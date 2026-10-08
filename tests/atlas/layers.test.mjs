@@ -89,7 +89,16 @@ test('빗금 분류(고산 기후)가 따로 남는다', () => {
 
 test('흐름선: 수입은 우리나라로, 수출은 우리나라에서, 굵기 단계가 있다', () => {
   const flows = load('p24-trade').features.filter((f) => f.properties.type === 'flow');
-  assert.ok(flows.length >= 10, `흐름선 ${flows.length}`);
+  // 교과서: 수출입액 상위 10개국씩
+  assert.equal(flows.filter((f) => f.properties.cls === 'import').length, 10);
+  assert.equal(flows.filter((f) => f.properties.cls === 'export').length, 10);
+  const cls = (c, name) => flows.find((f) => f.properties.cls === c && f.properties.label === name)?.properties.value;
+  assert.equal(cls('export', '중국'), '10 이상');
+  assert.equal(cls('export', '미국'), '10 이상');
+  assert.equal(cls('export', '베트남'), '5~10');
+  assert.equal(cls('export', '멕시코'), '1~2');
+  assert.equal(cls('import', '중국'), '10 이상');
+  for (const f of flows) assert.equal(f.properties.width, { '1~2': 0.6, '2~5': 1.0, '5~10': 1.5, '10 이상': 2.0 }[f.properties.value]);
   const korea = [127, 37.5];
   const near = (p) => Math.hypot(p[0] - korea[0], p[1] - korea[1]) < 4;
   for (const f of flows) {

@@ -36,7 +36,6 @@ WHITE_DE = 6.0       # 이만큼 흰색에 가까우면 바다(빈 곳)
 SIEVE_PX = 8         # 이보다 작은 래스터 얼룩은 이웃 분류에 흡수
 GROW_PT = 1.0        # 분류 면을 빈 곳으로 넓히는 폭
 SLIVER_PT2 = 0.3     # 이보다 작은 조각은 버림(지면 pt²)
-FLOW_MIN_PT = 8.0    # 이보다 짧은 흐름선 조각은 허브 근처 겹침 조각으로 보고 버림
 DENSIFY_PT = 2.0     # 경위도 변환 전에 긴 변을 이 간격으로 나눈다
 
 CONFIG = {
@@ -54,6 +53,18 @@ CONFIG = {
         'import': ['#0066a6', '#0066b3', '#00656e', '#056543', '#006557', '#006579', '#00649f', '#00669b',
                    '#00668f', '#00636d', '#333376'],
         'export': ['#ed0f67', '#9e2d33', '#b72749', '#af2a3c', '#ed1844', '#dd1767', '#333376'],
+        # 상대국 끝점(지면 pt): 수출 = 화살촉 끝, 수입 = 꼬리 끝. 400dpi 확대 화면과 골격 끝점에서 읽음.
+        # 짙은 초록·짙은 빨강 화살표는 따로 된 범례가 아니라 초록 나라 위에 겹친 수입(파랑)·수출(빨강)이다.
+        'partners': {
+            'import': [('중국', [288.8, 591.7]), ('미국', [411.3, 592.8]), ('일본', [304.9, 602.7]),
+                       ('오스트레일리아', [300.8, 654.7]), ('사우디아라비아', [231.8, 615.0]), ('타이완', [290.9, 612.1]),
+                       ('독일', [193.7, 586.1]), ('베트남', [276.3, 616.6]), ('카타르', [229.4, 611.4]),
+                       ('인도네시아', [281.9, 641.3])],
+            'export': [('중국', [277.9, 603.1]), ('미국', [401.2, 598.2]), ('베트남', [280.1, 621.3]),
+                       ('일본', [306.3, 601.3]), ('홍콩', [284.6, 613.4]), ('타이완', [291.8, 613.3]),
+                       ('싱가포르', [277.3, 632.1]), ('인도', [253.9, 613.3]), ('오스트레일리아', [302.7, 655.1]),
+                       ('멕시코', [411.8, 614.2])],
+        },
     }},
     'p24-resources': {'mode': 'symbols', 'glyphMax': 6.0},
     'p22-singapore': {'mode': 'symbols', 'glyphMax': 4.5, 'leaders': {'stroke': '#231f20', 'width': 0.3}},
@@ -559,141 +570,96 @@ def _stroke_paths(d):
 
 
 # ── 흐름선(p24-trade) ─────────────────────────────────────────────────────
-def _thin(img):
-    """Zhang–Suen 세선화(0/1 배열)."""
-    I = img.astype(np.uint8).copy()
-    while True:
-        changed = False
-        for step in (0, 1):
-            P = np.pad(I, 1)
-            n = [P[:-2, 1:-1], P[:-2, 2:], P[1:-1, 2:], P[2:, 2:], P[2:, 1:-1], P[2:, :-2], P[1:-1, :-2], P[:-2, :-2]]
-            B = sum(x.astype(int) for x in n)
-            A = sum(((n[i] == 0) & (n[(i + 1) % 8] == 1)).astype(int) for i in range(8))
-            if step == 0: c = (n[0] * n[2] * n[4] == 0) & (n[2] * n[4] * n[6] == 0)
-            else: c = (n[0] * n[2] * n[6] == 0) & (n[0] * n[4] * n[6] == 0)
-            rm = (I == 1) & (B >= 2) & (B <= 6) & (A == 1) & c
-            if rm.any(): I[rm] = 0; changed = True
-        if not changed: return I
+# 교과서 화살표는 겹치는 곳마다 색을 바꿔 칠한(초록 땅 위 = 짙은 초록·짙은 빨강) 조각 수백 개라 도형 하나가 흐름선 하나가 아니다.
+# 그래서 상대국 끝점(수출 = 화살촉, 수입 = 꼬리)을 지면에서 읽어 CONFIG 에 두고, 같은 방향(수입·수출) 조각을 합친 가면 위에서
+# 끝점 → 허브 최단 경로(띠 가운데를 따르도록 가장자리일수록 비싸게)를 찾아 선으로 쓴다.
+# 굵기 = 상대국 쪽 구간(끝 3pt·허브 쪽 절반 제외)의 거리 변환 중앙값 × 2 → 범례 선 굵기(0.6/1.0/1.5/2.0pt) 중 가장 가까운 단계.
+FLOW_PX = 6.0          # 가면 해상도(화소/pt)
+FLOW_LEGEND = [(0.6, '1~2'), (1.0, '2~5'), (1.5, '5~10'), (2.0, '10 이상')]   # 범례 선 굵기(pt) ↔ 백억 달러
 
 
-def _longest_path(sk):
-    """골격 화소 중 가장 긴 경로(두 번 BFS) → [(r,c)...]."""
-    from collections import deque
-    pts = set(zip(*np.nonzero(sk)))
-    if not pts: return []
-    def nb(p):
+def _shortest(mask, cost, src, dst):
+    """가면 화소 위 8방향 다익스트라 → [(r,c)...] (src→dst). 못 가면 []."""
+    import heapq
+    H, W = mask.shape
+    dist = {src: 0.0}; prev = {}; pq = [(0.0, src)]
+    while pq:
+        d, p = heapq.heappop(pq)
+        if p == dst: break
+        if d > dist.get(p, 1e18): continue
         r, c = p
         for dr in (-1, 0, 1):
             for dc in (-1, 0, 1):
+                if not dr and not dc: continue
                 q = (r + dr, c + dc)
-                if q != p and q in pts: yield q
-    def bfs(s):
-        prev = {s: None}; dq = deque([s]); last = s
-        while dq:
-            p = dq.popleft(); last = p
-            for q in nb(p):
-                if q not in prev: prev[q] = p; dq.append(q)
-        return last, prev
-    a, _ = bfs(next(iter(pts)))
-    b, prev = bfs(a)
-    path = []; p = b
-    while p is not None: path.append(p); p = prev[p]
-    return path
-
-
-BRANCH_MIN_PT = 12.0  # 이보다 긴 곁가지 골격은 따로 갈라진 흐름선으로 본다
-
-
-def _branch_paths(sk, s, x0, y0, hub):
-    """골격 → [(지면 점 배열(허브 쪽부터), 가지가 갈라진 위치 색인 또는 0)]. 가장 긴 길을 먼저 뽑고,
-    남은 골격에서 BRANCH_MIN_PT 보다 긴 가지마다 '주 경로의 허브~갈림점 + 가지'를 하나 더 만든다(묶여 그린 흐름선 나누기)."""
-    import cv2
-    toxy = lambda path: np.array([[x0 + (c + 0.5) / s, y0 + (r + 0.5) / s] for r, c in path])
-    main = _longest_path(sk)
-    if len(main) < 4: return []
-    P = toxy(main)
-    if np.hypot(*(P[-1] - hub)) < np.hypot(*(P[0] - hub)): P = P[::-1]; main = main[::-1]
-    out = [(P, 0)]
-    rest = sk.copy()
-    cover = np.zeros_like(sk); 
-    for r, c in main: cover[r, c] = 1
-    cover = cv2.dilate(cover.astype(np.uint8), np.ones((7, 7), np.uint8))
-    rest[cover > 0] = 0
-    n, lab_ = cv2.connectedComponents(rest.astype(np.uint8), connectivity=8)
-    for k in range(1, n):
-        part = (lab_ == k).astype(np.uint8)
-        if part.sum() < BRANCH_MIN_PT * s: continue
-        q = _longest_path(part)
-        if len(q) < BRANCH_MIN_PT * s: continue
-        Q = toxy(q)
-        d0 = np.hypot(*(P - Q[0]).T).min(); d1 = np.hypot(*(P - Q[-1]).T).min()
-        if d1 < d0: Q = Q[::-1]
-        j = int(np.argmin(np.hypot(*(P - Q[0]).T)))
-        out.append((np.vstack([P[:j + 1], Q]), j + 1))
-    return out
+                if not (0 <= q[0] < H and 0 <= q[1] < W) or not mask[q]: continue
+                nd = d + (1.4142 if dr and dc else 1.0) * cost[q]
+                if nd < dist.get(q, 1e18):
+                    dist[q] = nd; prev[q] = p; heapq.heappush(pq, (nd, q))
+    if dst not in prev and dst != src: return []
+    path = [dst]
+    while path[-1] != src: path.append(prev[path[-1]])
+    return path[::-1]
 
 
 def flows(m, cfg, leg_strokes):
+    import cv2
     from rasterio import features as rf
     from affine import Affine
     page = pdfkit.doc()[m['page'] - 1]
-    ex = excluded_boxes(m)
-    groups = {'수입': [], '수출': []}
-    for d in page.get_drawings():
-        h = hexc(d.get('fill'))
-        if h is None: continue
-        r = d['rect']
-        if not inside(r, m['bbox'], 0) or any(overlaps(r, b) for b in ex): continue
-        for key, cols in (('수입', cfg['import']), ('수출', cfg['export'])):
-            if h in cols:
-                g = drawing_geom(d)
-                if g is not None: groups[key].append(g)
-    s = 8.0  # 화소/pt
+    s = FLOW_PX
     x0, y0, x1, y1 = m['bbox']
     W, H = int((x1 - x0) * s) + 1, int((y1 - y0) * s) + 1
     tf = Affine(1 / s, 0, x0, 0, 1 / s, y0)
-    hub = Point(cfg['hub'])
+    topx = lambda p: (int((p[1] - y0) * s), int((p[0] - x0) * s))
+    toxy = lambda rc: [x0 + (rc[1] + 0.5) / s, y0 + (rc[0] + 0.5) / s]
     out, rep = [], {}
-    for key, gs in groups.items():
-        if not gs: continue
-        U = unary_union(gs).buffer(0.05)
-        core = U.difference(hub.buffer(4.0))
-        comps = [p for p in shapely.get_parts(core) if p.area > 1.0]
-        rep[key] = {'pieces': len(gs), 'components': len(comps)}
-        for comp in comps:
-            mask = rf.rasterize([(comp, 1)], out_shape=(H, W), transform=tf, fill=0, dtype='uint8')
-            sk = _thin(mask)
-            for P, branch in _branch_paths(sk, s, x0, y0, cfg['hub']):
-                line = LineString(P).simplify(0.15)
-                length = line.length
-                if length < FLOW_MIN_PT: continue   # 허브 근처 겹침 조각
-                # 굵기: 이 선에서 1pt 안쪽 면적 / 길이(가지는 끝 쪽 고유 구간으로 잰다)
-                own = LineString(P[branch:]) if branch and len(P) - branch >= 2 else line
-                width = comp.intersection(own.buffer(2.5, cap_style='flat')).area / max(own.length, 1e-6)
-                pts = [list(cfg['hub'])] + [list(c) for c in line.coords]
-                pts = np.array(LineString(pts).simplify(0.15).coords)
-                if key == '수입': pts = pts[::-1]  # 상대국 → 우리나라
-                out.append({'points': np.round(shapely.segmentize(LineString(pts), DENSIFY_PT).coords, 3).tolist(),
-                            'cls': 'import' if key == '수입' else 'export', 'kind': key,
-                            'dir': 'to-korea' if key == '수입' else 'from-korea',
-                            'color': leg_strokes[key], 'widthPt': round(min(width, 2 * 2.5), 2), 'lengthPt': round(length, 1),
-                            'branch': bool(branch)})
+    masks = {}
+    for ckey in ('import', 'export'):
+        gs = [drawing_geom(d) for d in page.get_drawings()
+              if hexc(d.get('fill')) in cfg[ckey] and inside(d['rect'], m['bbox'], 0) and not any(overlaps(d['rect'], b) for b in excluded_boxes(m))]
+        U = unary_union([g for g in gs if g is not None]).buffer(0.05)
+        masks[ckey] = rf.rasterize([(U, 1)], out_shape=(H, W), transform=tf, fill=0, dtype='uint8')
+    # 지나갈 수 있는 곳: 두 방향 가면 + 허브(우리나라) 둘레 6pt — 조각 사이 틈(겹친 다른 색·흰 테두리)은 2화소 팽창으로 잇는다
+    hubdisc = np.zeros((H, W), np.uint8)
+    cv2.circle(hubdisc, (int((cfg['hub'][0] - x0) * s), int((cfg['hub'][1] - y0) * s)), int(6 * s), 1, -1)
+    for key, ckey in (('수입', 'import'), ('수출', 'export')):
+        own = masks[ckey]
+        other = masks['export' if ckey == 'import' else 'import']
+        mask = cv2.dilate(own | other | hubdisc, np.ones((5, 5), np.uint8))
+        dt = cv2.distanceTransform(own, cv2.DIST_L2, 5)          # 화소(자기 방향 띠 안에서만)
+        cost = np.where(own > 0, 1.0 + 6.0 / (1.0 + dt), np.where(other > 0, 8.0, 12.0))
+        ys, xs = np.nonzero(own)
+        def snap(p):
+            r, c = topx(p); k = int(np.argmin((ys - r) ** 2 + (xs - c) ** 2)); return (int(ys[k]), int(xs[k])), float(np.hypot(ys[k] - r, xs[k] - c) / s)
+        rows = []
+        hub = topx(cfg['hub'])
+        for name, end in cfg['partners'][ckey]:
+            e, gap = snap(end)
+            path = _shortest(mask, cost, e, hub)
+            if not path:
+                rows.append({'partner': name, 'error': 'no path'}); continue
+            P = np.array([toxy(rc) for rc in path])
+            seg = np.r_[0, np.cumsum(np.hypot(*np.diff(P, axis=0).T))]
+            L = seg[-1]
+            sel = (seg >= min(3.0, 0.2 * L)) & (seg <= 0.5 * L)
+            if sel.sum() < 3: sel = seg <= 0.6 * L
+            width = 2 * float(np.median([dt[rc] for rc, ok in zip(path, sel) if ok])) / s
+            k = int(np.argmin([abs(width - w) for w, _ in FLOW_LEGEND]))
+            line = LineString([list(cfg['hub'])] + P[::-1].tolist()).simplify(0.2)   # 허브 → 상대국
+            pts = np.array(line.coords)
+            if key == '수입': pts = pts[::-1]                                         # 상대국 → 우리나라
+            out.append({'points': np.round(shapely.segmentize(LineString(pts), DENSIFY_PT).coords, 3).tolist(),
+                        'cls': ckey, 'kind': key, 'dir': 'to-korea' if key == '수입' else 'from-korea',
+                        'color': leg_strokes[key], 'label': name, 'widthPt': round(width, 2),
+                        'value': FLOW_LEGEND[k][1], 'valueRank': k + 1, 'width': FLOW_LEGEND[k][0], 'lengthPt': round(float(L), 1)})
+            rows.append({'partner': name, 'widthPt': round(width, 2), 'value': FLOW_LEGEND[k][1], 'snapPt': round(gap, 2)})
+        rep[key] = rows
     return out, rep
 
 
 def flow_classes(lines, m):
-    """흐름선 굵기 → 범례 4단계(1~2, 2~5, 5~10, 10 이상 백억 달러). 범례 선 굵기 0.6/1.0/1.5/2.0pt 를
-    지도 굵기 분포에 맞춘 경계로 나눈다(가장 가는 선 = 1단계)."""
-    labels = ['1~2', '2~5', '5~10', '10 이상']
-    ws = sorted(l['widthPt'] for l in lines)
-    if not ws: return []
-    # 범례 굵기 비율(0.6:1.0:1.5:2.0)을 가장 가는 지도 선에 맞춘다
-    base = ws[0] / 0.6
-    refs = [0.6 * base, 1.0 * base, 1.5 * base, 2.0 * base]
-    for l in lines:
-        k = int(np.argmin([abs(l['widthPt'] - r) for r in refs]))
-        l['value'] = labels[k]; l['valueRank'] = k + 1; l['width'] = [0.6, 1.0, 1.5, 2.0][k]
-    return labels
+    return [v for _, v in FLOW_LEGEND]
 
 
 # ── 진입점 ──────────────────────────────────────────────────────────────

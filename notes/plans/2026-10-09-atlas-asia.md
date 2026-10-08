@@ -789,3 +789,10 @@ export default function mount(root) {
 - 경위도 기호는 `°`와 `˚`(U+02DA)를 모두 인식한다.
 - georef CLI는 `scripts/atlas/georef-cli.mjs`다(`--all`, `--verify <id|all>`). 라이브러리 `georef.mjs`는 `fitControls/applyFit/invertFit/fitWithTps/makeConverter/inControlHull/robustFit`을 내보낸다. 대량 변환에는 `makeConverter(fit)`를 쓰고, `null`(변환 실패·수렴 실패)을 처리한다. TPS 보정은 기준점 볼록 껍질 밖에서 0으로 줄어든다. 작업 폴더는 env `ATLAS_WORK`(기본 `C:/Users/Public/atlas-work`)이고, 경위도 맞추기 제외 지도는 maps_u2.json의 `"georef": false`로 표시한다.
 - JS 테스트 명령은 `node --test "tests/**/*.test.mjs"`(`npm test`가 Python과 함께 실행한다).
+- (C1) 주제 레이어 결정:
+  - `p24-exports`는 기호가 아니라 **면 레이어**다(국가별 주요 수출품 5분류 단계구분도).
+  - `p21-climate`의 기후 구분은 벡터가 아니라 **래스터 타일**이라, 이미지만 렌더해 화소를 범례색(Lab ΔE)으로 분류해 면으로 만든다. 고산 기후 빗금은 벡터 윤곽(#ba703d)이라 별도 분류(`pattern:'hatch'`)로 둔다.
+  - `p21-jan`·`p21-jul` = 강수량 7단계 면(래스터 분류) + 등온선(값 붙은 선, `type:'isotherm'`). 기온은 면이 아니라 선이다.
+  - `p24-trade`는 흐름선(수입·수출 각 상위 10개국, 굵기 4단계 = 범례 선 굵기 0.6/1.0/1.5/2.0pt) 외에 **우리나라와의 교역액 단계구분도(7단계 면)**도 담는다. 짙은 초록·짙은 빨강 화살표는 별도 범례가 아니라 초록 나라 위에 겹친 수입·수출이다. 상대국 끝점은 features.py CONFIG에 손으로 적었다.
+  - `p23-growth`의 중국 면 색 #ffe4b9는 범례에 없는 색이라 '0~0.5'(#f5eeba)로 대응시킨다(중국 2021 증가율 약 0.1%).
+  - `p22-kashmir` 면 = Natural Earth 분쟁 지역의 **관할국**(파키스탄 지배·인도 지배·중국–인도 분쟁 지역), 색은 교과서 각국 주장 국경 색을 옅게 한 것. 주장 국경은 NE 관점별(POV) 국가 경계, 정전 라인은 NE Line of control. 종교 비율 3분류는 대응 자료가 없어 **범례 항목만**(`geometry:false`) 둔다.

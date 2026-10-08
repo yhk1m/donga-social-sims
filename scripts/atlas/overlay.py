@@ -17,6 +17,16 @@ def _rgb(h):
     return tuple(int(h[i:i + 2], 16) for i in (1, 3, 5))
 
 
+_fnt = None
+def _font():
+    global _fnt
+    if _fnt is None:
+        from PIL import ImageFont
+        try: _fnt = ImageFont.truetype('C:/Windows/Fonts/malgun.ttf', 13)
+        except OSError: _fnt = ImageFont.load_default()
+    return _fnt
+
+
 def _draw_layer(img, ov, P, outline_only):
     d = ImageDraw.Draw(img); size = img.size
     for a in ov.get('areas', []):
@@ -40,8 +50,12 @@ def _draw_layer(img, ov, P, outline_only):
                 if a.get('pattern') == 'hatch': d.line(ext + [ext[0]], fill=col, width=1)
     for L in ov.get('paths', []):
         pts = [P(p) for p in L['points']]
-        if len(pts) > 1: d.line(pts, fill=_rgb(L['color']), width=max(1, int(round(L.get('width', 1)))))
+        # width 는 지면 pt(범례 선 굵기) → 화소. 교과서 선과 같은 굵기로 보여야 맞은 것
+        if len(pts) > 1: d.line(pts, fill=_rgb(L['color']), width=max(1, int(round(L.get('width', 1) * ov['dpi'] / 72))), joint='curve')
         if pts: d.ellipse([pts[-1][0] - 3, pts[-1][1] - 3, pts[-1][0] + 3, pts[-1][1] + 3], outline=_rgb(L['color']), width=2)
+        if pts and L.get('label') and not outline_only:
+            d.text((pts[0][0] + 3, pts[0][1] - 10) if L.get('labelAt') == 'start' else (pts[-1][0] + 4, pts[-1][1] - 10),
+                   L['label'], fill=_rgb(L['color']), font=_font())
     for p in ov.get('points', []):
         x, y = P(p['xy'])
         d.ellipse([x - 4, y - 4, x + 4, y + 4], fill=_rgb(p['color']), outline=(0, 0, 0), width=1)

@@ -178,7 +178,10 @@ function verify(layer) {
     const p = f.properties, g = f.geometry;
     if (g.type === 'MultiPolygon') areas.push({ color: p.color, pattern: p.pattern, polygons: g.coordinates.map((poly) => poly.map(back)) });
     else if (g.type === 'Point') { const xy = cv.apply(g.coordinates); if (xy) points.push({ xy, color: p.color }); }
-    else if (g.type === 'LineString') paths.push({ points: back(g.coordinates), color: p.color, width: p.width || 1 });
+    else if (g.type === 'LineString') {
+      paths.push({ points: back(g.coordinates), color: p.color, width: p.width || 0.4,
+        ...(p.type === 'flow' ? { label: `${p.label} ${p.value}`, labelAt: p.dir === 'to-korea' ? 'start' : 'end' } : {}) });
+    }
   }
   const span = Math.max(m.bbox[2] - m.bbox[0], m.bbox[3] - m.bbox[1]);
   const ov = { page: m.page, bbox: m.bbox, dpi: Math.min(300, Math.max(110, Math.round(72 * 900 / span))), out: outPng, title: `${layer.id} (lon/lat -> page)`, areas, points, paths };
