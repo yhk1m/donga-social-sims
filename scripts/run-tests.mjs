@@ -15,6 +15,6 @@ const run = (cmd, args) => {
 let fail = 0;
 const python = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
 fail |= run(python, ['-I', '-m', 'unittest', 'discover', '-s', 'scripts/atlas/tests', '-v']);
-if (existsSync(join(root, 'tests'))) fail |= run(process.execPath, ['--test', 'tests/']);
+if (existsSync(join(root, 'tests'))) fail |= run(process.execPath, ['--test', 'tests/**/*.test.mjs']);
 else console.log('\n(tests/ 폴더가 없어 Node 테스트는 건너뜀)');
 process.exit(fail ? 1 : 0);
