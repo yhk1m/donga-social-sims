@@ -309,9 +309,6 @@ class Outputs(unittest.TestCase):
                     self.assertEqual(D.blue_pixels(im, oc['iconBlueOverRed']), 0)   # 사람 아이콘(파랑)이 없다
 
 
-if __name__ == '__main__': unittest.main()
-
-
 @NEED_PDF
 class OverlayLegend(unittest.TestCase):
     """23쪽 인구 밀도 음영의 범례 단계: 지면 범례 견본 수 = 설정 expectLegend = JSON legend."""
@@ -326,3 +323,6 @@ class OverlayLegend(unittest.TestCase):
                 self.assertEqual(json.load(f)['legend'], leg)
         self.assertEqual([e['label'] for e in D.overlay_legend(unit_config()['photos']['overlays'][0])],
                          ['200 이상', '100~200', '50~100', '5~50', '5 미만'])
+
+
+if __name__ == '__main__': unittest.main()

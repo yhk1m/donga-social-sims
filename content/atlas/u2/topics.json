@@ -27,6 +27,7 @@
   "markers": [],
   "blocks": [
    {
+    "id": "asia-text",
     "type": "text",
     "view": "asia",
     "titleSrc": {
@@ -41,6 +42,7 @@
     "text": "람베르트 정적 방위 도법 1:40,000,000"
    },
    {
+    "id": "east-asia-text",
     "type": "text",
     "view": "east-asia",
     "titleSrc": {
@@ -55,6 +57,7 @@
     "text": "람베르트 정각 원뿔 도법 1:16,000,000"
    },
    {
+    "id": "southeast-asia-text",
     "type": "text",
     "view": "southeast-asia",
     "titleSrc": {
@@ -69,14 +72,17 @@
     "text": "람베르트 정적 방위 도법 1:20,000,000"
    },
    {
+    "id": "page-16",
     "type": "page",
     "page": 16
    },
    {
+    "id": "page-18",
     "type": "page",
     "page": 18
    },
    {
+    "id": "page-19",
     "type": "page",
     "page": 19
    }
@@ -94,6 +100,7 @@
   "markers": [],
   "blocks": [
    {
+    "id": "goal",
     "type": "text",
     "role": "goal",
     "title": "학습 목표",
@@ -105,6 +112,7 @@
     "text": "다양한 지리 정보와 매체를 활용하여 아시아의 국가와 주요 도시의 위치를 표현할 수 있다."
    },
    {
+    "id": "text-1",
     "type": "text",
     "titleSrc": {
      "page": 17,
@@ -118,6 +126,7 @@
     "text": "세계에서 가장 큰 대륙인 아시아는 남북으로 인도네시아에서 러시아의 시베리아, 동서로 일본에서 튀르키예 및 아라비아반도에 걸쳐 있다. 아시아 대륙은 다시 동아시아와 동남아시아, 남부 아시아, 서남아시아, 중앙아시아로 구분된다. 이들 지역은 각 지역별로 지형과 기후 등의 자연환경과 민족, 언어, 종교, 의식주 등의 문화적 특징이 매우 다양하게 나타나기 때문에 지역에 따라 독특한 주민의 삶의 모습을 볼 수 있다."
    },
    {
+    "id": "activity-1",
     "type": "activity",
     "src": {
      "page": 17,
@@ -126,6 +135,7 @@
     "text": "각 나라에 색칠하여 지도를 완성하고 각 국가명과 도시명을 써넣어 보자."
    },
    {
+    "id": "page-17",
     "type": "page",
     "page": 17
    }
@@ -179,6 +189,7 @@
   ],
   "blocks": [
    {
+    "id": "question",
     "type": "text",
     "role": "question",
     "src": {
@@ -188,6 +199,7 @@
     "text": "아시아의 자연환경은 어떤 특색을 지니고 있을까?"
    },
    {
+    "id": "goal",
     "type": "text",
     "role": "goal",
     "title": "학습 목표",
@@ -199,6 +211,7 @@
     "text": "다양한 지리 정보와 매체를 활용하여 아시아의 지형과 기후 특색을 지도로 표현할 수 있다."
    },
    {
+    "id": "section-1",
     "type": "text",
     "role": "section",
     "src": {
@@ -213,6 +226,7 @@
     "credit": "(naturalearthdata.com, 2023)"
    },
    {
+    "id": "activity-1",
     "type": "activity",
     "title": "활동하기 1",
     "src": {
@@ -222,6 +236,7 @@
     "text": "16쪽의 아시아 지도와 인터넷을 참고하여 사진의 위치를 지도의 빈칸에 표시해 보자."
    },
    {
+    "id": "page-20",
     "type": "page",
     "page": 20
    }
@@ -335,6 +350,7 @@
   ],
   "blocks": [
    {
+    "id": "question",
     "type": "text",
     "role": "question",
     "src": {
@@ -344,6 +360,7 @@
     "text": "아시아의 자연환경은 어떤 특색을 지니고 있을까?"
    },
    {
+    "id": "goal",
     "type": "text",
     "role": "goal",
     "title": "학습 목표",
@@ -355,6 +372,7 @@
     "text": "다양한 지리 정보와 매체를 활용하여 아시아의 지형과 기후 특색을 지도로 표현할 수 있다."
    },
    {
+    "id": "section-1",
     "type": "text",
     "role": "section",
     "src": {
@@ -364,6 +382,7 @@
     "text": "아시아의 기후"
    },
    {
+    "id": "activity-1",
     "type": "activity",
     "title": "활동하기 2",
     "src": {
@@ -373,6 +392,7 @@
     "text": "기후 그래프와 사진 설명을 읽고 해당 지역의 위치를 지도에 표시해 보자."
    },
    {
+    "id": "page-21",
     "type": "page",
     "page": 21
    }
@@ -479,6 +499,7 @@
   ],
   "blocks": [
    {
+    "id": "question",
     "type": "text",
     "role": "question",
     "src": {
@@ -488,6 +509,7 @@
     "text": "아시아의 다양한 문화 경관은 어떤 모습으로 나타날까?"
    },
    {
+    "id": "goal",
     "type": "text",
     "role": "goal",
     "title": "학습 목표",
@@ -499,6 +521,7 @@
     "text": "종교와 관련된 아시아의 다양한 문화 경관 및 생활 양식을 사례를 들어 설명할 수 있다."
    },
    {
+    "id": "section-1",
     "type": "text",
     "role": "section",
     "view": "religion",
@@ -509,6 +532,7 @@
     "text": "아시아의 종교 분포"
    },
    {
+    "id": "section-2",
     "type": "text",
     "role": "section",
     "src": {
@@ -518,22 +542,27 @@
     "text": "종교와 주민 생활"
    },
    {
+    "id": "p22-life-1",
     "type": "photo",
     "ref": "p22-life-1"
    },
    {
+    "id": "p22-life-2",
     "type": "photo",
     "ref": "p22-life-2"
    },
    {
+    "id": "p22-life-3",
     "type": "photo",
     "ref": "p22-life-3"
    },
    {
+    "id": "p22-life-4",
     "type": "photo",
     "ref": "p22-life-4"
    },
    {
+    "id": "section-3",
     "type": "text",
     "role": "section",
     "view": "singapore",
@@ -544,6 +573,7 @@
     "text": "다양한 종교가 공존하는 싱가포르"
    },
    {
+    "id": "singapore-text",
     "type": "text",
     "view": "singapore",
     "src": {
@@ -553,6 +583,7 @@
     "text": "다민족 국가인 싱가포르는 다양한 문화의 공존을 추구하고 있으며, 크리스트교, 불교, 이슬람교, 힌두교 등 여러 종교의 축제일을 공휴일로 지정하였다."
    },
    {
+    "id": "subtitle",
     "type": "text",
     "view": "singapore",
     "role": "subtitle",
@@ -568,22 +599,27 @@
     "credit": "(Public Holidays Global, 2023)"
    },
    {
+    "id": "p22-sg-1",
     "type": "photo",
     "ref": "p22-sg-1"
    },
    {
+    "id": "p22-sg-2",
     "type": "photo",
     "ref": "p22-sg-2"
    },
    {
+    "id": "p22-sg-3",
     "type": "photo",
     "ref": "p22-sg-3"
    },
    {
+    "id": "p22-sg-4",
     "type": "photo",
     "ref": "p22-sg-4"
    },
    {
+    "id": "section-4",
     "type": "text",
     "role": "section",
     "view": "kashmir",
@@ -594,6 +630,7 @@
     "text": "힌두교와 이슬람교 간 분쟁"
    },
    {
+    "id": "page-22-part",
     "type": "page",
     "page": 22,
     "view": "kashmir",
@@ -605,6 +642,7 @@
     "title": "카슈미르 분쟁 지역"
    },
    {
+    "id": "card-1",
     "type": "card",
     "view": "kashmir",
     "titleSrc": {
@@ -619,6 +657,7 @@
     "text": "인도반도는 1947년 영국으로부터 독립하면서 인도와 파키스탄으로 분리되었다. 이 과정에서 이슬람교를 믿는 대다수의 카슈미르 주민들은 파키스탄 편입을 원했으나, 힌두교를 믿는 지도층이 인도 편입을 선언하였다."
    },
    {
+    "id": "page-22",
     "type": "page",
     "page": 22
    }
@@ -686,6 +725,7 @@
   "markers": [],
   "blocks": [
    {
+    "id": "question",
     "type": "text",
     "role": "question",
     "src": {
@@ -695,6 +735,7 @@
     "text": "아시아의 인구는 어떻게 변화하고 있을까?"
    },
    {
+    "id": "goal",
     "type": "text",
     "role": "goal",
     "title": "학습 목표",
@@ -706,6 +747,7 @@
     "text": "아시아의 인구 특징을 파악하고, 지역별 인구 구조 변화를 비교할 수 있다."
    },
    {
+    "id": "text-1",
     "type": "text",
     "titleSrc": {
      "page": 23,
@@ -719,14 +761,17 @@
     "text": "아시아는 세계에서 인구 밀도가 가장 높은 대륙이다. 세계 평균 인구 밀도는 약 61명/㎢, 아시아는 약 150명/㎢이다."
    },
    {
+    "id": "p23-1",
     "type": "photo",
     "ref": "p23-1"
    },
    {
+    "id": "p23-2",
     "type": "photo",
     "ref": "p23-2"
    },
    {
+    "id": "text-2",
     "type": "text",
     "titleSrc": {
      "page": 23,
@@ -740,6 +785,7 @@
     "text": "대부분의 아시아 국가는 인구가 증가하고 있으나,중국, 일본 등 일부 국가는 인구 성장이 정체되고 있다."
    },
    {
+    "id": "p23-world-pop",
     "type": "chart",
     "ref": "p23-world-pop",
     "titleSrc": {
@@ -759,6 +805,7 @@
     "note": "*2021년 이후의 값은 추정치임."
    },
    {
+    "id": "activity-1",
     "type": "activity",
     "title": "활동하기 3",
     "src": {
@@ -768,6 +815,7 @@
     "text": "중국과 인도의 인구 자료를 보고, 인구 순위가 바뀐 이유에 대해 설명해 보자."
    },
    {
+    "id": "p23-china-india-pop",
     "type": "chart",
     "ref": "p23-china-india-pop",
     "titleSrc": {
@@ -783,6 +831,7 @@
     "text": "중국은 지난 수 세기 동안 세계에서 가장 인구가 많은 나라였다. 그러나 국제 연합은 2023년에 세계 1위 인구 대국이 인도로 바뀐 추정 결과를 발표하였다."
    },
    {
+    "id": "p23-age-ratio",
     "type": "chart",
     "ref": "p23-age-ratio",
     "titleSrc": {
@@ -792,6 +841,7 @@
     "title": "중국과 인도의 연령대별 인구 비율"
    },
    {
+    "id": "section-1",
     "type": "text",
     "role": "section",
     "src": {
@@ -801,6 +851,7 @@
     "text": "고령화 현상이 뚜렷한 일본"
    },
    {
+    "id": "p23-japan-pyramid",
     "type": "chart",
     "ref": "p23-japan-pyramid",
     "titleSrc": {
@@ -810,6 +861,7 @@
     "title": "일본의 인구 피라미드"
    },
    {
+    "id": "p23-japan-aging",
     "type": "chart",
     "ref": "p23-japan-aging",
     "titleSrc": {
@@ -824,6 +876,7 @@
     "text": "일본은 2021년 기준 65세 이상 인구 비율은 약 30%, 14세 이하 인구는 약 12%로, 저출산·고령화 현상이 뚜렷하다."
    },
    {
+    "id": "section-2",
     "type": "text",
     "role": "section",
     "src": {
@@ -833,6 +886,7 @@
     "text": "외국인의 유입이 많은 카타르"
    },
    {
+    "id": "p23-qatar-pyramid",
     "type": "chart",
     "ref": "p23-qatar-pyramid",
     "titleSrc": {
@@ -842,10 +896,12 @@
     "title": "카타르의 인구 피라미드"
    },
    {
+    "id": "p23-qatar-pie",
     "type": "chart",
     "ref": "p23-qatar-pie"
    },
    {
+    "id": "p23-qatar-foreigners",
     "type": "chart",
     "ref": "p23-qatar-foreigners",
     "titleSrc": {
@@ -860,6 +916,7 @@
     "text": "카타르는 석유와 천연가스 수출을 기반으로 경제가 급속히 성장하였다. 그 과정에서 건설 분야에 종사하는 청장년층 남성 외국인 노동자가 많이 유입되었다."
    },
    {
+    "id": "activity-2",
     "type": "activity",
     "title": "활동하기 4",
     "src": {
@@ -869,6 +926,7 @@
     "text": "자료를 참고하여 일본과 카타르가 당면한 인구 문제를 각각 설명해 보자."
    },
    {
+    "id": "page-23",
     "type": "page",
     "page": 23
    }
@@ -930,6 +988,7 @@
   "markers": [],
   "blocks": [
    {
+    "id": "question",
     "type": "text",
     "role": "question",
     "src": {
@@ -939,6 +998,7 @@
     "text": "아시아에는 어떤 산업이 발달하고 있을까?"
    },
    {
+    "id": "goal",
     "type": "text",
     "role": "goal",
     "title": "학습 목표",
@@ -950,6 +1010,7 @@
     "text": "아시아의 산업 특징과 변화를 파악하고, 이것이 우리나라 산업에 미치는 영향을 설명할 수 있다."
    },
    {
+    "id": "section-1",
     "type": "text",
     "role": "section",
     "src": {
@@ -959,6 +1020,7 @@
     "text": "아시아의 주요 자원"
    },
    {
+    "id": "p24-resources",
     "type": "chart",
     "ref": "p24-resources",
     "noteSrc": {
@@ -968,6 +1030,7 @@
     "note": "*희토류는 반도체, 배터리 등의 첨단 제품을 만드는 데 핵심 소재로 쓰이는 광물이다."
    },
    {
+    "id": "section-2",
     "type": "text",
     "role": "section",
     "src": {
@@ -977,6 +1040,7 @@
     "text": "아시아의 주요 산업"
    },
    {
+    "id": "p24-exports",
     "type": "chart",
     "ref": "p24-exports",
     "noteSrc": {
@@ -986,6 +1050,7 @@
     "note": "*지식 재산권은 지적 활동으로 인하여 발생하는 모든 재산권을 말하며, 산업 발전을 목적으로 하는 공업 소유권과 문화 창달을 목적으로 하는 저작권으로 크게 나뉜다."
    },
    {
+    "id": "card-1",
     "type": "card",
     "titleSrc": {
      "page": 24,
@@ -996,6 +1061,7 @@
     "title": "석유 고갈에 대비하는 사우디아라비아"
    },
    {
+    "id": "card-2",
     "type": "card",
     "titleSrc": {
      "page": 24,
@@ -1006,6 +1072,7 @@
     "title": "베트남의 주요 수출품 변화"
    },
    {
+    "id": "theme-1",
     "type": "activity",
     "role": "theme",
     "titleSrc": {
@@ -1020,6 +1087,7 @@
     "text": "다음 지도는 우리나라의 수출액과 수입액 상위 10개국의 수출입액을 나타낸 것이다. 이 중에서 아시아 국가에 동그라미로 표시해 보자."
    },
    {
+    "id": "theme-2",
     "type": "activity",
     "role": "theme",
     "src": {
@@ -1029,11 +1097,13 @@
     "text": "사우디아라비아와 베트남의 산업 변화가 우리나라의 산업과 미래의 일자리 변화에 미칠 영향에 대해 발표해 보자."
    },
    {
+    "id": "page-24-part",
     "type": "page",
     "page": 24,
     "bbox": [505, 555, 742, 708]
    },
    {
+    "id": "page-24",
     "type": "page",
     "page": 24
    }
@@ -1264,6 +1334,7 @@
   ],
   "blocks": [
    {
+    "id": "section-1",
     "type": "text",
     "role": "section",
     "src": {
@@ -1273,6 +1344,7 @@
     "text": "종교와 관련된 아시아의 세계 문화유산"
    },
    {
+    "id": "activity-1",
     "type": "activity",
     "src": {
      "page": 25,
@@ -1281,6 +1353,7 @@
     "text": "‘유네스코 한국 위원회’ 누리집을 참고하여 ①~⑪ 세계 문화유산이 위치한 국가와, 이 문화유산과 관련된 종교를 써 보자."
    },
    {
+    "id": "link",
     "type": "text",
     "role": "link",
     "src": {
@@ -1295,6 +1368,7 @@
     "title": "참고 사이트"
    },
    {
+    "id": "page-25",
     "type": "page",
     "page": 25
    }

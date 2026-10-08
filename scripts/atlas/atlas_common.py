@@ -249,3 +249,45 @@ def in_map(d, m, tol=0):
 
 
 def regex(s): return re.compile(s)
+
+
+# ── 낡은 산출물 검사: 입력 내용 해시(도장) ─────────────────────────────────────
+# 설정 content.stamps[이름] = {files: [경로…], sections: ['content.coloring', …]}. 경로가 '@work/' 로 시작하면 작업 폴더 기준, 아니면 저장소 기준.
+# 해시 = sha256( 줄마다 「이름\t내용 sha256」 ) — 파일은 바이트, 설정 부분은 정렬 JSON(canon_json). Node(geo_util.stampHash)와 같은 값이어야 한다.
+REPO = os.path.normpath(os.path.join(HERE, '..', '..'))
+
+
+def stamp_path(p):
+    return os.path.join(WORK, p[len('@work/'):]) if p.startswith('@work/') else os.path.join(REPO, p)
+
+
+def canon_json(o):
+    """정렬 키·공백 없는 JSON(_ 로 시작하는 설명 키는 뺌). 정수 값 실수는 정수로(Node 와 같게). 키 정렬은 UTF-16 순서(Node 와 같게)."""
+    if isinstance(o, dict):
+        ks = sorted((k for k in o if not k.startswith('_')), key=lambda k: k.encode('utf-16-be'))
+        return '{' + ','.join(json.dumps(k, ensure_ascii=False) + ':' + canon_json(o[k]) for k in ks) + '}'
+    if isinstance(o, list): return '[' + ','.join(canon_json(v) for v in o) + ']'
+    if isinstance(o, bool) or o is None: return json.dumps(o)
+    if isinstance(o, float) and o.is_integer(): return str(int(o))
+    if isinstance(o, (int, float)): return repr(o)
+    return json.dumps(o, ensure_ascii=False)
+
+
+def _section(path):
+    o = unit_config()
+    for k in path.split('.'): o = o[k]
+    return o
+
+
+def stamp_hash(name):
+    """도장 이름 → 입력 해시(hex). 없는 파일은 「없음」으로 넣는다(그래도 값은 정해짐)."""
+    import hashlib
+    spec = unit_config()['content']['stamps'][name]
+    lines = []
+    for p in spec.get('files', []):
+        f = stamp_path(p)
+        h = hashlib.sha256(open(f, 'rb').read()).hexdigest() if os.path.exists(f) else '없음'
+        lines.append(f'{p}\t{h}')
+    for s in spec.get('sections', []):
+        lines.append(f'{s}\t' + hashlib.sha256(canon_json(_section(s)).encode('utf-8')).hexdigest())
+    return hashlib.sha256('\n'.join(lines).encode('utf-8')).hexdigest()

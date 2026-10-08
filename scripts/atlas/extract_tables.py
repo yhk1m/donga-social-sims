@@ -17,7 +17,7 @@ import json, os, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from atlas_common import WORK, unit_config, UNIT_CONFIG
+from atlas_common import WORK, unit_config, UNIT_CONFIG, stamp_hash, stamp_path
 from climate_table import read_climate_table, check_climate_rows
 from charts_read import READERS
 from charts_labels import text
@@ -212,6 +212,8 @@ def main(argv):
         print(f'경고가 있어 JSON 을 쓰지 않음(--force 로 강제): {", ".join(p for p, _ in writes) or "-"}')
     else:
         for path, obj in writes: write_json(path, obj)
+        if any(p == out_path('charts') for p, _ in writes):   # 그래프 JSON 도장(build_content.mjs 가 코드·설정·결과 해시로 확인)
+            write_json(stamp_path(unit_config()['content']['stamps']['charts']['stamp']), {'inputsHash': stamp_hash('charts')})
     if 'sheets' in flags:
         from chart_sheets import build_sheets
         if charts is None:

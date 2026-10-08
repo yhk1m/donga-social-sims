@@ -2,7 +2,8 @@
 # scripts/atlas/extract_text.py — 주제 원본(content/atlas/u2/topics.json)의 글을 교과서에서 원문 그대로 채우고 검사한다(C5).
 #   python -I scripts/atlas/extract_text.py --fill     src 가 있는 글을 box_text 로 다시 채워 topics.json 에 쓴다
 #   python -I scripts/atlas/extract_text.py --check    채워진 글이 PDF 원문과 같은지만 본다(다르면 종료 코드 1)
-#   python -I scripts/atlas/extract_text.py --labels   색칠하기 지도(17쪽)의 나라 이름·수도 이름 글자 → $ATLAS_WORK/<content.labels>
+#   --fill·--check 가 경고 없이 끝나면 topics 도장(content.stamps.topics.stamp)을 남긴다. --labels 결과에는 inputsHash(stamps.labels).
+#   python -I scripts/atlas/extract_text.py --labels   색칠하기 지도(content.coloring.page)의 나라 이름·수도 이름 글자 → $ATLAS_WORK/<content.labels>
 #   (없으면 --labels --check). 경고가 있으면 종료 코드 1, 모르는 옵션은 2.
 # 글 출처 표기: 어느 객체든 `src` = {page, bbox[, skip]} 이면 `text`, `<키>Src` 이면 `<키>`(예: titleSrc → title)를 box_text(page, bbox)로 채운다.
 # skip = 글 앞에 붙어 나오는 다른 글(같은 줄 제목 등) — 정확히 그 글로 시작해야 하고, 떼어 낸다. 사람이 고친 값은 topics.json 이 아니라
@@ -12,7 +13,7 @@ import json, os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import pdfkit
-from atlas_common import WORK, unit_config
+from atlas_common import WORK, unit_config, stamp_hash, stamp_path
 
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 STEPS = ('fill', 'check', 'labels')
@@ -80,7 +81,7 @@ def p17_labels():
         if c['countryFont'] in s['font']: countries.append({'text': s['text'], 'bbox': s['bbox']})
         elif c['capitalFont'] in s['font'] and abs(s['size'] - c['capitalSize']) < 0.2:
             capitals.append({'text': s['text'], 'bbox': s['bbox']})
-    return {'page': c['page'], 'map': c['map'], 'countries': countries, 'capitals': capitals}
+    return {'page': c['page'], 'map': c['map'], 'countries': countries, 'capitals': capitals, 'inputsHash': stamp_hash('labels')}
 
 
 _CREDIT = re.compile(r'\([^()]*?(?:19|20)\d\d\s*\)')
@@ -104,29 +105,19 @@ def read_json(path):
     with open(path, encoding='utf-8') as f: return json.load(f)
 
 
-_SCALAR_LIST = re.compile(r'\[\s*((?:(?:-?\d[\d.eE+-]*|"(?:[^"\\]|\\.)*"|true|false|null)\s*,\s*)*(?:-?\d[\d.eE+-]*|"(?:[^"\\]|\\.)*"|true|false|null))\s*\]')
-
-
-def dumps(obj):
-    """사람이 읽기 좋은 JSON: 들여쓰기 1칸, 숫자·글만 든 목록은 한 줄."""
-    s = json.dumps(obj, ensure_ascii=False, indent=1)
-    return _SCALAR_LIST.sub(lambda m: '[' + ', '.join(x.strip() for x in _split_items(m.group(1))) + ']', s)
-
-
-def _split_items(s):
-    """한 줄로 모을 목록 안쪽 「a,\n b」 → 항목들(글 안의 쉼표는 지킴)."""
-    out, cur, q, esc = [], '', False, False
-    for ch in s:
-        if q:
-            cur += ch
-            if esc: esc = False
-            elif ch == '\\': esc = True
-            elif ch == '"': q = False
-        elif ch == '"': q = True; cur += ch
-        elif ch == ',': out.append(cur); cur = ''
-        else: cur += ch
-    out.append(cur)
-    return out
+def dumps(obj, indent=1, _level=0):
+    """사람이 읽기 좋은 JSON: 들여쓰기 indent 칸, 숫자·글·참거짓·null 만 든 목록은 한 줄. 글자 값은 json.dumps 그대로(손대지 않음)."""
+    pad, inner = ' ' * (indent * _level), ' ' * (indent * (_level + 1))
+    if isinstance(obj, dict):
+        if not obj: return '{}'
+        items = [f'{inner}{json.dumps(k, ensure_ascii=False)}: {dumps(v, indent, _level + 1)}' for k, v in obj.items()]
+        return '{\n' + ',\n'.join(items) + '\n' + pad + '}'
+    if isinstance(obj, list):
+        if not obj: return '[]'
+        if all(not isinstance(v, (dict, list)) for v in obj):
+            return '[' + ', '.join(json.dumps(v, ensure_ascii=False) for v in obj) + ']'
+        return '[\n' + ',\n'.join(inner + dumps(v, indent, _level + 1) for v in obj) + '\n' + pad + ']'
+    return json.dumps(obj, ensure_ascii=False)
 
 
 def write_json(path, obj):
@@ -160,7 +151,7 @@ def main(argv):
     W = []
     if 'labels' in flags:
         lab = p17_labels()
-        print(f'17쪽 나라 이름 {len(lab["countries"])}개, 수도 이름 {len(lab["capitals"])}개')
+        print(f'{lab["page"]}쪽 나라 이름 {len(lab["countries"])}개, 수도 이름 {len(lab["capitals"])}개')
         write_json(os.path.join(WORK, content_config()['labels']), lab)
     if flags & {'fill', 'check'}:
         tpath = repo_path(content_config()['topics'])
@@ -171,6 +162,9 @@ def main(argv):
             if ws: print('경고가 있어 topics.json 을 쓰지 않음')
             elif n: write_json(tpath, doc)
             print(f'원문으로 채운 글 {n}개')
+        if not ws:   # 원문과 같음이 확인된 topics.json 의 도장(build_content.mjs 가 확인)
+            st = content_config()['stamps']['topics']
+            write_json(stamp_path(st['stamp']), {'inputsHash': stamp_hash('topics')})
     if W:
         print(f'\n경고 {len(W)}개:')
         for w in W: print('  - ' + w)

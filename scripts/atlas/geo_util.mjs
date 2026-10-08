@@ -1,6 +1,9 @@
 // © 2026 김용현
 // scripts/atlas/geo_util.mjs — 아틀라스 Node 단계가 함께 쓰는 작은 도구: 이름 열쇠, 대권 거리, 중앙값, Natural Earth 인구 지점 색인
 import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 
 /** 작업 폴더(ASCII). env ATLAS_WORK, 기본 C:/Users/Public/atlas-work (슬래시로). */
 export const WORK = (process.env.ATLAS_WORK || 'C:/Users/Public/atlas-work').replace(/\\/g, '/');
@@ -62,4 +65,66 @@ export const mtime = (f) => (fs.existsSync(f) ? fs.statSync(f).mtimeMs : -Infini
 export function stale(inputs, outputs) {
   const oldest = Math.min(...outputs.map(mtime));
   return !Number.isFinite(oldest) || inputs.some((f) => mtime(f) > oldest);
+}
+
+/** 저장소 루트(이 파일 기준 ../..). */
+export const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+/** JSON 파일 읽기. */
+export const readJson = (f) => JSON.parse(fs.readFileSync(f, 'utf8'));
+
+/** 소수 nd 자리 반올림. */
+export const round = (v, nd) => { const k = 10 ** nd; return Math.round(v * k) / k; };
+
+/** 내용이 다를 때만 임시 파일 → 이름 바꾸기로 쓴다(원자적). 썼으면 true. */
+export function writeIfChanged(f, text) {
+  if (fs.existsSync(f) && fs.readFileSync(f, 'utf8') === text) return false;
+  const tmp = `${f}.tmp`;
+  fs.writeFileSync(tmp, text);
+  fs.renameSync(tmp, f);
+  return true;
+}
+
+// ── 평면(경위도) 점-다각형 ──────────────────────────────────────────────────
+/** 고리 [[lon,lat]…] 안인가(짝수–홀수 규칙). */
+export function inRing(p, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j];
+    if ((yi > p[1]) !== (yj > p[1]) && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+const polysOf = (g) => (g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : []);
+/** Polygon·MultiPolygon 안인가(구멍 빼고). */
+export function contains(geom, p) {
+  return polysOf(geom).some(([outer, ...holes]) => inRing(p, outer) && !holes.some((h) => inRing(p, h)));
+}
+/** 도형 꼭짓점까지 가장 짧은 거리(km) — 면 밖 점의 가까운 면 찾기용 어림. */
+export function nearKm(geom, p) {
+  let best = Infinity;
+  for (const poly of polysOf(geom)) for (const ring of poly) for (const v of ring) best = Math.min(best, km(p, v));
+  return best;
+}
+
+// ── 낡은 산출물 검사: 입력 내용 해시(도장) — atlas_common.stamp_hash 와 같은 값 ─────────────
+const sha = (b) => crypto.createHash('sha256').update(b).digest('hex');
+/** 정렬 키·공백 없는 JSON(_ 로 시작하는 설명 키는 뺌). */
+export function canonJson(o) {
+  if (Array.isArray(o)) return `[${o.map(canonJson).join(',')}]`;
+  if (o && typeof o === 'object') {
+    return `{${Object.keys(o).filter((k) => !k.startsWith('_')).sort().map((k) => `${JSON.stringify(k)}:${canonJson(o[k])}`).join(',')}}`;
+  }
+  return JSON.stringify(o);
+}
+/** '@work/…' = 작업 폴더, 나머지 = 저장소 기준. */
+export const stampPath = (p) => (p.startsWith('@work/') ? `${WORK}/${p.slice(6)}` : path.join(REPO, p));
+/** 도장 이름 → 입력 해시. unit = 단원 설정 전체(sections 를 찾을 곳). */
+export function stampHash(unit, name) {
+  const spec = unit.content.stamps[name];
+  if (!spec) throw new Error(`도장 설정 없음: ${name}`);
+  const lines = [];
+  for (const p of spec.files ?? []) { const f = stampPath(p); lines.push(`${p}\t${fs.existsSync(f) ? sha(fs.readFileSync(f)) : '없음'}`); }
+  for (const s of spec.sections ?? []) lines.push(`${s}\t${sha(Buffer.from(canonJson(s.split('.').reduce((o, k) => o[k], unit)), 'utf8'))}`);
+  return sha(Buffer.from(lines.join('\n'), 'utf8'));
 }

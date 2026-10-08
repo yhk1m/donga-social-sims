@@ -393,7 +393,7 @@
  }
 },
 "content": {
- "_doc": "C5 주제 내용. 사람이 고치는 원본은 topics(글은 src 상자에서 extract_text.py --fill 이 원문 그대로 채움)와 overrides(사람이 고친 값, 키 topicId.markerId.field 또는 topicId.blocks[i].field). coloring_quiz.mjs 가 17쪽 글자(labels) → coloring 을 만들고, build_content.mjs 가 topics + overrides + photos + charts + coloringOut → out/topics.json·charts.json·layers.js. 경로: topics·overrides·photos·coloringOut·places·out·pageDir·photoDir 은 저장소 기준, labels·charts 는 작업 폴더 기준.",
+ "_doc": "C5 주제 내용. 사람이 고치는 원본은 topics(글은 src·…Src 상자에서 extract_text.py --fill 이 원문 그대로 채움)와 overrides(사람이 고친 값, 키 topicId.field · topicId.quiz.field · topicId.markers.<id>.field · topicId.blocks.<id>.field · topicId.layers.<ref>.field · topicId.views.<id>.field, from 필수). coloring_quiz.mjs 가 색칠하기 쪽 글자(labels) → coloringOut, build_content.mjs 가 topics + overrides + photos + charts + coloringOut → out/topics.json·charts.json·layers.js. 경로: topics·overrides·photos·coloringOut·places·out·pageDir·photoDir 은 저장소 기준, labels·charts 는 작업 폴더 기준. schema = 생성 전 검사(모르는 키는 오류, …Src·_·why 키는 원본 표기라 허용 후 뺌). stamps = 낡은 산출물 검사(입력 내용 해시, atlas_common.stamp_hash = geo_util.stampHash).",
  "topics": "content/atlas/u2/topics.json",
  "overrides": "content/atlas/u2/overrides.json",
  "photos": "content/atlas/u2/photos.json",
@@ -406,7 +406,7 @@
  "charts": "tables/charts-u2.json",
  "pages": [16, 25],
  "expect": {"topics": ["general", "coloring", "relief", "climate", "religion", "population", "industry", "heritage"],
-            "markers": {"relief": 7, "heritage": 11}, "chartMarkers": {"climate": 4}, "coloringCountries": 46},
+            "markers": {"relief": 7, "heritage": 11}, "chartMarkers": {"climate": 4}, "coloringCountries": 46, "charts": 17},
  "_expect": "실측(C3·C4): 지형 핀 7, 기후 그래프 4(테헤란·방콕·이르쿠츠크·우한), 세계유산 11, 17쪽 나라 이름 46. 계획의 「지형 8·기후 5」는 조사 어림값.",
  "expectCredits": {
   "_doc": "16~25쪽에 인쇄된 출처 글(쪽: 목록). 생성물 topics.json·charts.json 어딘가에 있어야 한다(공백 무시, tests/atlas/content.test.mjs). 같은 꼴이지만 출처가 아닌 것은 notCredits(23쪽 사진 설명 「(2021)」, 24쪽 범례 단위 「(억 달러, 2022)」). 16~19·25쪽에는 출처 글이 없다. extract_text.printed_credits 로 지면과 대조(test_text.py).",
@@ -420,6 +420,40 @@
  },
  "viewGrid": 20, "viewPercentile": 5, "markerMargin": 1,
  "_view": "보기 범위 = 지도 틀 안 21×21 격자점을 되돌린 경위도의 5~95% 범위(틀 모서리는 방위 도법에서 극 가까이라 쓰지 않음). 주제 보기는 마커를 모두 담도록 markerMargin(도)만큼 넓힘.",
+ "pageFile": {"prefix": "p", "pad": 3, "ext": ".jpg"},
+ "photoExts": [".jpg", ".webp"],
+ "schema": {
+  "topic": ["id", "title", "pages", "view", "views", "layers", "markers", "blocks", "quiz"],
+  "view": ["id", "label", "map", "layer", "center", "bounds"],
+  "layer": ["ref", "type", "legend", "group", "label", "note", "credit", "legendTitle", "lineLegendTitle"],
+  "marker": ["id", "photo", "title", "text", "lonlat", "lonlatFrom", "chart", "source", "quiz"],
+  "markerTextOptionalWith": "quiz",
+  "lonlatFrom": ["place"],
+  "source": ["name", "id", "url", "title", "component"],
+  "markerQuiz": ["country", "religions", "answerFrom", "answer"],
+  "blockTypes": {
+   "text": {"required": ["text"], "allowed": ["role", "view", "title", "text", "credit"]},
+   "activity": {"required": ["text"], "allowed": ["role", "view", "title", "text"]},
+   "card": {"required": ["title", "text"], "allowed": ["role", "view", "title", "text", "photo", "chart", "charts"]},
+   "chart": {"required": ["ref"], "allowed": ["role", "view", "title", "text", "note", "ref"]},
+   "photo": {"required": ["ref"], "allowed": ["view", "title", "text", "ref"]},
+   "page": {"required": ["page"], "allowed": ["view", "title", "page", "bbox"]}
+  },
+  "_blockTypes": "블록마다 id·type 필수. required 는 사진·그래프를 푼 뒤의 값으로 검사(카드 글은 사진 설명일 수 있음).",
+  "quizTypes": {"coloring": ["type", "ref"], "heritage": ["type", "answerKey", "sourceData"]}
+ },
+ "stamps": {
+  "labels": {"files": ["scripts/atlas/extract_text.py", "scripts/atlas/pdfkit.py"], "sections": ["content.coloring"]},
+  "coloring": {"files": ["@work/text/p17-labels.json", "sims/atlas-u2-asia/data/places.json", "@work/geo/p17-coloring.fit.json",
+                         "@work/raw/ne/ne_10m_admin_0_countries.geojson", "@work/raw/ne/ne_10m_populated_places.geojson",
+                         "scripts/atlas/coloring_quiz.mjs", "scripts/atlas/georef.mjs", "scripts/atlas/geo_util.mjs"], "sections": ["content.coloring"]},
+  "topics": {"stamp": "@work/text/topics-check.json", "files": ["content/atlas/u2/topics.json", "scripts/atlas/extract_text.py", "scripts/atlas/pdfkit.py"]},
+  "charts": {"stamp": "@work/tables/charts-u2.stamp.json",
+             "files": ["scripts/atlas/extract_tables.py", "scripts/atlas/charts_read.py", "scripts/atlas/charts_labels.py", "scripts/atlas/charts_axes.py",
+                       "scripts/atlas/charts_geom.py", "scripts/atlas/climate_table.py", "scripts/atlas/pdfkit.py", "scripts/atlas/atlas_common.py",
+                       "scripts/atlas/assign.py", "@work/tables/charts-u2.json", "@work/tables/climate-world.json"], "sections": ["charts"]},
+  "_doc": "labels·coloring 은 산출물 안 inputsHash, topics·charts 는 stamp 파일 {inputsHash}. topics 도장은 extract_text.py --fill/--check 가 경고 없이 끝났을 때, charts 도장은 extract_tables.py 가 그래프 JSON 을 쓴 뒤 남긴다. build_content.mjs·coloring_quiz.mjs 는 다시 계산한 해시와 다르면 무엇을 먼저 돌릴지 알리고 멈춘다. 설정 부분 해시에서 _ 로 시작하는 키(설명)는 뺀다."
+ },
  "coloring": {"page": 17, "map": "p17-coloring", "countryFont": "KCCChassam", "capitalFont": "KyoboHandwriting", "capitalSize": 7.5,
               "neCountries": "raw/ne/ne_10m_admin_0_countries.geojson", "nePlaces": "raw/ne/ne_10m_populated_places.geojson",
               "capitalKinds": ["capital"], "countryKinds": ["country"], "nearKm": 150, "nameKm": 600,

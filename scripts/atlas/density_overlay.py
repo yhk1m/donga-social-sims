@@ -176,7 +176,8 @@ def build_overlay(oc, c, warnings, root=ROOT):
     bounds = [w, round(min(p[1] for p in ll), 3), e, round(max(p[1] for p in ll), 3)]
     meta = {'url': c['assetBase'] + c['assetPrefix'] + oc['out'], 'page': m['page'], 'bbox': bbox, 'fitId': oc['map'],
             'width': W, 'height': H, 'bounds': bounds, 'legend': overlay_legend(oc)}
-    if len(meta['legend']) != oc['expectLegend']: warnings.append(f'{oc["id"]}: 범례 {len(meta["legend"])}개 ≠ 지면 {oc["expectLegend"]}개')
+    if 'expectLegend' not in oc: warnings.append(f'{oc["id"]}: 설정 photos.overlays 에 expectLegend(지면 범례 단계 수)가 없음')
+    elif len(meta['legend']) != oc['expectLegend']: warnings.append(f'{oc["id"]}: 범례 {len(meta["legend"])}개 ≠ 지면 {oc["expectLegend"]}개')
     if not all(e['label'] for e in meta['legend']): warnings.append(f'{oc["id"]}: 이름 없는 범례 견본')
     with open(os.path.join(root, oc['json']), 'w', encoding='utf-8', newline='\n') as f:
         json.dump(meta, f, ensure_ascii=False, indent=1); f.write('\n')

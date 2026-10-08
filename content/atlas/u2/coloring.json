@@ -1,7 +1,8 @@
 {
- "_doc": "색칠하기(17쪽) 문제 자료 — coloring_quiz.mjs 가 만든다(직접 고치지 말고 고칠 값은 overrides.json). name = 나라 이름(교과서 지명), label = 17쪽 글자(초성 또는 이름), iso = Natural Earth ADM0_A3, capitalFrom = p17(17쪽 손글씨)·places(16·18·19쪽 수도 지명)·places+ne(여럿 중 Natural Earth 수도에 가까운 것).",
+ "_doc": "coloring_quiz.mjs 생성물(직접 고치지 말고 고칠 값은 overrides.json). name = 나라 이름(교과서 지명), label = 색칠하기 지도 글자(초성 또는 이름), iso = Natural Earth ADM0_A3, labelIso = 글자가 놓인 다른 나라, capitalFrom = printed(색칠하기 지도에 적힌 수도)·places(일반도 수도 지명)·places+ne(여럿 중 Natural Earth 수도에 가까운 것).",
  "page": 17,
  "map": "p17-coloring",
+ "inputsHash": "ca19c8267cfc2af698fdd63fd454c401622bce53724d1d4091be5780d2ed1216",
  "countries": [
   {
    "name": "아프가니스탄",
@@ -33,7 +34,7 @@
     54.37,
     24.47
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "아르메니아",
@@ -50,7 +51,7 @@
     44.51,
     40.16
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "아제르바이잔",
@@ -66,7 +67,7 @@
     49.86,
     40.37
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "방글라데시",
@@ -82,7 +83,7 @@
     90.45,
     23.75
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "바레인",
@@ -98,7 +99,7 @@
     50.56,
     26.23
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "브루나이",
@@ -114,7 +115,7 @@
     114.93,
     4.88
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "부탄",
@@ -131,7 +132,7 @@
     89.76,
     27.47
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "중국",
@@ -164,7 +165,7 @@
     44.79,
     41.69
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "인도네시아",
@@ -228,7 +229,7 @@
     44.39,
     33.34
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "이스라엘",
@@ -244,7 +245,7 @@
     35.21,
     31.79
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "요르단",
@@ -260,7 +261,7 @@
     35.95,
     31.95
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "일본",
@@ -308,7 +309,7 @@
     74.58,
     42.87
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "캄보디아",
@@ -324,7 +325,7 @@
     104.91,
     11.55
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "대한민국",
@@ -358,7 +359,7 @@
     47.79,
     29.37
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "라오스",
@@ -374,7 +375,7 @@
     102.55,
     18.15
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "레바논",
@@ -390,7 +391,7 @@
     35.53,
     33.89
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "스리랑카",
@@ -406,7 +407,7 @@
     79.86,
     6.89
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "몰디브",
@@ -422,7 +423,7 @@
     73.51,
     4.17
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "미얀마",
@@ -551,7 +552,7 @@
     51.53,
     25.29
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "러시아",
@@ -599,7 +600,7 @@
     103.85,
     1.3
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "시리아",
@@ -615,7 +616,7 @@
     36.29,
     33.51
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "타이",
@@ -648,7 +649,7 @@
     68.74,
     38.53
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "투르크메니스탄",
@@ -664,7 +665,7 @@
     58.42,
     37.96
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "동티모르",
@@ -680,7 +681,7 @@
     125.58,
     -8.56
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "튀르키예",
@@ -712,7 +713,7 @@
     69.27,
     41.22
    ],
-   "capitalFrom": "p17"
+   "capitalFrom": "printed"
   },
   {
    "name": "베트남",
