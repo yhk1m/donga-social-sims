@@ -19,7 +19,7 @@ const FAMILIES = {
   conicConformal: (p) => g.geoConicConformal().rotate([-p[0], 0]).parallels([p[1], p[2]]),
   miller: (p) => gp.geoMiller().rotate([-p[0], 0]),
   robinson: (p) => gp.geoRobinson().rotate([-p[0], 0]),
-  equirectangular: (p) => g.geoEquirectangular().rotate([-p[0], 0]),
+  equirectangular: (p) => g.geoEquirectangular().rotate([-p[0], -(p[1] || 0)]), // p[1]: 작은 지역 지도의 중심 위도(사각 회전)
   mercator: (p) => g.geoMercator().rotate([-p[0], 0]),
 };
 const INIT = { azimuthalEqualArea: [100, 40], azimuthalEquidistant: [100, 40], conicEqualArea: [100, 25, 50], conicConformal: [100, 25, 50], miller: [100], robinson: [100], equirectangular: [100], mercator: [100] };
@@ -159,7 +159,17 @@ function fitFamily(fam, cps) {
 
 /** 기준점 → 가장 잘 맞는 투영식. 반환: {family, params, sim, rmsPt, meanPt, resid}.
  *  rms 가 최소인 식을 고르되, 그보다 매개변수가 적은 식의 rms 가 최소의 1.05배 + 0.02pt 안이면 그것을 고른다(과적합 방지). */
+export const SMALL_AREA_DEG = 2;
 export function fitControls(cps, families = FAMILY_NAMES) {
+  // 작은 지역(기준점 경위도 폭 < 2°): 도법 차이가 잔차에 드러나지 않아 도법·중심을 고를 수 없다.
+  // 기준점 평균 경위도를 중심으로 회전한 정거 원통(그 자리에서 거의 정각)에 닮음 변환만 맞춘다.
+  const span = (k) => Math.max(...cps.map((c) => c[k])) - Math.min(...cps.map((c) => c[k]));
+  if (span('lon') < SMALL_AREA_DEG && span('lat') < SMALL_AREA_DEG) {
+    const mean = (k) => cps.reduce((a, c) => a + c[k], 0) / cps.length;
+    const params = [mean('lon'), mean('lat')], e = evaluate('equirectangular', params, cps);
+    return { family: 'equirectangular', params, sim: e.sim, rmsPt: e.rms, meanPt: e.resid.reduce((a, b) => a + b, 0) / e.resid.length,
+      resid: e.resid, smallArea: true, candidates: [{ family: 'equirectangular', rmsPt: e.rms }] };
+  }
   const all = families.map((fam) => ({ family: fam, ...fitFamily(fam, cps) })).filter((r) => isFinite(r.rms));
   all.sort((a, b) => a.rms - b.rms);
   const top = all[0];
@@ -314,16 +324,21 @@ async function cli(argv) {
         id: m.id, family: fit.family, params: fit.params.map((v) => +v.toFixed(4)), sim: fit.sim,
         rmsPt: r2(fit.rmsPt), rmsMm: r2(fit.rmsPt * PT_MM), meanPt: r2(fit.meanPt), meanMm: r2(meanMm), maxPt: r2(Math.max(...fit.resid)),
         n: cps.length, src: [...new Set(cps.map((c) => c.src))],
-        ...(fit.tps ? { tps: fit.tps, rmsTpsPt: r2(fit.rmsTpsPt), meanTpsPt: r2(fit.meanTpsPt), looMeanPt: r2(fit.looMeanPt) } : {}),
+        ...(fit.tps ? { tps: fit.tps, rmsTpsPt: r2(fit.rmsTpsPt), meanTpsPt: r2(fit.meanTpsPt), meanTpsMm: r2(fit.meanTpsPt * PT_MM), looMeanPt: r2(fit.looMeanPt), looMeanMm: r2(fit.looMeanPt * PT_MM) } : {}),
         dropped, candidates: fit.candidates.map((c) => ({ family: c.family, rmsPt: r2(c.rmsPt) })),
         resid: cps.map((c, i) => ({ name: cpName(c), residPt: r2(fit.resid[i]), ...(c.approx ? { approx: true } : {}) })),
       };
-      if (meanMm > ACCEPT_MM) out.approx = true;
+      if (fit.smallArea) out.smallArea = true;
+      const reasons = [];
+      if (meanMm > ACCEPT_MM) reasons.push(`평균 잔차 ${meanMm.toFixed(2)}mm > ${ACCEPT_MM}mm`);
+      if (cps.length && cps.every((c) => c.approx)) reasons.push('기준점을 눈으로 찍음(모든 기준점 approx)');
+      if (reasons.length) { out.approx = true; out.approxReason = reasons.join('; '); }
       fs.writeFileSync(`${WORK}/geo/${m.id}.fit.json`, JSON.stringify(out, null, 1));
       rows.push([m.id, out.family, out.params.map((v) => v.toFixed(1)).join(','), out.rmsPt.toFixed(2), out.rmsMm.toFixed(2), out.meanMm.toFixed(2),
-        cps.length, fit.tps ? `TPS ${out.rmsTpsPt.toFixed(2)} (LOO ${out.looMeanPt.toFixed(2)})` : '-', dropped.length || '', out.approx ? 'approx' : '']);
+        fit.tps ? `${out.meanTpsMm.toFixed(2)} (LOO ${out.looMeanMm.toFixed(2)})` : '-', cps.length, dropped.length || '', out.approx ? `approx: ${out.approxReason}` : '']);
     }
-    console.log(['id', 'family', 'params', 'rmsPt', 'rmsMm', 'meanMm', 'n', 'tps', 'drop', ''].join('\t'));
+    console.log(`합격 기준: TPS 전 평균 잔차 meanMm ≤ ${ACCEPT_MM}mm (tpsMeanMm 는 참고: TPS 후 기준점 위 평균, 괄호는 한 점 빼고 맞춘 평균)`);
+    console.log(['id', 'family', 'params', 'rmsPt', 'rmsMm', 'meanMm', 'tpsMeanMm', 'n', 'drop', ''].join('\t'));
     for (const r of rows) console.log(r.join('\t'));
     return 0;
   }

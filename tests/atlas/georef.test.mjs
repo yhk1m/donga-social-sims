@@ -65,3 +65,16 @@ test('잔차가 작으면 TPS 를 붙이지 않는다', () => {
   const fit = fitWithTps(grid(truth, range(40, 160, 20), range(-10, 70, 20)));
   assert.equal(fit.tps, undefined);
 });
+
+test('작은 지역(도시 규모) 기준점은 기준점 중심의 정거 원통 + 닮음 변환으로 맞춘다', () => {
+  const city = geoAzimuthalEqualArea().rotate([-103.82, -1.35]).scale(60000).translate([140, 540]);
+  const cps = grid(city, [103.65, 103.75, 103.85, 103.95], [1.25, 1.33, 1.41]);
+  const fit = fitControls(cps);
+  assert.equal(fit.family, 'equirectangular');
+  assert.ok(Math.abs(fit.params[0] - 103.8) < 1e-6 && Math.abs(fit.params[1] - 1.33) < 1e-6, `${fit.params}`);
+  assert.ok(fit.rmsPt < 0.2, `rms ${fit.rmsPt}`);
+  const [x, y] = applyFit(fit, [103.8, 1.3]), [tx, ty] = city([103.8, 1.3]);
+  assert.ok(Math.hypot(x - tx, y - ty) < 0.2);
+  const [lon, lat] = invertFit(fit, [x, y]);
+  assert.ok(Math.abs(lon - 103.8) < 1e-6 && Math.abs(lat - 1.3) < 1e-6);
+});
