@@ -1,6 +1,6 @@
 # © 2026 김용현
 # scripts/atlas/extract_vectors.py
-"""지도 영역의 벡터 자료 뽑기. 지금은 경위도 맞추기용 기준점(--controls)만 한다.
+"""지도 영역의 벡터 자료 뽑기: 경위도 맞추기용 기준점(--controls), 주제도 면·기호·선(--features, features.py).
 
 기준점 만드는 방법
   - maps_u2.json 의 graticuleLabels 가 true 인 지도(p16·p18·p19·p21-climate): 경위선 교차점.
@@ -14,6 +14,7 @@ CLI
   python -I scripts/atlas/extract_vectors.py --controls p16-asia            → 표준 출력에 JSON
   python -I scripts/atlas/extract_vectors.py --controls all [--out DIR]     → DIR/<id>.controls.json
      (기본 DIR = $ATLAS_WORK/vec, ATLAS_WORK 기본값 C:/Users/Public/atlas-work)
+  python -I scripts/atlas/extract_vectors.py --features <id|all> [--out DIR] → DIR/<id>.features.json (features.py 참고)
 """
 import json, os, re, sys
 import numpy as np
@@ -260,10 +261,19 @@ def controls(map_id, report=None):
 
 def main(argv):
     if hasattr(sys.stdout, 'reconfigure'): sys.stdout.reconfigure(encoding='utf-8')
-    if len(argv) < 2 or argv[0] != '--controls':
+    if len(argv) < 2 or argv[0] not in ('--controls', '--features'):
         print(__doc__); return 2
     target = argv[1]
     out_dir = argv[argv.index('--out') + 1] if '--out' in argv else os.path.join(WORK, 'vec')
+    if argv[0] == '--features':
+        import features
+        ids = list(features.CONFIG) if target == 'all' else [target]
+        for mid in ids:
+            f, path = features.write(mid, out_dir)
+            r = f['report']
+            print(f"{f['id']:24s} 범례 {r['legendCount']:2d} 출력 분류 {r['outputClasses']:2d} 면 {len(f['polys']):2d} "
+                  f"기호 {len(f['symbols']):3d} 선 {len(f['lines']):3d} 빠진 분류 {r['absent']}")
+        return 0
     if target != 'all':
         json.dump(controls(target), sys.stdout, ensure_ascii=False, indent=1); print(); return 0
     os.makedirs(out_dir, exist_ok=True)
