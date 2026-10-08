@@ -13,15 +13,16 @@ def tick_spans(pno):
     return [s for s in pdfkit.page_spans(pno) if TICK.search(s['text'])]
 
 def frame_rects(pno, min_w=140, min_h=110):
-    """채움 없는(또는 흰) 테두리 사각형과 클립 영역 가운데 지도 크기인 것."""
+    """클립 영역과 단순한 선 사각형(항목 5개 이하) 가운데 지도 크기인 것(쪽 너비에 가까운 것은 뺀다)."""
     page = pdfkit.doc()[pno - 1]
+    max_w = page.rect.width - 5
     out = []
     for d in page.get_drawings(extended=True):
         r = d.get('rect') or d.get('scissor')
         if r is None: continue
-        if r.width < min_w or r.height < min_h or r.width > 775: continue
+        if r.width < min_w or r.height < min_h or r.width > max_w: continue
         kind = d.get('type')  # 'f','s','fs','clip','group'
-        if kind in ('clip',) or (kind in ('s', 'fs') and len(d.get('items', [])) <= 5):
+        if kind == 'clip' or (kind in ('s', 'fs') and len(d.get('items', [])) <= 5):
             out.append((kind, [round(r.x0, 1), round(r.y0, 1), round(r.x1, 1), round(r.y1, 1)]))
     seen, uniq = set(), []
     for k, b in out:
@@ -30,7 +31,6 @@ def frame_rects(pno, min_w=140, min_h=110):
     return uniq
 
 def main(a, b):
-    sys.stdout.reconfigure(encoding='utf-8')
     for p in range(a, b + 1):
         print(f'=== p{p}')
         ticks = tick_spans(p)
@@ -39,5 +39,6 @@ def main(a, b):
         for k, r in frame_rects(p): print(f'  rect {k:5} {r}  ({r[2]-r[0]:.0f}x{r[3]-r[1]:.0f})')
 
 if __name__ == '__main__':
+    sys.stdout.reconfigure(encoding='utf-8')
     a = int(sys.argv[1]); b = int(sys.argv[2]) if len(sys.argv) > 2 else a
     main(a, b)
