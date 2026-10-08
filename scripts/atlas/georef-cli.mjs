@@ -3,6 +3,7 @@
 //   node scripts/atlas/georef-cli.mjs --all             지도마다 $ATLAS_WORK/geo/<id>.fit.json + 표
 //   node scripts/atlas/georef-cli.mjs --verify <id|all> Natural Earth 해안선을 지도 렌더(150dpi) 위에 겹친 <id>.verify.png
 // 기준점: python -I scripts/atlas/extract_vectors.py --controls all 이 쓴 $ATLAS_WORK/vec/<id>.controls.json
+//   (--all 은 controls.json 이 없거나 maps_u2.json·extract_vectors.py 보다 오래됐으면 먼저 다시 뽑는다)
 // ATLAS_WORK 기본값 C:/Users/Public/atlas-work. maps_u2.json 의 "georef": false 지도는 건너뛴다.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -11,6 +12,7 @@ import { spawnSync } from 'node:child_process';
 import { geoPath } from 'd3-geo';
 import { feature } from 'topojson-client';
 import { fitWithTps, robustFit, applyFit, fitProjection, PT_MM } from './georef.mjs';
+import { stale } from './geo_util.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const WORK = (process.env.ATLAS_WORK || 'C:/Users/Public/atlas-work').replace(/\\/g, '/');
@@ -27,7 +29,20 @@ function loadCps(id) {
 }
 const cpName = (c) => c.name || `${c.lon},${c.lat}`;
 
+/** 기준점 파일이 maps_u2.json·extract_vectors.py 보다 오래됐으면 다시 뽑는다(maps_u2.json 의 손·도시 기준점을 고친 뒤 잊지 않도록). */
+function refreshControls() {
+  const inputs = [path.join(here, 'maps_u2.json'), path.join(here, 'extract_vectors.py')];
+  const outs = maps.filter(georefOn).map((m) => `${WORK}/vec/${m.id}.controls.json`);
+  if (!stale(inputs, outs)) return;
+  console.log('기준점 파일이 maps_u2.json 보다 오래됨 → python -I scripts/atlas/extract_vectors.py --controls all');
+  const r = spawnSync(process.env.PYTHON || 'python', ['-I', path.join(here, 'extract_vectors.py'), '--controls', 'all'], { encoding: 'utf8' });
+  if (r.status !== 0) throw new Error(`extract_vectors.py --controls all 실패
+${r.stdout}
+${r.stderr}`);
+}
+
 function fitAll() {
+  refreshControls();
   fs.mkdirSync(`${WORK}/geo`, { recursive: true });
   const rows = [];
   for (const m of maps) {

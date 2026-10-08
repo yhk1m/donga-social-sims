@@ -65,8 +65,7 @@ def yc(b): return (b[1] + b[3]) / 2
 
 
 # ── 색 ──────────────────────────────────────────────────────────────────
-def hexc(c):
-    return None if c is None else '#%02x%02x%02x' % tuple(int(round(v * 255)) for v in c[:3])
+hexc = pdfkit.hex_color   # 색 튜플 → '#rrggbb' (pdfkit 의 하나뿐인 바꾸개)
 
 
 def hex_rgb(h):
@@ -223,8 +222,8 @@ def rect(b):
 
 
 def excluded_boxes(m):
-    """지도 안에서 내용이 아닌 상자(범례·덧붙인 지도·위치도)."""
-    return [m[k] for k in ('legendBbox', 'insetBbox', 'locatorBbox') if m.get(k)]
+    """지도 안에서 내용이 아닌 상자(범례·제목 상자·덧붙인 지도·위치도)."""
+    return [m[k] for k in ('legendBbox', 'cartoucheBbox', 'insetBbox', 'locatorBbox') if m.get(k)]
 
 
 def frame(m):

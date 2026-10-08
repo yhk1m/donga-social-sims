@@ -19,6 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { fitControls, robustFit, fitWithTps, applyFit, makeConverter } from './georef.mjs';
+import { key, km, median, neIndex as neIndexAt } from './geo_util.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..', '..');
@@ -26,17 +27,10 @@ const WORK = (process.env.ATLAS_WORK || 'C:/Users/Public/atlas-work').replace(/\
 const CONFIG_FILE = process.env.ATLAS_UNIT_CONFIG || path.join(here, 'config', 'u2.json');
 const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
 const CC = config.cityControls;
+const PC = config.places;                                     // neFile·neBox 는 places 와 함께 쓴다
 const MAPS_FILE = path.resolve(path.dirname(CONFIG_FILE), config.maps);
 const PY = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
-const key = (s) => (s || '').replace(/\s+/g, '');
-const median = (a) => { const s = [...a].sort((x, y) => x - y); return s.length ? s[s.length >> 1] : NaN; };
 const r2 = (v) => Math.round(v * 100) / 100, r4 = (v) => Math.round(v * 1e4) / 1e4;
-
-export function km(a, b) {
-  const R = 6371, r = Math.PI / 180, dLat = (b[1] - a[1]) * r, dLon = (b[0] - a[0]) * r;
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[1] * r) * Math.cos(b[1] * r) * Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
-}
 
 function hull(pts) {
   const p = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
@@ -59,16 +53,10 @@ function hullDist(H, q) {
   return inside ? -d : d;
 }
 
-/** Natural Earth 인구 지점: NAME_KO 열쇠 → 아시아 범위 안 지점 목록. */
+/** Natural Earth 인구 지점(places.neFile·neBox): NAME_KO 열쇠 → [{lon, lat, ne}]. 없으면 멈춘다. */
 function neIndex() {
-  const file = `${WORK}/${CC.neFile}`;
-  if (!fs.existsSync(file)) throw new Error(`${file} 없음 — Natural Earth 10m populated places 를 받아 둘 것`);
-  const [x0, y0, x1, y1] = CC.neBox, by = new Map();
-  for (const f of JSON.parse(fs.readFileSync(file, 'utf8')).features) {
-    const k = key(f.properties.NAME_KO), [lon, lat] = f.geometry.coordinates;
-    if (!k || lon < x0 || lon > x1 || lat < y0 || lat > y1) continue;
-    if (!by.has(k)) by.set(k, []); by.get(k).push({ lon, lat, ne: f.properties.NAME });
-  }
+  const by = neIndexAt(`${WORK}/${PC.neFile}`, PC.neBox);
+  if (!by) throw new Error(`${WORK}/${PC.neFile} 없음 — Natural Earth 10m populated places 를 받아 둘 것`);
   return by;
 }
 
@@ -178,7 +166,7 @@ function writeMaps(sel) {
 }
 
 function main(argv) {
-  const ne = neIndex(), sel = {};
+  const ne = neIndex(), sel = {}, hold = {};
   for (const id of CC.maps) {
     const { base, chosen, kept, report } = selectCities(id, ne);
     sel[id] = chosen;
@@ -187,10 +175,14 @@ function main(argv) {
     if (report.mad.length) console.log('   MAD:', report.mad.join(', '));
     if (report.local.length) console.log('   이웃:', report.local.join(', '));
     if (argv.includes('--holdout')) {
-      const h = holdout(id, base, chosen, kept);
+      const h = holdout(id, base, chosen, kept); hold[id] = h;
       console.log(`   겹 나누기(${CC.folds}겹) 빠진 도시 오차 km: 도시 기준점 ${JSON.stringify(h.holdout)} / 교차점만 ${JSON.stringify(h.gridOnlySame)}`);
       if (h.unusedCities) console.log(`   기준점 아닌 도시(간격으로 뺀 것) km: 도시 기준점 ${JSON.stringify(h.unusedCities)} / 교차점만 ${JSON.stringify(h.unusedGridOnly)}`);
     }
+  }
+  if (argv.includes('--holdout')) {                          // 테스트가 읽는 독립 검사 결과(도시 기준점 짝이 Natural Earth 라 places 대조는 표본 안)
+    fs.writeFileSync(`${WORK}/geo/city-holdout.json`, JSON.stringify({ folds: CC.folds, seed: CC.seed, maps: hold }, null, 1));
+    console.log(`겹 나누기 결과 → ${WORK}/geo/city-holdout.json`);
   }
   if (argv.includes('--write')) { writeMaps(sel); console.log(`maps_u2.json controls 에 src:'city' 기준점을 씀`); }
 }

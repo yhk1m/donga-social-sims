@@ -24,7 +24,7 @@ from collections import Counter
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import pdfkit
-from atlas_common import WORK, maps, unit_config, drawings, hexc
+from atlas_common import WORK, maps, unit_config, drawings, hexc, excluded_boxes
 
 
 def places_config():
@@ -45,7 +45,7 @@ def key(name):
 
 
 def kind_of(role, name, sym_cls, cfg):
-    if role == 'city' and sym_cls in cfg['kindBySymbol']: return cfg['kindBySymbol'][sym_cls]
+    if sym_cls and sym_cls in cfg['kindBySymbol']: return cfg['kindBySymbol'][sym_cls]     # 기호는 점 지명에만 붙는다
     for pat, kind in cfg['kinds'][role]:
         if re.search(pat, name): return kind
     raise ValueError(f'종류를 정할 수 없음: {role} {name}')
@@ -137,14 +137,17 @@ def _same_style(a, b):
             and abs(a['size'] - b['size']) <= 0.35)
 
 
-TOUCH_EM = 0.3
+def _chain():
+    """묶기 수치(config places.chain)."""
+    return places_config()['chain']
 
 
 def _chain_link(a, b, join_em):
     """두 조각이 같은 글자 줄(곧거나 휜) 위에서 이어지는가 → 잇는 비용(작을수록 그럴듯함) 또는 None.
     두 방향의 평균 축에 대해 수직 어긋남 < 0.7em 또는 축과 15° 안, 축 방향 빈틈 ≤ join_em·크기.
-    둘 다 여러 글자면 같은 기준선에서 빈틈 ≤ TOUCH_EM·크기일 때만(맞닿은 다른 지명은 _split_by_index 가 찾아보기로 다시 나눈다).
+    둘 다 여러 글자면 같은 기준선에서 빈틈 ≤ touchEm·크기일 때만(맞닿은 다른 지명은 _split_by_index 가 찾아보기로 다시 나눈다).
     비용 = 빈틈/크기 + 수직 어긋남/크기 + 2·(1 − 두 방향의 cos)."""
+    ch = _chain()
     dx, dy = a['dir'][0] + b['dir'][0], a['dir'][1] + b['dir'][1]; n = math.hypot(dx, dy)
     if n < 1e-6: return None
     dx, dy = dx / n, dy / n
@@ -158,9 +161,10 @@ def _chain_link(a, b, join_em):
     gap = abs(along) - ha - hb
     cost = max(gap, 0) / size + perp / size + 2 * (1 - (a['dir'][0] * b['dir'][0] + a['dir'][1] * b['dir'][1]))
     if not (a['single'] or b['single']):                             # 여러 글자끼리는 같은 기준선에서 맞닿을 때만(글꼴이 바뀐 한 낱말)
-        return cost if perp <= 0.2 * size and gap <= TOUCH_EM * size else None
+        return cost if perp <= ch['touchPerpEm'] * size and gap <= ch['touchEm'] * size else None
     # 한 글자가 낀 연결: 글자 상자 중심이 기준선에서 흔들리고 줄이 휜다
-    ok = perp <= (0.8 if gap <= TOUCH_EM * size else 0.7) * size or perp <= math.tan(math.radians(15)) * abs(along)
+    ok = perp <= (ch['touchSinglePerpEm'] if gap <= ch['touchEm'] * size else ch['singlePerpEm']) * size \
+        or perp <= math.tan(math.radians(ch['bendDeg'])) * abs(along)
     return cost if ok and gap <= join_em * size else None
 
 
@@ -245,6 +249,7 @@ def _split_by_index(nodes, keys, notes):
 def group(spans, keys=frozenset(), notes=None):
     """역할이 붙은 조각(규칙은 s['rule']) → 지명 목록. 맨 위 주석의 2 참고."""
     notes = notes if notes is not None else []
+    ch = _chain()
     nodes = [_node(s) for s in spans]
     cands = []
     for i, a in enumerate(nodes):
@@ -290,14 +295,14 @@ def group(spans, keys=frozenset(), notes=None):
                 a, b = nodes_of(A), nodes_of(B)
                 if not _same_style(a[0], b[0]): continue
                 ba, bb = _union([n['s']['bbox'] for n in a]), _union([n['s']['bbox'] for n in b])
-                if _gap(ba, bb) > 1.2 * a[0]['size']: continue
+                if _gap(ba, bb) > ch['lineGapEm'] * a[0]['size']: continue
                 ka, kb = key(_text(a)), key(_text(b))
                 if ka + kb in keys:                                  # A 다음 B
                     notes.append(f'찾아보기로 이음: {ka} + {kb}')
                     la, lb = A['lines'][-1], B['lines'][0]
                     (ax, ay), (bx, by), (dx, dy) = la[-1]['c'], lb[0]['c'], la[-1]['dir']
                     along, perp = (bx - ax) * dx + (by - ay) * dy, abs(-(bx - ax) * dy + (by - ay) * dx)
-                    nextline = perp > 0.5 * a[0]['size'] and (along < 0 or perp > along)   # 줄을 바꿔 앞으로 돌아감
+                    nextline = perp > ch['nextLineEm'] * a[0]['size'] and (along < 0 or perp > along)   # 줄을 바꿔 앞으로 돌아감
                     if nextline: A['lines'] = A['lines'] + B['lines']                                                     # 다음 줄
                     else: A['lines'] = A['lines'][:-1] + [la + lb] + B['lines'][1:]                                      # 같은 줄
                     B['lines'] = []; changed = True
@@ -308,12 +313,9 @@ def group(spans, keys=frozenset(), notes=None):
 def _ops(d): return ''.join(it[0][0] for it in d['items'])
 
 
-def _excl_boxes(m): return [m[k] for k in ('legendBbox', 'cartoucheBbox', 'insetBbox', 'locatorBbox') if m.get(k)]
-
-
 def symbols(pno, m, cfg):
     """지도 안 점 기호 → [{xy, cls, size}] (겹친 동심 도형은 하나로: 가장 큰 도형 중심, 분류는 classes 순서가 앞선 것)."""
-    sc = cfg['symbols']; lo, hi = sc['sizeRange']; excl = _excl_boxes(m)
+    sc = cfg['symbols']; lo, hi = sc['sizeRange']; excl = excluded_boxes(m)
     cand = []
     for d in drawings(pno):
         r = d['rect']; w, h = r.width, r.height
@@ -341,55 +343,59 @@ def symbols(pno, m, cfg):
     return out
 
 
-EXACT_MAX = 9     # 이보다 큰 덩어리는 탐욕 + 맞바꾸기
+BIG = 1e9        # 안 되는 쌍의 비용(헝가리안 행렬)
+
+
+def _hungarian(C):
+    """직사각 비용 행렬(행 n ≤ 열 m) 최소 비용 배정(헝가리안, 퍼텐셜 방식 O(n²m)). → 행마다 고른 열 번호."""
+    n, m = len(C), len(C[0])
+    u, v, p, way = [0.0] * (n + 1), [0.0] * (m + 1), [0] * (m + 1), [0] * (m + 1)
+    for i in range(1, n + 1):
+        p[0] = i; j0 = 0
+        minv, used = [math.inf] * (m + 1), [False] * (m + 1)
+        while True:
+            used[j0] = True; i0 = p[j0]; delta = math.inf; j1 = 0
+            for j in range(1, m + 1):
+                if used[j]: continue
+                cur = C[i0 - 1][j - 1] - u[i0] - v[j]
+                if cur < minv[j]: minv[j] = cur; way[j] = j0
+                if minv[j] < delta: delta = minv[j]; j1 = j
+            for j in range(m + 1):
+                if used[j]: u[p[j]] += delta; v[j] -= delta
+                else: minv[j] -= delta
+            j0 = j1
+            if p[j0] == 0: break
+        while j0:
+            j1 = way[j0]; p[j0] = p[j1]; j0 = j1
+    out = [None] * n
+    for j in range(1, m + 1):
+        if p[j]: out[p[j] - 1] = j - 1
+    return out
 
 
 def _pair(items, targets, cost, ok, miss=None):
-    """일대일 짝 맞추기: 짝지을 수 있는 쌍(ok)으로 이어진 덩어리마다 비용 합이 가장 작은 짝(짝 없음 = miss(item) 비용).
+    """일대일 짝 맞추기: 짝지을 수 있는 쌍(ok)으로 이어진 덩어리마다 비용 합이 가장 작은 배정(헝가리안).
+    행 = item, 열 = target + item 마다 「짝 없음」 열(그 item 만 miss(item) 비용), 안 되는 쌍은 BIG.
     가까운 순 탐욕은 남의 기호가 글자에 스칠 때 맞바꿔 짝짓는다(선전·홍콩). → {item 번호: target 번호}"""
-    edges = {i: {j: cost(a, b) for j, b in enumerate(targets) if ok(a, b)} for i, a in enumerate(items)}
     miss = miss or (lambda a: 1e3)
-    # 덩어리(쌍으로 이어진 item·target)
-    seen_i, out = set(), {}
+    edges = {i: {j: cost(a, b) for j, b in enumerate(targets) if ok(a, b)} for i, a in enumerate(items)}
     by_t = {}
     for i, e in edges.items():
         for j in e: by_t.setdefault(j, []).append(i)
+    seen, out = set(), {}
     for i0 in edges:
-        if i0 in seen_i or not edges[i0]: continue
-        comp_i, st = [], [i0]
+        if i0 in seen or not edges[i0]: continue
+        rows, st = [], [i0]                                          # 덩어리: 쌍으로 이어진 item 들
         while st:
             i = st.pop()
-            if i in seen_i: continue
-            seen_i.add(i); comp_i.append(i)
-            for j in edges[i]: st.extend(k for k in by_t[j] if k not in seen_i)
-        comp_i.sort(key=lambda i: min(edges[i].values()))
-        if len(comp_i) <= EXACT_MAX:
-            best = [math.inf, {}]
-            def dfs(k, used, total, cur):
-                if total >= best[0]: return
-                if k == len(comp_i): best[0], best[1] = total, dict(cur); return
-                i = comp_i[k]
-                for j, c in sorted(edges[i].items(), key=lambda t: t[1]):
-                    if j in used: continue
-                    used.add(j); cur[i] = j; dfs(k + 1, used, total + c, cur); del cur[i]; used.discard(j)
-                dfs(k + 1, used, total + miss(items[i]), cur)
-            dfs(0, set(), 0.0, {})
-            out.update(best[1])
-        else:
-            res, used = {}, set()
-            for c, i, j in sorted((c, i, j) for i in comp_i for j, c in edges[i].items()):
-                if i in res or j in used: continue
-                res[i] = j; used.add(j)
-            improved = True
-            while improved:                                         # 두 짝 맞바꾸기로 줄어들면 바꾼다
-                improved = False
-                for x in list(res):
-                    for y in list(res):
-                        if x >= y: continue
-                        jx, jy = res[x], res[y]
-                        if jy in edges[x] and jx in edges[y] and edges[x][jy] + edges[y][jx] < edges[x][jx] + edges[y][jy] - 1e-9:
-                            res[x], res[y] = jy, jx; improved = True
-            out.update(res)
+            if i in seen: continue
+            seen.add(i); rows.append(i)
+            for j in edges[i]: st.extend(k for k in by_t[j] if k not in seen)
+        cols = sorted({j for i in rows for j in edges[i]})
+        n, m = len(rows), len(cols)
+        C = [[edges[i].get(j, BIG) for j in cols] + [miss(items[i]) if k == r else BIG for k in range(n)] for r, i in enumerate(rows)]
+        for r, c in enumerate(_hungarian(C)):
+            if c is not None and c < m and C[r][c] < BIG: out[rows[r]] = cols[c]
     return out
 
 
@@ -458,7 +464,7 @@ def index_keys():
 def extract(map_id, keys=None):
     cfg = places_config(); m = maps()[map_id]; pno = m['page']
     keys = index_keys() if keys is None else keys
-    excl = _excl_boxes(m)
+    excl = excluded_boxes(m)
     warnings, dropped, kept, elevs, notes = [], [], [], [], []
     unknown = Counter()
     for s in pdfkit.page_spans(pno):
@@ -530,6 +536,7 @@ def extract(map_id, keys=None):
         L['kind'] = kind_of(L['role'], L['name'], (L.get('symbol') or {}).get('cls'), cfg)
         if L['kind'] == 'mountain' and L['role'] == 'city' and 'elev' not in L:
             warnings.append(f'{map_id}: 산 「{L["name"]}」에 높이 숫자가 없음')
+        L['point'] = bool(L['rule'].get('point'))                 # 점 지명(도시·수도·산 봉우리): 위치 = 기호
         del L['rule']
     return {'id': map_id, 'page': pno, 'labels': labels, 'dropped': dropped, 'notes': notes, 'unusedSymbols': unused,
             'report': {'labels': len(labels), 'kinds': dict(Counter(L['kind'] for L in labels)),

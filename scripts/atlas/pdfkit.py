@@ -77,8 +77,8 @@ def _glyph_char(u, gid, latin):
     return chr(u)
 
 
-def _hex(c):
-    """texttrace 색(0–1 실수, 회색 1개·RGB 3개·CMYK 4개) → '#rrggbb'."""
+def hex_color(c):
+    """PDF 색(0–1 실수, 회색 1개·RGB 3개·CMYK 4개) → '#rrggbb', 색 없음(None·빈 값) → None. 아틀라스 단계의 하나뿐인 색 바꾸개."""
     c = tuple(c or ())
     if len(c) == 1: c = c * 3
     elif len(c) == 4: c = tuple((1 - v) * (1 - c[3]) for v in c[:3])
@@ -116,7 +116,7 @@ def page_spans(pno, space_em=0.25, break_em=1.0):
                 elif gap > space_em * size and not cur['text'].endswith(' ') and ch != ' ':
                     cur['text'] += ' '
             if cur is None:
-                cur = {'text': '', 'size': round(size, 1), 'font': t['font'], 'color': _hex(t.get('color')), 'bbox': list(bbox),
+                cur = {'text': '', 'size': round(size, 1), 'font': t['font'], 'color': hex_color(t.get('color')), 'bbox': list(bbox),
                        'dir': [round(dx, 3), round(dy, 3)]}
             if not (ch == ' ' and cur['text'].endswith(' ')): cur['text'] += ch
             b = cur['bbox']; cur['bbox'] = [min(b[0], bbox[0]), min(b[1], bbox[1]), max(b[2], bbox[2]), max(b[3], bbox[3])]
