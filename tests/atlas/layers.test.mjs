@@ -53,7 +53,7 @@ for (const [id, e] of Object.entries(EXPECT)) {
         assert.equal(f.geometry.type, 'MultiPolygon');
         assert.ok(p.label && Array.isArray(p.centroid));
       }
-      if (p.type === 'symbol') assert.ok(p.kind && p.size > 0);
+      if (p.type === 'symbol') assert.ok(p.kind && p.size > 0 && p.label, `기호 label ${JSON.stringify(p)}`);
     }
   });
 }
@@ -123,9 +123,17 @@ test('카슈미르는 Natural Earth 자료, 교과서 범례 이름을 쓴다', 
 });
 
 test('싱가포르 이름 붙은 사원 4곳', () => {
-  const named = load('p22-singapore').features.filter((f) => f.properties.label).map((f) => f.properties.label);
+  const named = load('p22-singapore').features.filter((f) => f.properties.name).map((f) => f.properties.name);
   assert.equal(named.length, 4);
   assert.ok(named.includes('세인트 앤드루 대성당'));
+});
+
+test('자원 기호 label = 범례 이름, 인구 막대 label = 나라', () => {
+  const res = load('p24-resources').features;
+  assert.ok(res.every((f) => f.properties.label === f.properties.kind));
+  assert.equal(res.filter((f) => f.properties.label === '석유').length, 35);
+  const pop = load('p23-density-cities').features.map((f) => f.properties.label);
+  assert.ok(pop.includes('중국') && pop.includes('인도'));
 });
 
 test('레이어 합계 용량이 작다(≤ 650KB)', () => {

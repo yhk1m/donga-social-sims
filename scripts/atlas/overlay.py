@@ -83,7 +83,10 @@ def main(path):
             d.line([bx, by - 3, bx, by + 3], fill=(0, 120, 0), width=1)
     if 'areas' in ov or 'points' in ov or 'paths' in ov:
         _draw_layer(im, ov, P, True)
-        right = Image.new('RGB', im.size, (255, 255, 255))
+        if ov.get('areas'):
+            right = Image.new('RGB', im.size, (255, 255, 255))
+        else:  # 점·선만 있는 레이어: 오른쪽에도 교과서 렌더를 옅게 깔아 위치를 맞춰 볼 수 있게
+            right = Image.blend(Image.open(ov['out']).convert('RGB'), Image.new('RGB', im.size, (255, 255, 255)), 0.55)
         _draw_layer(right, ov, P, False)
         both = Image.new('RGB', (im.size[0] * 2 + 6, im.size[1]), (120, 120, 120))
         both.paste(im, (0, 0)); both.paste(right, (im.size[0] + 6, 0))

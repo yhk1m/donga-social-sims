@@ -80,8 +80,10 @@ function convert(layer, feat, fit) {
     total++;
     const ll = cv.invert(s.xy);
     if (!ll) { dropped++; continue; }
-    const props = { type: 'symbol', cls: s.cls, kind: s.kind, color: s.color, size: s.size };
-    for (const k of ['label', 'value', 'anchor']) if (s[k] != null) props[k] = s[k];
+    // label: 말풍선 글. 이름이 있으면 이름(사원·나라), 없으면 범례 항목(석유, 크리스트교 …). 이름이 있는 것만 name 도 둔다.
+    const props = { type: 'symbol', cls: s.cls, kind: s.kind, label: s.label ?? s.kind, color: s.color, size: s.size };
+    if (s.label != null) props.name = s.label;
+    for (const k of ['value', 'anchor']) if (s[k] != null) props[k] = s[k];
     features.push({ type: 'Feature', properties: props, geometry: { type: 'Point', coordinates: ll } });
   }
   for (const l of feat.lines) {
