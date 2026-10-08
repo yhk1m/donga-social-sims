@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, statSync } from 'node:fs';
-import { convertPath } from '../../scripts/atlas/build_layers.mjs';
+import { convertPath, alignHole } from '../../scripts/atlas/build_layers.mjs';
 
 const DIR = 'sims/atlas-u2-asia/data';
 const load = (id) => JSON.parse(readFileSync(`${DIR}/layer-${id}.json`, 'utf8'));
@@ -102,7 +102,8 @@ test('흐름선: 수입은 우리나라로, 수출은 우리나라에서, 굵기
   const korea = [127, 37.5];
   const near = (p) => Math.hypot(p[0] - korea[0], p[1] - korea[1]) < 4;
   for (const f of flows) {
-    const c = f.geometry.coordinates;
+    // 날짜변경선을 건너는 선(미국·멕시코)은 MultiLineString 으로 나뉘어 있다
+    const c = f.geometry.type === 'MultiLineString' ? f.geometry.coordinates.flat() : f.geometry.coordinates;
     if (f.properties.cls === 'import') assert.ok(near(c[c.length - 1]), '수입 끝점');
     else assert.ok(near(c[0]), '수출 시작점');
     assert.ok(['1~2', '2~5', '5~10', '10 이상'].includes(f.properties.value));
@@ -140,6 +141,12 @@ test('레이어 합계 용량이 작다(≤ 650KB)', () => {
   const ids = [...Object.keys(EXPECT), 'p22-kashmir'];
   const kb = ids.reduce((a, id) => a + statSync(`${DIR}/layer-${id}.json`).size, 0) / 1024;
   assert.ok(kb <= 650, `${kb.toFixed(1)} KB`);
+});
+
+test('alignHole: 구멍을 바깥 고리 쪽 경도로 옮긴다', () => {
+  const ext = [[179, 0], [181, 0], [181, 1], [179, 0]];
+  assert.deepEqual(alignHole(ext, [[-179.5, 0.2], [-179.2, 0.2], [-179.5, 0.5]]), [[180.5, 0.2], [180.8, 0.2], [180.5, 0.5]]);
+  assert.deepEqual(alignHole(ext, [[180.1, 0.2]]), [[180.1, 0.2]]);
 });
 
 test('convertPath: null 은 빼고 경도는 날짜변경선을 넘어 이어 붙인다', () => {

@@ -800,3 +800,5 @@ export default function mount(root) {
   - `p22-singapore`·`p20-relief`는 fit 파일이 `approx: true`라 레이어 맨 위 properties 에도 `approx: true`가 실린다 → UI에 「위치 근사」 표시.
   - 기호 레이어(자원·싱가포르 사원·인구 막대)의 모든 기호에 `label`(말풍선 글: 이름이 있으면 이름, 없으면 범례 항목)을 두고, 이름이 있는 것만 `name`도 둔다.
   - 아시아 범위(경도 20~160, 위도 −15~80) 밖 꼭짓점은 모두 실제 땅이다: 추코트카(180° 동쪽, 경도 −180~−164)·캄차카(160~180°E)·세베르나야제믈랴(80~81°N).
+  - (C1 코드 정리) 레이어 설정은 `scripts/atlas/config/u2.json` 한 곳(`maps`가 maps_u2.json 을 가리킴): 지도·mode·tol·minArea·expectLegend·색 대응·교역 상대국 끝점·카슈미르 분류. 다음 단원은 config/uN.json 을 새로 쓴다(env `ATLAS_UNIT_CONFIG`). 흐름선 굵기 단계·단위는 범례에서 읽는다. Python 모듈: atlas_common(작업 폴더·설정·색·도형) / legend / zones / symbols / lines / features(진입점) / clip_land / kashmir.
+  - 면 레이어는 분류들을 하나의 덮개로 다룬다: 육지 자르기 → 범례 순서 우선으로 겹침 제거 → `shapely.coverage_simplify`(shapely ≥ 2.1, 허용치 = tol × coverageTolFactor 1.8) → 0.001° 격자(set_precision) → 다른 분류와 안 겹치는 작은 구멍만 메움. 결과: 모든 면 유효, 분류 간 겹침 < 0.0001°². 선은 날짜변경선에서 MultiLineString 으로 나눈다. 원통 도법 지도(p24-trade)는 역변환 가능한 지면 범위(`<map>.domain.json`)로 먼저 잘라 꼭짓점을 잃지 않는다(실패 점 > 1% 또는 면 고리 점 손실이면 빌드 실패). 합계 약 615KB.

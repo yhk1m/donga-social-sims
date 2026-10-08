@@ -7,9 +7,13 @@
 #   경위도 맞추기(georef-cli --verify): 해안선 = 자홍 선, 기준점 = 빨간 원, 맞춘 위치 = 초록 십자, 둘을 잇는 초록 선 = 잔차
 #   주제 레이어(build_layers --verify): areas 가 있으면 두 칸 그림 — 왼쪽 = 원본 위에 분류 경계(검은 선)·기호·선,
 #     오른쪽 = 레이어만 분류 색으로 칠한 그림(빗금 분류는 빗금). 두 칸이 같아 보이면 맞은 것.
+#   경위도 모드(lonlatExtent:[lon0,lon1,lat0,lat1] 가 있으면, 예: kashmir.py --verify): areas·paths 좌표는 경위도.
+#     왼쪽 = 교과서 쪽 렌더 그대로, 오른쪽 = 레이어를 정거 원통(cos 중간 위도 보정)으로 그린 그림.
 import json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import math
 import pdfkit
+from atlas_common import FONT_PATH
 from PIL import Image, ImageChops, ImageDraw
 
 
@@ -22,7 +26,7 @@ def _font():
     global _fnt
     if _fnt is None:
         from PIL import ImageFont
-        try: _fnt = ImageFont.truetype('C:/Windows/Fonts/malgun.ttf', 13)
+        try: _fnt = ImageFont.truetype(FONT_PATH, 13)
         except OSError: _fnt = ImageFont.load_default()
     return _fnt
 
@@ -81,7 +85,17 @@ def main(path):
             d.line([ax, ay, bx, by], fill=(0, 160, 0), width=2)
             d.line([bx - 3, by, bx + 3, by], fill=(0, 120, 0), width=1)
             d.line([bx, by - 3, bx, by + 3], fill=(0, 120, 0), width=1)
-    if 'areas' in ov or 'points' in ov or 'paths' in ov:
+    if ov.get('lonlatExtent'):
+        lon0, lon1, lat0, lat1 = ov['lonlatExtent']
+        k = math.cos(math.radians((lat0 + lat1) / 2)); W, H = im.size; pad = 10
+        sc = min((W - 2 * pad) / ((lon1 - lon0) * k), (H - 2 * pad) / (lat1 - lat0))
+        Q = lambda p: (pad + (p[0] - lon0) * k * sc, pad + (lat1 - p[1]) * sc)
+        right = Image.new('RGB', im.size, (255, 255, 255))
+        _draw_layer(right, ov, Q, False)
+        both = Image.new('RGB', (W * 2 + 6, H), (120, 120, 120))
+        both.paste(im, (0, 0)); both.paste(right, (W + 6, 0))
+        im = both; d = ImageDraw.Draw(im)
+    elif 'areas' in ov or 'points' in ov or 'paths' in ov:
         _draw_layer(im, ov, P, True)
         if ov.get('areas'):
             right = Image.new('RGB', im.size, (255, 255, 255))

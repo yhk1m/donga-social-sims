@@ -14,16 +14,14 @@ CLI
   python -I scripts/atlas/extract_vectors.py --controls p16-asia            → 표준 출력에 JSON
   python -I scripts/atlas/extract_vectors.py --controls all [--out DIR]     → DIR/<id>.controls.json
      (기본 DIR = $ATLAS_WORK/vec, ATLAS_WORK 기본값 C:/Users/Public/atlas-work)
-  python -I scripts/atlas/extract_vectors.py --features <id|all> [--out DIR] → DIR/<id>.features.json (features.py 참고)
+  python -I scripts/atlas/extract_vectors.py --features <레이어 id ...|all> [--out DIR] → DIR/<id>.features.json (features.py, config/u2.json)
 """
 import json, os, re, sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pdfkit
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-WORK = os.environ.get('ATLAS_WORK', 'C:/Users/Public/atlas-work')
+from atlas_common import HERE, WORK, maps, BEZIER_STEPS, bez as _bez
 
 # ── 상수(지면 단위 pt) ───────────────────────────────────────────────────
 LABEL_MARGIN = 16        # 눈금 글자는 지도 틀 바깥 여백(약 10pt)에도 있다
@@ -32,20 +30,10 @@ LINE_MIN_ITEM_LEN = 12   # 경위선은 마디(직선·곡선 하나)가 길다.
 STROKE_MAX_WIDTH = 0.6   # 경위선 획 굵기 상한(실측 0.15~0.2)
 FILL_MAX_THICKNESS = 0.5 # 선을 면으로 바꾼 도형: 넓이/둘레 상한(실측 약 0.1)
 EDGE_TOL = 1.0           # 이 안에서 지도 틀과 겹치는 선은 틀 자체로 본다
-BEZIER_STEPS = 16        # 곡선 하나를 16 등분(곡률이 작아 오차 0.01pt 미만)
 MAX_LABEL_DIST = 12      # 눈금 글자 중심 ↔ 선 최대 거리(글자는 선 끝·선 위에 붙는다)
 AMBIGUITY_RATIO = 1.5    # 가장 가까운 선이 그다음 '다른' 선보다 이 배수 이상 가까워야 짝짓는다
 SAME_LINE_DIST = 1.0     # 두 후보가 이만큼 가깝고 거의 나란하면(10° 안) 같은 선의 조각·면 가장자리로 본다
 MERGE_TOL = 1.5          # 같은 (경도, 위도) 교차점들이 이 안에 모이면 평균, 아니면 버림
-
-_maps = None
-def maps():
-    global _maps
-    if _maps is None:
-        with open(os.path.join(HERE, 'maps_u2.json'), encoding='utf-8') as f:
-            _maps = {m['id']: m for m in json.load(f)}
-    return _maps
-
 
 def georef_enabled(m):
     """maps_u2.json 의 "georef": false 면 경위도 맞추기를 하지 않는다(기본 true)."""
@@ -89,12 +77,6 @@ def tick_labels(m, margin=LABEL_MARGIN):
 
 
 # ── 기하 ────────────────────────────────────────────────────────────────
-def _bez(p0, p1, p2, p3, k=BEZIER_STEPS):
-    t = np.linspace(0, 1, k + 1)[1:, None]; mt = 1 - t
-    P = np.array([[p.x, p.y] for p in (p0, p1, p2, p3)])
-    return mt**3 * P[0] + 3 * mt * mt * t * P[1] + 3 * mt * t * t * P[2] + t**3 * P[3]
-
-
 def _subpaths(d):
     """그리기 항목 → [(점 배열, 항목 수)] (곡선은 BEZIER_STEPS 등분)."""
     out = []; cur = None; n = 0; last = None
@@ -267,12 +249,13 @@ def main(argv):
     out_dir = argv[argv.index('--out') + 1] if '--out' in argv else os.path.join(WORK, 'vec')
     if argv[0] == '--features':
         import features
-        ids = list(features.CONFIG) if target == 'all' else [target]
-        for mid in ids:
-            f, path = features.write(mid, out_dir)
+        ids = features.pdf_layer_ids() if target == 'all' else argv[1:argv.index('--out')] if '--out' in argv else argv[1:]
+        for lid in ids:
+            f, path = features.write(lid, out_dir)
             r = f['report']
             print(f"{f['id']:24s} 범례 {r['legendCount']:2d} 출력 분류 {r['outputClasses']:2d} 면 {len(f['polys']):2d} "
-                  f"기호 {len(f['symbols']):3d} 선 {len(f['lines']):3d} 빠진 분류 {r['absent']}")
+                  f"기호 {len(f['symbols']):3d} 선 {len(f['lines']):3d} 경고 {len(r['warnings'])}")
+            for w in r['warnings']: print('   경고:', w)
         return 0
     if target != 'all':
         json.dump(controls(target), sys.stdout, ensure_ascii=False, indent=1); print(); return 0
