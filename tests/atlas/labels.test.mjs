@@ -1,7 +1,7 @@
 // tests/atlas/labels.test.mjs — 지명 배치(D4): 우선순위·확대 수준·화면 밖·기호 옆 자리·선/면 지명(글자 줄 path)·회전 충돌·뒤집힘 방지
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { placeLabels, MIN_K } from '../../src/atlas/labels.js';
+import { placeLabels, MIN_K, createMeasureCache } from '../../src/atlas/labels.js';
 
 const measure = (t, size) => t.length * size * 0.9;
 const opts = (o = {}) => ({ width: 800, height: 600, measure, k: 1, ...o });
@@ -121,4 +121,75 @@ test('순수 함수: 입력을 바꾸지 않고 같은 입력이면 같은 결�
   const a = placeLabels(pts, opts()), b = placeLabels(pts, opts());
   assert.equal(JSON.stringify(pts), snap);
   assert.deepEqual(a, b);
+});
+
+test('굽은 줄(U자): 글자 하나하나도 뒤집히지 않음(각도 ±90° 안)', () => {
+  // 중심 (400, 250), 반지름 100, 위 → 오른쪽 → 아래로 도는 반원
+  const pathXY = [];
+  for (let a = -90; a <= 90; a += 5) pathXY.push([400 + 100 * Math.cos((a * Math.PI) / 180), 250 + 100 * Math.sin((a * Math.PI) / 180)]);
+  const [o] = placeLabels([{ name: '가나다라마바사아', rank: 1, size: 12, pathXY }], opts());
+  assert.ok(o.glyphs);
+  for (const g of o.glyphs) assert.ok(g.angle > -90 && g.angle <= 90, `${g.ch} ${g.angle}`);
+});
+
+test('놓인 항목에 pathXY 는 싣지 않음', () => {
+  const [o] = placeLabels([{ name: '황하', rank: 2, size: 12, pathXY: [[200, 300], [400, 301]] }], opts());
+  assert.ok(!('pathXY' in o));
+});
+
+test('rank 없는 항목은 6 으로 침(맨 뒤, minK 9)', () => {
+  const pts = [{ name: '무등급', size: 12, xy: [300, 300] }, { name: '서울', rank: 1, size: 12, xy: [302, 300] }];
+  assert.deepEqual(placeLabels(pts, opts({ k: 9 })).map((o) => o.name), ['서울']);
+  assert.equal(placeLabels([pts[0]], opts({ k: 8 })).length, 0);
+});
+
+test('기호 옆 자리 간격은 symbolR·pad 에서 나옴(자기 기호를 가리지 않음)', () => {
+  for (const symbolR of [3, 6, 10]) {
+    const [o] = placeLabels([{ name: '서울', rank: 1, size: 12, xy: [400, 300], symbol: true }], opts({ symbolR }));
+    assert.ok(o.bbox[3] <= 300 - symbolR + 1e-9, `R=${symbolR} ${o.bbox}`);
+  }
+});
+
+test('빈 이름·점 하나짜리 줄은 재지 않고 건너뜀', () => {
+  let calls = 0;
+  const m = (t, size) => { calls++; return measure(t, size); };
+  const out = placeLabels([{ name: '', rank: 1, size: 12, xy: [100, 100] }, { name: '가', rank: 1, size: 12, pathXY: [[10, 10]] },
+    { name: '나', rank: 1, size: 12, pathXY: [[10, 10], [10, 10]] }], opts({ measure: m }));
+  assert.equal(out.length, 0);
+  assert.equal(calls, 0);
+});
+
+test('createMeasureCache: 같은 글자·크기는 한 번만 재고, 호출 사이에도 유지', () => {
+  let calls = 0;
+  const m = createMeasureCache((t, size) => { calls++; return measure(t, size); });
+  const pts = [{ name: '히말라야산맥', rank: 1, size: 12, pathXY: [[100, 100], [500, 110]] }, { name: '서울', rank: 1, size: 12, xy: [300, 400], symbol: true }];
+  placeLabels(pts, opts({ measure: m }));
+  const first = calls;
+  assert.ok(first > 0);
+  placeLabels(pts, opts({ measure: m }));
+  assert.equal(calls, first);
+  assert.equal(m('서울', 12), measure('서울', 12));
+  assert.equal(calls, first);
+});
+
+test('성능: 지명 900개 배치가 30ms 안(데운 뒤)', () => {
+  let seed = 1;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const names = ['서울', '베이징', '도쿄', '히말라야산맥', '양쯔강', '타클라마칸사막', '울란바토르', '자카르타'];
+  const pts = [];
+  for (let i = 0; i < 900; i++) {
+    const x = 20 + rnd() * 980, y = 20 + rnd() * 720, rank = 1 + Math.floor(rnd() * 6), name = names[i % names.length] + (i % 7);
+    if (i % 5 === 0) {
+      const a = rnd() * Math.PI, L = 40 + rnd() * 120;
+      pts.push({ name, rank, size: 10 + rank, pathXY: [[x, y], [x + Math.cos(a) * L / 2, y + Math.sin(a) * L / 2 + 5], [x + Math.cos(a) * L, y + Math.sin(a) * L]] });
+    } else pts.push({ name, rank, size: 9 + (6 - rank), xy: [x, y], symbol: i % 2 === 0 });
+  }
+  const m = createMeasureCache(measure);
+  const o = { width: 1024, height: 768, measure: m, k: 40 };
+  for (let i = 0; i < 5; i++) placeLabels(pts, o);
+  const t0 = performance.now();
+  const out = placeLabels(pts, o);
+  const ms = performance.now() - t0;
+  assert.ok(out.length > 50, `${out.length}`);
+  assert.ok(ms < 30, `${ms.toFixed(1)}ms`);
 });
