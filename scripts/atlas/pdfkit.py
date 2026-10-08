@@ -63,7 +63,7 @@ def render_clip(pno, bbox, dpi, out_path, images_only=False):
         page = tmp[0]
         page.add_redact_annot(page.rect)
         page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE, graphics=fitz.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED, text=fitz.PDF_REDACT_TEXT_REMOVE)
-    pix = page.get_pixmap(dpi=dpi, clip=fitz.Rect(bbox))
+    pix = page.get_pixmap(dpi=int(round(dpi)), clip=fitz.Rect(bbox))  # PyMuPDF 는 정수 dpi 만 받는다
     if tmp is not None: tmp.close()
     pix.save(out_path)
     return pix.width, pix.height
