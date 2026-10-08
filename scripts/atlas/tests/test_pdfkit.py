@@ -156,6 +156,45 @@ class Render(unittest.TestCase):
             self.assertAlmostEqual(w, 209 * 50 / 72, delta=2)
 
 
+@NEED_PDF
+class BoxText(unittest.TestCase):
+    """box_text: 영역 안 글자를 쪽 흐름 그대로(원문 공백 유지, 줄바꿈에 공백을 지어내지 않음) 잇는다."""
+    def test_wrapped_paragraph_verbatim(self):
+        # 20쪽 사진 1 설명: '이 / 르는' 처럼 낱말 가운데서 줄이 바뀌어도 원문대로 '이르는'
+        t = pdfkit.box_text(20, [565, 204, 745, 238])
+        self.assertEqual(t, '시베리아는 러시아의 우랄산맥에서 태평양 연안에 이르는 지역으로, 석유와 천연가스, 철, 금 등의 지하자원이 풍부하다.')
+
+    def test_run_split_across_line_glued(self):
+        # 20쪽 사진 3: 글자 묶음이 '…조' / '산대가…' 로 갈려 줄이 바뀐다 → '조산대'
+        t = pdfkit.box_text(20, [565, 506, 745, 536])
+        self.assertIn('알프스-히말라야 조산대가 만나는 곳', t)
+
+    def test_number_runs_inline(self):
+        # 20쪽 사진 5·6: 숫자는 다른 글꼴 묶음 — 원문 공백만 남는다
+        self.assertIn('총 26개의 고리 모양', pdfkit.box_text(20, [208, 654, 385, 685]))
+        self.assertIn('약 6,100m로', pdfkit.box_text(20, [388, 654, 562, 685]))
+
+    def test_forced_break_in_centered_label(self):
+        # 22쪽 싱가포르 공휴일 꼬리표(가운데 정렬): 다른 줄의 묶음 사이는 공백. 단 '(라마단의' / '끝을 기념)' 처럼
+        # 한 묶음 안에서 두 줄 너비가 거의 같으면 기하로는 가를 수 없다 → 사진 설정의 captionOverride 로 바로잡는다
+        self.assertTrue(pdfkit.box_text(22, [272, 510, 316, 531]).startswith('하리 라야 푸아사 (라마단의'))
+
+    def test_space_between_number_runs(self):
+        # 22쪽 공휴일 날짜: '5' '월' '12' '일' 이 따로 묶음 — 월 뒤 낱말 사이(약 0.22em)는 공백
+        self.assertEqual(pdfkit.box_text(22, [388, 499, 432, 511]), '5월 12일')
+
+    def test_title_stripped(self):
+        self.assertEqual(pdfkit.box_text(20, [576, 195, 700, 205]), '서시베리아 평원')
+
+    def test_empty_box(self):
+        self.assertEqual(pdfkit.box_text(20, [0, 0, 1, 1]), '')
+
+    def test_runs_have_style(self):
+        r = pdfkit.text_runs(20, [565, 194, 745, 238])
+        self.assertTrue(all({'text', 'font', 'size', 'color', 'bbox'} <= set(x) for x in r))
+        self.assertGreaterEqual(len(r), 2)
+
+
 class PdfPath(unittest.TestCase):
     def test_env_override_missing_file(self):
         old = os.environ.get('ATLAS_PDF')

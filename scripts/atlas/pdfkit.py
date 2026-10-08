@@ -125,6 +125,62 @@ def page_spans(pno, space_em=0.25, break_em=1.0):
     return out
 
 
+def text_runs(pno, bbox=None):
+    """인쇄 쪽 번호 → [{text,font,size,color,bbox,line0,line1}]: 글자 묶음(texttrace) 하나 = 한 항목, 쪽 흐름 순서.
+    page_spans 와 달리 줄바꿈으로 나누지 않고 원문 공백(앞뒤 공백 포함)을 그대로 둔다 — 본문·설명글을 원문대로 읽을 때 쓴다.
+    bbox 가 있으면 가운데가 그 안에 드는 글자만 남긴다. line0/line1 = 첫·끝 글자 기준선 (x, y)."""
+    out = []
+    for t in doc()[pno - 1].get_texttrace():
+        if t['type'] == 3 or not t['chars']: continue
+        latin = any(k in t['font'] for k in LATIN_FONTS)
+        chars = [c for c in t['chars'] if bbox is None or
+                 (bbox[0] <= (c[3][0] + c[3][2]) / 2 <= bbox[2] and bbox[1] <= (c[3][1] + c[3][3]) / 2 <= bbox[3])]
+        if not chars: continue
+        left, right = min(c[3][0] for c in chars), max(c[3][2] for c in chars)
+        text = ''
+        for i, (u, gid, o, b) in enumerate(chars):
+            ch = _glyph_char(u, gid, latin)
+            if i:
+                pu, pg, po, pb = chars[i - 1]
+                # 묶음 안 줄바꿈: 양끝 맞춤 문단의 줄바꿈(앞 줄이 오른쪽 끝까지, 새 줄이 왼쪽 끝에서)이 아니면
+                # 가운데 정렬 꼬리표 등의 강제 줄바꿈이라 공백으로 본다
+                if (abs(o[1] - po[1]) > 0.5 * t['size'] and ch != ' ' and not text.endswith(' ')
+                        and not _wrapped(pb[2], b[0], left, right, t['size'])): text += ' '
+            text += ch
+        if not text.strip(): continue
+        bx = [min(c[3][0] for c in chars), min(c[3][1] for c in chars), max(c[3][2] for c in chars), max(c[3][3] for c in chars)]
+        out.append({'text': text, 'font': t['font'], 'size': round(t['size'], 1), 'color': hex_color(t.get('color')),
+                    'bbox': [round(v, 1) for v in bx], 'line0': tuple(chars[0][2]), 'line1': tuple(chars[-1][2]),
+                    'adv1': chars[-1][3][2], 'x0first': chars[0][3][0]})
+    return out
+
+
+def _wrapped(prev_right, next_left, left, right, size):
+    """양끝 맞춤 문단의 줄바꿈인가: 앞 줄 끝이 글 오른쪽 끝 0.5em 안, 새 줄 시작이 왼쪽 끝 0.3em 안."""
+    return prev_right >= right - 0.5 * size and next_left <= left + 0.3 * size
+
+
+def box_text(pno, bbox):
+    """영역 안 글자를 원문대로 한 줄 문자열로 잇는다(text_runs 순서). 묶음 사이는:
+    한쪽 끝에 공백이 있으면 그대로(원문 공백), 같은 줄에서 0.15em 안으로 붙어 있으면 붙임(낱말 사이 공백 폭은 약 0.22em 이상),
+    줄이 바뀌었는데 양끝 맞춤 줄바꿈(_wrapped)이면 붙임(낱말 가운데서도 줄이 바뀐다),
+    그 밖(다른 글상자·짧은 줄)은 공백 하나. 연속 공백은 하나로, 앞뒤 공백은 지운다. 글자가 없으면 ''."""
+    runs = text_runs(pno, bbox)
+    left = min((r['bbox'][0] for r in runs), default=0)
+    right = max((r['bbox'][2] for r in runs), default=0)
+    s, prev = '', None
+    for r in runs:
+        t = r['text']
+        if prev is not None and s and not s.endswith(' ') and not t.startswith(' '):
+            same_line = abs(r['line0'][1] - prev['line1'][1]) < 0.3 * r['size']
+            if same_line: glue = r['x0first'] - prev['adv1'] < 0.15 * r['size']
+            else: glue = _wrapped(prev['adv1'], r['x0first'], left, right, r['size'])
+            if not glue: s += ' '
+        s += t
+        prev = r
+    return ' '.join(s.split())
+
+
 def _is_hangul(ch):
     return '가' <= ch <= '힣' or 'ㄱ' <= ch <= 'ㆎ'
 
