@@ -25,6 +25,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import pdfkit
 from atlas_common import WORK, maps, unit_config, drawings, hexc, excluded_boxes
+from assign import pair
 
 
 def places_config():
@@ -343,62 +344,6 @@ def symbols(pno, m, cfg):
     return out
 
 
-BIG = 1e9        # 안 되는 쌍의 비용(헝가리안 행렬)
-
-
-def _hungarian(C):
-    """직사각 비용 행렬(행 n ≤ 열 m) 최소 비용 배정(헝가리안, 퍼텐셜 방식 O(n²m)). → 행마다 고른 열 번호."""
-    n, m = len(C), len(C[0])
-    u, v, p, way = [0.0] * (n + 1), [0.0] * (m + 1), [0] * (m + 1), [0] * (m + 1)
-    for i in range(1, n + 1):
-        p[0] = i; j0 = 0
-        minv, used = [math.inf] * (m + 1), [False] * (m + 1)
-        while True:
-            used[j0] = True; i0 = p[j0]; delta = math.inf; j1 = 0
-            for j in range(1, m + 1):
-                if used[j]: continue
-                cur = C[i0 - 1][j - 1] - u[i0] - v[j]
-                if cur < minv[j]: minv[j] = cur; way[j] = j0
-                if minv[j] < delta: delta = minv[j]; j1 = j
-            for j in range(m + 1):
-                if used[j]: u[p[j]] += delta; v[j] -= delta
-                else: minv[j] -= delta
-            j0 = j1
-            if p[j0] == 0: break
-        while j0:
-            j1 = way[j0]; p[j0] = p[j1]; j0 = j1
-    out = [None] * n
-    for j in range(1, m + 1):
-        if p[j]: out[p[j] - 1] = j - 1
-    return out
-
-
-def _pair(items, targets, cost, ok, miss=None):
-    """일대일 짝 맞추기: 짝지을 수 있는 쌍(ok)으로 이어진 덩어리마다 비용 합이 가장 작은 배정(헝가리안).
-    행 = item, 열 = target + item 마다 「짝 없음」 열(그 item 만 miss(item) 비용), 안 되는 쌍은 BIG.
-    가까운 순 탐욕은 남의 기호가 글자에 스칠 때 맞바꿔 짝짓는다(선전·홍콩). → {item 번호: target 번호}"""
-    miss = miss or (lambda a: 1e3)
-    edges = {i: {j: cost(a, b) for j, b in enumerate(targets) if ok(a, b)} for i, a in enumerate(items)}
-    by_t = {}
-    for i, e in edges.items():
-        for j in e: by_t.setdefault(j, []).append(i)
-    seen, out = set(), {}
-    for i0 in edges:
-        if i0 in seen or not edges[i0]: continue
-        rows, st = [], [i0]                                          # 덩어리: 쌍으로 이어진 item 들
-        while st:
-            i = st.pop()
-            if i in seen: continue
-            seen.add(i); rows.append(i)
-            for j in edges[i]: st.extend(k for k in by_t[j] if k not in seen)
-        cols = sorted({j for i in rows for j in edges[i]})
-        n, m = len(rows), len(cols)
-        C = [[edges[i].get(j, BIG) for j in cols] + [miss(items[i]) if k == r else BIG for k in range(n)] for r, i in enumerate(rows)]
-        for r, c in enumerate(_hungarian(C)):
-            if c is not None and c < m and C[r][c] < BIG: out[rows[r]] = cols[c]
-    return out
-
-
 # ── 찾아보기 ──────────────────────────────────────────────────────────────
 def index_rows(spans, cfg=None):
     """찾아보기 쪽 글자(흐름 순서) → [{name, page, grid, en?, note?}].
@@ -495,7 +440,7 @@ def extract(map_id, keys=None):
         labels.append(L)
     # 따로 놓인 괄호 병기((시짱 고원), (K2), (아모이)) → 가장 가까운 지명의 다른 이름(alt)
     main = [L for L in labels if 'attachTo' not in L['rule']]
-    pr = _pair([P for _, P in parens], main, lambda P, L: math.dist(P['xy'], L['xy']),     # 같은 역할(글꼴 계열) 중 중심이 가까운 것
+    pr = pair([P for _, P in parens], main, lambda P, L: math.dist(P['xy'], L['xy']),     # 같은 역할(글꼴 계열) 중 중심이 가까운 것
                lambda P, L: P['role'] == L['role'] and _gap(P['bbox'], L['bbox']) <= cfg['altMaxEm'] * P['size'])
     for i, (alt, P) in enumerate(parens):
         if i in pr and 'alt' not in main[pr[i]]: main[pr[i]]['alt'] = alt
@@ -503,7 +448,7 @@ def extract(map_id, keys=None):
     # 산 높이 숫자 → 가장 가까운 점 지명(아래·옆)
     pts = [L for L in labels if L['rule'].get('point')]
     sc = cfg['symbols']
-    pr = _pair(elevs, pts, lambda e, L: _gap(e['bbox'], L['bbox']),
+    pr = pair(elevs, pts, lambda e, L: _gap(e['bbox'], L['bbox']),
                lambda e, L: _gap(e['bbox'], L['bbox']) <= sc['elevMaxEm'] * L['size'])
     for i, e in enumerate(elevs):
         if i in pr: pts[pr[i]]['elev'] = int(e['text'])
@@ -511,7 +456,7 @@ def extract(map_id, keys=None):
     # 기호
     syms = symbols(pno, m, cfg)
     pen = sc['mismatchPenaltyEm']
-    pr = _pair(pts, syms,
+    pr = pair(pts, syms,
                lambda L, s: _anchor_dist(s['xy'], L) + (0 if (s['cls'] == 'mountain') == ('elev' in L) else pen * L['size']),
                lambda L, s: _anchor_dist(s['xy'], L) <= sc['pairMaxEm'] * L['size'],
                lambda L: sc['pairMaxEm'] * L['size'] * 2)
@@ -526,7 +471,7 @@ def extract(map_id, keys=None):
         ens = [L for L in labels if L['role'] == en_role]; rule = ens[0]['rule']
         tg = [L for L in main if L['role'] in rule['attachTo']
               and (not rule.get('attachSymbol') or (L.get('symbol') or {}).get('cls') == rule['attachSymbol'])]
-        pr = _pair(ens, tg, lambda e, t: _gap(e['bbox'], t['bbox']),
+        pr = pair(ens, tg, lambda e, t: _gap(e['bbox'], t['bbox']),
                    lambda e, t: _gap(e['bbox'], t['bbox']) <= rule['maxDistEm'] * e['size'])
         for i, e in enumerate(ens):
             if i in pr: tg[pr[i]]['en'] = e['name']

@@ -20,11 +20,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { makeConverter } from './georef.mjs';
-import { key, km, cmp, neIndex as neIndexAt, stale, mtime } from './geo_util.mjs';
+import { key, km, cmp, neIndex as neIndexAt, stale, mtime, WORK, fitPath, loadFit } from './geo_util.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..', '..');
-const WORK = (process.env.ATLAS_WORK || 'C:/Users/Public/atlas-work').replace(/\\/g, '/');
 const CONFIG_FILE = process.env.ATLAS_UNIT_CONFIG || path.join(here, 'config', 'u2.json');
 const PY = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
 const VERIFY_DPI = 200;
@@ -101,7 +100,7 @@ function extract(force) {
 
 /** fit 이 기준점(controls.json)이나 maps_u2.json 보다 오래됐으면 멈춘다. */
 function checkFit(id) {
-  const fit = `${WORK}/geo/${id}.fit.json`;
+  const fit = fitPath(id);
   if (stale([`${WORK}/vec/${id}.controls.json`, MAPS_FILE], [fit]))
     throw new Error(`${id}: ${fit} 이 기준점(vec/${id}.controls.json)·maps_u2.json 보다 오래됨 — node scripts/atlas/georef-cli.mjs --all 먼저`);
 }
@@ -121,7 +120,7 @@ function main(argv) {
   for (const id of PC.maps) {
     const m = maps[id];
     checkFit(id);
-    const fit = JSON.parse(fs.readFileSync(`${WORK}/geo/${id}.fit.json`, 'utf8'));
+    const fit = loadFit(id);
     const cv = makeConverter(fit);
     if (!cv) throw new Error(`${id}: fit 으로 변환기를 만들 수 없음`);
     const src = JSON.parse(fs.readFileSync(`${WORK}/text/places-${id}.json`, 'utf8'));
@@ -230,7 +229,7 @@ export function neCheck(places, file = NE_FILE, farKm = 40) {
 /** 지명을 지도 id 의 fit 으로 지면에 되돌려 교과서 렌더 위에 겹친다: 점 = 기호 위치(빨강 수도·검정 도시·갈색 산), 글자 = 이름(종류 색), 글자 줄 = 파랑 선. */
 function verify(id, places) {
   const m = maps[id];
-  const cv = makeConverter(JSON.parse(fs.readFileSync(`${WORK}/geo/${id}.fit.json`, 'utf8')));
+  const cv = makeConverter(loadFit(id));
   const COLOR = PC.verifyColors;
   const inside = ([x, y]) => x >= m.bbox[0] && x <= m.bbox[2] && y >= m.bbox[1] && y <= m.bbox[3];
   const points = [], paths = [], texts = [];

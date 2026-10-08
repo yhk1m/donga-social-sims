@@ -15,10 +15,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { makeConverter } from './georef.mjs';
+import { WORK, loadFit } from './geo_util.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..', '..');
-const WORK = (process.env.ATLAS_WORK || 'C:/Users/Public/atlas-work').replace(/\\/g, '/');
 const CONFIG_FILE = process.env.ATLAS_UNIT_CONFIG || path.join(here, 'config', 'u2.json');
 const PY = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
 const CYLINDRICAL = new Set(['miller', 'robinson', 'equirectangular', 'mercator']);
@@ -37,7 +37,6 @@ const run = (args) => {
   return r.stdout;
 };
 const r3 = (v) => Math.round(v * 1000) / 1000;
-const loadFit = (mapId) => JSON.parse(fs.readFileSync(`${WORK}/geo/${mapId}.fit.json`, 'utf8'));
 
 /** fit → 변환기. 만들 수 없으면 레이어 id 와 함께 멈춘다. */
 function converter(layer, fit) {

@@ -4,6 +4,7 @@ import os, re, sys, unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import pdfkit
 import places as PL
+import assign
 
 NEED_PDF = unittest.skipUnless(os.path.exists(pdfkit.pdf_path()), f'사회과부도 PDF 없음({pdfkit.pdf_path()})')
 
@@ -65,30 +66,30 @@ class Group(unittest.TestCase):
 
 
 class Pair(unittest.TestCase):
-    """_pair: 덩어리마다 최적 짝(헝가리안). 짝 없음 = miss(item) 비용, 안 되는 쌍은 아주 큰 비용."""
+    """assign.pair: 덩어리마다 최적 짝(헝가리안). 짝 없음 = miss(item) 비용, 안 되는 쌍은 아주 큰 비용."""
     def test_optimal_beats_greedy(self):
         # 선전·홍콩: 탐욕(가까운 것부터)이면 선전–2(2.3) 다음 홍콩–1(8.9) = 11.2, 최적은 선전–1 + 홍콩–2 = 6.3
         C = {('선전', 1): 2.6, ('선전', 2): 2.3, ('홍콩', 1): 8.9, ('홍콩', 2): 3.7}
         items, targets = ['선전', '홍콩'], [1, 2]
-        pr = PL._pair(items, targets, lambda a, b: C[a, b], lambda a, b: True)
+        pr = assign.pair(items, targets, lambda a, b: C[a, b], lambda a, b: True)
         self.assertEqual({items[i]: targets[j] for i, j in pr.items()}, {'선전': 1, '홍콩': 2})
 
     def test_large_component_is_optimal(self):
         # 12개가 사슬로 이어진 덩어리: i → i+1(0.9) 를 탐욕으로 고르면 마지막 하나가 짝을 잃는다. 최적은 모두 i → i(1.0)
         n = 12
         cost = lambda a, b: 1.0 if b == a else 0.9 if b == a + 1 else None
-        pr = PL._pair(list(range(n)), list(range(n)), lambda a, b: cost(a, b), lambda a, b: cost(a, b) is not None,
+        pr = assign.pair(list(range(n)), list(range(n)), lambda a, b: cost(a, b), lambda a, b: cost(a, b) is not None,
                       miss=lambda a: 5.0)
         self.assertEqual(pr, {i: i for i in range(n)})
 
     def test_miss_cheaper_than_pairing(self):
-        pr = PL._pair(['a', 'b'], ['x'], lambda a, b: {'a': 10.0, 'b': 1.0}[a], lambda a, b: True, miss=lambda a: 5.0)
+        pr = assign.pair(['a', 'b'], ['x'], lambda a, b: {'a': 10.0, 'b': 1.0}[a], lambda a, b: True, miss=lambda a: 5.0)
         self.assertEqual(pr, {1: 0})
-        pr = PL._pair(['a'], ['x'], lambda a, b: 10.0, lambda a, b: True, miss=lambda a: 5.0)
+        pr = assign.pair(['a'], ['x'], lambda a, b: 10.0, lambda a, b: True, miss=lambda a: 5.0)
         self.assertEqual(pr, {})
 
     def test_infeasible_pairs_never_used(self):
-        pr = PL._pair(['a', 'b'], ['x'], lambda a, b: 0.0, lambda a, b: a == 'b')
+        pr = assign.pair(['a', 'b'], ['x'], lambda a, b: 0.0, lambda a, b: a == 'b')
         self.assertEqual(pr, {1: 0})
 
 

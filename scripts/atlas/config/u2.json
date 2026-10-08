@@ -199,6 +199,7 @@
   "expect": {"relief": 7, "climate": 4, "religion": 12, "population": 2, "industry": 2, "heritage": 11},
   "_expect": "계획의 「지형 8, 기후 5」는 조사 단계 어림값(inventory ±10%). 실제 20쪽 지형 사진·핀은 1~7번 7개(#7251a1 핀 7개), 21쪽 기후 사진·핀은 1~4번 4개(5번째로 센 것은 머리띠 마스코트 그림). 종교·문화 12 = 지도 원 사진 4 + 주민 생활 4 + 싱가포르 공휴일 4.",
   "pinNearMaxKm": 600,
+  "_pinNearMaxKm": "번호 없는 핀 짝의 기본 상한(km). 항목의 pinNearMaxKm 이 우선 — 20·21쪽은 교과서 핀이 지명 가까이 분명히 찍혀 있어 실측 거리의 약 1.3배로 좁게 잡았다(서시베리아 평원은 평원 글자 중심과 핀이 멀어 600). 한 지명의 상한 안에 핀이 둘 이상이면 모호 경고.",
   "pins": {
    "p20-relief": {"by": "shape", "fill": "#7251a1", "w": [15, 19], "h": [18, 22], "anchor": "bottom"},
    "p21-climate": {"by": "shape", "fill": "#7251a1", "w": [15, 19], "h": [18, 22], "anchor": "bottom"},
@@ -206,17 +207,17 @@
    "p25-heritage": {"by": "text", "font": "DINPro-Bold", "color": "#fff200", "size": 6.0, "re": "^\\d{2}$", "circleMaxPt": 14}
   },
   "items": [
-   {"id": "p20-1", "page": 20, "topic": "relief", "bbox": [568.7, 94.3, 734.2, 191.3], "titleBox": [577, 195, 740, 206], "captionBox": [568, 206.5, 740, 237], "pin": 1, "map": "p20-relief", "pinNear": "서시베리아 평원"},
-   {"id": "p20-2", "page": 20, "topic": "relief", "bbox": [568.8, 244.1, 735.2, 341.1], "titleBox": [577, 345, 740, 356], "captionBox": [568, 356.5, 740, 387], "pin": 2, "map": "p20-relief", "pinNear": "고비 사막"},
-   {"id": "p20-3", "page": 20, "topic": "relief", "bbox": [568.7, 393.9, 735.2, 490.8], "titleBox": [577, 495, 740, 506], "captionBox": [568, 506.3, 740, 537], "pin": 3, "map": "p20-relief", "pinNear": "수라바야", "_pinNear": "브로모 화산은 places 에 없다 → 약 50km 떨어진 수라바야"},
-   {"id": "p20-4", "page": 20, "topic": "relief", "bbox": [33.0, 542.1, 199.5, 639.2], "titleBox": [41, 644, 205, 654], "captionBox": [32, 654.5, 205, 686], "pin": 4, "map": "p20-relief", "pinNear": "구이린"},
-   {"id": "p20-5", "page": 20, "topic": "relief", "bbox": [212.6, 542.2, 377.0, 639.2], "titleBox": [219, 644, 385, 654], "captionBox": [210, 654.5, 385, 686], "pin": 5, "map": "p20-relief", "pinNear": "몰디브"},
-   {"id": "p20-6", "page": 20, "topic": "relief", "bbox": [390.2, 542.2, 556.6, 639.2], "titleBox": [398, 644, 562, 654], "captionBox": [389, 654.5, 562, 686], "pin": 6, "map": "p20-relief", "pinNear": "타지키스탄", "_pinNear": "파미르고원은 places 에 없다 → 고원이 걸친 타지키스탄"},
-   {"id": "p20-7", "page": 20, "topic": "relief", "bbox": [568.7, 542.2, 735.2, 639.2], "titleBox": [577, 644, 745, 654], "captionBox": [568, 654.5, 745, 686], "pin": 7, "map": "p20-relief", "pinNear": "다카", "_pinNear": "갠지스강 삼각주 = 방글라데시 다카 일대(갠지스강 글자는 강 중류에 있다)"},
-   {"id": "p21-1", "page": 21, "topic": "climate", "bbox": [50.3, 480.8, 204.9, 581.4], "titleBox": [135, 586, 210, 597], "captionBox": [127, 598.5, 210, 672], "pin": 1, "map": "p21-climate", "pinNear": "테헤란"},
-   {"id": "p21-2", "page": 21, "topic": "climate", "bbox": [228.9, 480.8, 383.4, 581.4], "titleBox": [314, 586, 388, 597], "captionBox": [305, 598.5, 388, 672], "pin": 2, "map": "p21-climate", "pinNear": "방콕"},
-   {"id": "p21-3", "page": 21, "topic": "climate", "bbox": [407.5, 480.8, 562.0, 581.5], "titleBox": [492, 586, 567, 597], "captionBox": [484, 598.5, 567, 672], "pin": 3, "map": "p21-climate", "pinNear": "이르쿠츠크"},
-   {"id": "p21-4", "page": 21, "topic": "climate", "bbox": [586.0, 480.8, 740.6, 581.5], "titleBox": [671, 586, 745, 597], "captionBox": [662, 598.5, 745, 672], "pin": 4, "map": "p21-climate", "pinNear": "우한"},
+   {"id": "p20-1", "page": 20, "topic": "relief", "bbox": [568.7, 94.3, 734.2, 191.3], "titleBox": [577, 195, 740, 206], "captionBox": [568, 206.5, 740, 237], "pin": 1, "map": "p20-relief", "pinNear": "서시베리아 평원", "pinNearMaxKm": 600},
+   {"id": "p20-2", "page": 20, "topic": "relief", "bbox": [568.8, 244.1, 735.2, 341.1], "titleBox": [577, 345, 740, 356], "captionBox": [568, 356.5, 740, 387], "pin": 2, "map": "p20-relief", "pinNear": "고비 사막", "pinNearMaxKm": 250},
+   {"id": "p20-3", "page": 20, "topic": "relief", "bbox": [568.7, 393.9, 735.2, 490.8], "titleBox": [577, 495, 740, 506], "captionBox": [568, 506.3, 740, 537], "pin": 3, "map": "p20-relief", "pinNear": "수라바야", "pinNearMaxKm": 120, "_pinNear": "브로모 화산은 places 에 없다 → 약 50km 떨어진 수라바야"},
+   {"id": "p20-4", "page": 20, "topic": "relief", "bbox": [33.0, 542.1, 199.5, 639.2], "titleBox": [41, 644, 205, 654], "captionBox": [32, 654.5, 205, 686], "pin": 4, "map": "p20-relief", "pinNear": "구이린", "pinNearMaxKm": 150},
+   {"id": "p20-5", "page": 20, "topic": "relief", "bbox": [212.6, 542.2, 377.0, 639.2], "titleBox": [219, 644, 385, 654], "captionBox": [210, 654.5, 385, 686], "pin": 5, "map": "p20-relief", "pinNear": "몰디브", "pinNearMaxKm": 400},
+   {"id": "p20-6", "page": 20, "topic": "relief", "bbox": [390.2, 542.2, 556.6, 639.2], "titleBox": [398, 644, 562, 654], "captionBox": [389, 654.5, 562, 686], "pin": 6, "map": "p20-relief", "pinNear": "타지키스탄", "pinNearMaxKm": 320, "_pinNear": "파미르고원은 places 에 없다 → 고원이 걸친 타지키스탄"},
+   {"id": "p20-7", "page": 20, "topic": "relief", "bbox": [568.7, 542.2, 735.2, 639.2], "titleBox": [577, 644, 745, 654], "captionBox": [568, 654.5, 745, 686], "pin": 7, "map": "p20-relief", "pinNear": "다카", "pinNearMaxKm": 160, "_pinNear": "갠지스강 삼각주 = 방글라데시 다카 일대(갠지스강 글자는 강 중류에 있다)"},
+   {"id": "p21-1", "page": 21, "topic": "climate", "bbox": [50.3, 480.8, 204.9, 581.4], "titleBox": [135, 586, 210, 597], "captionBox": [127, 598.5, 210, 672], "pin": 1, "map": "p21-climate", "pinNear": "테헤란", "pinNearMaxKm": 150},
+   {"id": "p21-2", "page": 21, "topic": "climate", "bbox": [228.9, 480.8, 383.4, 581.4], "titleBox": [314, 586, 388, 597], "captionBox": [305, 598.5, 388, 672], "pin": 2, "map": "p21-climate", "pinNear": "방콕", "pinNearMaxKm": 60},
+   {"id": "p21-3", "page": 21, "topic": "climate", "bbox": [407.5, 480.8, 562.0, 581.5], "titleBox": [492, 586, 567, 597], "captionBox": [484, 598.5, 567, 672], "pin": 3, "map": "p21-climate", "pinNear": "이르쿠츠크", "pinNearMaxKm": 80},
+   {"id": "p21-4", "page": 21, "topic": "climate", "bbox": [586.0, 480.8, 740.6, 581.5], "titleBox": [671, 586, 745, 597], "captionBox": [662, 598.5, 745, 672], "pin": 4, "map": "p21-climate", "pinNear": "우한", "pinNearMaxKm": 100},
    {"id": "p22-1", "page": 22, "topic": "religion", "bbox": [382.6, 77.9, 455.0, 150.8], "mask": "circle", "titleBox": [40, 104, 190, 115], "captionBox": [32, 115.5, 190, 136], "pin": 1, "map": "p22-religion"},
    {"id": "p22-2", "page": 22, "topic": "religion", "bbox": [257.4, 335.8, 330.3, 408.7], "mask": "circle", "titleBox": [40, 142, 190, 152.5], "captionBox": [32, 153, 190, 174], "pin": 2, "map": "p22-religion"},
    {"id": "p22-3", "page": 22, "topic": "religion", "bbox": [28.7, 258.0, 106.7, 336.0], "mask": "circle", "titleBox": [40, 339.5, 190, 350], "captionBox": [32, 350.5, 190, 381], "pin": 3, "map": "p22-religion"},
@@ -270,10 +271,10 @@
    {"page": 25, "bbox": [280, 104, 325, 148], "what": "QR 코드(벡터)", "reason": "QR 코드 — 웹에서는 쓰지 않는다"},
    {"page": 25, "bbox": [36, 170, 750, 500], "what": "폴라로이드 틀 그림자·압정 그림", "reason": "사진 틀 장식(사진은 items)"}
   ],
-  "overlay": {
-   "map": "p23-density", "dpi": 150, "whiteMin": 248, "iconBlueOverRed": 40, "iconDilatePx": 2, "inpaintMinOpaqueFrac": 0.5,
+  "overlays": [{
+   "id": "p23-density", "map": "p23-density", "dpi": 150, "whiteMin": 248, "iconBlueOverRed": 40, "iconDilatePx": 2, "inpaintMinOpaqueFrac": 0.5, "edgePx": 2, "noiseD": 20,
    "out": "overlay/p23-density.png", "json": "sims/atlas-u2-asia/data/overlay-p23-density.json",
-   "_doc": "23쪽 인구 밀도 음영: 지도 틀(maps_u2 bbox)을 래스터만 렌더 → 흰 바탕(세 채널 ≥ whiteMin) 투명 → 파란 사람 아이콘(B − R > iconBlueOverRed, iconDilatePx 넓힘) 지움 → 지운 덩어리 둘레가 inpaintMinOpaqueFrac 이상 음영이면 둘레 색으로 메우고 아니면(바다 위) 투명"
-  }
+   "_doc": "23쪽 인구 밀도 음영: 지도 틀(maps_u2 bbox)을 래스터만 렌더 → 흰 바탕(세 채널 ≥ whiteMin) 투명 → 파란 사람 아이콘(B − R > iconBlueOverRed, iconDilatePx 넓힘) 지움 → 지운 덩어리 둘레가 inpaintMinOpaqueFrac 이상 음영이면 둘레 색으로 메우고 아니면(바다 위) 투명 → 흰색과 맞닿은 edgePx 띠는 흰색 거리로 부드러운 알파(기준 = 띠 밖 음영 이웃의 흰색 거리 최댓값) + 색은 α≥0.5 면 흰색을 걷어 낸 값, 더 옅으면 이웃 음영 색(해안 흰 테두리 없앰). 둘레에 음영이 없는 띠 화소 중 흰색 거리 < noiseD 는 바다 잡티라 투명(가장 옅은 단계 #fef1e1 의 흰색 거리 30)"
+  }]
  }
 }

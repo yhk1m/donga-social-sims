@@ -12,10 +12,9 @@ import { spawnSync } from 'node:child_process';
 import { geoPath } from 'd3-geo';
 import { feature } from 'topojson-client';
 import { fitWithTps, robustFit, applyFit, fitProjection, PT_MM } from './georef.mjs';
-import { stale } from './geo_util.mjs';
+import { stale, WORK, fitPath, loadFit } from './geo_util.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const WORK = (process.env.ATLAS_WORK || 'C:/Users/Public/atlas-work').replace(/\\/g, '/');
 const ACCEPT_MM = 0.5;
 const maps = JSON.parse(fs.readFileSync(path.join(here, 'maps_u2.json'), 'utf8'));
 const georefOn = (m) => m.georef !== false;
@@ -65,7 +64,7 @@ function fitAll() {
     if (meanMm > ACCEPT_MM) reasons.push(`평균 잔차 ${meanMm.toFixed(2)}mm > ${ACCEPT_MM}mm`);
     if (cps.length && cps.every((c) => c.approx)) reasons.push('기준점을 눈으로 찍음(모든 기준점 approx)');
     if (reasons.length) { out.approx = true; out.approxReason = reasons.join('; '); }
-    fs.writeFileSync(`${WORK}/geo/${m.id}.fit.json`, JSON.stringify(out, null, 1));
+    fs.writeFileSync(fitPath(m.id), JSON.stringify(out, null, 1));
     rows.push([m.id, out.family, out.params.map((v) => v.toFixed(1)).join(','), out.rmsPt.toFixed(2), out.rmsMm.toFixed(2), out.meanMm.toFixed(2),
       fit.tps ? `${out.meanTpsMm.toFixed(2)} (LOO ${out.looMeanMm.toFixed(2)})` : '-', cps.length, dropped.length || '', out.approx ? `approx: ${out.approxReason}` : '']);
   }
@@ -87,7 +86,7 @@ function verify(target) {
   };
   for (const id of ids) {
     const m = maps.find((x) => x.id === id);
-    const fit = JSON.parse(fs.readFileSync(`${WORK}/geo/${id}.fit.json`, 'utf8'));
+    const fit = loadFit(id);
     // 1° 가 몇 pt 인가로 해안선 해상도를 고른다(세계 지도는 50m, 나머지는 10m)
     const lat0 = fit.params.length === 2 ? fit.params[1] : 10;
     const a = applyFit(fit, [fit.params[0], lat0]), b = applyFit(fit, [fit.params[0] + 1, lat0]);

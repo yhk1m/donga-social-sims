@@ -2,6 +2,19 @@
 // scripts/atlas/geo_util.mjs — 아틀라스 Node 단계가 함께 쓰는 작은 도구: 이름 열쇠, 대권 거리, 중앙값, Natural Earth 인구 지점 색인
 import fs from 'node:fs';
 
+/** 작업 폴더(ASCII). env ATLAS_WORK, 기본 C:/Users/Public/atlas-work (슬래시로). */
+export const WORK = (process.env.ATLAS_WORK || 'C:/Users/Public/atlas-work').replace(/\\/g, '/');
+
+/** 경위도 맞추기 결과 파일 경로. */
+export const fitPath = (id) => `${WORK}/geo/${id}.fit.json`;
+
+/** fit 읽기. 없으면 무엇을 먼저 돌릴지 알려 주는 오류. */
+export function loadFit(id) {
+  const f = fitPath(id);
+  if (!fs.existsSync(f)) throw new Error(`fit 파일 없음: ${f} (node scripts/atlas/georef-cli.mjs --all 먼저)`);
+  return JSON.parse(fs.readFileSync(f, 'utf8'));
+}
+
 /** 이름 비교 열쇠: 공백 없앰(「고비 사막」 = 「고비사막」). */
 export const key = (s) => String(s ?? '').replace(/\s+/g, '');
 

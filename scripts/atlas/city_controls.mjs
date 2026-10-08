@@ -19,11 +19,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { fitControls, robustFit, fitWithTps, applyFit, makeConverter } from './georef.mjs';
-import { key, km, median, neIndex as neIndexAt } from './geo_util.mjs';
+import { key, km, median, neIndex as neIndexAt, WORK } from './geo_util.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..', '..');
-const WORK = (process.env.ATLAS_WORK || 'C:/Users/Public/atlas-work').replace(/\\/g, '/');
 const CONFIG_FILE = process.env.ATLAS_UNIT_CONFIG || path.join(here, 'config', 'u2.json');
 const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
 const CC = config.cityControls;
