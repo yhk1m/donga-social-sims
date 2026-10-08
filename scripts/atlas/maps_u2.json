@@ -1,0 +1,1367 @@
+[
+ {
+  "id": "p16-asia",
+  "page": 16,
+  "kind": "general",
+  "title": "아시아 일반도",
+  "bbox": [
+   0,
+   0,
+   780,
+   723
+  ],
+  "legendBbox": [
+   710,
+   454,
+   748,
+   595
+  ],
+  "cartoucheBbox": [
+   57,
+   536,
+   215,
+   673
+  ],
+  "projection": "람베르트 정적 방위 도법",
+  "scale": "1:40,000,000",
+  "graticuleLabels": true,
+  "controls": [],
+  "notes": "전면(재단 여백까지) 지도. 경위도 눈금 글자(˚E/˚N/˚S)가 지도 안 가장자리에 30개. 범례=육지 높이·바다 깊이 색띠. 왼쪽 아래 「아시아」 제목 상자(축척·도법)가 지도를 덮는다."
+ },
+ {
+  "id": "p17-coloring",
+  "page": 17,
+  "kind": "coloring",
+  "title": "아시아의 국가와 주요 도시(색칠하기)",
+  "bbox": [
+   0,
+   0,
+   780,
+   723
+  ],
+  "legendBbox": [
+   55,
+   150,
+   152,
+   162
+  ],
+  "projection": "람베르트 정적 방위 도법",
+  "scale": "1:40,000,000",
+  "graticuleLabels": false,
+  "controls": [
+   {
+    "name": "kanyakumari",
+    "type": "point",
+    "xy": [
+     286.3,
+     540.0
+    ],
+    "lon": 77.54,
+    "lat": 8.08
+   },
+   {
+    "name": "ras-al-hadd",
+    "type": "point",
+    "xy": [
+     176.1,
+     426.5
+    ],
+    "lon": 59.8,
+    "lat": 22.53
+   },
+   {
+    "name": "sri-lanka",
+    "type": "centroid",
+    "xy": [
+     309.28,
+     543.78
+    ],
+    "lon": 80.706,
+    "lat": 7.608
+   },
+   {
+    "name": "taiwan",
+    "type": "centroid",
+    "xy": [
+     596.04,
+     423.68
+    ],
+    "lon": 120.961,
+    "lat": 23.749
+   },
+   {
+    "name": "hainan",
+    "type": "centroid",
+    "xy": [
+     520.43,
+     459.07
+    ],
+    "lon": 109.739,
+    "lat": 19.197
+   },
+   {
+    "name": "cyprus",
+    "type": "centroid",
+    "xy": [
+     56.49,
+     301.53
+    ],
+    "lon": 33.226,
+    "lat": 35.05
+   },
+   {
+    "name": "hokkaido",
+    "type": "centroid",
+    "xy": [
+     690.63,
+     268.49
+    ],
+    "lon": 142.566,
+    "lat": 43.375
+   },
+   {
+    "name": "sakhalin",
+    "type": "centroid",
+    "xy": [
+     667.06,
+     220.51
+    ],
+    "lon": 142.714,
+    "lat": 50.246
+   },
+   {
+    "name": "cape-lopatka",
+    "type": "point",
+    "xy": [
+     725.34,
+     198.96
+    ],
+    "lon": 156.67,
+    "lat": 50.87
+   }
+  ],
+  "notes": "경위선 눈금 없음 → 수동 기준점 9개(벡터 육지 경로 #8 꼭짓점·섬 다각형 중심). 점검 적합(정적 방위, 중심 100E) rms 0.8pt. 왼쪽 위 개관 글 상자 [48,38,297,170]가 지도를 덮음. 나라 경계는 두꺼운 띠(칠하기용), 국가명은 초성 힌트. centroid 기준점: 지도 위 섬 다각형(가장 큰 고리)의 면적 중심 ↔ Natural Earth 10m(world-atlas land-10m) 같은 섬의 구면 중심(d3.geoCentroid)."
+ },
+ {
+  "id": "p18-east-asia",
+  "page": 18,
+  "kind": "general",
+  "title": "동아시아 일반도",
+  "bbox": [
+   25.5,
+   25.5,
+   754,
+   697.3
+  ],
+  "legendBbox": [
+   714,
+   552,
+   744,
+   692
+  ],
+  "cartoucheBbox": [
+   540,
+   498,
+   698,
+   635
+  ],
+  "projection": "람베르트 정각 원뿔 도법",
+  "scale": "1:16,000,000",
+  "graticuleLabels": true,
+  "controls": [],
+  "notes": "지도 틀 [25.5,25.5,754,697.3] 바깥 여백에 경위도 눈금 15개(위·아래 ˚E, 좌우 ˚N)와 찾기 격자 A~F/1~4. 정각 원뿔이라 위선이 곡선."
+ },
+ {
+  "id": "p19-southeast-asia",
+  "page": 19,
+  "kind": "general",
+  "title": "동남아시아 일반도",
+  "bbox": [
+   25.5,
+   25.5,
+   754,
+   697.3
+  ],
+  "legendBbox": [
+   28,
+   552,
+   74,
+   692
+  ],
+  "cartoucheBbox": [
+   566,
+   57,
+   692,
+   163
+  ],
+  "projection": "람베르트 정적 방위 도법",
+  "scale": "1:20,000,000",
+  "graticuleLabels": true,
+  "controls": [],
+  "notes": "지도 틀 바깥 여백에 경위도 눈금 19개. 범례(육지 높이)는 틀 안 왼쪽 아래."
+ },
+ {
+  "id": "p20-relief",
+  "page": 20,
+  "kind": "relief",
+  "title": "아시아의 지형",
+  "bbox": [
+   0,
+   62,
+   566,
+   540
+  ],
+  "legendBbox": null,
+  "scale": "0–500km",
+  "graticuleLabels": false,
+  "controls": [
+   {
+    "name": "kanyakumari",
+    "type": "point",
+    "xy": [
+     214.8,
+     432.7
+    ],
+    "lon": 77.54,
+    "lat": 8.08,
+    "approx": true
+   },
+   {
+    "name": "sri-lanka",
+    "type": "centroid",
+    "xy": [
+     231.4,
+     435.6
+    ],
+    "lon": 80.706,
+    "lat": 7.608,
+    "approx": true
+   },
+   {
+    "name": "taiwan",
+    "type": "centroid",
+    "xy": [
+     433.0,
+     350.1
+    ],
+    "lon": 120.961,
+    "lat": 23.749,
+    "approx": true
+   },
+   {
+    "name": "hainan",
+    "type": "centroid",
+    "xy": [
+     380.4,
+     375.1
+    ],
+    "lon": 109.739,
+    "lat": 19.197,
+    "approx": true
+   },
+   {
+    "name": "ras-al-hadd",
+    "type": "point",
+    "xy": [
+     136.9,
+     352.3
+    ],
+    "lon": 59.8,
+    "lat": 22.53,
+    "approx": true
+   },
+   {
+    "name": "cape-lopatka",
+    "type": "point",
+    "xy": [
+     524.4,
+     191.2
+    ],
+    "lon": 156.67,
+    "lat": 50.87,
+    "approx": true
+   },
+   {
+    "name": "hokkaido",
+    "type": "centroid",
+    "xy": [
+     500.8,
+     240.8
+    ],
+    "lon": 142.566,
+    "lat": 43.375,
+    "approx": true
+   },
+   {
+    "name": "cyprus",
+    "type": "centroid",
+    "xy": [
+     52.0,
+     264.6
+    ],
+    "lon": 33.226,
+    "lat": 35.05,
+    "approx": true
+   }
+  ],
+  "notes": "바탕이 쪽 전체를 덮는 래스터 한 장(naturalearthdata 음영, 약 2px/pt)이고 벡터 해안선이 없다. 기준점은 1100dpi 확대 화면에서 눈으로 읽음(±0.5~1pt, approx; 섬 중심은 섬 경계 상자와 실제 중심 비율로 계산). 점검 적합 rms 0.6pt. 흰 경위선이 흐리게 보이나 눈금 글자는 없음. 번호 핀 8개. 오른쪽·아래 사진 카드는 지도 밖. centroid 기준점: 지도 위 섬 다각형(가장 큰 고리)의 면적 중심 ↔ Natural Earth 10m(world-atlas land-10m) 같은 섬의 구면 중심(d3.geoCentroid)."
+ },
+ {
+  "id": "p21-climate",
+  "page": 21,
+  "kind": "climate",
+  "title": "아시아의 기후 구분",
+  "bbox": [
+   25,
+   72,
+   487,
+   447
+  ],
+  "legendBbox": [
+   55,
+   377,
+   272,
+   432
+  ],
+  "scale": "0–500km",
+  "graticuleLabels": true,
+  "controls": [],
+  "notes": "지도 안에 경위도 글자 26개(곡선 경위선 끝·중간). 범례 안에도 80˚E 글자가 겹쳐 있음. 기후 사진 핀 4개."
+ },
+ {
+  "id": "p21-jan",
+  "page": 21,
+  "kind": "temp-precip",
+  "title": "1월 평균 기온과 강수량",
+  "bbox": [
+   496,
+   74,
+   753,
+   266
+  ],
+  "legendBbox": [
+   500,
+   221,
+   600,
+   265
+  ],
+  "scale": "0–1,000km",
+  "graticuleLabels": false,
+  "controls": [
+   {
+    "name": "cyprus",
+    "type": "centroid",
+    "xy": [
+     535.02,
+     153.31
+    ],
+    "lon": 33.226,
+    "lat": 35.05
+   },
+   {
+    "name": "sri-lanka",
+    "type": "centroid",
+    "xy": [
+     602.87,
+     218.37
+    ],
+    "lon": 80.706,
+    "lat": 7.608
+   },
+   {
+    "name": "kanyakumari",
+    "type": "point",
+    "xy": [
+     596.81,
+     218.09
+    ],
+    "lon": 77.54,
+    "lat": 8.08
+   },
+   {
+    "name": "taiwan",
+    "type": "centroid",
+    "xy": [
+     680.77,
+     186.67
+    ],
+    "lon": 120.961,
+    "lat": 23.749
+   },
+   {
+    "name": "hainan",
+    "type": "centroid",
+    "xy": [
+     660.37,
+     195.94
+    ],
+    "lon": 109.739,
+    "lat": 19.197
+   },
+   {
+    "name": "hokkaido",
+    "type": "centroid",
+    "xy": [
+     706.14,
+     144.74
+    ],
+    "lon": 142.566,
+    "lat": 43.375
+   },
+   {
+    "name": "sakhalin",
+    "type": "centroid",
+    "xy": [
+     700.44,
+     132.16
+    ],
+    "lon": 142.714,
+    "lat": 50.246
+   },
+   {
+    "name": "kyushu",
+    "type": "centroid",
+    "xy": [
+     694.94,
+     168.04
+    ],
+    "lon": 130.872,
+    "lat": 32.646
+   }
+  ],
+  "notes": "강수량은 래스터(worldclim), 육지 윤곽은 벡터 마스크(경로 #620·섬별 경로). 등온선(빨강) 벡터. 점검 적합 rms 0.3pt. centroid 기준점: 지도 위 섬 다각형(가장 큰 고리)의 면적 중심 ↔ Natural Earth 10m(world-atlas land-10m) 같은 섬의 구면 중심(d3.geoCentroid)."
+ },
+ {
+  "id": "p21-jul",
+  "page": 21,
+  "kind": "temp-precip",
+  "title": "7월 평균 기온과 강수량",
+  "bbox": [
+   496,
+   268,
+   753,
+   466
+  ],
+  "legendBbox": [
+   500,
+   423,
+   600,
+   467
+  ],
+  "scale": "0–1,000km",
+  "graticuleLabels": false,
+  "controls": [
+   {
+    "name": "cyprus",
+    "type": "centroid",
+    "xy": [
+     535.53,
+     347.51
+    ],
+    "lon": 33.226,
+    "lat": 35.05
+   },
+   {
+    "name": "sri-lanka",
+    "type": "centroid",
+    "xy": [
+     603.4,
+     412.55
+    ],
+    "lon": 80.706,
+    "lat": 7.608
+   },
+   {
+    "name": "kanyakumari",
+    "type": "point",
+    "xy": [
+     597.37,
+     412.29
+    ],
+    "lon": 77.54,
+    "lat": 8.08
+   },
+   {
+    "name": "taiwan",
+    "type": "centroid",
+    "xy": [
+     681.38,
+     380.95
+    ],
+    "lon": 120.961,
+    "lat": 23.749
+   },
+   {
+    "name": "hainan",
+    "type": "centroid",
+    "xy": [
+     660.94,
+     390.24
+    ],
+    "lon": 109.739,
+    "lat": 19.197
+   },
+   {
+    "name": "hokkaido",
+    "type": "centroid",
+    "xy": [
+     706.73,
+     338.96
+    ],
+    "lon": 142.566,
+    "lat": 43.375
+   },
+   {
+    "name": "sakhalin",
+    "type": "centroid",
+    "xy": [
+     701.01,
+     326.36
+    ],
+    "lon": 142.714,
+    "lat": 50.246
+   },
+   {
+    "name": "kyushu",
+    "type": "centroid",
+    "xy": [
+     695.53,
+     362.23
+    ],
+    "lon": 130.872,
+    "lat": 32.646
+   }
+  ],
+  "notes": "1월 지도와 같은 바탕을 (+0.55, +194.2)pt 옮긴 배치. 육지 경로 #647. centroid 기준점: 지도 위 섬 다각형(가장 큰 고리)의 면적 중심 ↔ Natural Earth 10m(world-atlas land-10m) 같은 섬의 구면 중심(d3.geoCentroid)."
+ },
+ {
+  "id": "p22-religion",
+  "page": 22,
+  "kind": "religion",
+  "title": "아시아의 종교 분포",
+  "bbox": [
+   100,
+   80,
+   500,
+   429
+  ],
+  "legendBbox": [
+   34,
+   177,
+   94,
+   258
+  ],
+  "scale": "0–500km",
+  "graticuleLabels": false,
+  "controls": [
+   {
+    "name": "kanyakumari",
+    "type": "point",
+    "xy": [
+     245.67,
+     353.2
+    ],
+    "lon": 77.54,
+    "lat": 8.08
+   },
+   {
+    "name": "sri-lanka",
+    "type": "centroid",
+    "xy": [
+     257.45,
+     355.69
+    ],
+    "lon": 80.706,
+    "lat": 7.608
+   },
+   {
+    "name": "taiwan",
+    "type": "centroid",
+    "xy": [
+     414.78,
+     289.79
+    ],
+    "lon": 120.961,
+    "lat": 23.749
+   },
+   {
+    "name": "hainan",
+    "type": "centroid",
+    "xy": [
+     373.3,
+     309.2
+    ],
+    "lon": 109.739,
+    "lat": 19.197
+   },
+   {
+    "name": "ras-al-hadd",
+    "type": "point",
+    "xy": [
+     184.47,
+     290.66
+    ],
+    "lon": 59.8,
+    "lat": 22.53
+   },
+   {
+    "name": "cape-lopatka",
+    "type": "point",
+    "xy": [
+     485.71,
+     166.52
+    ],
+    "lon": 156.67,
+    "lat": 50.87
+   }
+  ],
+  "notes": "종교별 면(벡터)과 해안선 띠(경로 #1500). 스리랑카는 불교·힌두교 두 면의 면적 가중 중심. 사진 원 4개와 설명 글이 지도 왼쪽·가운데를 덮음. 점검 적합 rms 0.4pt. centroid 기준점: 지도 위 섬 다각형(가장 큰 고리)의 면적 중심 ↔ Natural Earth 10m(world-atlas land-10m) 같은 섬의 구면 중심(d3.geoCentroid)."
+ },
+ {
+  "id": "p22-singapore",
+  "page": 22,
+  "kind": "singapore",
+  "title": "싱가포르의 종교 사원 분포",
+  "bbox": [
+   41,
+   480,
+   239,
+   598
+  ],
+  "legendBbox": [
+   216,
+   562,
+   253,
+   605
+  ],
+  "scale": "0–4km",
+  "graticuleLabels": false,
+  "locatorBbox": [
+   34,
+   610,
+   112,
+   687
+  ],
+  "controls": [
+   {
+    "name": "jurong-island",
+    "type": "centroid",
+    "xy": [
+     79.87,
+     572.43
+    ],
+    "lon": 103.7,
+    "lat": 1.2667,
+    "approx": true
+   },
+   {
+    "name": "sentosa",
+    "type": "centroid",
+    "xy": [
+     142.17,
+     579.53
+    ],
+    "lon": 103.8306,
+    "lat": 1.2494,
+    "approx": true
+   },
+   {
+    "name": "pulau-ubin",
+    "type": "centroid",
+    "xy": [
+     200.99,
+     505.83
+    ],
+    "lon": 103.9589,
+    "lat": 1.4089,
+    "approx": true
+   },
+   {
+    "name": "sultan-mosque",
+    "type": "point",
+    "xy": [
+     154.84,
+     554.71
+    ],
+    "lon": 103.8589,
+    "lat": 1.3022,
+    "approx": true
+   },
+   {
+    "name": "st-andrews-cathedral",
+    "type": "point",
+    "xy": [
+     150.88,
+     560.87
+    ],
+    "lon": 103.8522,
+    "lat": 1.2925,
+    "approx": true
+   },
+   {
+    "name": "sri-mariamman-temple",
+    "type": "point",
+    "xy": [
+     149.56,
+     565.24
+    ],
+    "lon": 103.8453,
+    "lat": 1.2828,
+    "approx": true
+   },
+   {
+    "name": "buddha-tooth-relic-temple",
+    "type": "point",
+    "xy": [
+     149.67,
+     567.06
+    ],
+    "lon": 103.8439,
+    "lat": 1.2814,
+    "approx": true
+   }
+  ],
+  "notes": "대축척(약 4pt/km, googlemap 2023). 섬 경위도는 위키백과 좌표(분·초 단위, ±0.005° ≈ ±2pt), 사원 4곳은 지도 기호 중심(기호 지름 2.9pt, 겹침 회피로 1~2pt 밀림 가능) — 모두 approx. 점검 적합(닮음 변환) rms 1.2pt. 정밀 맞춤에는 고해상도 해안선(OSM 등)과의 대조가 필요. 왼쪽 아래 지구본은 위치도(locator). centroid 기준점: 지도 위 섬 다각형(가장 큰 고리)의 면적 중심 ↔ Natural Earth 10m(world-atlas land-10m) 같은 섬의 구면 중심(d3.geoCentroid)."
+ },
+ {
+  "id": "p22-kashmir",
+  "page": 22,
+  "kind": "kashmir",
+  "title": "힌두교와 이슬람교 간 분쟁(카슈미르)",
+  "bbox": [
+   509,
+   458,
+   736,
+   566
+  ],
+  "legendBbox": [
+   510,
+   567,
+   734,
+   608
+  ],
+  "scale": "0–100km",
+  "graticuleLabels": false,
+  "insetBbox": [
+   658,
+   458,
+   736,
+   548
+  ],
+  "controls": [],
+  "notes": "수동 기준점 없음(의도적). 해안선이 없고 국경이 물결 모양으로 크게 양식화된 모식도라, Natural Earth 인도–파키스탄 경계(LoC)와 ICP 대조 시 잔차 최대 20pt 이상 → 정확한 기준점을 만들 수 없음. 오른쪽 위 인도 위치도(inset) 포함. 웹에서는 실제 경계 자료로 분쟁 지역을 그리고 이 지도는 범례·색만 참고하는 쪽을 권함(결정 필요)."
+ },
+ {
+  "id": "p23-density",
+  "page": 23,
+  "kind": "density",
+  "title": "아시아의 인구 분포",
+  "bbox": [
+   36,
+   90,
+   326,
+   354
+  ],
+  "legendBbox": [
+   53,
+   289,
+   128,
+   342
+  ],
+  "scale": "0–500km",
+  "graticuleLabels": false,
+  "controls": [
+   {
+    "name": "kanyakumari",
+    "type": "point",
+    "xy": [
+     147.37,
+     292.73
+    ],
+    "lon": 77.54,
+    "lat": 8.08
+   },
+   {
+    "name": "sri-lanka",
+    "type": "centroid",
+    "xy": [
+     156.52,
+     294.26
+    ],
+    "lon": 80.706,
+    "lat": 7.608
+   },
+   {
+    "name": "taiwan",
+    "type": "centroid",
+    "xy": [
+     270.65,
+     246.45
+    ],
+    "lon": 120.961,
+    "lat": 23.749
+   },
+   {
+    "name": "hainan",
+    "type": "centroid",
+    "xy": [
+     240.55,
+     260.53
+    ],
+    "lon": 109.739,
+    "lat": 19.197
+   },
+   {
+    "name": "ras-al-hadd",
+    "type": "point",
+    "xy": [
+     103.51,
+     247.08
+    ],
+    "lon": 59.8,
+    "lat": 22.53
+   },
+   {
+    "name": "cape-lopatka",
+    "type": "point",
+    "xy": [
+     322.09,
+     157.03
+    ],
+    "lon": 156.67,
+    "lat": 50.87
+   },
+   {
+    "name": "sakhalin",
+    "type": "centroid",
+    "xy": [
+     298.9,
+     165.59
+    ],
+    "lon": 142.714,
+    "lat": 50.246
+   },
+   {
+    "name": "hokkaido",
+    "type": "centroid",
+    "xy": [
+     308.28,
+     184.69
+    ],
+    "lon": 142.566,
+    "lat": 43.375
+   }
+  ],
+  "notes": "밀도는 래스터 이미지(조각 여러 장), 해안선은 벡터 선(경로 #576, 5100항목). p23-growth 해안선(#1558)과 꼭짓점이 1:1로 같아 닮음 변환(배율 1.00006, 이동 −381.83, −0.02; 최대 오차 0.001pt)으로 기준점을 옮김. 국가별 인구 막대 기호와 오른쪽 3D 상자(몽골·방글라데시, x≥326)는 지도 밖 요소. centroid 기준점: 지도 위 섬 다각형(가장 큰 고리)의 면적 중심 ↔ Natural Earth 10m(world-atlas land-10m) 같은 섬의 구면 중심(d3.geoCentroid)."
+ },
+ {
+  "id": "p23-growth",
+  "page": 23,
+  "kind": "growth",
+  "title": "아시아의 국가별 인구 증가율",
+  "bbox": [
+   428,
+   94,
+   715,
+   353
+  ],
+  "legendBbox": [
+   440,
+   281,
+   484,
+   342
+  ],
+  "scale": "0–500km",
+  "graticuleLabels": false,
+  "controls": [
+   {
+    "name": "kanyakumari",
+    "type": "point",
+    "xy": [
+     529.17,
+     292.73
+    ],
+    "lon": 77.54,
+    "lat": 8.08
+   },
+   {
+    "name": "sri-lanka",
+    "type": "centroid",
+    "xy": [
+     538.32,
+     294.26
+    ],
+    "lon": 80.706,
+    "lat": 7.608
+   },
+   {
+    "name": "taiwan",
+    "type": "centroid",
+    "xy": [
+     652.44,
+     246.45
+    ],
+    "lon": 120.961,
+    "lat": 23.749
+   },
+   {
+    "name": "hainan",
+    "type": "centroid",
+    "xy": [
+     622.35,
+     260.53
+    ],
+    "lon": 109.739,
+    "lat": 19.197
+   },
+   {
+    "name": "ras-al-hadd",
+    "type": "point",
+    "xy": [
+     485.31,
+     247.08
+    ],
+    "lon": 59.8,
+    "lat": 22.53
+   },
+   {
+    "name": "cape-lopatka",
+    "type": "point",
+    "xy": [
+     703.88,
+     157.04
+    ],
+    "lon": 156.67,
+    "lat": 50.87
+   },
+   {
+    "name": "sakhalin",
+    "type": "centroid",
+    "xy": [
+     680.69,
+     165.6
+    ],
+    "lon": 142.714,
+    "lat": 50.246
+   },
+   {
+    "name": "hokkaido",
+    "type": "centroid",
+    "xy": [
+     690.07,
+     184.7
+    ],
+    "lon": 142.566,
+    "lat": 43.375
+   }
+  ],
+  "notes": "국가별 단계구분도(벡터 면) + 해안선 선(경로 #1558). 이 지도의 기준점이 p23-density·p24-resources·p24-exports·p25-heritage 의 원본(같은 바탕 지도). 점검 적합(정적 방위, 중심 100E) rms 0.2pt. centroid 기준점: 지도 위 섬 다각형(가장 큰 고리)의 면적 중심 ↔ Natural Earth 10m(world-atlas land-10m) 같은 섬의 구면 중심(d3.geoCentroid)."
+ },
+ {
+  "id": "p24-resources",
+  "page": 24,
+  "kind": "resources",
+  "title": "국가별 주요 자원 분포",
+  "bbox": [
+   34,
+   92,
+   255,
+   268
+  ],
+  "legendBbox": [
+   38,
+   227,
+   100,
+   259
+  ],
+  "scale": "0–1,000km",
+  "graticuleLabels": false,
+  "controls": [
+   {
+    "name": "kanyakumari",
+    "type": "point",
+    "xy": [
+     111.93,
+     235.87
+    ],
+    "lon": 77.54,
+    "lat": 8.08
+   },
+   {
+    "name": "sri-lanka",
+    "type": "centroid",
+    "xy": [
+     118.96,
+     237.05
+    ],
+    "lon": 80.706,
+    "lat": 7.608
+   },
+   {
+    "name": "taiwan",
+    "type": "centroid",
+    "xy": [
+     206.68,
+     200.3
+    ],
+    "lon": 120.961,
+    "lat": 23.749
+   },
+   {
+    "name": "hainan",
+    "type": "centroid",
+    "xy": [
+     183.55,
+     211.13
+    ],
+    "lon": 109.739,
+    "lat": 19.197
+   },
+   {
+    "name": "ras-al-hadd",
+    "type": "point",
+    "xy": [
+     78.22,
+     200.79
+    ],
+    "lon": 59.8,
+    "lat": 22.53
+   },
+   {
+    "name": "cape-lopatka",
+    "type": "point",
+    "xy": [
+     246.21,
+     131.58
+    ],
+    "lon": 156.67,
+    "lat": 50.87
+   },
+   {
+    "name": "sakhalin",
+    "type": "centroid",
+    "xy": [
+     228.39,
+     138.16
+    ],
+    "lon": 142.714,
+    "lat": 50.246
+   },
+   {
+    "name": "hokkaido",
+    "type": "centroid",
+    "xy": [
+     235.6,
+     152.84
+    ],
+    "lon": 142.566,
+    "lat": 43.375
+   }
+  ],
+  "notes": "해안선 경로 #2826 이 p23-growth #1558 과 꼭짓점 1:1 일치 → 닮음 변환(배율 0.768609)으로 기준점 이전. 자원 기호 6종(점 기호). centroid 기준점: 지도 위 섬 다각형(가장 큰 고리)의 면적 중심 ↔ Natural Earth 10m(world-atlas land-10m) 같은 섬의 구면 중심(d3.geoCentroid)."
+ },
+ {
+  "id": "p24-exports",
+  "page": 24,
+  "kind": "exports",
+  "title": "국가별 주요 수출품",
+  "bbox": [
+   34,
+   318,
+   253,
+   490
+  ],
+  "legendBbox": [
+   40,
+   437,
+   80,
+   484
+  ],
+  "scale": "0–1,000km",
+  "graticuleLabels": false,
+  "controls": [
+   {
+    "name": "kanyakumari",
+    "type": "point",
+    "xy": [
+     111.18,
+     447.24
+    ],
+    "lon": 77.54,
+    "lat": 8.08
+   },
+   {
+    "name": "sri-lanka",
+    "type": "centroid",
+    "xy": [
+     118.13,
+     448.4
+    ],
+    "lon": 80.706,
+    "lat": 7.608
+   },
+   {
+    "name": "taiwan",
+    "type": "centroid",
+    "xy": [
+     204.87,
+     412.06
+    ],
+    "lon": 120.961,
+    "lat": 23.749
+   },
+   {
+    "name": "hainan",
+    "type": "centroid",
+    "xy": [
+     182.0,
+     422.76
+    ],
+    "lon": 109.739,
+    "lat": 19.197
+   },
+   {
+    "name": "ras-al-hadd",
+    "type": "point",
+    "xy": [
+     77.84,
+     412.54
+    ],
+    "lon": 59.8,
+    "lat": 22.53
+   },
+   {
+    "name": "cape-lopatka",
+    "type": "point",
+    "xy": [
+     243.97,
+     344.11
+    ],
+    "lon": 156.67,
+    "lat": 50.87
+   },
+   {
+    "name": "sakhalin",
+    "type": "centroid",
+    "xy": [
+     226.34,
+     350.61
+    ],
+    "lon": 142.714,
+    "lat": 50.246
+   },
+   {
+    "name": "hokkaido",
+    "type": "centroid",
+    "xy": [
+     233.47,
+     365.13
+    ],
+    "lon": 142.566,
+    "lat": 43.375
+   }
+  ],
+  "notes": "해안선 경로 #3873 이 p23-growth #1558 과 1:1 일치 → 닮음 변환(배율 0.760046)으로 기준점 이전. 국가별 면 5종. centroid 기준점: 지도 위 섬 다각형(가장 큰 고리)의 면적 중심 ↔ Natural Earth 10m(world-atlas land-10m) 같은 섬의 구면 중심(d3.geoCentroid)."
+ },
+ {
+  "id": "p24-trade",
+  "page": 24,
+  "kind": "trade",
+  "title": "우리나라의 아시아 교역(주제도 활동)",
+  "bbox": [
+   158,
+   543,
+   496,
+   692
+  ],
+  "legendBbox": [
+   35,
+   618,
+   160,
+   688
+  ],
+  "scale": "0–3,000km",
+  "graticuleLabels": false,
+  "controls": [
+   {
+    "name": "madagascar",
+    "type": "centroid",
+    "xy": [
+     225.19,
+     651.97
+    ],
+    "lon": 46.742,
+    "lat": -19.321
+   },
+   {
+    "name": "iceland",
+    "type": "centroid",
+    "xy": [
+     167.51,
+     567.26
+    ],
+    "lon": -18.602,
+    "lat": 65.001
+   },
+   {
+    "name": "tasmania",
+    "type": "centroid",
+    "xy": [
+     313.4,
+     674.01
+    ],
+    "lon": 146.595,
+    "lat": -42.013
+   },
+   {
+    "name": "nz-south-island",
+    "type": "centroid",
+    "xy": [
+     334.42,
+     676.09
+    ],
+    "lon": 170.602,
+    "lat": -43.96
+   },
+   {
+    "name": "nz-north-island",
+    "type": "centroid",
+    "xy": [
+     338.94,
+     670.28
+    ],
+    "lon": 175.716,
+    "lat": -38.564
+   },
+   {
+    "name": "cuba",
+    "type": "centroid",
+    "xy": [
+     432.85,
+     615.38
+    ],
+    "lon": -78.926,
+    "lat": 21.628
+   },
+   {
+    "name": "sri-lanka",
+    "type": "centroid",
+    "xy": [
+     255.17,
+     627.89
+    ],
+    "lon": 80.706,
+    "lat": 7.608
+   },
+   {
+    "name": "new-caledonia",
+    "type": "centroid",
+    "xy": [
+     329.9,
+     653.69
+    ],
+    "lon": 165.482,
+    "lat": -21.325
+   }
+  ],
+  "notes": "태평양 중심 세계지도(점검 적합: 밀러 도법, 중심 경도 약 148E, rms 0.3pt). 적도 눈금 \"0˚\" 글자만 좌우 2개라 수동 기준점 사용. 범례·활동 글 상자가 지도 왼쪽(아프리카 서쪽)을 덮음. 흐름선(수출·수입) 벡터. centroid 기준점: 지도 위 섬 다각형(가장 큰 고리)의 면적 중심 ↔ Natural Earth 10m(world-atlas land-10m) 같은 섬의 구면 중심(d3.geoCentroid)."
+ },
+ {
+  "id": "p25-heritage",
+  "page": 25,
+  "kind": "heritage",
+  "title": "종교와 관련된 아시아의 세계 문화유산",
+  "bbox": [
+   327,
+   15,
+   508,
+   176
+  ],
+  "legendBbox": null,
+  "scale": "0–1,000km",
+  "graticuleLabels": false,
+  "controls": [
+   {
+    "name": "kanyakumari",
+    "type": "point",
+    "xy": [
+     392.28,
+     135.39
+    ],
+    "lon": 77.54,
+    "lat": 8.08
+   },
+   {
+    "name": "sri-lanka",
+    "type": "centroid",
+    "xy": [
+     397.83,
+     136.32
+    ],
+    "lon": 80.706,
+    "lat": 7.608
+   },
+   {
+    "name": "taiwan",
+    "type": "centroid",
+    "xy": [
+     467.12,
+     107.29
+    ],
+    "lon": 120.961,
+    "lat": 23.749
+   },
+   {
+    "name": "hainan",
+    "type": "centroid",
+    "xy": [
+     448.85,
+     115.84
+    ],
+    "lon": 109.739,
+    "lat": 19.197
+   },
+   {
+    "name": "ras-al-hadd",
+    "type": "point",
+    "xy": [
+     365.65,
+     107.67
+    ],
+    "lon": 59.8,
+    "lat": 22.53
+   },
+   {
+    "name": "cape-lopatka",
+    "type": "point",
+    "xy": [
+     498.36,
+     53.0
+    ],
+    "lon": 156.67,
+    "lat": 50.87
+   },
+   {
+    "name": "sakhalin",
+    "type": "centroid",
+    "xy": [
+     484.28,
+     58.2
+    ],
+    "lon": 142.714,
+    "lat": 50.246
+   },
+   {
+    "name": "hokkaido",
+    "type": "centroid",
+    "xy": [
+     489.97,
+     69.8
+    ],
+    "lon": 142.566,
+    "lat": 43.375
+   }
+  ],
+  "notes": "번호 원 마커 11개(01~11). 나라 면(인도 #33, 중국 #37, 러시아 #110 …)이 p23-growth 의 같은 나라 면과 꼭짓점 1:1 일치 → 닮음 변환(배율 0.607166)으로 기준점 이전. 범례 없음. centroid 기준점: 지도 위 섬 다각형(가장 큰 고리)의 면적 중심 ↔ Natural Earth 10m(world-atlas land-10m) 같은 섬의 구면 중심(d3.geoCentroid)."
+ }
+]
