@@ -787,3 +787,5 @@ export default function mount(root) {
 - `p22-kashmir`는 교과서 도형이 양식화돼 있어 경위도 맞추기가 불가능하다(오차 20pt 이상). 분쟁 지역 도형은 Natural Earth `ne_10m_admin_0_disputed_areas`·국경에서 가져오고, 교과서의 색·범례·이름만 쓴다. 지도에는 「위치: 실제 경계 자료」라고 표시한다.
 - `pdfkit.dec()`의 알려진 복원 오류: `·`→`h`, `℃`→`?`, `㎢`→`LN`, `『』`→`|…}`. 글 추출(C5) 전에 고친다.
 - 경위도 기호는 `°`와 `˚`(U+02DA)를 모두 인식한다.
+- georef CLI는 `scripts/atlas/georef-cli.mjs`다(`--all`, `--verify <id|all>`). 라이브러리 `georef.mjs`는 `fitControls/applyFit/invertFit/fitWithTps/makeConverter/inControlHull/robustFit`을 내보낸다. 대량 변환에는 `makeConverter(fit)`를 쓰고, `null`(변환 실패·수렴 실패)을 처리한다. TPS 보정은 기준점 볼록 껍질 밖에서 0으로 줄어든다. 작업 폴더는 env `ATLAS_WORK`(기본 `C:/Users/Public/atlas-work`)이고, 경위도 맞추기 제외 지도는 maps_u2.json의 `"georef": false`로 표시한다.
+- JS 테스트 명령은 `node --test "tests/**/*.test.mjs"`(`npm test`가 Python과 함께 실행한다).
