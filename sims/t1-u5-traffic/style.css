@@ -1,0 +1,57 @@
+/* © 2026 김용현 */
+/* t1-u5-traffic 전용 모양 — 모두 .ds-sim 아래 클래스 선택자만 쓴다(EMBED_RULES) */
+.ds-sim .tr-stage { background: #e6e8e2; touch-action: none; cursor: grab; }
+.ds-sim .tr-stage.tr-dragging { cursor: grabbing; }
+.ds-sim .tr-canvas { position: absolute; left: 0; top: 0; display: block; }
+.ds-sim .tr-cars { pointer-events: none; }
+
+.ds-sim .tr-clock {
+  position: absolute; left: 16px; top: 16px; display: flex; flex-direction: column;
+  background: rgba(255,255,255,.92); border: 1px solid var(--line, #e2e0d9); border-radius: 12px;
+  padding: 8px 14px 9px; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06); pointer-events: none;
+}
+.ds-sim .tr-clock-time { font-size: 34px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.5px; }
+.ds-sim .tr-clock-tag { font-size: 13px; color: var(--ink-2, #5b636d); min-height: 1.4em; }
+
+.ds-sim .tr-tools { position: absolute; right: 16px; top: 16px; display: flex; flex-direction: column; gap: 6px; }
+.ds-sim .tr-tool {
+  width: 36px; height: 36px; display: grid; place-items: center; border-radius: 8px; padding: 0;
+  border: 1px solid var(--line, #e2e0d9); background: rgba(255,255,255,.95); color: var(--ink, #1d2126); cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
+}
+.ds-sim .tr-tool:hover { background: #f1f0eb; }
+.ds-sim .tr-icon { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.ds-sim .tr-legend {
+  position: absolute; left: 16px; bottom: 16px; width: 220px; background: rgba(255,255,255,.92);
+  border: 1px solid var(--line, #e2e0d9); border-radius: 12px; padding: 10px 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
+  font-size: 12px; color: var(--ink-2, #5b636d); pointer-events: none;
+}
+.ds-sim .tr-lg-title { font-weight: 700; color: var(--ink, #1d2126); margin-bottom: 6px; }
+.ds-sim .tr-lg-bar { height: 10px; border-radius: 3px; }
+.ds-sim .tr-lg-ticks, .ds-sim .tr-lg-words { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; margin-top: 3px; }
+.ds-sim .tr-lg-words { color: var(--ink, #1d2126); }
+
+.ds-sim .tr-time-row { display: flex; gap: 10px; align-items: center; }
+.ds-sim .tr-play { flex: none; width: 40px; height: 36px; padding: 0; }
+.ds-sim .tr-range { flex: 1; min-width: 0; }
+
+.ds-sim .tr-box { display: flex; flex-direction: column; gap: 6px; }
+.ds-sim .tr-chart { width: 100%; max-width: 380px; height: auto; display: block; }
+.ds-sim .tr-hint { margin: 0; font-size: 12.5px; color: var(--ink-2, #5b636d); }
+.ds-sim .tr-link-name { font-weight: 700; font-size: 15px; }
+.ds-sim .tr-link-sub { font-size: 12.5px; color: var(--ink-2, #5b636d); margin-bottom: 4px; }
+.ds-sim .tr-check { display: flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; }
+.ds-sim .tr-checkbox { accent-color: var(--accent, #1f6feb); width: 16px; height: 16px; margin: 0; }
+.ds-sim .tr-note { display: flex; flex-direction: column; gap: 6px; }
+
+@media (max-width: 820px) {
+  .ds-sim .tr-clock { left: 10px; top: 10px; padding: 6px 10px; }
+  .ds-sim .tr-clock-time { font-size: 24px; }
+  .ds-sim .tr-tools { right: 10px; top: 10px; }
+  .ds-sim .tr-legend { left: 10px; bottom: 10px; width: 180px; padding: 8px 10px; }
+}
+.ds-sim .tr-note-p { margin: 0; }
+.ds-sim .tr-strong { color: var(--ink); }
+.ds-sim .tr-box[hidden] { display: none; }

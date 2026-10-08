@@ -1,0 +1,38 @@
+/* 하천 직강화와 범람 — 이 자료만의 꾸밈. 모든 선택자는 .ds-sim 아래 (빌드 때 .ds-t1-u5-channelization 으로 바뀜) */
+.ds-sim .ch-stage { background: #dfe7ec; }
+.ds-sim .ch-ov { position: absolute; pointer-events: none; overflow: hidden; }
+.ds-sim .ch-tag { position: absolute; left: 10px; top: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: rgba(255,255,255,.92); border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; font-size: 14px; font-weight: 700; box-shadow: var(--shadow); }
+.ds-sim .ch-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.ds-sim .ch-dot-s { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.ds-sim .ch-dot-b { background: #2f9e44; }
+.ds-sim .ch-dot-a { background: #e8590c; }
+.ds-sim .ch-tag-sub { font-weight: 500; color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; }
+.ds-sim .ch-flood { display: none; background: #c92a2a; color: #fff; border-radius: 6px; padding: 1px 7px; font-size: 12px; }
+.ds-sim .ch-flood.ch-on { display: inline-block; }
+.ds-sim .ch-lbl { position: absolute; transform: translate(-50%, -100%); font-size: 12px; font-weight: 600; color: var(--ink);
+  background: rgba(255,255,255,.82); border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
+.ds-sim .ch-lbl::after { content: ''; position: absolute; left: 50%; bottom: -5px; width: 1px; height: 5px; background: rgba(29,33,38,.55); }
+.ds-sim .ch-divider { position: absolute; background: rgba(255,255,255,.95); pointer-events: none; }
+.ds-sim .ch-clock { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); pointer-events: none;
+  background: rgba(29,33,38,.82); color: #fff; border-radius: 999px; padding: 6px 14px; font-size: 13px; white-space: nowrap;
+  font-variant-numeric: tabular-nums; display: flex; gap: 12px; align-items: center; }
+.ds-sim .ch-rain { display: inline-flex; gap: 6px; align-items: center; }
+.ds-sim .ch-q { font-weight: 700; }
+.ds-sim .ch-bar { width: 64px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.25); overflow: hidden; display: inline-block; }
+.ds-sim .ch-bar-fill { display: block; height: 100%; width: 0; background: #74c0fc; }
+.ds-sim .ch-fallback { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--ink-2); }
+
+.ds-sim .ch-h2 { margin-bottom: 8px; }
+.ds-sim .ch-cmp { display: grid; grid-template-columns: 1fr auto auto; gap: 5px 10px; font-size: 13.5px; align-items: baseline; }
+.ds-sim .ch-colh { font-size: 12px; color: var(--ink-2); font-weight: 700; text-align: right; display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
+.ds-sim .ch-k { color: var(--ink-2); }
+.ds-sim .ch-v { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; min-width: 64px; }
+.ds-sim .ch-v.ch-bad { color: #c92a2a; }
+.ds-sim .ch-v.ch-ok { color: #2b8a3e; }
+.ds-sim .ch-chart-wrap { border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 4px; }
+.ds-sim .ch-chart { display: block; width: 100%; height: auto; }
+.ds-sim .ch-cap { font-size: 12px; color: var(--ink-2); margin: 4px 2px 0; }
+.ds-sim .ch-em { color: var(--ink); font-weight: 700; }
+.ds-sim .ch-list { margin: 6px 0 0; padding-left: 18px; }
+.ds-sim .ch-li + .ch-li { margin-top: 3px; }

@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- © 2026 김용현 -->
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>선박 평형수와 외래 생물종</title>
+</head>
+<body style="margin:0">
+  <div class="ds-sim" id="root"></div>
+  <script type="module">
+    // 개발용 진입점(공통 빌드 방식이 정해지면 교체). ?step=3&p=0.6&case=1&treat=1&freeze=1&nb=1&inv=0.5 로 상태 고정 가능
+    import mount from './main.js';
+    const root = document.getElementById("root");
+    const q = new URLSearchParams(location.search);
+    const debug = {};
+    for (const k of ['case', 'step', 'p', 'treat', 'inv', 'pause', 'freeze', 'nb']) if (q.has(k)) debug[k] = q.get(k) === '' ? 1 : +q.get(k);
+    mount(root, { debug, expose: q.has('debug') ? (o) => { window.__ballast = o; } : null });
+  </script>
+</body>
+</html>

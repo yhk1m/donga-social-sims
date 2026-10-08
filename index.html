@@ -1,0 +1,45 @@
+<!-- © 2026 김용현 -->
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>사회과 인터랙티브 자료</title>
+  <style>
+    .hub { max-width: 960px; margin: 0 auto; padding: 32px 16px 64px; }
+    .hub h1 { font-size: 26px; margin: 0 0 4px; }
+    .hub > p { color: var(--ink-2); margin: 0 0 28px; }
+    .book { margin-bottom: 32px; }
+    .book h2 { font-size: 18px; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--ink); }
+    .unit h3 { font-size: 14px; color: var(--ink-2); margin: 16px 0 8px; font-weight: 600; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+    .card { display: block; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color .15s, transform .15s; }
+    .card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .card .t { font-weight: 700; }
+    .card .m { font-size: 13px; color: var(--ink-2); margin-top: 4px; display: flex; gap: 8px; }
+    .tag { font-size: 12px; padding: 1px 6px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); }
+  </style>
+</head>
+<body>
+  <main class="hub">
+    <h1>사회과 인터랙티브 자료</h1>
+    <p>동아출판 2022 개정 교과서 쪽별 자료</p>
+    <div id="list"></div>
+  </main>
+  <script type="module">
+    import './src/shared/theme.css';
+    import { BOOKS, SIMS } from './src/registry.js';
+    const list = document.getElementById('list');
+    for (const book of BOOKS) {
+      const sims = SIMS.filter((s) => s.book === book.id);
+      if (!sims.length) continue;
+      const units = [...new Set(sims.map((s) => s.unit))];
+      list.insertAdjacentHTML('beforeend', `<section class="book"><h2>${book.title}</h2>${units.map((u) => `
+        <div class="unit"><h3>${u}</h3><div class="cards">${sims.filter((s) => s.unit === u).map((s) => `
+          <a class="card" href="sims/${s.id}/"><div class="t">${s.title}</div>
+          <div class="m"><span class="tag">${s.kind}</span>${s.page ? `${s.page}쪽` : ''}</div></a>`).join('')}
+        </div></div>`).join('')}</section>`);
+    }
+  </script>
+</body>
+</html>

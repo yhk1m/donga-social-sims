@@ -1,0 +1,53 @@
+/* © 2026 김용현 */
+/* 위도별 태양 에너지 전용 스타일. 모든 선택자는 .ds-sim 으로 시작(빌드 때 .ds-s1-u1-sunlight 로 바뀜), 클래스만 사용 */
+.ds-sim { --sun-laser: #ffb020; --sun-space: #0e1621; }
+
+.ds-sim .sun-stage { background: radial-gradient(ellipse at 40% 45%, #1b2a3d 0%, var(--sun-space) 70%); }
+
+.ds-sim .sun-hint {
+  position: absolute; top: 12px; left: 12px; z-index: 3;
+  font-size: 12px; color: #c9d4e0; background: rgba(14, 22, 33, .6);
+  border: 1px solid rgba(255, 255, 255, .12); border-radius: 6px; padding: 4px 8px;
+  pointer-events: none;
+}
+
+.ds-sim .sun-label3d {
+  font-family: var(--font); font-size: 13px; font-weight: 600; color: #e8eef5;
+  background: rgba(14, 22, 33, .72); border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 6px; padding: 2px 7px; white-space: nowrap; pointer-events: none;
+}
+.ds-sim .sun-label3d-laser { color: var(--sun-laser); border-color: rgba(255, 176, 32, .45); }
+
+.ds-sim .sun-inset {
+  position: absolute; left: 12px; bottom: 12px; z-index: 3; margin: 0;
+  width: clamp(170px, 26%, 260px); box-sizing: border-box;
+  background: rgba(255, 255, 255, .95); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 8px 10px 6px;
+}
+.ds-sim .sun-inset[hidden] { display: none; }
+.ds-sim .sun-inset-cap { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.ds-sim .sun-inset-svg { display: block; width: 100%; height: auto; }
+
+.ds-sim .sun-stats { display: flex; flex-direction: column; gap: 8px; }
+.ds-sim .sun-stats[hidden] { display: none; }
+
+.ds-sim .sun-meter { height: 10px; border-radius: 5px; background: #efede6; overflow: hidden; margin-top: 4px; }
+.ds-sim .sun-meter-bar { display: block; height: 100%; width: 100%; background: var(--sun-laser); transition: width .15s; }
+
+.ds-sim .sun-fp { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+.ds-sim .sun-fp-svg { display: block; width: 96px; height: 96px; flex: none; background: #1f3f5f; border-radius: 8px; }
+.ds-sim .sun-fp-text { margin: 0; font-size: 13px; }
+.ds-sim .sun-muted { display: block; color: var(--ink-2); font-size: 12px; }
+
+.ds-sim .sun-cmp { border-collapse: collapse; font-size: 13px; width: 100%; font-variant-numeric: tabular-nums; }
+.ds-sim .sun-cmp-th, .ds-sim .sun-cmp-td { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: right; }
+.ds-sim .sun-cmp-th:first-child, .ds-sim .sun-cmp-td:first-child { text-align: left; }
+.ds-sim .sun-cmp-th { color: var(--ink-2); font-weight: 600; }
+.ds-sim .sun-cmp-td { font-weight: 700; }
+.ds-sim .sun-cmp-td:first-child { font-weight: 600; }
+
+.ds-sim .sun-range:disabled { opacity: .4; }
+.ds-sim .ds-seg-btn:disabled { opacity: .45; cursor: not-allowed; }
+.ds-sim .sun-inset-btn { align-self: stretch; }
+.ds-sim .sun-b { color: var(--ink); font-weight: 700; }
+.ds-sim .sun-note { margin: 0; }
