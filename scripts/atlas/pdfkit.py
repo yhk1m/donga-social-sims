@@ -77,8 +77,17 @@ def _glyph_char(u, gid, latin):
     return chr(u)
 
 
+def _hex(c):
+    """texttrace 색(0–1 실수, 회색 1개·RGB 3개·CMYK 4개) → '#rrggbb'."""
+    c = tuple(c or ())
+    if len(c) == 1: c = c * 3
+    elif len(c) == 4: c = tuple((1 - v) * (1 - c[3]) for v in c[:3])
+    elif len(c) != 3: return None
+    return '#%02x%02x%02x' % tuple(int(round(v * 255)) for v in c)
+
+
 def page_spans(pno, space_em=0.25, break_em=1.0):
-    """인쇄 쪽 번호 → [{text,size,font,bbox,dir}] (글자별 복원 적용).
+    """인쇄 쪽 번호 → [{text,size,font,color,bbox,dir}] (글자별 복원 적용). 순서는 쪽 내용 흐름(content stream) 순서.
     한 글자 묶음(texttrace) 안에서 글자 사이 빈칸이 space_em·크기보다 넓으면 공백을 넣고,
     break_em·크기보다 넓거나 줄이 바뀌면 조각을 나눈다. 보이지 않는 글자(type 3)는 뺀다."""
     out = []
@@ -107,7 +116,8 @@ def page_spans(pno, space_em=0.25, break_em=1.0):
                 elif gap > space_em * size and not cur['text'].endswith(' ') and ch != ' ':
                     cur['text'] += ' '
             if cur is None:
-                cur = {'text': '', 'size': round(size, 1), 'font': t['font'], 'bbox': list(bbox), 'dir': [round(dx, 3), round(dy, 3)]}
+                cur = {'text': '', 'size': round(size, 1), 'font': t['font'], 'color': _hex(t.get('color')), 'bbox': list(bbox),
+                       'dir': [round(dx, 3), round(dy, 3)]}
             if not (ch == ' ' and cur['text'].endswith(' ')): cur['text'] += ch
             b = cur['bbox']; cur['bbox'] = [min(b[0], bbox[0]), min(b[1], bbox[1]), max(b[2], bbox[2]), max(b[3], bbox[3])]
             prev = (origin, bbox)

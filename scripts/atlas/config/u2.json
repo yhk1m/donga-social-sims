@@ -77,5 +77,78 @@
                    ["오스트레일리아", [302.7, 655.1]], ["멕시코", [411.8, 614.2]]]}},
     "maskPxPerPt": 6.0, "hubRadiusPt": 6.0, "maxSnapPt": 1.0, "simplifyPt": 0.2,
     "widthWindow": [0.2, 0.5], "widthSkipEndPt": 3.0}}
+ },
+ "places": {
+  "_doc": "일반도 지명(Task C2). places.py(PDF → 지면 글자·기호, $ATLAS_WORK/text/places-<map>.json; --index → $ATLAS_WORK/tables/index.json) → build_places.mjs(경위도·중복 합치기·등급·찾아보기 대조 → <out>/places.json). 규칙은 16·18·19쪽 렌더와 글자 양식 표(글꼴·크기·색)를 보고 정했다. ignore 를 먼저 보고, 그다음 styles 에서 처음 맞는 것. 어디에도 안 맞는 글자는 경고로 남는다.",
+  "maps": ["p16-asia", "p18-east-asia", "p19-southeast-asia"],
+  "overview": "p16-asia",
+  "out": "places.json",
+  "index": {"pages": [105, 111], "out": "tables/index.json", "nameFont": "^YDVYGOStd33$", "refRe": "(\\d{2})([A-Z])(\\d{1,2})", "checkPages": [16, 19]},
+  "ignore": [
+   {"font": "^DINPro-Regular$", "color": "#231f20", "textRe": "^[0-9]{3,4}$", "elevation": true, "why": "산 높이(m) — 산 지명에 elev 로 붙임"},
+   {"font": "^DINPro", "why": "숫자·라틴 기호: 경위도 눈금, 찾기 격자(A~N, 1~10), 축척"},
+   {"font": "^(GodoM|GaramondPremrPro|YDVYGOStd34)", "why": "쪽 제목·단원 표시·쪽 번호"},
+   {"color": "#fff56d", "why": "쪽 제목"},
+   {"color": "#ffffff", "why": "축척 막대 글자"},
+   {"color": "#d71920", "why": "세계 유산 이름(지명이 아니라 유산; 기호는 별도)"},
+   {"color": "#6d6e71", "why": "철도 이름(18쪽)"},
+   {"font": "^YDVYGOStd3[23]$", "color": "#0072bc", "why": "유빙 한계(선 이름)"},
+   {"font": "^YDVYGOStd33$", "size": [5.6, 5.8], "why": "북극권·북회귀선·적도·날짜 변경선(선 이름)과 축척 쌍점"},
+   {"font": "^YDVYGOStd3[23]$", "size": [0, 5.5], "why": "범례 글자(육지 높이·바다 깊이·빙하)·한자 병기(東京)·도법 이름"},
+   {"font": "^YDVYMjOStd3[23]$", "color": "#231f20", "size": [0, 5.5], "why": "괄호 안 다른 이름 병기(쯔엉사 군도, 스프래틀리 군도, …)"},
+   {"font": "^YDVYMjOStd32$", "color": "#ed1064", "why": "나라 소속 표시((인), (러), (예멘))"}
+  ],
+  "styles": [
+   {"role": "country", "font": "^InterGTOTFB", "color": "#ed1064", "joinEm": 1.6, "_": "나라: 굵은 고딕 자홍(12.4~5.6pt)"},
+   {"role": "countryEn", "font": "^HelveticaNeue", "color": "#ed1064", "attachTo": ["country"], "maxDistEm": 3.0},
+   {"role": "cityEn", "font": "^HelveticaNeue", "color": "#231f20", "attachTo": ["city"], "attachSymbol": "capital", "maxDistEm": 3.0, "_": "수도 영문 이름"},
+   {"role": "waterEn", "font": "^TimesNewRoman", "color": "#0072bc", "attachTo": ["water"], "maxDistEm": 4.0, "_": "대양 영문 이름"},
+   {"role": "water", "font": "^YDVYMjOStd33$", "color": "#0072bc", "joinEm": 2.8, "_": "바다·만·해협·호수·하천: 파란 명조"},
+   {"role": "landform", "font": "^NanumMyeongjo", "color": "#231f20", "joinEm": 4.0, "_": "산맥·사막·평원·고원·지역: 굵은 명조(곡선 글자)"},
+   {"role": "land", "font": "^YDVYMjOStd3[23]$", "color": "#231f20", "joinEm": 2.2, "_": "섬·제도·반도·곶·만리장성: 검은 명조"},
+   {"role": "city", "font": "^YDVYGOStd32$", "color": "#231f20", "size": [5.6, 5.8], "joinEm": 0.4, "point": true, "_": "도시(작은 글자)·산 이름: 고딕"},
+   {"role": "city", "font": "^YDVYGOStd33$", "color": "#231f20", "size": [5.9, 7.3], "joinEm": 0.4, "point": true, "_": "큰 도시·수도: 굵은 고딕"}
+  ],
+  "exclude": [
+   {"re": "^\\(|^[^(]*\\)$|,$", "why": "괄호 안 병기(다른 이름·소속국 표시: (인), (러), (파라셀 군도, …)와 그 토막)"},
+   {"re": "^[:·.]$", "why": "기호 글자"}
+  ],
+  "kinds": {
+   "country": [["", "country"]],
+   "water": [["강$|강\\)$|천$|강\\(.*\\)$", "river"], ["", "sea"]],
+   "landform": [["산맥$|산지$|산$", "mountain"], ["사막$", "desert"], ["평원$|평야$|저지$|초원$|분지$|고원$|삼각주$", "plain"], ["", "region"]],
+   "land": [["반도$", "region"], ["곶$|장성$|기지$", "other"], ["", "island"]],
+   "city": [["", "city"]]
+  },
+  "altMaxEm": 2.0,
+  "_altMaxEm": "따로 놓인 괄호 병기((시짱 고원), (K2), (아모이))는 같은 역할이고 글자 상자 사이 거리가 altMaxEm·크기 안인 지명 중 중심이 가장 가까운 것의 alt(다른 이름)가 된다. (인)·(러) 같은 소속 표시는 뺀다.",
+  "kindBySymbol": {"capital": "capital", "mountain": "mountain"},
+  "_kinds": "kinds[role] = [[정규식, 종류], ...] 처음 맞는 것. 호수·해구·해협·만은 sea(물), 고원·분지는 plain(평탄 지형 묶음). city 역할은 짝지은 기호가 수도(붉은 사각·원)면 capital, 삼각형이면 mountain.",
+  "symbols": {
+   "sizeRange": [1.5, 6.6],
+   "concentricPt": 0.9,
+   "pairMaxEm": 2.4,
+   "mismatchPenaltyEm": 2.5,
+   "_pair": "점 지명 ↔ 기호는 (거리 + 어긋남 벌점) 작은 순 일대일. 어긋남 = 산 높이 숫자가 붙은 지명인데 기호가 삼각형이 아님(또는 그 반대). 거리 상한은 pairMaxEm·글자 크기.",
+   "elevMaxEm": 2.0,
+   "classes": [
+    {"cls": "capital", "fill": ["#ef4030"], "_": "수도: 붉은 사각(큰 나라)·붉은 원"},
+    {"cls": "mountain", "fill": ["#d71920", "#231f20"], "ops": "^l{3,4}$", "_": "산: 붉은·검은 삼각형"},
+    {"cls": "city", "fill": ["#ffffff"], "_": "큰 도시: 흰 사각·흰 이중 원"},
+    {"cls": "city", "fill": [null], "stroke": "#231f20", "ops": "^(c{4}|l{4}|r)$", "size": [1.6, 3.0], "_": "도시: 작은 원·사각 테두리"}
+   ]
+  },
+  "rankBySize": [[11.0, 1], [9.0, 2], [7.5, 3], [6.8, 4], [5.8, 5], [0, 6]],
+  "rankAdjust": {"capital": -1},
+  "regionalRankPenalty": 1,
+  "_rank": "rank = 개관도(16쪽) 글자 크기 단계(가장 큰 것 1) + rankAdjust[kind]. 16쪽에 없고 18·19쪽에만 있으면 그쪽 글자 크기 단계 + regionalRankPenalty(지역도는 축척이 커 같은 지명도 글자가 커서 16쪽과 비교할 수 없음).",
+  "dedupKm": {"point": 60, "pointNoSymbol": 150, "area": 20000},
+  "decimals": 2,
+  "leakRe": "^\\d|[˚°]|^[A-Z]{1,2}$|높이|깊이|^빙하$|^\\(|km$|도법|축척|북회귀선|북극권|^적도$|변경선|유빙",
+  "indexExclude": {},
+  "extraNames": {"이어도 종합 해양 과학 기지": "두 줄 지명인데 찾아보기에 없어(이어도만 우리나라 찾아보기) 묶기 판단에 더한다"},
+  "_areaPosition": "면·선 지명(나라·바다·산맥·하천·섬 등)은 같은 이름이면 거리와 상관없이(dedupKm.area) 하나로 합친다. 위치는 가장 큰 축척 지도의 글자(가장 자세한 위치)인데, 나라(overviewKinds)와 개관도 글자가 overviewMinSize pt 이상인 큰 지물(대양·큰 바다·큰 나라)은 개관도(16쪽) 글자를 쓴다 — 지역도 글자는 그 지도 창 안쪽에 치우쳐 있다(러시아·인도양). 점 지명(도시·수도·산 봉우리)은 가장 큰 축척 지도의 기호 위치.",
+  "overviewKinds": ["country"],
+  "overviewMinSize": 9.0
  }
 }

@@ -802,3 +802,13 @@ export default function mount(root) {
   - 아시아 범위(경도 20~160, 위도 −15~80) 밖 꼭짓점은 모두 실제 땅이다: 추코트카(180° 동쪽, 경도 −180~−164)·캄차카(160~180°E)·세베르나야제믈랴(80~81°N).
   - (C1 코드 정리) 레이어 설정은 `scripts/atlas/config/u2.json` 한 곳(`maps`가 maps_u2.json 을 가리킴): 지도·mode·tol·minArea·expectLegend·색 대응·교역 상대국 끝점·카슈미르 분류. 다음 단원은 config/uN.json 을 새로 쓴다(env `ATLAS_UNIT_CONFIG`). 흐름선 굵기 단계·단위는 범례에서 읽는다. Python 모듈: atlas_common(작업 폴더·설정·색·도형) / legend / zones / symbols / lines / features(진입점) / clip_land / kashmir.
   - 면 레이어는 분류들을 하나의 덮개로 다룬다: 육지 자르기 → 범례 순서 우선으로 겹침 제거 → `shapely.coverage_simplify`(shapely ≥ 2.1, 허용치 = tol × coverageTolFactor 1.8) → 0.001° 격자(set_precision) → 다른 분류와 안 겹치는 작은 구멍만 메움. 결과: 모든 면 유효, 분류 간 겹침 < 0.0001°². 선은 날짜변경선에서 MultiLineString 으로 나눈다. 원통 도법 지도(p24-trade)는 역변환 가능한 지면 범위(`<map>.domain.json`)로 먼저 잘라 꼭짓점을 잃지 않는다(실패 점 > 1% 또는 면 고리 점 손실이면 빌드 실패). 합계 약 615KB.
+- (C2) 지명 결정:
+  - 파이프라인: `python -I scripts/atlas/places.py`(지면 pt 지명·기호 → `$ATLAS_WORK/text/places-<map>.json`, 찾아보기 → `$ATLAS_WORK/tables/index.json`) → `node scripts/atlas/build_places.mjs [--extract] [--verify]`(경위도·합치기·등급 → `sims/atlas-u2-asia/data/places.json`, 검증 그림 `$ATLAS_WORK/shots/c2/<map>.png`). 규칙은 모두 `config/u2.json`의 `places`(역할별 글꼴·색·크기 표, 종류 접미 정규식, 기호 분류, 등급표, 합치기 거리).
+  - `pdfkit.page_spans`가 글자 색(`color`, '#rrggbb')도 돌려준다. 역할: 나라 = 굵은 고딕 자홍(#ed1064), 바다·하천 = 파란 명조(#0072bc), 지형 = 굵은 명조, 섬·반도 = 검은 명조, 도시·산 봉우리 = 고딕(5.7/7.1pt), 영문 = Helvetica(나라 자홍·수도 검정)·Times(대양).
+  - 곡선·자간 글자는 흐름 순서가 뒤섞여 있어(유프라테스강이 「강스테라프유」 순) 기하로 묶는다: 같은 양식 조각을 싼 연결부터 이웃 둘까지만 잇는 사슬(갈래·건너뛰기 금지), 읽는 방향은 글자 dir. 맞닿은 다른 지명(벨기에+독일)은 찾아보기로 나누고, 여러 줄 지명(고드윈/오스턴산, 보스니아/헤르체고비나)은 이은 이름이 찾아보기(또는 `extraNames`)에 있을 때만 잇는다.
+  - 점 지명 ↔ 기호는 글자 줄 방향으로 돌린 글자 상자의 붙는 자리(변 가운데·모서리)까지 거리 + 산 높이 숫자 ↔ 삼각형 어긋남 벌점으로, 덩어리마다 비용 합 최소 짝(탐욕은 선전·홍콩, 탈린·헬싱키를 맞바꿔 짝지었다). 수도 = 붉은 사각·원 기호.
+  - `places.json` 항목: `{name, lon, lat, rank, kind, size, page, symbol?, path?, angle?, en?, alt?, elev?, inIndex}`. 점 지명은 lon/lat = 기호 위치이고 `symbol`도 같은 값. 면·선 지명은 `path`(글자 줄 2~6점, 경위도)로 길이·방향·곡선을 주고, 지면 각도가 3° 이상이면 `angle`(지면 기준, 시계 방향 +). `alt` = 괄호 병기(양쯔강, K2), `elev` = 산 높이(m).
+  - 합치기: 점 지명은 같은 이름이 60km(기호 없는 쪽이 끼면 150km) 안, 면·선 지명은 같은 이름이면 하나. 위치 = 가장 큰 축척 지도(점은 기호 있는 것), 단 나라와 16쪽 글자 9pt 이상(대양·큰 바다)은 16쪽 위치. rank = 16쪽 글자 크기 단계(+수도 −1), 18·19쪽에만 있으면 그 단계 + 1. 지역도 글자 크기는 축척이 달라 16쪽과 비교하지 않는다.
+  - 찾아보기 16~19쪽 754줄은 모두 places 에 있다(누락 0, 제외 0). `inIndex` = 찾아보기에 16~19쪽 참조가 있는 지명. 세계 유산 이름·철도 이름·선 이름(북회귀선 등)·유빙 한계는 지명이 아니라 뺀다.
+  - 검증: Natural Earth 10m 인구 지점(`$ATLAS_WORK/raw/ne/ne_10m_populated_places.geojson`, NAME_KO 일치 249곳)과 도시 위치 중앙값 4.3km, 90% 12.5km, 최대 108km(18쪽 에르데네트 — 지도 가장자리, 기준점 껍질 밖). 테스트가 이 값을 지킨다(파일 없으면 건너뜀). 용량 약 127KB(상한 150KB).
+

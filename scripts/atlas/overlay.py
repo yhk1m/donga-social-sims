@@ -3,7 +3,9 @@
 #   python -I scripts/atlas/overlay.py <overlay.json>
 #   overlay.json: {page, bbox, dpi, out, title, lines:[[[x,y],...]], cps:[{xy, fit}],
 #                  areas?:[{color, polygons:[[ring,...],...], pattern?}], points?:[{xy, color}], paths?:[{points, color, width}]}
+#                  texts?:[{xy, text, color, anchor?}], fontPx?}
 #   (좌표는 모두 지면 pt)
+#   지명(build_places --verify): texts 가 있으면 한 칸 그림 — 옅게 깐 교과서 렌더 위에 기호 점·글자 줄(path)·이름.
 #   경위도 맞추기(georef-cli --verify): 해안선 = 자홍 선, 기준점 = 빨간 원, 맞춘 위치 = 초록 십자, 둘을 잇는 초록 선 = 잔차
 #   주제 레이어(build_layers --verify): areas 가 있으면 두 칸 그림 — 왼쪽 = 원본 위에 분류 경계(검은 선)·기호·선,
 #     오른쪽 = 레이어만 분류 색으로 칠한 그림(빗금 분류는 빗금). 두 칸이 같아 보이면 맞은 것.
@@ -21,14 +23,13 @@ def _rgb(h):
     return tuple(int(h[i:i + 2], 16) for i in (1, 3, 5))
 
 
-_fnt = None
-def _font():
-    global _fnt
-    if _fnt is None:
+_fnt = {}
+def _font(px=13):
+    if px not in _fnt:
         from PIL import ImageFont
-        try: _fnt = ImageFont.truetype(FONT_PATH, 13)
-        except OSError: _fnt = ImageFont.load_default()
-    return _fnt
+        try: _fnt[px] = ImageFont.truetype(FONT_PATH, px)
+        except OSError: _fnt[px] = ImageFont.load_default()
+    return _fnt[px]
 
 
 def _draw_layer(img, ov, P, outline_only):
@@ -56,13 +57,17 @@ def _draw_layer(img, ov, P, outline_only):
         pts = [P(p) for p in L['points']]
         # width 는 지면 pt(범례 선 굵기) → 화소. 교과서 선과 같은 굵기로 보여야 맞은 것
         if len(pts) > 1: d.line(pts, fill=_rgb(L['color']), width=max(1, int(round(L.get('width', 1) * ov['dpi'] / 72))), joint='curve')
-        if pts: d.ellipse([pts[-1][0] - 3, pts[-1][1] - 3, pts[-1][0] + 3, pts[-1][1] + 3], outline=_rgb(L['color']), width=2)
+        if pts and not L.get('noEnd'): d.ellipse([pts[-1][0] - 3, pts[-1][1] - 3, pts[-1][0] + 3, pts[-1][1] + 3], outline=_rgb(L['color']), width=2)
         if pts and L.get('label') and not outline_only:
             d.text((pts[0][0] + 3, pts[0][1] - 10) if L.get('labelAt') == 'start' else (pts[-1][0] + 4, pts[-1][1] - 10),
                    L['label'], fill=_rgb(L['color']), font=_font())
     for p in ov.get('points', []):
         x, y = P(p['xy'])
         d.ellipse([x - 4, y - 4, x + 4, y + 4], fill=_rgb(p['color']), outline=(0, 0, 0), width=1)
+    for t in ov.get('texts', []):
+        x, y = P(t['xy'])
+        d.text((x, y), t['text'], fill=_rgb(t['color']), font=_font(ov.get('fontPx', 13)), anchor=t.get('anchor', 'mm'),
+               stroke_width=2, stroke_fill=(255, 255, 255))
 
 
 def main(path):
@@ -95,6 +100,9 @@ def main(path):
         both = Image.new('RGB', (W * 2 + 6, H), (120, 120, 120))
         both.paste(im, (0, 0)); both.paste(right, (W + 6, 0))
         im = both; d = ImageDraw.Draw(im)
+    elif 'texts' in ov:  # 지명: 한 칸(교과서 렌더를 옅게 깔고 그 위에)
+        im = Image.blend(im, Image.new('RGB', im.size, (255, 255, 255)), 0.45)
+        _draw_layer(im, ov, P, False); d = ImageDraw.Draw(im)
     elif 'areas' in ov or 'points' in ov or 'paths' in ov:
         _draw_layer(im, ov, P, True)
         if ov.get('areas'):
