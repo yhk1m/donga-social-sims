@@ -75,9 +75,10 @@ test('보간 투영의 stream(geoPath)이 t=0·t=1 에서 양 끝 도법 경로�
   for (const c of [0, 150]) {
     const a = makeProjection('miller', { centerLon: c, width: 800, height: 500 });
     const b = makeProjection('robinson', { centerLon: c, width: 800, height: 500 });
-    const f = interpolateProjection(a, b);
-    close(geoPath(f(0))(poly), geoPath(a)(poly), `c=${c} t=0`);
-    close(geoPath(f(1))(poly), geoPath(b)(poly), `c=${c} t=1`);
+    const f = interpolateProjection(a, b, { precision: a.precision() });
+    // 양 끝(t=0·1)은 끝 도법 그대로라, 아주 가까운 t 로 보간 투영 자체의 stream 을 본다
+    close(geoPath(f(1e-9))(poly), geoPath(a)(poly), `c=${c} t≈0`);
+    close(geoPath(f(1 - 1e-9))(poly), geoPath(b)(poly), `c=${c} t≈1`);
     // 중간 경로의 첫 점 = 두 도법 첫 점의 가운데
     const [x, y] = nums(geoPath(f(0.5))(poly)), [xa, ya] = nums(geoPath(a)(poly)), [xb, yb] = nums(geoPath(b)(poly));
     assert.ok(Math.abs(x - (xa + xb) / 2) < 0.5 && Math.abs(y - (ya + yb) / 2) < 0.5, `c=${c} t=.5 ${x},${y}`);
@@ -98,12 +99,49 @@ test('보간 투영: 구드가 끼면 구드의 단속(preclip)을 씀', () => {
   assert.equal(interpolateProjection(b, a)(0.5).preclip(), a.preclip());
 });
 
-test('보간 투영: invert 는 t=0 에서 시작 도법 invert 와 같음', () => {
-  const a = makeProjection('robinson', { centerLon: 150, width: 800, height: 500 });
-  const b = makeProjection('equalEarth', { centerLon: 150, width: 800, height: 500 });
-  const f = interpolateProjection(a, b)(0);
-  const ll = f.invert(a([127, 37.5]));
-  assert.ok(Math.abs(ll[0] - 127) < 0.01 && Math.abs(ll[1] - 37.5) < 0.01, `${ll}`);
+test('보간 투영: 양 끝(t ≤ 0, t ≥ 1)은 끝 도법 자체를 돌려줌', () => {
+  const a = makeProjection('goode', { centerLon: 150, width: 800, height: 500 });
+  const b = makeProjection('robinson', { centerLon: 150, width: 800, height: 500 });
+  const f = interpolateProjection(a, b);
+  assert.equal(f(0), a); assert.equal(f(-0.2), a); assert.equal(f(1), b); assert.equal(f(1.5), b);
+});
+
+test('보간 투영: 두 끝의 중심 경도가 다르면 오류', () => {
+  const a = makeProjection('miller', { centerLon: 0, width: 800, height: 500 });
+  const b = makeProjection('robinson', { centerLon: 150, width: 800, height: 500 });
+  assert.throws(() => interpolateProjection(a, b), /중심 경도/);
+});
+
+test('보간 투영: precision 선택(움직이는 동안 기본 0.7)', () => {
+  const a = makeProjection('miller', { centerLon: 0, width: 800, height: 500 });
+  const b = makeProjection('robinson', { centerLon: 0, width: 800, height: 500 });
+  assert.ok(Math.abs(interpolateProjection(a, b)(0.5).precision() - 0.7) < 1e-9);
+  assert.ok(Math.abs(interpolateProjection(a, b, { precision: 0.2 })(0.5).precision() - 0.2) < 1e-9);
+});
+
+test('보간 투영: invert 는 정방향과 왕복하고, 지도 밖·구드 틈은 null', () => {
+  for (const c of [0, 150]) {
+    const a = makeProjection('robinson', { centerLon: c, width: 800, height: 500 });
+    const b = makeProjection('equalEarth', { centerLon: c, width: 800, height: 500 });
+    for (const t of [1e-9, 0.3, 0.7]) {
+      const f = interpolateProjection(a, b)(t);
+      for (const ll of [[127, 37.5], [c + 170, -60], [c - 100, 70]]) {
+        const back = f.invert(f(ll));
+        assert.ok(back && Math.abs(((back[0] - ll[0] + 540) % 360) - 180) < 1e-4 && Math.abs(back[1] - ll[1]) < 1e-4, `c=${c} t=${t} ${ll} → ${back}`);
+      }
+      assert.equal(f.invert([2, 2]), null, `c=${c} t=${t} 왼쪽 위 모서리는 지도 밖`);
+      assert.equal(f.invert([798, 498]), null, `c=${c} t=${t} 오른쪽 아래 모서리는 지도 밖`);
+    }
+  }
+  // 구드 남반구 단속(−20°) 틈 한가운데
+  const g = makeProjection('goode', { centerLon: 0, width: 800, height: 500 });
+  const r = makeProjection('robinson', { centerLon: 0, width: 800, height: 500 });
+  for (const t of [0.05, 0.3]) {
+    const f = interpolateProjection(g, r)(t);
+    const L = f([-20.001, -75]), R = f([-19.999, -75]);
+    assert.ok(R[0] - L[0] > 5, `틈 있음 ${L} ${R}`);
+    assert.equal(f.invert([(L[0] + R[0]) / 2, (L[1] + R[1]) / 2]), null, `t=${t} 틈`);
+  }
 });
 
 test('fitBoundsTransform: 범위를 화면(여백 안)에 꽉 맞추고 가운데에 둠', () => {
@@ -143,6 +181,33 @@ test('fitBoundsTransform: 구드 단속을 걸치는 범위도 화면 안', () =
     const [x, y] = p(ll), sx = t.k * x + t.x, sy = t.k * y + t.y;
     assert.ok(sx >= 9 && sx <= W - 9 && sy >= 9 && sy <= H - 9, `${ll} → ${sx},${sy}`);
   }
+});
+
+test('fitBoundsTransform: 360° 넘는 범위는 360° 로 자르고, 경도를 도법 이음매 창으로 옮겨도 같은 결과', () => {
+  const p = makeProjection('miller', { centerLon: 150, width: 1000, height: 600 });
+  const near = (s, t) => ['k', 'x', 'y'].every((q) => Math.abs(s[q] - t[q]) < 1e-6);
+  const wide = fitBoundsTransform(p, [[-200, -10], [300, 10]], 1000, 600, 10);
+  assert.ok(near(wide, fitBoundsTransform(p, [[-200, -10], [160, 10]], 1000, 600, 10)), JSON.stringify(wide));
+  assert.ok(near(fitBoundsTransform(p, [[380, 30], [400, 50]], 1000, 600, 10), fitBoundsTransform(p, [[20, 30], [40, 50]], 1000, 600, 10)));
+  assert.ok(near(fitBoundsTransform(p, [[-170, 50], [-150, 60]], 1000, 600, 10), fitBoundsTransform(p, [[190, 50], [210, 60]], 1000, 600, 10)));
+});
+
+test('fitBoundsTransform: 구드 단속선 양쪽 가장자리가 모두 화면 안(단속선이 범위 가운데)', () => {
+  const W = 1000, H = 600;
+  const p = makeProjection('goode', { centerLon: 0, width: W, height: H });
+  const t = fitBoundsTransform(p, [[-31, -60], [-11, -10]], W, H, 10);
+  for (const lat of [-60, -50, -35, -10]) {
+    for (const lon of [-20.0001, -19.9999]) {
+      const [x, y] = p([lon, lat]), sx = t.k * x + t.x, sy = t.k * y + t.y;
+      assert.ok(sx >= 9.9 && sx <= W - 9.9 && sy >= 9.9 && sy <= H - 9.9, `${lon},${lat} → ${sx},${sy}`);
+    }
+  }
+});
+
+test('fitBoundsTransform: 아무 점도 투영되지 않으면 화면 가운데 기준 minK', () => {
+  const none = () => null;
+  assert.deepEqual(fitBoundsTransform(none, [[0, 0], [10, 10]], 800, 500, 0), { k: 1, x: 0, y: 0 });
+  assert.deepEqual(fitBoundsTransform(none, [[0, 0], [10, 10]], 800, 500, 0, { minK: 2 }), { k: 2, x: -400, y: -250 });
 });
 
 test('fitBoundsTransform: k 는 [minK, maxK] 로 제한(기본 1~40)', () => {
