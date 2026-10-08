@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, statSync, existsSync } from 'node:fs';
-import { neCheck } from '../../scripts/atlas/build_places.mjs';
+import { neCheck, neIndex } from '../../scripts/atlas/build_places.mjs';
 
 const FILE = 'sims/atlas-u2-asia/data/places.json';
 const places = JSON.parse(readFileSync(FILE, 'utf8'));
@@ -94,7 +94,27 @@ test('도시·수도 위치가 Natural Earth 같은 이름 도시와 가깝다(�
   assert.ok(r && r.n > 200, `대조 ${r && r.n}곳`);
   assert.ok(r.median < 8, `중앙값 ${r.median}km`);
   assert.ok(r.p90 < 25, `90% ${r.p90}km`);
-  assert.ok(r.max < 150, `최대 ${r.max}km ${r.far.join(', ')}`);   // 지도 가장자리(18쪽 에르데네트 108km)
+});
+
+test('Natural Earth 짝이 하나뿐인 도시·수도는 30km 안(아니면 keepTextbookPosition 에 까닭)', { skip: !existsSync(NE) && 'Natural Earth 인구 지점 파일 없음' }, () => {
+  const ne = neIndex(NE), keep = cfg.keepTextbookPosition || {};
+  const count = new Map();
+  for (const p of places) if (p.symbol || ['city', 'capital'].includes(p.kind)) count.set(key(p.name), (count.get(key(p.name)) || 0) + 1);
+  const far = [];
+  for (const p of places) {
+    if (!['city', 'capital'].includes(p.kind)) continue;
+    const m = ne.get(key(p.name));
+    if (!m || m.length !== 1 || count.get(key(p.name)) !== 1) continue;
+    const d = km(p, { lon: m[0][0], lat: m[0][1] });
+    if (d > cfg.snapKm && !keep[p.name]) far.push(`${p.name} ${d.toFixed(0)}km`);
+  }
+  assert.deepEqual(far, []);
+  for (const [n, why] of Object.entries(keep)) assert.ok(typeof why === 'string' && why.length > 3, n);
+  for (const p of places.filter((q) => q.snapped)) {
+    assert.ok(p.snapped.km > cfg.snapKm && p.snapped.from.length === 2, p.name);
+    if (p.symbol) assert.deepEqual(p.symbol, [p.lon, p.lat], p.name);
+  }
+  assert.ok(!places.some((p) => p.snapped && p.path), '면·선 지명은 옮기지 않음');
 });
 
 test('places.json 은 150KB 이하', () => {

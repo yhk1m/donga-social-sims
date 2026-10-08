@@ -10,8 +10,10 @@
 //   4. 합치기: 같은 이름·같은 종류 묶음(수도·도시는 한 묶음)이 dedupKm(점 point / 그 밖 area) 안이면 하나로.
 //      위치 = 가장 큰 축척 지도(점은 기호 있는 것 우선, 나라·큰 지물은 개관도), rank = 개관도(overview) 글자 크기 단계 + rankAdjust,
 //      개관도에 없으면 지역도 단계 + regionalRankPenalty (1~6으로 자름). size·page 는 위치를 준 글자.
+//   4b. 옮겨 그린 기호 바로잡기(snapToNe): 바탕 지도가 실제 지리라, 교과서가 겹치지 않게 옮겨 그린 도시 기호(에르데네트·냐짱 등)는
+//      Natural Earth 위치로 옮기고 snapped: {from, km} 로 남긴다(설정 snapKm, keepTextbookPosition).
 //   5. inIndex = 찾아보기에 16~19쪽 참조가 있는 지명. 찾아보기의 16~19쪽 지명이 없으면(indexExclude 제외) 누락 목록을 출력.
-//   출력 항목: {name, lon, lat, rank, kind, size, page, symbol?: [lon,lat], path?: [[lon,lat]...], angle?, en?, alt?, elev?, inIndex}
+//   출력 항목: {name, lon, lat, rank, kind, size, page, symbol?: [lon,lat], path?: [[lon,lat]...], angle?, en?, alt?, elev?, snapped?, inIndex}
 //   --verify: 지명을 같은 fit 으로 지면에 되돌려 교과서 렌더와 겹친 그림 $ATLAS_WORK/shots/c2/<map>.png
 import fs from 'node:fs';
 import path from 'node:path';
@@ -132,6 +134,9 @@ function main(argv) {
     }
   }
   const places = merge(occ);
+  const ne = neIndex();
+  if (!ne) warnings.push(`Natural Earth 인구 지점 파일이 없어 옮겨 그린 기호 바로잡기(snapToNe)를 못 함: ${NE_FILE}`);
+  const snapped = ne ? snapToNe(places, ne) : [];
   const inIdx = new Set(mapRows.map((r) => key(r.name)));
   for (const p of places) p.inIndex = inIdx.has(key(p.name));
   places.sort((a, b) => a.rank - b.rank || b.size - a.size || a.name.localeCompare(b.name, 'ko'));
@@ -158,16 +163,21 @@ function main(argv) {
   for (const s of missing) console.log('  없음:', s);
   for (const s of otherPage) console.log('  다른 쪽에만:', s);
   console.log(`inIndex ${places.filter((p) => p.inIndex).length}/${places.length}`);
-  const ne = neCheck(places);
-  if (ne) console.log(`Natural Earth 대조: 도시·수도 ${ne.n}곳 중앙값 ${ne.median.toFixed(1)}km, 90% ${ne.p90.toFixed(1)}km, ` +
-    `최대 ${ne.max.toFixed(0)}km, 40km 넘음 ${ne.far.length}: ${ne.far.join(', ')}`);
+  console.log(`Natural Earth 위치로 옮김 ${snapped.length}곳 (${PC.snapKm}km 넘게 어긋난 점 지명, 이름이 하나뿐인 짝만):`);
+  for (const p of snapped) console.log(`  옮김: ${p.name}(${p.page}쪽 ${p.kind}) ${p.snapped.km}km  ${p.snapped.from} → ${p.lon},${p.lat}`);
+  const kept = Object.keys(PC.keepTextbookPosition || {});
+  if (kept.length) console.log(`교과서 위치 그대로 둠(keepTextbookPosition): ${kept.join(', ')}`);
+  const nec = neCheck(places);
+  if (nec) console.log(`Natural Earth 대조: 도시·수도 ${nec.n}곳 중앙값 ${nec.median.toFixed(1)}km, 90% ${nec.p90.toFixed(1)}km, ` +
+    `최대 ${nec.max.toFixed(0)}km, 40km 넘음 ${nec.far.length}: ${nec.far.join(', ')}`);
   for (const w of warnings) console.log('  경고:', w);
   if (flags.has('--verify')) for (const id of PC.maps) console.log('검증 그림', verify(id, places));
 }
 
-/** 도시·수도 위치를 Natural Earth 10m 인구 지점(NAME_KO 가 같은 것, 아시아 범위)과 견준다.
- *  → {n, median, p90, max, far: ['이름(쪽) 거리', ...]} (km). 파일이 없거나 맞는 이름이 없으면 null. */
-export function neCheck(places, file = `${WORK}/raw/ne/ne_10m_populated_places.geojson`, farKm = 40) {
+const NE_FILE = `${WORK}/raw/ne/ne_10m_populated_places.geojson`;
+
+/** Natural Earth 10m 인구 지점: NAME_KO 열쇠 → 아시아 범위(경도 ≥ 20, 위도 −15~82) 안 [lon, lat] 목록. 파일이 없으면 null. */
+export function neIndex(file = NE_FILE) {
   if (!fs.existsSync(file)) return null;
   const by = new Map();
   for (const f of JSON.parse(fs.readFileSync(file, 'utf8')).features) {
@@ -175,6 +185,35 @@ export function neCheck(places, file = `${WORK}/raw/ne/ne_10m_populated_places.g
     if (!k || lon < 20 || lat < -15 || lat > 82) continue;
     if (!by.has(k)) by.set(k, []); by.get(k).push([lon, lat]);
   }
+  return by;
+}
+
+/** 옮겨 그린 기호 바로잡기: 점 지명(도시·수도·산 봉우리) 중 Natural Earth 에 이름이 똑같은 지점이 하나뿐이고 places 에도 그 이름의
+ *  점 지명이 하나뿐인데 snapKm 넘게 어긋나면 lon/lat·symbol 을 Natural Earth 경위도로 바꾸고 snapped: {from, km} 를 남긴다.
+ *  keepTextbookPosition 에 있는 이름은 그대로. 면·선 지명은 건드리지 않는다. 바꾼 지명 목록을 돌려준다. */
+export function snapToNe(places, ne, { snapKm = PC.snapKm, keep = PC.keepTextbookPosition || {} } = {}) {
+  const isPoint = (p) => !!p.symbol || ['city', 'capital'].includes(p.kind);
+  const count = new Map();
+  for (const p of places) if (isPoint(p)) count.set(key(p.name), (count.get(key(p.name)) || 0) + 1);
+  const out = [];
+  for (const p of places) {
+    const m = ne.get(key(p.name));
+    if (!isPoint(p) || !m || m.length !== 1 || count.get(key(p.name)) !== 1 || keep[p.name]) continue;
+    const d = km([p.lon, p.lat], m[0]);
+    if (d <= snapKm) continue;
+    p.snapped = { from: [p.lon, p.lat], km: Math.round(d) };
+    p.lon = round(m[0][0]); p.lat = round(m[0][1]);
+    if (p.symbol) p.symbol = [p.lon, p.lat];
+    out.push(p);
+  }
+  return out;
+}
+
+/** 도시·수도 위치를 Natural Earth 10m 인구 지점(NAME_KO 가 같은 것, 아시아 범위)과 견준다.
+ *  → {n, median, p90, max, far: ['이름(쪽) 거리', ...]} (km). 파일이 없거나 맞는 이름이 없으면 null. */
+export function neCheck(places, file = NE_FILE, farKm = 40) {
+  const by = neIndex(file);
+  if (!by) return null;
   const ds = [], far = [];
   for (const p of places) {
     if (!['city', 'capital'].includes(p.kind) || !by.has(key(p.name))) continue;
