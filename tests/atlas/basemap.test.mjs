@@ -80,3 +80,35 @@ test('도장: meta.inputsHash = 지금 입력(설정·Natural Earth·코드) 해
   const topo = readJson(FILE);
   assert.equal(topo.meta.inputsHash, stampHash(UNIT, 'basemap'));
 });
+
+test('원본 주소는 커밋 SHA 로 고정', () => {
+  assert.match(CFG.sourceUrl, /^https:\/\/raw\.githubusercontent\.com\/nvkelso\/natural-earth-vector\/[0-9a-f]{40}\/geojson\/$/);
+});
+
+test('받은 GeoJSON 검사: FeatureCollection·도형 수·필수 속성', async () => {
+  const { validateGeojson } = await import('../../scripts/atlas/build_basemap.mjs');
+  const ok = JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', properties: { ADM0_A3: 'KOR', NAME_KO: '대한민국' }, geometry: null }] });
+  assert.doesNotThrow(() => validateGeojson(ok, ['ADM0_A3', 'NAME_KO']));
+  assert.throws(() => validateGeojson('<html>404</html>', []), /JSON/);
+  assert.throws(() => validateGeojson('{"type":"Feature"}', []), /FeatureCollection/);
+  assert.throws(() => validateGeojson('{"type":"FeatureCollection","features":[]}', []), /도형이 없/);
+  assert.throws(() => validateGeojson(ok, ['scalerank']), /scalerank/);
+});
+
+test('받기: 시간 초과·실패는 다시 시도하고, 끝내 실패하면 오류', async () => {
+  const { fetchWithRetry } = await import('../../scripts/atlas/build_basemap.mjs');
+  let n = 0;
+  const flaky = async (url, { signal }) => {
+    assert.ok(signal, '시간 제한 signal');
+    n++;
+    if (n < 3) throw new Error('네트워크');
+    return { ok: true, status: 200, arrayBuffer: async () => new TextEncoder().encode('{}').buffer };
+  };
+  const buf = await fetchWithRetry('http://x', { tries: 3, timeoutMs: 1000, waitMs: 0, fetchImpl: flaky });
+  assert.equal(Buffer.from(buf).toString(), '{}');
+  assert.equal(n, 3);
+  let m = 0;
+  const bad = async () => { m++; return { ok: false, status: 500 }; };
+  await assert.rejects(fetchWithRetry('http://x', { tries: 2, timeoutMs: 1000, waitMs: 0, fetchImpl: bad }), /500/);
+  assert.equal(m, 2);
+});

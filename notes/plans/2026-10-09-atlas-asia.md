@@ -893,3 +893,9 @@ export default function mount(root) {
   - `lod.js`: `pickDetail(k, inUnit)`(k<2 → 110, k≥4 이고 단원 안 → 10a, 나머지 50), `inUnit([lon,lat], boxes)`(경도 ±360 감김), `detailObjects(level)` → TopoJSON 객체 이름(110 은 rivers·lakes null).
   - 지명 배치 `placeLabels(points, {width, height, measure, k, pad=2, symbolR=3, maxSpread=3, straightDeg=8})`: 입력은 화면 좌표 `xy`·`pathXY`(렌더러가 places 의 path 를 투영), 반환 항목 = 입력 + `{at, angle, boxes, bbox}`(+ 선·면 지명 `spacing`·`span`, 굽은 줄 `glyphs:[{ch, at, angle}]`). 각도는 화면 기준 시계 방향 +(SVG rotate). 선·면 지명은 줄 가운데에 놓고 줄이 길면 자간을 벌림(글자 폭의 3배까지), 글자마다 접선이 줄 방향과 8° 넘게 다르면 굽은 줄로 글자별 배치. 읽는 방향이 ±90° 를 넘으면 줄을 뒤집는다. 충돌은 글자 줄을 따라 놓은 표본 상자(글자 높이 크기)로 회전 글자를 어림하고, 보일 수 있는 기호 자리도 장애물로 먼저 넣는다(자기 기호 제외). 항목별 `minK`가 등급표보다 앞선다. places.json 880곳 실측(밀러, 1024×768): 세계 k1 16곳·아시아 k2.2 72곳·동아시아 k7.8 68곳·한반도 k23 53곳, 각 3ms 안.
   - `legendState.js`는 계획 그대로.
+- (D1·D2·D4·D6 코드 검토 반영)
+  - `interpolateProjection(a, b, {precision = 0.7})`: 두 끝 중심 경도가 다르면 오류, t ≤ 0 → a 자체, t ≥ 1 → b 자체(끝 지도에 보간 흔적·구드 이음매 없음). invert = 감쇠 뉴턴(한 걸음 최대 10°, 잔차가 늘면 걸음 반), 잔차 > `INVERT_TOL`(1e-3 px)이면 null(지도 밖·구드 틈·수렴 실패). 전환 프레임 정밀도 기본 0.7px(끝 도법은 0.2).
+  - `fitBoundsTransform`: 폭 360° 로 자름, 경도를 도법 이음매 창 [중심−180, 중심+180]에서 시작하도록 옮김, 구드는 단속선 양쪽(±1e-6°)·적도 표본을 더함, 아무 점도 투영 안 되면 화면 가운데 기준 minK 변환.
+  - `labels.js`: 기호 장애물도 격자 색인(자기 것 건너뜀), 정수 칸 열쇠(쓰레기 없음), `createMeasureCache(measure)`(렌더러가 한 번 만들어 계속 넘김), 빈 이름·점 하나짜리 줄은 재기 전에 건너뜀, 굽은 줄 글자 각도도 (−90°, 90°]로(U·S 자 줄), rank 없으면 6, 기호 간격 = symbolR + pad + 1, 출력에서 pathXY 뺌. 900개 배치 시간 검사(30ms 안, 실측 약 3ms).
+  - `legendState.js`: 모르는 분류 toggle 은 오류, 상태가 바뀔 때만 알림, 구독자 오류는 console.error 로 남기고 나머지에 계속 알림.
+  - `build_basemap.mjs`: 원본 주소를 natural-earth-vector 커밋 `ca96624a`(2022-06-02 master, 받아 둔 파일과 같음)로 고정, 받기는 60초 시간 제한·3번 시도·GeoJSON 검사(FeatureCollection·도형 수·필수 속성) 뒤 저장, mapshaper 는 `$ATLAS_WORK/tools/mapshaper_0.6.102`에 한 번 설치해 `node bin/mapshaper`로 셸 없이 실행. basemap.json 도형은 바이트까지 그대로(meta.inputsHash 만 바뀜).

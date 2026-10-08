@@ -2,7 +2,8 @@
 // scripts/atlas/build_basemap.mjs — Natural Earth → 바탕 지도 TopoJSON 하나(D2)
 //   node scripts/atlas/build_basemap.mjs [--force]
 //   설정: scripts/atlas/config/u2.json 의 basemap (out·mapshaper 버전·rawDir·sourceUrl·unitBoxes·quantization·maxBytes·levels)
-//   입력: $ATLAS_WORK/<rawDir>/<이름>.geojson — 없으면 sourceUrl(nvkelso/natural-earth-vector geojson/)에서 받는다.
+//   입력: $ATLAS_WORK/<rawDir>/<이름>.geojson — 없으면 sourceUrl(nvkelso/natural-earth-vector 커밋 고정 geojson/)에서 받는다
+//         (시간 제한·다시 시도, GeoJSON 검사 뒤 저장). mapshaper 는 $ATLAS_WORK/tools/ 에 한 번 설치해 node 로 바로 실행.
 //   단계(mapshaper, 작업 폴더 $ATLAS_WORK/basemap 에서 — 한글 경로에 대량 출력하지 않음):
 //     1. 상세도(level)마다 나라: [단원 상자로 자르기] → iso(ADM0_A3)·ko(NAME_KO) → 단순화(keep-shapes) → 녹여 육지(land, 같은 호 공유)
 //        하천·호수: [자르기] → scalerank ≤ maxRank → s(scalerank) → 단순화. 결과는 양자화 없는 TopoJSON 조각.
@@ -34,6 +35,36 @@ export function rawNames(levels) {
   return [...s];
 }
 
+/** 원본 파일 이름 → 필수 속성. */
+const requiredProps = (name) => (/admin_0_countries/.test(name) ? ['ADM0_A3', 'NAME_KO'] : ['scalerank']);
+
+/** 받은 글이 쓸 만한 GeoJSON 인지(FeatureCollection, 도형 1개 이상, 첫 도형에 필수 속성). 아니면 오류. */
+export function validateGeojson(text, required) {
+  let gj;
+  try { gj = JSON.parse(text); } catch { throw new Error('JSON 이 아님(오류 쪽을 받았을 수 있음)'); }
+  if (gj?.type !== 'FeatureCollection' || !Array.isArray(gj.features)) throw new Error(`FeatureCollection 이 아님: ${gj?.type}`);
+  if (!gj.features.length) throw new Error('도형이 없음');
+  const props = gj.features[0].properties || {};
+  for (const k of required) if (!(k in props)) throw new Error(`필수 속성 없음: ${k}`);
+  return gj.features.length;
+}
+
+/** fetch + 시간 제한(timeoutMs) + 다시 시도(tries, 사이 waitMs·2^n). 성공하면 ArrayBuffer. */
+export async function fetchWithRetry(url, { tries = 3, timeoutMs = 60000, waitMs = 1000, fetchImpl = fetch } = {}) {
+  let last;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const r = await fetchImpl(url, { signal: AbortSignal.timeout(timeoutMs) });
+      if (!r.ok) throw new Error(`HTTP ${r.status}: ${url}`);
+      return await r.arrayBuffer();
+    } catch (e) {
+      last = e;
+      if (i < tries - 1 && waitMs) await new Promise((res) => setTimeout(res, waitMs * 2 ** i));
+    }
+  }
+  throw new Error(`받기 실패(${tries}번): ${last?.message}`);
+}
+
 async function ensureRaw(cfg) {
   const dir = `${WORK}/${cfg.rawDir}`;
   fs.mkdirSync(dir, { recursive: true });
@@ -42,20 +73,39 @@ async function ensureRaw(cfg) {
     if (fs.existsSync(f)) continue;
     const url = `${cfg.sourceUrl}${name}.geojson`;
     console.log(`받기: ${url}`);
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(`받기 실패 ${r.status}: ${url}`);
-    fs.writeFileSync(`${f}.tmp`, Buffer.from(await r.arrayBuffer()));
+    const buf = Buffer.from(await fetchWithRetry(url));
+    const n = validateGeojson(buf.toString('utf8'), requiredProps(name));
+    console.log(`  도형 ${n}개`);
+    fs.writeFileSync(`${f}.tmp`, buf);
     fs.renameSync(`${f}.tmp`, f);
   }
 }
 
-/** mapshaper 실행(작업 폴더에서). 인자는 큰따옴표로 감싼다(Windows cmd 의 < > 공백 보호). */
+/** mapshaper 를 작업 폴더 tools/<버전> 에 한 번 설치하고 실행 파일(js) 경로를 돌려준다. 이후 node 로 바로 실행(셸·npx 없음). */
+let mapshaperBin = null;
+function resolveMapshaper(cfg) {
+  if (mapshaperBin) return mapshaperBin;
+  const [, version] = cfg.mapshaper.split('@');
+  const dir = `${WORK}/tools/${cfg.mapshaper.replace(/[^\w.-]/g, '_')}`;
+  const pkg = `${dir}/node_modules/mapshaper/package.json`;
+  if (!fs.existsSync(pkg) || JSON.parse(fs.readFileSync(pkg, 'utf8')).version !== version) {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log(`mapshaper 설치: ${cfg.mapshaper} → ${dir}`);
+    // npm 은 Windows 에서 .cmd 라 셸이 필요하다 → 한 줄 명령(작업 폴더·버전 글자는 ASCII 라 따옴표로 충분)
+    const cmd = `npm install --prefix "${dir}" --no-save --no-audit --no-fund ${cfg.mapshaper}`;
+    if (!/^[\w@.-]+$/.test(cfg.mapshaper) || /"/.test(dir)) throw new Error(`mapshaper 버전·작업 폴더 글자 확인: ${cfg.mapshaper} ${dir}`);
+    const r = spawnSync(cmd, { encoding: 'utf8', shell: true, maxBuffer: 1 << 26 });
+    if (r.status !== 0) throw new Error(`mapshaper 설치 실패: ${r.stderr || r.stdout}`);
+  }
+  mapshaperBin = `${dir}/node_modules/mapshaper/bin/mapshaper`;
+  if (!fs.existsSync(mapshaperBin)) throw new Error(`mapshaper 실행 파일 없음: ${mapshaperBin}`);
+  return mapshaperBin;
+}
+
+/** mapshaper 실행(작업 폴더에서, 셸 없이 인자 그대로). */
 function mapshaper(cfg, cwd, args) {
-  const win = process.platform === 'win32';
-  const q = (a) => (/^[\w.,=%/:-]+$/.test(a) ? a : `"${a}"`);
-  const cmd = [win ? 'npx.cmd' : 'npx', '-y', cfg.mapshaper, ...args].map(q).join(' ');
-  const r = spawnSync(cmd, { cwd, shell: true, encoding: 'utf8', maxBuffer: 1 << 26 });
-  if (r.status !== 0) throw new Error(`mapshaper 실패(${r.status}): ${cmd}\n${r.stderr || r.stdout}`);
+  const r = spawnSync(process.execPath, [resolveMapshaper(cfg), ...args], { cwd, encoding: 'utf8', maxBuffer: 1 << 26 });
+  if (r.status !== 0) throw new Error(`mapshaper 실패(${r.status}): ${args.join(' ')}\n${r.stderr || r.stdout}`);
   return r.stderr + r.stdout;
 }
 
