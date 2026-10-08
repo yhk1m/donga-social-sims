@@ -848,3 +848,11 @@ export default function mount(root) {
   - 원·고리: 바깥 호(이어진 곡선 마디)로 원을 맞춰 쓸어 간 각 = 값 %. 부채꼴은 짧은 호 하나로 맞춘 중심이 흔들려(19.8 ↔ 19.4) 곧은 변 꼭짓점을 중심으로 쓴다(19.44). 고리 막대 계열 = 고리 12시 띠 높이에 놓인 범례 글자.
   - 교과서 원문 문제(인쇄된 그대로 둠, 설정 notes): 24쪽 「특허 등록」 막대가 신발 수출 비율을 그대로 옮긴 것으로 보임(중국 36.9 = 35.3 + 홍콩 1.6, 나머지 칸 같음, 합계 146 ↔ 146,339). 「통신 기기 수출」 아랍 에미리트(4.3)·네덜란드(3.6) 칸 너비가 서로 바뀐 듯 0.7~0.8%p 어긋남(p24-exports warnDiff 1.0, `_warnDiff`). 카타르 외국인 국적 띠는 칸 높이가 값에 비례하지 않아(최대 5.6%p) 인쇄값만 쓴다(`toScale: false`, 합 80.6 = 원그래프 외국인 검증). 97쪽 표에 테헤란이 없어 테헤란 기후 그래프는 잰 값(기온 ±0.22℃, 강수 ±1.1mm)만.
   - 97쪽 표: 41곳(왼쪽 21 + 오른쪽 20), 열 = 머리줄 흰 「n월」 가운데, 수 줄 ↔ 도시 이름 줄(기온)·나라 줄(강수, 글자색으로 다시 확인). 강조 칸(최저·최고)은 쪽 흐름 뒤쪽에 따로 있어 위치로만 모은다. 연 강수량 = 월 합, 연평균 ≈ 월 평균(0.6℃) 모두 맞음. 경위도·고도는 표에 없어 넣지 않는다.
+- (C4 검토 반영) 축·색·원호·띠·출력:
+  - 축 잔차 문: `charts_axes.fit_axis_checked` — 눈금 글자 3개 미만이면 경고, 잔차가 `charts.defaults.axisResidTol`(0.6pt)을 넘으면 가장 어긋난 글자 하나를 빼고 다시 맞추고(`axes.*.dropped`), 그래도 넘으면 경고. 선형 축인데 로그로 맞추면 잔차가 4배 넘게 작으면 「axisScale log」를 알린다(값 축은 `axisScale` 'linear'·'log'). 위치 순으로 값이 오르내리거나 같은 자리에 다른 값·기울기 0 이면 ValueError. 지금 17개 그래프 모두 뺀 글자 없음.
+  - 색: `atlas_common.color_match(c, targets, de)`(Lab ΔE) — 채움·선·글자 색 맞추기는 모두 이것을 거친다(`defaults.colorDE`, 기본 0 = 같은 색만). 도형 item 의 color = 맞춘 목표 색, rawColor = 실제 색.
+  - 원호: 고리 막대는 고리마다 12시(`startTolDeg` 2°)에서 `direction`(기본 cw)으로 그렸는지 확인한다. 부채꼴은 각 합이 100 인지(check.measuredSum). 원호 없는 채움은 경고하고 잰 값 null.
+  - 띠 칸: `bar_segments` → (칸, {dropped, gaps}). 덮여 버린 칸은 `check.droppedSegments`로 보고(희토류 끝 회색 2칸, 95%·100% 덮임), 칸 사이·축 끝과의 틈이 `maxGapPt`(0.5pt)를 넘으면 잇지 않고 `check.gaps` + 경고(지금 0). 축 끝 맞춤 거리는 `EDGE_SNAP_PT`.
+  - 출력: 경로는 `charts.out`(climate·charts·sheets, 작업 폴더 기준), 읽개 기본값은 `charts.defaults`(colorDE·numberFont·axisResidTol·axisScale·maxGapPt·snapTol·startTolDeg·endTolPt). 경고가 하나라도 있으면 JSON 을 쓰지 않는다(`--force`로만 씀, 종료 코드는 1). 쓰기는 임시 파일 → os.replace. 경고는 중복 없이. 대조표는 뽑은 결과·chart_sheets.py·설정보다 오래됐을 때(또는 다시 뽑았을 때) 다시 그린다. 낡은 산출물 검사 입력에 chart_sheets.py·charts_labels.py 도 든다.
+  - 잰 값의 소수 자리 = 정밀도의 한 자리 아래, 그 그래프에 인쇄된 수의 소수 자리 + 1 을 넘지 않는다(눈금이 정수인 선·피라미드는 소수 1, 띠·원은 2, 기후 그래프는 부록 표 자리 + 1 = 2). 피라미드 합은 반올림 전 값으로.
+  - 모듈: 글자 도우미(상자 글·줄 묶기·이름 ↔ 수 짝·상자 거리)는 `charts_labels.py`로 나눔. 세계 인구 대조표의 쌓는 순서는 설정 `sheetStackOrder`. 같은 입력으로 두 번 뽑으면 charts-u2.json 이 바이트까지 같다(테스트).

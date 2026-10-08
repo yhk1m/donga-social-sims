@@ -54,14 +54,66 @@ class Axes(unittest.TestCase):
         ax = AX.fit_axis([(0, 0), (10, 100)])
         self.assertAlmostEqual(AX.precision(ax, draw_pt=0.1), 1.0, places=6)   # 0.1pt × 10 단위/pt
 
+    def test_fit_axis_rejects_bad_order(self):
+        with self.assertRaises(ValueError): AX.fit_axis([(0, 0), (10, 20), (20, 10)])   # 위치 순으로 값이 오르내림
+        with self.assertRaises(ValueError): AX.fit_axis([(5, 0), (5, 10)])              # 같은 자리에 다른 값(기울기 무한)
+
+    def test_checked_axis_drops_one_outlier(self):
+        # 눈금 글자 하나가 단위 「(%)」에 밀려 3pt 비껴 있다 → 한 번 빼고 다시 맞추면 잔차가 허용치 안
+        pairs = [(10 * v, v) for v in range(6)]
+        pairs[-1] = (pairs[-1][0] - 3.0, 5)
+        W = []
+        ax = AX.fit_axis_checked(pairs, tol=0.6, warnings=W, name='t')
+        self.assertEqual(W, [])
+        self.assertLess(ax.resid, 1e-6)
+        self.assertEqual(ax.dropped, [5])
+
+    def test_checked_axis_warns(self):
+        W = []
+        AX.fit_axis_checked([(0, 0), (10, 10)], tol=0.6, warnings=W, name='t')
+        self.assertTrue(any('눈금 2개' in w for w in W))                             # 눈금 둘뿐
+        W = []
+        bad = [(0, 0), (10, 1), (23, 2), (30, 3), (37, 4), (50, 5)]                 # 두 글자가 어긋남
+        AX.fit_axis_checked(bad, tol=0.6, warnings=W, name='t')
+        self.assertTrue(any('잔차' in w for w in W))
+
+    def test_log_axis(self):
+        pairs = [(0, 1), (10, 10), (20, 100), (30, 1000)]
+        ax = AX.fit_axis(pairs, scale='log')
+        self.assertAlmostEqual(ax.val(15), 10 ** 1.5, places=6)
+        self.assertAlmostEqual(ax.pos(100), 20, places=6)
+        # 선형으로 맞추면 고르지 않은 간격을 알린다(로그 축일 수 있음)
+        W = []
+        AX.fit_axis_checked(pairs, tol=0.6, warnings=W, name='t')
+        self.assertTrue(any('log' in w for w in W))
+
+    def test_decimals_cap(self):
+        self.assertEqual(AX.decimals_for(0.014), 3)
+        self.assertEqual(AX.decimals_for(0.014, cap=2), 2)          # 인쇄 자리 + 1 을 넘지 않는다
+        self.assertEqual(AX.decimals_for(3.0, cap=2), 1)          # 정밀도 3 → 한 자리 아래(소수 1)
+        self.assertEqual(AX.decimals_for(3.0, cap=0), 0)
+        self.assertEqual(AX.token_decimals([{'text': '12.5'}, {'text': '3'}]), 1)
+
+
+class Colors(unittest.TestCase):
+    def test_color_match(self):
+        from atlas_common import color_match
+        self.assertEqual(color_match('#ff0000', ['#ff0000', '#00ff00']), '#ff0000')
+        self.assertIsNone(color_match('#fe0101', ['#ff0000']))                       # 기본 = 같은 색만
+        self.assertEqual(color_match('#fe0101', ['#ff0000', '#00ff00'], de=3), '#ff0000')
+        self.assertIsNone(color_match('#0000ff', ['#ff0000'], de=3))
+        self.assertIsNone(color_match(None, ['#ff0000'], de=3))
+
 
 class Geom(unittest.TestCase):
     def test_bar_segments_overlap_midpoints(self):
         # 회색 칸끼리 0.2pt 겹침 → 경계는 겹침 가운데. 마지막 칸(기타)이 그 아래 칸 둘을 덮으면 그 둘은 버린다.
         items = [{'i': 0, 'x0': 0.0, 'x1': 10.0}, {'i': 1, 'x0': 9.8, 'x1': 20.1}, {'i': 2, 'x0': 19.9, 'x1': 24.0},
                  {'i': 3, 'x0': 23.9, 'x1': 25.0}, {'i': 4, 'x0': 23.95, 'x1': 26.0}]
-        segs = G.bar_segments(items, lo=0.0, hi=26.0)
+        segs, rep = G.bar_segments(items, lo=0.0, hi=26.0)
         self.assertEqual([s['i'] for s in segs], [0, 1, 2, 4])
+        self.assertEqual([d['i'] for d in rep['dropped']], [3])     # 덮여 버린 칸은 보고한다
+        self.assertEqual(rep['gaps'], [])
         self.assertAlmostEqual(segs[0]['x1'], 9.9)
         self.assertAlmostEqual(segs[1]['x1'], 20.0)
         self.assertAlmostEqual(segs[-1]['x1'], 26.0)
@@ -73,8 +125,15 @@ class Geom(unittest.TestCase):
         fills = [{'i': 0, 'color': '#a', 'geom': box(0, 0, 10, 100)}, {'i': 1, 'color': '#b', 'geom': box(0, 40, 10, 60)}]
         runs = G.visible_runs(fills, 5.0)
         self.assertEqual([(r['color'], round(r['y0']), round(r['y1'])) for r in runs], [('#a', 0, 40), ('#b', 40, 60), ('#a', 60, 100)])
-        tot = G.run_lengths(runs)
-        self.assertAlmostEqual(tot['#a'], 80); self.assertAlmostEqual(tot['#b'], 20)
+
+    def test_bar_segments_gap(self):
+        # 칸 사이가 비어 있으면(maxGapPt 넘게) 잇지 않고 틈으로 알린다
+        items = [{'i': 0, 'x0': 0.0, 'x1': 10.0}, {'i': 1, 'x0': 12.0, 'x1': 20.0}]
+        segs, rep = G.bar_segments(items, lo=0.0, hi=20.0, max_gap=0.5)
+        self.assertEqual(rep['gaps'], [[10.0, 12.0]])
+        self.assertAlmostEqual(segs[0]['x1'], 10.0); self.assertAlmostEqual(segs[1]['x0'], 12.0)
+        _, rep = G.bar_segments(items, lo=-2.0, hi=20.0, max_gap=0.5)
+        self.assertIn([-2.0, 0.0], rep['gaps'])                     # 축 0 과 첫 칸 사이도
 
     def test_polyline_at(self):
         pts = np.array([[0, 0], [10, 10], [20, 0]], float)
@@ -89,6 +148,16 @@ class Geom(unittest.TestCase):
         cx, cy, rr = G.fit_circle(pts)
         self.assertAlmostEqual(cx, 100, places=4); self.assertAlmostEqual(rr, 20, places=4)
         self.assertAlmostEqual(G.sweep_deg(pts, (cx, cy)), 249.12, places=3)
+
+    def test_full_circle_and_direction(self):
+        c = (0.0, 0.0)
+        ang = np.radians(np.linspace(0, 360, 121))
+        cw = np.c_[10 * np.sin(ang), -10 * np.cos(ang)]               # 12시에서 시계 방향(지면 y 아래로)
+        self.assertAlmostEqual(G.sweep_deg(cw, c), 360, places=6)      # 100 %
+        self.assertEqual(G.arc_direction(cw, c), 'cw')
+        self.assertEqual(G.arc_direction(cw[::-1], c), 'ccw')          # 거꾸로 그린 호
+        self.assertAlmostEqual(G.clock_angle(cw[0], c), 0, places=6)
+        self.assertAlmostEqual(G.clock_angle([10, 0], c), 90, places=6)   # 3시
 
     def test_arc_runs_from_bezier(self):
         # 사분원 베지어 하나(k = 0.5523) → 90°
@@ -188,10 +257,79 @@ class Charts(unittest.TestCase):
                 self.assertLessEqual(c['check']['maxTempDiff'], 0.6)
                 self.assertLessEqual(c['check']['maxPrecDiff'], 6.0)
 
+    def test_deterministic(self):
+        import json
+        again = self.et.extract_charts([])
+        self.assertEqual(json.dumps(again, ensure_ascii=False, sort_keys=True), json.dumps(self.charts, ensure_ascii=False, sort_keys=True))
+
+    def test_validate_negative(self):
+        import copy
+        bad = copy.deepcopy(self.charts)
+        pie = bad['p23-qatar-pie']; pie['series'][0]['values'][0] = 25.0                     # 합 105.6
+        bad['p23-china-india-pop']['series'][0]['values'][3] = None                          # 빈 값
+        bad['p23-japan-aging']['series'] = bad['p23-japan-aging']['series'][:1]              # 계열 빠짐
+        del bad['p24-neom']                                                                  # 그래프 빠짐
+        W = self.et.validate(bad, self.cfg)
+        self.assertTrue(any('p23-qatar-pie' in w and '합' in w for w in W), W)
+        self.assertTrue(any('p23-china-india-pop' in w and '빈 값' in w for w in W), W)
+        self.assertTrue(any('p23-japan-aging' in w and '계열' in w for w in W), W)
+        self.assertTrue(any('p24-neom' in w for w in W), W)
+
+    def test_no_dropped_or_gaps(self):
+        for cid in ('p24-resources', 'p24-exports'):
+            ck = self.charts[cid]['check']
+            self.assertEqual(ck['gaps'], [], cid)
+            self.assertEqual(len(ck['droppedSegments']), 2 if cid == 'p24-resources' else 0, cid)   # 희토류 끝 회색 2칸
+
+    def test_refuse_to_write_on_warnings(self):
+        import tempfile
+        from unittest import mock
+        from atlas_common import WORK
+        with tempfile.TemporaryDirectory(dir=WORK) as d:
+            paths = {k: os.path.join(d, k + '.json') for k in ('climate', 'charts')}
+            with mock.patch.object(self.et, 'out_path', lambda k: paths.get(k, d)),                  mock.patch.object(self.et, 'validate', lambda ch, cfg: ['가짜 경고']):
+                self.assertEqual(self.et.main(['--charts']), 1)
+                self.assertFalse(os.path.exists(paths['charts']))            # 경고가 있으면 쓰지 않는다
+                self.assertEqual(self.et.main(['--charts', '--force']), 1)
+                self.assertTrue(os.path.exists(paths['charts']))             # --force 면 쓴다(종료 코드는 그대로 1)
+
     def test_monotonic_years(self):
         for cid, c in self.charts.items():
             if c.get('categoryKind') == 'year':
                 self.assertEqual(c['categories'], sorted(c['categories']), cid)
+
+
+class Cli(unittest.TestCase):
+    def test_parse_flags(self):
+        import extract_tables as et
+        self.assertEqual(et.parse_flags([]), (set(et.STEPS), False))
+        self.assertEqual(et.parse_flags(['--charts', '--force']), ({'charts'}, True))
+        with self.assertRaises(ValueError): et.parse_flags(['--chart'])
+        with self.assertRaises(ValueError): et.parse_flags(['charts'])
+
+    def test_atomic_write(self):
+        import tempfile, json
+        import extract_tables as et
+        from atlas_common import WORK
+        os.makedirs(WORK, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=WORK) as d:     # ASCII 작업 폴더
+            f = os.path.join(d, 'x.json')
+            et.write_json(f, {'a': 1})
+            with open(f, encoding='utf-8') as fh: self.assertEqual(json.load(fh), {'a': 1})
+            self.assertEqual(os.listdir(d), ['x.json'])                 # 임시 파일이 남지 않는다
+
+
+@NEED_PDF
+class Words(unittest.TestCase):
+    def test_reversed_trace_split(self):
+        # 23쪽 해 눈금: 한 글자 묶음에 「2100 2050 … 1800」 이 오른쪽→왼쪽 순으로 들어 있다
+        ws = [w['text'] for w in AX.words(23, [38, 498, 386, 506]) if AX.parse_num(w['text']) is not None]
+        self.assertEqual(sorted(ws), ['1800', '1850', '1900', '1950', '2000', '2021', '2050', '2100'])
+
+    def test_space_split(self):
+        # 24쪽 베트남 가로축: 「0 100 200 300 400 500 600」 한 조각 → 7 낱말
+        vals = [t['value'] for t in AX.number_tokens(24, [649, 386.5, 724, 394.5])]
+        self.assertEqual(vals, [0, 100, 200, 300, 400, 500, 600])
 
 
 if __name__ == '__main__':

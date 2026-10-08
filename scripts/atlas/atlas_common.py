@@ -92,6 +92,15 @@ def delta_e(h1, h2):
     return float(np.linalg.norm(np.subtract(lab_hex(h1), lab_hex(h2))))
 
 
+def color_match(c, targets, de=0.0):
+    """색 c → targets(hex 목록) 중 같은 색, 아니면 Lab ΔE ≤ de 안에서 가장 가까운 색, 없으면 None. de = 0 이면 같은 색만."""
+    if c is None: return None
+    if c in targets: return c
+    if de <= 0: return None
+    best = min(targets, key=lambda t: delta_e(c, t), default=None)
+    return best if best is not None and delta_e(c, best) <= de else None
+
+
 def match_color(h, legend, max_de):
     """채움색 → 범례 항목(같은 색 우선, 아니면 가장 가까운 ΔE ≤ max_de) 또는 None."""
     best, bd = None, max_de

@@ -1,6 +1,6 @@
 # © 2026 김용현
 # scripts/atlas/chart_sheets.py — C4 대조표: 그래프마다 교과서 그림(자른 것) | 뽑은 숫자로 다시 그린 그림(matplotlib) 을 한 줄로,
-# 쪽마다 한 장 $ATLAS_WORK/shots/c4/charts-<쪽>.png. 다시 그린 그림의 색은 설정 계열 색(없으면 기본 색), 잰 값은 작은 × 로 겹친다.
+# 쪽마다 한 장 <out_dir>/charts-<쪽>.png (out_dir = 설정 charts.out.sheets). 다시 그린 그림의 색은 설정 계열 색(없으면 기본 색), 잰 값은 작은 × 로 겹친다.
 import io, os, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Wedge
 from PIL import Image, ImageDraw, ImageFont
 import pdfkit
-from atlas_common import FONT_PATH, WORK, unit_config
+from atlas_common import FONT_PATH, unit_config
 
 plt.rcParams['font.family'] = ['Malgun Gothic', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
@@ -29,12 +29,14 @@ def _colors(cid, ch):
     return [m.get(s['name'], PALETTE[i % len(PALETTE)]) for i, s in enumerate(ch['series'])]
 
 
-def _crop(ch):
-    b = list(ch['bbox'])
-    os.makedirs(os.path.join(WORK, 'c4'), exist_ok=True)
-    out = os.path.join(WORK, 'c4', 'crop.png')   # ASCII 작업 폴더
-    pdfkit.render_clip(ch['page'], b, DPI, out)
-    return Image.open(out).convert('RGB')
+def _crop(ch, tmp_dir):
+    """교과서 그래프 영역 렌더(임시 PNG 는 대조표 폴더(ASCII 작업 폴더)에 두었다가 지운다)."""
+    out = os.path.join(tmp_dir, '_crop.png')
+    try:
+        pdfkit.render_clip(ch['page'], list(ch['bbox']), DPI, out)
+        with Image.open(out) as im: return im.convert('RGB')
+    finally:
+        if os.path.exists(out): os.remove(out)
 
 
 def _measured(s):
@@ -90,7 +92,7 @@ def _plot(cid, ch, ax):
             bottom += v
         ax.set_xlim(-1, 1); ax.set_xticks([])
     elif t == 'stackedArea':
-        order = ['오세아니아', '남아메리카', '북아메리카', '유럽', '아프리카', '아시아(1950년 전)', '중국', '인도', '아시아(중국·인도 제외)']
+        order = unit_config()['charts']['items'][cid].get('sheetStackOrder') or [s['name'] for s in reversed(ch['series'])]   # 아래 → 위
         by = {s['name']: s for s in ch['series']}
         cmap = dict(zip([s['name'] for s in ch['series']], cols))
         ys = [[v or 0 for v in by[n]['values']] for n in order]
@@ -147,7 +149,7 @@ def build_sheets(charts, out_dir):
         rows = []
         for cid, ch in charts.items():
             if ch['page'] != pno: continue
-            crop = _crop(ch)
+            crop = _crop(ch, out_dir)
             s = ROW_H / crop.height
             crop = crop.resize((max(1, int(crop.width * s)), ROW_H))
             plot = _render_plot(cid, ch, max(560, crop.width), ROW_H)

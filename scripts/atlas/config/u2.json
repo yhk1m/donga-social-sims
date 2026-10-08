@@ -280,6 +280,10 @@
  "charts": {
  "_doc": "C4 그래프 숫자·부록 표(extract_tables.py). 좌표는 모두 지면 pt. 읽개 종류(type): climograph·line·bar·stackedBar·stackedArea·pyramid·radialBar·pie·stackedPrinted(칸마다 인쇄된 세로 쌓은 막대, 출력 type 은 stackedBar)·table. 상자: bbox = 대조표에 자르는 그래프 영역, titleBox·sourceBox·unitBox = 원문 그대로 읽는 글자 상자, *AxisBox = 눈금 글자, *TickBox = 눈금선(세로·가로 곧은 선, 또는 *TickFillColor 색 채움 막대의 가운데) 찾는 곳, plotBox = 막대·선·면 도형 찾는 곳. 허용치: sumTol = 원·100% 띠 합(인쇄값) 100 과의 차, maxDiff = 인쇄 숫자 ↔ 잰 값 짝 지을 때 최대 차, warnDiff = 그 차가 넘으면 경고.",
  "sumTol": 0.15,
+ "out": {"climate": "tables/climate-world.json", "charts": "tables/charts-u2.json", "sheets": "shots/c4"},
+ "defaults": {"colorDE": 0.0, "numberFont": "DIN", "axisResidTol": 0.6, "axisScale": "linear", "maxGapPt": 0.5, "snapTol": 1.5,
+  "startTolDeg": 2.0, "endTolPt": 0.6},
+ "_defaults": "그래프 설정에 같은 이름이 있으면 그것이 먼저. colorDE = 채움·선·글자 색을 목표 색에 맞출 Lab ΔE(0 = 같은 색만), numberFont = 수 글자 글꼴 이름 일부, axisResidTol = 축 잔차 문(pt, 넘으면 가장 어긋난 눈금 하나 빼고 다시, 그래도 넘으면 경고), axisScale = 값 축 'linear'·'log', maxGapPt = 띠 칸 사이 허용 틈(pt, 넘으면 경고), snapTol = 눈금 글자를 눈금선에 붙이는 거리(pt), startTolDeg = 고리 막대가 12시에서 시작하는지 볼 허용 각, endTolPt = 꺾은선 끝이 해 눈금보다 짧을 때 끝점을 쓰는 거리(pt).",
  "climateTable": {"page": 97, "tables": [[45, 92, 390, 690], [405, 92, 752, 690]], "headerColor": "#ffffff", "cityFont": "Std33",
   "numberFont": "DIN", "rowTol": 4.0, "precSumTol": 1.0, "precSumRel": 0.002, "tempMeanTol": 0.6,
   "notInTable": {"테헤란": "97쪽 「주요 도시의 기후」 표에 테헤란이 없다 — 21쪽 그래프를 잰 값만 쓴다(method measured)."}},
@@ -309,6 +313,7 @@
     {"name": "아시아(1950년 전)", "color": "#9acf87", "note": "1950년 전에는 아시아를 중국·인도·그 밖으로 나누지 않고 한 띠(#9acf87)로 그렸다 — 그 해들은 이 계열에만 값이 있다."}],
    "allowNull": ["아시아(중국·인도 제외)", "인도", "중국", "아시아(1950년 전)"],
    "shareTol": 1.0, "totalsRounding": "floor",
+   "sheetStackOrder": ["오세아니아", "남아메리카", "북아메리카", "유럽", "아프리카", "아시아(1950년 전)", "중국", "인도", "아시아(중국·인도 제외)"],
    "_totalsRounding": "해 위 합계 숫자는 버림한 수다 — 띠 합(잰 값)이 8개 모두 인쇄값 이상 인쇄값+1 미만이고(1800년 9 ↔ 9.9, 1850년 12 ↔ 12.7), 반올림으로 보면 1800·1850년이 어긋난다. 높이 ↔ 값 비례(원점 지남)는 인쇄값 + 0.5 로 맞춘다.",
    "notes": "세로축 눈금이 없다 — 값 ↔ 높이는 인쇄된 합계(해 위 숫자 8개, 버림한 수)로 맞춘 비례(axes.height, 원점 지남). 2021·2100년 몫(%)은 인쇄값(printed.shares)."},
   "p23-china-india-pop": {"page": 23, "type": "line", "bbox": [415, 378, 600, 476], "titleBox": [425, 476, 514, 486],
