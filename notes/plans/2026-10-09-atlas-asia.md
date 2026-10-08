@@ -183,7 +183,7 @@ def render_clip(pno, bbox, dpi, out_path, images_only=False):
   {"id":"p21-climate","page":21,"kind":"climate","bbox":[20,60,470,420],"legendBbox":[25,330,180,415]}
 ]
 ```
-- [ ] **Step 3:** 개수 대조 — 16~25쪽 지도는 일반도 3(16·18·19), 색칠하기 1(17), 지형 1(20), 기후 3(21: 구분·1월·7월), 종교 3(22: 분포·싱가포르·카슈미르), 인구 2(23), 산업 2(24) + 교역 활동 1, 세계유산 1(25)이다. `python -I -c "import json;print(len(json.load(open('scripts/atlas/maps_u2.json',encoding='utf-8'))))"`가 18이어야 한다.
+- [ ] **Step 3:** 개수 대조 — 16~25쪽 지도는 일반도 3(16·18·19), 색칠하기 1(17), 지형 1(20), 기후 3(21: 구분·1월·7월), 종교 3(22: 분포·싱가포르·카슈미르), 인구 2(23), 산업 2(24) + 교역 활동 1, 세계유산 1(25)이다. `python -I -c "import json;print(len(json.load(open('scripts/atlas/maps_u2.json',encoding='utf-8'))))"`가 17이어야 한다(일반도 3 + 색칠하기 1 + 지형 1 + 기후 3 + 종교 3 + 인구 2 + 산업 3 + 세계유산 1).
 - [ ] **Step 4:** 커밋.
 
 ---
@@ -780,3 +780,10 @@ export default function mount(root) {
 - D1, D2, D4, D6(legendState)는 A·B와 독립이라 병렬로 할 수 있다.
 - C1~C4는 B2 이후 병렬로 할 수 있다. C5는 C1~C4가 끝난 뒤다.
 - D3 → D5 → D6(layers) → D7 → E1 → E2 → E3
+
+## 실행 중 결정 (2026-10-09)
+
+- 아시아 지도는 17장이다(A3 Step 3의 목록 합계). NEOM은 카드로만 다룬다.
+- `p22-kashmir`는 교과서 도형이 양식화돼 있어 경위도 맞추기가 불가능하다(오차 20pt 이상). 분쟁 지역 도형은 Natural Earth `ne_10m_admin_0_disputed_areas`·국경에서 가져오고, 교과서의 색·범례·이름만 쓴다. 지도에는 「위치: 실제 경계 자료」라고 표시한다.
+- `pdfkit.dec()`의 알려진 복원 오류: `·`→`h`, `℃`→`?`, `㎢`→`LN`, `『』`→`|…}`. 글 추출(C5) 전에 고친다.
+- 경위도 기호는 `°`와 `˚`(U+02DA)를 모두 인식한다.
