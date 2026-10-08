@@ -83,6 +83,23 @@ def p17_labels():
     return {'page': c['page'], 'map': c['map'], 'countries': countries, 'capitals': capitals}
 
 
+_CREDIT = re.compile(r'\([^()]*?(?:19|20)\d\d\s*\)')
+
+
+def printed_credits(page, max_size=7.2):
+    """쪽에 인쇄된 출처 글(「(…, 2023)」꼴, 작은 글자)을 줄마다 찾아 공백을 지운 글 목록으로(겹친 것은 하나). 설정 content.expectCredits 대조용."""
+    lines = {}
+    for s in pdfkit.page_spans(page):
+        if s['size'] < max_size: lines.setdefault(round((s['bbox'][1] + s['bbox'][3]) / 2), []).append(s)
+    out = []
+    for k in sorted(lines):
+        t = ' '.join(s['text'] for s in sorted(lines[k], key=lambda s: s['bbox'][0]))
+        for m in _CREDIT.finditer(t):
+            c = ''.join(m.group(0).split())
+            if c not in out: out.append(c)
+    return out
+
+
 def read_json(path):
     with open(path, encoding='utf-8') as f: return json.load(f)
 

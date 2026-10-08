@@ -50,6 +50,15 @@ class ContentMatchesPdf(unittest.TestCase):
         self.assertEqual(w, [], '\n'.join(w))
         self.assertGreater(sum(1 for _, o in ET.walk(doc) for _ in ET.src_fields(o)), 60)
 
+    def test_expected_credits_match_pdf(self):
+        # 설정의 출처 목록 = 지면에서 찾은 출처 글(같은 꼴이지만 출처가 아닌 notCredits 는 뺌)
+        exp = ET.content_config()['expectCredits']
+        skip = {''.join(c.split()) for c in exp['notCredits']}
+        for p in range(16, 26):
+            found = [c for c in ET.printed_credits(p) if c not in skip]
+            want = [''.join(c.split()) for c in exp.get(str(p), [])]
+            self.assertEqual(sorted(found), sorted(want), f'{p}쪽')
+
     def test_p17_labels(self):
         lab = ET.p17_labels()
         self.assertEqual(len(lab['countries']), 46)

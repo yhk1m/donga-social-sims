@@ -406,6 +406,16 @@
  "expect": {"topics": ["general", "coloring", "relief", "climate", "religion", "population", "industry", "heritage"],
             "markers": {"relief": 7, "heritage": 11}, "chartMarkers": {"climate": 4}, "coloringCountries": 46},
  "_expect": "실측(C3·C4): 지형 핀 7, 기후 그래프 4(테헤란·방콕·이르쿠츠크·우한), 세계유산 11, 17쪽 나라 이름 46. 계획의 「지형 8·기후 5」는 조사 어림값.",
+ "expectCredits": {
+  "_doc": "16~25쪽에 인쇄된 출처 글(쪽: 목록). 생성물 topics.json·charts.json 어딘가에 있어야 한다(공백 무시, tests/atlas/content.test.mjs). 같은 꼴이지만 출처가 아닌 것은 notCredits(23쪽 사진 설명 「(2021)」, 24쪽 범례 단위 「(억 달러, 2022)」). 16~19·25쪽에는 출처 글이 없다. extract_text.printed_credits 로 지면과 대조(test_text.py).",
+  "notCredits": ["(2021)", "(억 달러, 2022)"],
+  "20": ["(naturalearthdata.com, 2023)"],
+  "21": ["(www.worldclim.org, 2023)", "(www.gloh2o.org, 2023)", "(『이과연표』, 2023)"],
+  "22": ["(『디르케 세계 지도』, 2023)", "(『신상 지리 자료』, 2023)", "(googlemap, 2023)", "(Public Holidays Global, 2023)"],
+  "23": ["(UN, 「세계 인구 전망」, 2021)", "(ourworldindata.org, 2023)", "(UN, 「국제 이주 통계」, 2020)"],
+  "24": ["(네옴시티 누리집, 2023)", "(UN, 「에너지 통계 연보」, 2020 / 미국 지질 조사 연구소, 「광물 상품 요약」, 2023)", "(『Philip’s international school』, 2006)",
+         "(The Observatory of Economic Complexity, 2010, 2021)", "(UN, 「국제 무역 통계 연보」 2021 / UN, 「통계 연보」, 2022)", "(UNCTAD, 「통계 핸드북」, 2021)", "(국가데이터처, 2023)"]
+ },
  "viewGrid": 20, "viewPercentile": 5, "markerMargin": 1,
  "_view": "보기 범위 = 지도 틀 안 21×21 격자점을 되돌린 경위도의 5~95% 범위(틀 모서리는 방위 도법에서 극 가까이라 쓰지 않음). 주제 보기는 마커를 모두 담도록 markerMargin(도)만큼 넓힘.",
  "coloring": {"page": 17, "map": "p17-coloring", "countryFont": "KCCChassam", "capitalFont": "KyoboHandwriting", "capitalSize": 7.5,

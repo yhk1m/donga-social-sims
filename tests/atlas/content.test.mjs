@@ -195,3 +195,28 @@ test('다시 만들어도 생성물이 바이트까지 같다', () => {
   assert.equal(JSON.stringify(a.topics), readFileSync(`${DIR}/topics.json`, 'utf8').trimEnd());
   assert.equal(JSON.stringify(a.charts), readFileSync(`${DIR}/charts.json`, 'utf8').trimEnd());
 });
+
+test('16~25쪽에 인쇄된 출처 글이 모두 주제 자료(topics·charts)에 있다', () => {
+  const hay = key(JSON.stringify(T) + JSON.stringify(C)).replace(/\\"/g, '"');
+  for (const [p, list] of Object.entries(CFG.expectCredits)) {
+    if (!/^\d+$/.test(p)) continue;
+    for (const c of list) assert.ok(hay.includes(key(c)), `${p}쪽 출처 ${c}`);
+  }
+  // 싱가포르 공휴일 달력 출처는 그 블록에
+  const sg = by.religion.blocks.find((b) => b.role === 'subtitle' && b.view === 'singapore');
+  assert.equal(sg.credit, '(Public Holidays Global, 2023)');
+});
+
+test('범례 제목: 교과서가 범례 제목을 인쇄한 레이어에 legendTitle(선 범례는 lineLegendTitle)', () => {
+  const L = Object.fromEntries(T.flatMap((t) => t.layers.map((l) => [l.ref, l])));
+  const want = {
+    'layer-p21-climate': ['기후 구분'], 'layer-p21-jan': ['강수량(mm)', '기온 (°C)'], 'layer-p21-jul': ['강수량(mm)', '기온 (°C)'],
+    'layer-p22-religion': ['지역별 종교 분포 비율'], 'overlay-p23-density': ['인구 밀도(명/km²)'], 'layer-p23-density-cities': ['인구'],
+    'layer-p23-growth': ['인구 증가율(%)'], 'layer-p24-trade': ['우리나라와의 무역액(억 달러, 2022)', '우리나라의 수출입액 (백억 달러, 2022)'],
+  };
+  for (const [ref, [area, line]] of Object.entries(want)) {
+    assert.equal(L[ref].legendTitle, area, ref);
+    assert.equal(L[ref].lineLegendTitle, line, `${ref} 선`);
+  }
+  for (const l of Object.values(L)) if (!(l.ref in want)) assert.equal(l.legendTitle, undefined, `${l.ref}: 교과서에 범례 제목 없음`);
+});

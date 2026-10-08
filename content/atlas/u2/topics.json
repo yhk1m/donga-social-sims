@@ -245,7 +245,12 @@
      "page": 21,
      "bbox": [270, 457, 385, 468]
     },
-    "credit": "*1991~2020년 평균 (www.gloh2o.org, 2023)"
+    "credit": "*1991~2020년 평균 (www.gloh2o.org, 2023)",
+    "legendTitleSrc": {
+     "page": 21,
+     "bbox": [59, 380, 87, 389]
+    },
+    "legendTitle": "기후 구분"
    },
    {
     "ref": "layer-p21-jan",
@@ -256,7 +261,17 @@
      "page": 21,
      "bbox": [628, 259, 748, 269]
     },
-    "credit": "*1970~2010년 평균 (www.worldclim.org, 2023)"
+    "credit": "*1970~2010년 평균 (www.worldclim.org, 2023)",
+    "legendTitleSrc": {
+     "page": 21,
+     "bbox": [500, 222, 534, 231]
+    },
+    "lineLegendTitleSrc": {
+     "page": 21,
+     "bbox": [574, 249, 599, 259]
+    },
+    "legendTitle": "강수량(mm)",
+    "lineLegendTitle": "기온 (°C)"
    },
    {
     "ref": "layer-p21-jul",
@@ -267,7 +282,17 @@
      "page": 21,
      "bbox": [628, 459, 748, 469]
     },
-    "credit": "*1970~2010년 평균 (www.worldclim.org, 2023)"
+    "credit": "*1970~2010년 평균 (www.worldclim.org, 2023)",
+    "legendTitleSrc": {
+     "page": 21,
+     "bbox": [500, 424, 534, 433]
+    },
+    "lineLegendTitleSrc": {
+     "page": 21,
+     "bbox": [574, 451, 599, 461]
+    },
+    "legendTitle": "강수량(mm)",
+    "lineLegendTitle": "기온 (°C)"
    }
   ],
   "markers": [
@@ -388,7 +413,12 @@
      "page": 22,
      "bbox": [276, 416, 342, 427]
     },
-    "credit": "(『디르케 세계 지도』, 2023)"
+    "credit": "(『디르케 세계 지도』, 2023)",
+    "legendTitleSrc": {
+     "page": 22,
+     "bbox": [33, 178, 95, 187]
+    },
+    "legendTitle": "지역별 종교 분포 비율"
    },
    {
     "ref": "layer-p22-kashmir",
@@ -530,7 +560,12 @@
      "page": 22,
      "bbox": [278, 458, 414, 471]
     },
-    "text": "싱가포르의 종교 관련 공휴일(2025년)"
+    "text": "싱가포르의 종교 관련 공휴일(2025년)",
+    "creditSrc": {
+     "page": 22,
+     "bbox": [418, 681, 498, 691]
+    },
+    "credit": "(Public Holidays Global, 2023)"
    },
    {
     "type": "photo",
@@ -607,7 +642,12 @@
      "page": 23,
      "bbox": [139, 335, 207, 345]
     },
-    "credit": "(UN, 「세계 인구 전망」, 2021)"
+    "credit": "(UN, 「세계 인구 전망」, 2021)",
+    "legendTitleSrc": {
+     "page": 23,
+     "bbox": [55, 291, 106, 300]
+    },
+    "legendTitle": "인구 밀도(명/km 2 )"
    },
    {
     "ref": "layer-p23-density-cities",
@@ -619,7 +659,12 @@
      "page": 23,
      "bbox": [97, 328, 128, 341]
     },
-    "note": "*1억 명 이상 국가만 표시"
+    "note": "*1억 명 이상 국가만 표시",
+    "legendTitleSrc": {
+     "page": 23,
+     "bbox": [94, 301, 120, 318]
+    },
+    "legendTitle": "인구"
    },
    {
     "ref": "layer-p23-growth",
@@ -630,7 +675,12 @@
      "page": 23,
      "bbox": [497, 335, 565, 345]
     },
-    "credit": "(UN, 「세계 인구 전망」, 2021)"
+    "credit": "(UN, 「세계 인구 전망」, 2021)",
+    "legendTitleSrc": {
+     "page": 23,
+     "bbox": [441, 282, 484, 292]
+    },
+    "legendTitle": "인구 증가율(%)"
    }
   ],
   "markers": [],
@@ -864,7 +914,17 @@
      "page": 24,
      "bbox": [376, 681, 428, 690]
     },
-    "credit": "(국가데이터처, 2023)"
+    "credit": "(국가데이터처, 2023)",
+    "legendTitleSrc": {
+     "page": 24,
+     "bbox": [42, 621, 140, 631]
+    },
+    "lineLegendTitleSrc": {
+     "page": 24,
+     "bbox": [42, 656, 150, 666]
+    },
+    "legendTitle": "우리나라와의 무역액(억 달러, 2022)",
+    "lineLegendTitle": "우리나라의 수출입액 (백억 달러, 2022)"
    }
   ],
   "markers": [],
