@@ -1,13 +1,16 @@
 // © 2026 김용현
-// scripts/atlas/georef.mjs — 교과서 지도 기준점에 투영식을 맞춘다. 앱과 같은 d3 투영을 쓴다.
+// scripts/atlas/georef.mjs — 교과서 지도 기준점에 투영식을 맞추는 순수 라이브러리. 앱과 같은 d3 투영을 쓴다.
+// (CLI 는 georef-cli.mjs)
 //
-//   fitControls(cps)        기준점 [{xy:[x,y] (지면 pt), lon, lat}] → {family, params, sim, rmsPt, meanPt, resid}
-//   fitWithTps(cps)         fitControls + 잔차가 크면(rms > 0.5pt, 기준점 12개 이상) thin-plate spline 보정(fit.tps)
-//   applyFit(fit, [lon,lat]) → 지면 pt      invertFit(fit, [x,y]) → [lon,lat]   (둘 다 fit.tps 가 있으면 함께 적용)
+//   fitControls(cps)          기준점 [{xy:[x,y] (지면 pt), lon, lat, src?}] → {family, params, sim, rmsPt, meanPt, resid, candidates}
+//   fitWithTps(cps)           fitControls + 잔차가 크면 thin-plate spline 보정(fit.tps)
+//   robustFit(cps)            경위선 교차점(src:'grid') 중 튀는 점을 빼고 fitControls
+//   makeConverter(fit)        {apply([lon,lat]) → [x,y] | null, invert([x,y]) → [lon,lat] | null} — 투영을 한 번만 만든다
+//   applyFit / invertFit      makeConverter 의 캐시(WeakMap)를 쓰는 짧은 이름
+//   inControlHull(fit, xy)    TPS 보정이 온전히 걸리는 기준점 볼록 껍질 안인가
+//   fitProjection(fit)        d3 geoPath 용 투영 객체(잘라내기·재표본 포함)
 //
-// CLI (기준점은 extract_vectors.py --controls all 이 쓴 C:/Users/Public/atlas-work/vec/<id>.controls.json)
-//   node scripts/atlas/georef.mjs --all            지도마다 C:/Users/Public/atlas-work/geo/<id>.fit.json + 표
-//   node scripts/atlas/georef.mjs --verify <id|all> Natural Earth 해안선을 지도 렌더(150dpi) 위에 겹친 <id>.verify.png
+// fit 객체는 만든 뒤 바꾸지 않는다(변환기를 객체별로 캐시하므로). 바꾸려면 새 객체를 만든다.
 import * as g from 'd3-geo';
 import * as gp from 'd3-geo-projection';
 
@@ -25,8 +28,19 @@ const FAMILIES = {
 const INIT = { azimuthalEqualArea: [100, 40], azimuthalEquidistant: [100, 40], conicEqualArea: [100, 25, 50], conicConformal: [100, 25, 50], miller: [100], robinson: [100], equirectangular: [100], mercator: [100] };
 export const FAMILY_NAMES = Object.keys(FAMILIES);
 export const PT_MM = 0.3528;
+// 모양을 정하는 실제 매개변수 수(중심 경도처럼 닮음 변환이 흡수하는 것은 빼고) — 비슷하면 적은 쪽을 고른다
+const PARAMS = { azimuthalEqualArea: 2, azimuthalEquidistant: 2, conicEqualArea: 2, conicConformal: 1, miller: 0, robinson: 1, equirectangular: 0, mercator: 0 };
 
-/** 맞춘 식의 d3 투영(배율 1, 이동 0). 지면 좌표 = sim(이 투영). */
+const norm180 = (v) => ((v + 540) % 360) - 180;
+const finite2 = (p) => !!p && Number.isFinite(p[0]) && Number.isFinite(p[1]);
+
+/** 경도의 원형 평균(날짜 변경선을 걸쳐도 맞다) */
+function lonMean(lons) {
+  let s = 0, c = 0; for (const l of lons) { s += Math.sin(l * Math.PI / 180); c += Math.cos(l * Math.PI / 180); }
+  return Math.atan2(s, c) * 180 / Math.PI;
+}
+
+/** 맞춘 식의 d3 투영(배율 1, 이동 0). 지면 좌표 = sim(이 투영). 부를 때마다 새로 만든다 — 반복 변환에는 makeConverter. */
 export function rawProjection(fit) { return FAMILIES[fit.family](fit.params).scale(1).translate([0, 0]); }
 
 // 투영 단위 좌표 → 지면 pt: 닮음 변환(배율·회전·이동)을 최소제곱으로 닫힌 해로 구한다
@@ -49,12 +63,13 @@ const invertSim = ({ a, b, tx, ty }, [x, y]) => {
 };
 
 function evaluate(family, params, cps) {
+  if (!params.every(Number.isFinite)) return { rms: Infinity };
   if (family.startsWith('conic') && Math.abs(params[1] + params[2]) < 1e-3) return { rms: Infinity };
   const proj = FAMILIES[family](params).scale(1).translate([0, 0]);
   const src = cps.map((c) => proj([c.lon, c.lat]));
-  if (src.some((p) => !p || !isFinite(p[0]) || !isFinite(p[1]))) return { rms: Infinity };
+  if (!src.every(finite2)) return { rms: Infinity };
   const sim = similarity(src, cps.map((c) => c.xy));
-  if (!isFinite(sim.a)) return { rms: Infinity };
+  if (!Number.isFinite(sim.a) || !Number.isFinite(sim.b)) return { rms: Infinity };
   let e = 0; const resid = [];
   for (let i = 0; i < cps.length; i++) {
     const [x, y] = applySim(sim, src[i]); const r = Math.hypot(x - cps[i].xy[0], y - cps[i].xy[1]);
@@ -63,13 +78,19 @@ function evaluate(family, params, cps) {
   return { rms: Math.sqrt(e / cps.length), sim, resid };
 }
 
-// Nelder–Mead (작은 차원용)
-function nelderMead(f, x0, step = 5, iters = 400) {
-  const n = x0.length; let s = [x0];
+/** Nelder–Mead 최소화(작은 차원용). 유한하지 않은 값(NaN·Infinity)은 아주 큰 벌점으로 바꿔 순서를 일관되게 한다.
+ *  함숫값 폭 ≤ ftol 이고 단체 지름 ≤ xtol 이면 일찍 멈춘다. 반환 {x, fx, iters}. */
+export function nelderMead(f0, x0, step = 5, maxIter = 400, { ftol = 1e-12, xtol = 1e-9 } = {}) {
+  const BIG = 1e300;
+  const f = (x) => { const v = f0(x); return Number.isFinite(v) ? v : BIG; };
+  const n = x0.length; let s = [x0.slice()];
   for (let i = 0; i < n; i++) { const x = x0.slice(); x[i] += step; s.push(x); }
-  let fs = s.map(f);
-  for (let k = 0; k < iters; k++) {
-    const idx = fs.map((v, i) => i).sort((i, j) => fs[i] - fs[j]); s = idx.map((i) => s[i]); fs = idx.map((i) => fs[i]);
+  let fs = s.map(f), k = 0;
+  const sortS = () => { const idx = fs.map((v, i) => i).sort((i, j) => fs[i] - fs[j] || i - j); s = idx.map((i) => s[i]); fs = idx.map((i) => fs[i]); };
+  for (; k < maxIter; k++) {
+    sortS();
+    let diam = 0; for (let i = 1; i <= n; i++) for (let j = 0; j < n; j++) diam = Math.max(diam, Math.abs(s[i][j] - s[0][j]));
+    if (fs[n] - fs[0] <= ftol * (1 + Math.abs(fs[0])) && diam <= xtol * (1 + Math.max(...s[0].map(Math.abs)))) break;
     const c = Array(n).fill(0); for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) c[j] += s[i][j] / n;
     const xr = c.map((v, j) => v + (v - s[n][j])); const fr = f(xr);
     if (fr < fs[0]) { const xe = c.map((v, j) => v + 2 * (v - s[n][j])); const fe = f(xe); [s[n], fs[n]] = fe < fr ? [xe, fe] : [xr, fr]; }
@@ -79,13 +100,9 @@ function nelderMead(f, x0, step = 5, iters = 400) {
       if (fc < fs[n]) { s[n] = xc; fs[n] = fc; } else { for (let i = 1; i <= n; i++) { s[i] = s[i].map((v, j) => s[0][j] + 0.5 * (v - s[0][j])); fs[i] = f(s[i]); } }
     }
   }
-  const i0 = fs.indexOf(Math.min(...fs));
-  return { x: s[i0], fx: fs[i0] };
+  sortS();
+  return { x: s[0], fx: fs[0] >= 1e300 ? Infinity : fs[0], iters: k };
 }
-
-// 모양을 정하는 실제 매개변수 수(중심 경도처럼 닮음 변환이 흡수하는 것은 빼고) — 비슷하면 적은 쪽을 고른다
-const PARAMS = { azimuthalEqualArea: 2, azimuthalEquidistant: 2, conicEqualArea: 2, conicConformal: 1, miller: 0, robinson: 1, equirectangular: 0, mercator: 0 };
-const norm180 = (v) => ((v + 540) % 360) - 180;
 
 // 원통 도법에서 중심 경도를 바꾸는 것은 이음선(중심 경도 ± 180°)이 기준점 경도 사이 같은 빈틈에 있는 한
 // 지면에서 평행 이동일 뿐이라 기준점으로 정해지지 않는다. 이음선을 그 빈틈의 한가운데로 옮겨 하나로 정한다.
@@ -116,7 +133,7 @@ function uprightConic(fam, params, cps) {
   for (let k = 0; k < 4; k++) {
     const t0 = theta(p), t1 = theta([p[0] + 1, p[1], p[2]]);
     let dt = t1 - t0; if (dt > Math.PI) dt -= 2 * Math.PI; if (dt < -Math.PI) dt += 2 * Math.PI;
-    if (!isFinite(t0) || Math.abs(dt) < 1e-9) break;
+    if (!Number.isFinite(t0) || Math.abs(dt) < 1e-9) break;
     p[0] = norm180(p[0] - t0 / dt);
     if (Math.abs(t0) < 1e-10) break;
   }
@@ -138,7 +155,7 @@ function polish(f, x0, steps = [10, 1, 0.1]) {
 }
 
 function fitFamily(fam, cps) {
-  const lons = cps.map((c) => c.lon), mlon = lons.reduce((a, b) => a + b, 0) / lons.length;
+  const mlon = lonMean(cps.map((c) => c.lon));
   const sp = shapeSpace(fam, mlon);
   let params;
   if (sp) {
@@ -157,24 +174,25 @@ function fitFamily(fam, cps) {
   return { params, ...evaluate(fam, params, cps) };
 }
 
-/** 기준점 → 가장 잘 맞는 투영식. 반환: {family, params, sim, rmsPt, meanPt, resid}.
- *  rms 가 최소인 식을 고르되, 그보다 매개변수가 적은 식의 rms 가 최소의 1.05배 + 0.02pt 안이면 그것을 고른다(과적합 방지). */
+/** 작은 지역 기준(°): 기준점의 경도·위도 폭이 둘 다 이보다 작으면 도법 차이가 잔차에 드러나지 않아
+ *  도법·중심을 고를 수 없다 → 기준점 평균 경위도 중심의 사각 정거 원통(그 자리에서 거의 정각)에 닮음 변환만 맞춘다. */
 export const SMALL_AREA_DEG = 2;
+
+/** 기준점 → 가장 잘 맞는 투영식. 반환: {family, params, sim, rmsPt, meanPt, resid, candidates, smallArea?}.
+ *  rms 가 최소인 식을 고르되, 매개변수가 더 적은 식의 rms 가 최소의 1.05배 + 0.02pt 안이면 그것을 고른다(과적합 방지). */
 export function fitControls(cps, families = FAMILY_NAMES) {
-  // 작은 지역(기준점 경위도 폭 < 2°): 도법 차이가 잔차에 드러나지 않아 도법·중심을 고를 수 없다.
-  // 기준점 평균 경위도를 중심으로 회전한 정거 원통(그 자리에서 거의 정각)에 닮음 변환만 맞춘다.
-  const span = (k) => Math.max(...cps.map((c) => c[k])) - Math.min(...cps.map((c) => c[k]));
-  if (span('lon') < SMALL_AREA_DEG && span('lat') < SMALL_AREA_DEG) {
-    const mean = (k) => cps.reduce((a, c) => a + c[k], 0) / cps.length;
-    const params = [mean('lon'), mean('lat')], e = evaluate('equirectangular', params, cps);
+  const mlon = lonMean(cps.map((c) => c.lon));
+  const dl = cps.map((c) => norm180(c.lon - mlon)), lats = cps.map((c) => c.lat);
+  if (Math.max(...dl) - Math.min(...dl) < SMALL_AREA_DEG && Math.max(...lats) - Math.min(...lats) < SMALL_AREA_DEG) {
+    const params = [mlon, lats.reduce((a, b) => a + b, 0) / lats.length], e = evaluate('equirectangular', params, cps);
     return { family: 'equirectangular', params, sim: e.sim, rmsPt: e.rms, meanPt: e.resid.reduce((a, b) => a + b, 0) / e.resid.length,
       resid: e.resid, smallArea: true, candidates: [{ family: 'equirectangular', rmsPt: e.rms }] };
   }
-  const all = families.map((fam) => ({ family: fam, ...fitFamily(fam, cps) })).filter((r) => isFinite(r.rms));
+  const all = families.map((fam) => ({ family: fam, ...fitFamily(fam, cps) })).filter((r) => Number.isFinite(r.rms));
+  if (!all.length) throw new Error('어느 도법으로도 기준점을 투영할 수 없음');
   all.sort((a, b) => a.rms - b.rms);
   const top = all[0];
-  const ok = all.filter((r) => r.rms <= top.rms * 1.05 + 0.02).sort((a, b) => PARAMS[a.family] - PARAMS[b.family] || a.rms - b.rms);
-  const best = ok[0];
+  const best = all.filter((r) => r.rms <= top.rms * 1.05 + 0.02).sort((a, b) => PARAMS[a.family] - PARAMS[b.family] || a.rms - b.rms)[0];
   return {
     family: best.family, params: best.params, sim: best.sim, rmsPt: best.rms,
     meanPt: best.resid.reduce((a, b) => a + b, 0) / best.resid.length, resid: best.resid,
@@ -182,56 +200,196 @@ export function fitControls(cps, families = FAMILY_NAMES) {
   };
 }
 
+/** 경위선 교차점(src:'grid')은 글자 짝짓기 실수가 섞일 수 있다. 잔차 최대인 점이 max(minPt, k×중앙값)을 넘고
+ *  src 가 'grid' 이면 빼고 다시 맞춘다(기준점 minN 개 이상일 때만, 최대 maxFrac 비율까지).
+ *  반환 {cps: 남은 기준점, dropped: [{name, xy, residPt}], fit: 남은 기준점의 fitControls 결과}. */
+export function robustFit(cps, { minPt = 2.5, k = 4, minN = 12, maxFrac = 0.1, families } = {}) {
+  let cur = cps.slice(); const dropped = [];
+  for (;;) {
+    const fit = fitControls(cur, families);
+    const sorted = [...fit.resid].sort((a, b) => a - b), med = sorted[Math.floor(sorted.length / 2)];
+    const w = fit.resid.indexOf(Math.max(...fit.resid));
+    if (cur.length < minN || fit.resid[w] <= Math.max(minPt, k * med) || dropped.length >= Math.floor(cps.length * maxFrac) || cur[w].src !== 'grid')
+      return { cps: cur, dropped, fit };
+    dropped.push({ name: cur[w].name || `${cur[w].lon},${cur[w].lat}`, xy: cur[w].xy, residPt: +fit.resid[w].toFixed(2) });
+    cur = cur.filter((_, i) => i !== w);
+  }
+}
+
 // ── thin-plate spline: 기본 식의 지면 좌표 p → 보정량 d(p) ────────────────
+// 좌표는 중심(cx, cy)을 빼고 범위 s(가로·세로 폭 중 큰 값)로 나눠 [-0.5, 0.5] 근처로 정규화해서 푼다.
+// λ 는 이 정규화 좌표에서의 정규화 값(상대값): 1e-6 ≈ 보간(기준점을 거의 그대로 지남), 키울수록 매끈해진다.
+// 기준점 볼록 껍질 바깥에서는 껍질 위 가장 가까운 점의 보정량을 쓰고, 껍질에서 멀어질수록 TPS_TAPER × s 거리에 걸쳐 0 으로 줄인다.
+export const TPS_LAMBDA = 1e-6;
+export const TPS_TAPER = 0.1;
+const TPS_DEDUPE_PT = 0.01;
 const U = (r2) => (r2 > 0 ? 0.5 * r2 * Math.log(r2) : 0); // r² log r
 
-function solve(A, b) { // 가우스 소거(부분 피벗)
-  const n = b.length; const M = A.map((row, i) => [...row, b[i]]);
+function luFactor(A) { // 부분 피벗 LU (제자리)
+  const n = A.length, piv = [...Array(n).keys()];
   for (let c = 0; c < n; c++) {
-    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
-    [M[c], M[p]] = [M[p], M[c]];
-    const piv = M[c][c]; if (Math.abs(piv) < 1e-14) throw new Error('TPS 선형계가 특이함');
-    for (let r = c + 1; r < n; r++) { const k = M[r][c] / piv; if (k) for (let j = c; j <= n; j++) M[r][j] -= k * M[c][j]; }
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    if (Math.abs(A[p][c]) < 1e-14) throw new Error('TPS 선형계가 특이함');
+    if (p !== c) { [A[c], A[p]] = [A[p], A[c]]; [piv[c], piv[p]] = [piv[p], piv[c]]; }
+    for (let r = c + 1; r < n; r++) { const k = (A[r][c] /= A[c][c]); if (k) for (let j = c + 1; j < n; j++) A[r][j] -= k * A[c][j]; }
   }
-  const x = Array(n).fill(0);
-  for (let r = n - 1; r >= 0; r--) { let s = M[r][n]; for (let j = r + 1; j < n; j++) s -= M[r][j] * x[j]; x[r] = s / M[r][r]; }
+  return { LU: A, piv };
+}
+function luSolve({ LU, piv }, b) {
+  const n = LU.length, x = piv.map((i) => b[i]);
+  for (let i = 0; i < n; i++) for (let j = 0; j < i; j++) x[i] -= LU[i][j] * x[j];
+  for (let i = n - 1; i >= 0; i--) { for (let j = i + 1; j < n; j++) x[i] -= LU[i][j] * x[j]; x[i] /= LU[i][i]; }
   return x;
 }
 
-export function tpsFit(pts, vals, lambda = 1e-3) {
-  const n = pts.length, N = n + 3;
-  const A = Array.from({ length: N }, () => Array(N).fill(0));
-  for (let i = 0; i < n; i++) {
-    for (let j = 0; j < n; j++) A[i][j] = U((pts[i][0] - pts[j][0]) ** 2 + (pts[i][1] - pts[j][1]) ** 2);
-    A[i][i] += lambda;
-    A[i][n] = A[n][i] = 1; A[i][n + 1] = A[n + 1][i] = pts[i][0]; A[i][n + 2] = A[n + 2][i] = pts[i][1];
+function convexHull(pts) { // monotone chain, 반시계(화면 좌표에서는 시계) 순서
+  const P = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (P.length < 3) return P;
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = [];
+  for (const p of P) { while (lo.length >= 2 && cross(lo.at(-2), lo.at(-1), p) <= 0) lo.pop(); lo.push(p); }
+  for (const p of P.reverse()) { while (up.length >= 2 && cross(up.at(-2), up.at(-1), p) <= 0) up.pop(); up.push(p); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+function inHull(H, [x, y]) {
+  if (H.length < 3) return false;
+  for (let i = 0; i < H.length; i++) {
+    const a = H[i], b = H[(i + 1) % H.length];
+    if ((b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0]) < 0) return false;
   }
-  const sx = solve(A, [...vals.map((v) => v[0]), 0, 0, 0]);
-  const sy = solve(A, [...vals.map((v) => v[1]), 0, 0, 0]);
-  return { pts, wx: sx.slice(0, n), wy: sy.slice(0, n), ax: sx.slice(n), ay: sy.slice(n), lambda };
+  return true;
+}
+function nearestOnHull(H, p) {
+  let best = null, bd = Infinity;
+  for (let i = 0; i < H.length; i++) {
+    const a = H[i], b = H[(i + 1) % H.length], dx = b[0] - a[0], dy = b[1] - a[1];
+    const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy || 1)));
+    const q = [a[0] + t * dx, a[1] + t * dy], d = Math.hypot(p[0] - q[0], p[1] - q[1]);
+    if (d < bd) { bd = d; best = q; }
+  }
+  return [best, bd];
 }
 
-export function tpsDelta(t, [x, y]) {
-  let dx = t.ax[0] + t.ax[1] * x + t.ax[2] * y, dy = t.ay[0] + t.ay[1] * x + t.ay[2] * y;
+/** TPS 맞추기: 기본 식 지면 좌표 pts → 보정량 vals. 0.01pt 안에 겹친 점은 평균해 하나로 합친다. */
+export function tpsFit(pts0, vals0, lambda = TPS_LAMBDA) {
+  const pts = [], vals = [], cnt = [];
+  for (let i = 0; i < pts0.length; i++) {
+    const j = pts.findIndex((p) => Math.hypot(p[0] - pts0[i][0], p[1] - pts0[i][1]) < TPS_DEDUPE_PT);
+    if (j < 0) { pts.push(pts0[i].slice()); vals.push(vals0[i].slice()); cnt.push(1); }
+    else { const c = ++cnt[j]; vals[j] = vals[j].map((v, k) => v + (vals0[i][k] - v) / c); }
+  }
+  const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+  const cx = (Math.max(...xs) + Math.min(...xs)) / 2, cy = (Math.max(...ys) + Math.min(...ys)) / 2;
+  const s = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) || 1;
+  const q = pts.map(([x, y]) => [(x - cx) / s, (y - cy) / s]);
+  const n = q.length, N = n + 3;
+  const A = Array.from({ length: N }, () => Array(N).fill(0));
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) A[i][j] = U((q[i][0] - q[j][0]) ** 2 + (q[i][1] - q[j][1]) ** 2);
+    A[i][i] += lambda;
+    A[i][n] = A[n][i] = 1; A[i][n + 1] = A[n + 1][i] = q[i][0]; A[i][n + 2] = A[n + 2][i] = q[i][1];
+  }
+  const lu = luFactor(A); // 한 번 분해해 x·y 두 오른쪽 변에 쓴다
+  const sx = luSolve(lu, [...vals.map((v) => v[0]), 0, 0, 0]);
+  const sy = luSolve(lu, [...vals.map((v) => v[1]), 0, 0, 0]);
+  return { cx, cy, s, pts: q, wx: sx.slice(0, n), wy: sy.slice(0, n), ax: sx.slice(n), ay: sy.slice(n), lambda,
+    hull: convexHull(pts), taper: TPS_TAPER * s };
+}
+
+function tpsRaw(t, [x, y]) {
+  const u = (x - t.cx) / t.s, v = (y - t.cy) / t.s;
+  let dx = t.ax[0] + t.ax[1] * u + t.ax[2] * v, dy = t.ay[0] + t.ay[1] * u + t.ay[2] * v;
   for (let i = 0; i < t.pts.length; i++) {
-    const u = U((x - t.pts[i][0]) ** 2 + (y - t.pts[i][1]) ** 2); dx += t.wx[i] * u; dy += t.wy[i] * u;
+    const k = U((u - t.pts[i][0]) ** 2 + (v - t.pts[i][1]) ** 2); dx += t.wx[i] * k; dy += t.wy[i] * k;
   }
   return [dx, dy];
 }
 
-const baseApply = (fit, lonlat) => { const p = rawProjection(fit)(lonlat); return p && applySim(fit.sim, p); };
+/** 보정량(지면 pt). 껍질 안은 TPS 그대로, 바깥은 껍질 위 가장 가까운 점의 값을 거리에 따라 0 으로(3t²-2t³ 곡선) 줄인다. */
+export function tpsDelta(t, p) {
+  if (inHull(t.hull, p)) return tpsRaw(t, p);
+  const [q, d] = nearestOnHull(t.hull, p);
+  const r = Math.min(1, d / t.taper), w = 1 - r * r * (3 - 2 * r);
+  if (w <= 0) return [0, 0];
+  const dq = tpsRaw(t, q);
+  return [w * dq[0], w * dq[1]];
+}
 
-/** 기준점 → 투영식 + (필요하면) TPS 보정. 반환: fitControls 결과 + {tps?, rmsTpsPt?, meanTpsPt?, looMeanPt?}.
+/** 지면 pt 가 TPS 기준점 볼록 껍질 안인가. TPS 가 없는 fit 은 보정 범위 개념이 없어 true. */
+export function inControlHull(fit, xy) {
+  return fit.tps ? inHull(fit.tps.hull, xy) : true;
+}
+
+// ── 변환기 ───────────────────────────────────────────────────────────────
+const converters = new WeakMap();
+const INVERT_TOL_PT = 0.01;
+
+/** fit → {apply, invert}. d3 투영을 한 번만 만들어 둔다(같은 fit 객체에는 같은 변환기를 돌려준다).
+ *  apply([lon,lat]) → [x,y] 지면 pt, 투영할 수 없거나(잘린 반구 등) 유한하지 않으면 null.
+ *  invert([x,y]) → [lon,lat]: 보정 없는 역함수로 시작해 (TPS 가 있으면) 뉴턴 반복으로 다듬는다.
+ *    수렴하지 않거나, 유한하지 않거나, apply(결과)가 입력에서 0.01pt 넘게 떨어지면 null. */
+export function makeConverter(fit) {
+  let cv = converters.get(fit);
+  if (cv) return cv;
+  const proj = rawProjection(fit), sim = fit.sim, tps = fit.tps;
+  const base = (ll) => { if (!finite2(ll)) return null; const p = proj(ll); return finite2(p) ? applySim(sim, p) : null; };
+  const apply = (ll) => {
+    const p = base(ll); if (!p) return null;
+    if (!tps) return p;
+    const d = tpsDelta(tps, p), r = [p[0] + d[0], p[1] + d[1]];
+    return finite2(r) ? r : null;
+  };
+  const err = (ll, xy) => { const p = apply(ll); return p ? [p[0] - xy[0], p[1] - xy[1]] : null; };
+  const invert = (xy) => {
+    if (!finite2(xy)) return null;
+    let ll = proj.invert(invertSim(sim, xy));
+    if (!finite2(ll)) return null;
+    let e = err(ll, xy); if (!e) return null;
+    if (tps) {
+      const h = 1e-6;
+      for (let k = 0; k < 30 && Math.hypot(e[0], e[1]) > 1e-9; k++) {
+        const ex = err([ll[0] + h, ll[1]], xy), ey = err([ll[0], ll[1] + h], xy);
+        if (!ex || !ey) return null;
+        const J = [(ex[0] - e[0]) / h, (ey[0] - e[0]) / h, (ex[1] - e[1]) / h, (ey[1] - e[1]) / h];
+        const det = J[0] * J[3] - J[1] * J[2];
+        if (!Number.isFinite(det) || Math.abs(det) < 1e-300) return null;
+        let dl = [-(J[3] * e[0] - J[1] * e[1]) / det, -(-J[2] * e[0] + J[0] * e[1]) / det];
+        // 줄어들 때까지 걸음을 반으로(되돌이 탐색)
+        let next = null, ne = null;
+        for (let half = 0; half < 20; half++) {
+          next = [ll[0] + dl[0], ll[1] + dl[1]]; ne = err(next, xy);
+          if (ne && Math.hypot(ne[0], ne[1]) < Math.hypot(e[0], e[1])) break;
+          dl = [dl[0] / 2, dl[1] / 2]; ne = null;
+        }
+        if (!ne) break;
+        ll = next; e = ne;
+      }
+    }
+    if (!finite2(ll) || Math.hypot(e[0], e[1]) > INVERT_TOL_PT) return null;
+    return [norm180(ll[0]), ll[1]];
+  };
+  cv = { apply, invert, projection: proj };
+  converters.set(fit, cv);
+  return cv;
+}
+
+/** 경위도 → 지면 pt (fit.tps 가 있으면 보정 포함). 투영할 수 없으면 null. */
+export function applyFit(fit, lonlat) { return makeConverter(fit).apply(lonlat); }
+
+/** 지면 pt → 경위도. 역변환이 확실하지 않으면 null(makeConverter 참고). */
+export function invertFit(fit, xy) { return makeConverter(fit).invert(xy); }
+
+/** 기준점 → 투영식 + (필요하면) TPS 보정. 반환: fitControls 결과에 {tps?, rmsTpsPt?, meanTpsPt?, looMeanPt?} 를 더한 새 객체.
  *  TPS 는 기본 식 rms > threshold 이고 기준점이 minPoints 개 이상일 때만 붙인다(적은 점은 보간이 곧 과적합). */
-export function fitWithTps(cps, { threshold = 0.5, lambda = 1e-3, minPoints = 12, families } = {}) {
+export function fitWithTps(cps, { threshold = 0.5, lambda = TPS_LAMBDA, minPoints = 12, families } = {}) {
   const fit = fitControls(cps, families);
   if (!(fit.rmsPt > threshold) || cps.length < minPoints) return fit;
-  const base = cps.map((c) => baseApply(fit, [c.lon, c.lat]));
+  const base = cps.map((c) => applyFit(fit, [c.lon, c.lat]));
   const vals = cps.map((c, i) => [c.xy[0] - base[i][0], c.xy[1] - base[i][1]]);
-  fit.tps = tpsFit(base, vals, lambda);
-  const r = cps.map((c) => { const p = applyFit(fit, [c.lon, c.lat]); return Math.hypot(p[0] - c.xy[0], p[1] - c.xy[1]); });
-  fit.rmsTpsPt = Math.sqrt(r.reduce((a, b) => a + b * b, 0) / r.length);
-  fit.meanTpsPt = r.reduce((a, b) => a + b, 0) / r.length;
+  const out = { ...fit, tps: tpsFit(base, vals, lambda) };
+  const r = cps.map((c) => { const p = applyFit(out, [c.lon, c.lat]); return Math.hypot(p[0] - c.xy[0], p[1] - c.xy[1]); });
+  out.rmsTpsPt = Math.sqrt(r.reduce((a, b) => a + b * b, 0) / r.length);
+  out.meanTpsPt = r.reduce((a, b) => a + b, 0) / r.length;
   // 한 점 빼고 맞추기(leave-one-out): 기준점 사이에서 기대되는 오차
   let loo = 0;
   for (let k = 0; k < cps.length; k++) {
@@ -240,29 +398,8 @@ export function fitWithTps(cps, { threshold = 0.5, lambda = 1e-3, minPoints = 12
     const d = tpsDelta(t, base[k]);
     loo += Math.hypot(base[k][0] + d[0] - cps[k].xy[0], base[k][1] + d[1] - cps[k].xy[1]);
   }
-  fit.looMeanPt = loo / cps.length;
-  return fit;
-}
-
-/** 경위도 → 지면 pt (fit.tps 가 있으면 보정 포함) */
-export function applyFit(fit, lonlat) {
-  const p = baseApply(fit, lonlat);
-  if (!p || !fit.tps) return p;
-  const d = tpsDelta(fit.tps, p);
-  return [p[0] + d[0], p[1] + d[1]];
-}
-
-/** 지면 pt → 경위도 (TPS 역보정 반복 + 닮음 역변환 + 투영 역함수) */
-export function invertFit(fit, [x, y]) {
-  let p = [x, y];
-  if (fit.tps) {
-    for (let k = 0; k < 100; k++) {
-      const d = tpsDelta(fit.tps, p), q = [x - d[0], y - d[1]];
-      const ch = Math.hypot(q[0] - p[0], q[1] - p[1]); p = q;
-      if (ch < 1e-10) break;
-    }
-  }
-  return rawProjection(fit).invert(invertSim(fit.sim, p));
+  out.looMeanPt = loo / cps.length;
+  return out;
 }
 
 /** d3 stream 용 투영 객체: geoPath(fitProjection(fit), ctx) 로 경위도 도형을 지면 pt 로 그린다(투영 잘라내기·재표본 포함). */
@@ -271,143 +408,12 @@ export function fitProjection(fit) {
   const proj = rawProjection(fit).precision(0.3 / s);
   return {
     stream(out) {
-      const tf = { point(x, y) { const p = applySim(fit.sim, [x, y]); const d = fit.tps ? tpsDelta(fit.tps, p) : [0, 0]; out.point(p[0] + d[0], p[1] + d[1]); },
-        lineStart() { out.lineStart(); }, lineEnd() { out.lineEnd(); }, polygonStart() { out.polygonStart(); }, polygonEnd() { out.polygonEnd(); }, sphere() { out.sphere && out.sphere(); } };
+      const tf = {
+        point(x, y) { const p = applySim(fit.sim, [x, y]); const d = fit.tps ? tpsDelta(fit.tps, p) : [0, 0]; out.point(p[0] + d[0], p[1] + d[1]); },
+        lineStart() { out.lineStart(); }, lineEnd() { out.lineEnd(); }, polygonStart() { out.polygonStart(); }, polygonEnd() { out.polygonEnd(); },
+        sphere() { if (out.sphere) out.sphere(); },
+      };
       return proj.stream(tf);
     },
   };
-}
-
-// ── CLI ──────────────────────────────────────────────────────────────────
-async function cli(argv) {
-  const fs = await import('node:fs');
-  const path = await import('node:path');
-  const { fileURLToPath } = await import('node:url');
-  const { spawnSync } = await import('node:child_process');
-  const here = path.dirname(fileURLToPath(import.meta.url));
-  const WORK = 'C:/Users/Public/atlas-work';
-  const maps = JSON.parse(fs.readFileSync(path.join(here, 'maps_u2.json'), 'utf8'));
-  const SKIP = new Set(['p22-kashmir']);
-  const ACCEPT_MM = 0.5;
-  fs.mkdirSync(`${WORK}/geo`, { recursive: true });
-
-  const loadCps = (id) => {
-    const f = `${WORK}/vec/${id}.controls.json`;
-    if (!fs.existsSync(f)) throw new Error(`${f} 없음 — 먼저 python -I scripts/atlas/extract_vectors.py --controls all`);
-    return JSON.parse(fs.readFileSync(f, 'utf8'));
-  };
-  const cpName = (c) => c.name || `${c.lon},${c.lat}`;
-
-  // 경위선 교차점(src:'grid')은 글자 짝짓기 실수가 섞일 수 있어 튀는 점을 빼고 다시 맞춘다
-  function robustFit(cps) {
-    let cur = cps.slice(); const dropped = [];
-    for (;;) {
-      const fit = fitControls(cur);
-      const med = [...fit.resid].sort((a, b) => a - b)[Math.floor(fit.resid.length / 2)];
-      const k = fit.resid.indexOf(Math.max(...fit.resid));
-      const lim = Math.max(2.5, 4 * med);
-      if (cur.length < 12 || fit.resid[k] <= lim || dropped.length >= Math.floor(cps.length * 0.1) || cur[k].src !== 'grid') return { cps: cur, dropped };
-      dropped.push({ name: cpName(cur[k]), xy: cur[k].xy, residPt: +fit.resid[k].toFixed(2) });
-      cur = cur.filter((_, i) => i !== k);
-    }
-  }
-
-  const r2 = (v) => Math.round(v * 100) / 100;
-  if (argv[0] === '--all') {
-    const rows = [];
-    for (const m of maps) {
-      if (SKIP.has(m.id)) { rows.push([m.id, '(맞추기 없음 — Natural Earth 분쟁 지역 자료 사용)']); continue; }
-      const { cps, dropped } = robustFit(loadCps(m.id));
-      const fit = fitWithTps(cps);
-      const meanMm = fit.meanPt * PT_MM;
-      const out = {
-        id: m.id, family: fit.family, params: fit.params.map((v) => +v.toFixed(4)), sim: fit.sim,
-        rmsPt: r2(fit.rmsPt), rmsMm: r2(fit.rmsPt * PT_MM), meanPt: r2(fit.meanPt), meanMm: r2(meanMm), maxPt: r2(Math.max(...fit.resid)),
-        n: cps.length, src: [...new Set(cps.map((c) => c.src))],
-        ...(fit.tps ? { tps: fit.tps, rmsTpsPt: r2(fit.rmsTpsPt), meanTpsPt: r2(fit.meanTpsPt), meanTpsMm: r2(fit.meanTpsPt * PT_MM), looMeanPt: r2(fit.looMeanPt), looMeanMm: r2(fit.looMeanPt * PT_MM) } : {}),
-        dropped, candidates: fit.candidates.map((c) => ({ family: c.family, rmsPt: r2(c.rmsPt) })),
-        resid: cps.map((c, i) => ({ name: cpName(c), residPt: r2(fit.resid[i]), ...(c.approx ? { approx: true } : {}) })),
-      };
-      if (fit.smallArea) out.smallArea = true;
-      const reasons = [];
-      if (meanMm > ACCEPT_MM) reasons.push(`평균 잔차 ${meanMm.toFixed(2)}mm > ${ACCEPT_MM}mm`);
-      if (cps.length && cps.every((c) => c.approx)) reasons.push('기준점을 눈으로 찍음(모든 기준점 approx)');
-      if (reasons.length) { out.approx = true; out.approxReason = reasons.join('; '); }
-      fs.writeFileSync(`${WORK}/geo/${m.id}.fit.json`, JSON.stringify(out, null, 1));
-      rows.push([m.id, out.family, out.params.map((v) => v.toFixed(1)).join(','), out.rmsPt.toFixed(2), out.rmsMm.toFixed(2), out.meanMm.toFixed(2),
-        fit.tps ? `${out.meanTpsMm.toFixed(2)} (LOO ${out.looMeanMm.toFixed(2)})` : '-', cps.length, dropped.length || '', out.approx ? `approx: ${out.approxReason}` : '']);
-    }
-    console.log(`합격 기준: TPS 전 평균 잔차 meanMm ≤ ${ACCEPT_MM}mm (tpsMeanMm 는 참고: TPS 후 기준점 위 평균, 괄호는 한 점 빼고 맞춘 평균)`);
-    console.log(['id', 'family', 'params', 'rmsPt', 'rmsMm', 'meanMm', 'tpsMeanMm', 'n', 'drop', ''].join('\t'));
-    for (const r of rows) console.log(r.join('\t'));
-    return 0;
-  }
-
-  if (argv[0] === '--verify') {
-    const { feature } = await import('topojson-client');
-    const ids = argv[1] === 'all' ? maps.map((m) => m.id).filter((id) => !SKIP.has(id)) : [argv[1]];
-    const land = {};
-    const getLand = (res) => {
-      if (!land[res]) {
-        const topo = JSON.parse(fs.readFileSync(path.join(here, '..', '..', 'node_modules', 'world-atlas', `land-${res}.json`), 'utf8'));
-        land[res] = feature(topo, topo.objects.land);
-      }
-      return land[res];
-    };
-    for (const id of ids) {
-      const m = maps.find((x) => x.id === id);
-      const fit = JSON.parse(fs.readFileSync(`${WORK}/geo/${id}.fit.json`, 'utf8'));
-      // 1° 가 몇 pt 인가로 해안선 해상도를 고른다(세계 지도는 50m, 나머지는 10m)
-      const a = applyFit(fit, [fit.params[0], 10]), b = applyFit(fit, [fit.params[0] + 1, 10]);
-      const ptPerDeg = Math.hypot(a[0] - b[0], a[1] - b[1]);
-      const res = ptPerDeg < 4 ? '50m' : '10m';
-      const lines = []; let cur = null;
-      const [x0, y0, x1, y1] = m.bbox, pad = 40;
-      const ctx = {
-        moveTo(x, y) { cur = [[x, y]]; lines.push(cur); }, lineTo(x, y) { cur.push([x, y]); },
-        closePath() { if (cur && cur.length) cur.push(cur[0]); }, arc() {}, rect() {},
-      };
-      g.geoPath(fitProjection(fit), ctx)(getLand(res));
-      const keep = lines.filter((L) => L.some(([x, y]) => x > x0 - pad && x < x1 + pad && y > y0 - pad && y < y1 + pad))
-        .map((L) => L.map(([x, y]) => [r2(x), r2(y)]));
-      const cps = loadCps(id).map((c) => ({ xy: c.xy, fit: applyFit(fit, [c.lon, c.lat]).map(r2) }));
-      const ov = { page: m.page, bbox: m.bbox, dpi: 150, lines: keep, cps, res, out: `${WORK}/geo/${id}.verify.png`,
-        title: `${id}  ${fit.family}  rms ${fit.rmsPt}pt  mean ${fit.meanMm}mm${fit.tps ? '  +TPS' : ''}  NE ${res}` };
-      const ovPath = `${WORK}/geo/${id}.overlay.json`;
-      fs.writeFileSync(ovPath, JSON.stringify(ov));
-      const py = `
-import sys, json
-sys.path.insert(0, sys.argv[2])
-import pdfkit
-from PIL import Image, ImageDraw
-ov = json.load(open(sys.argv[1], encoding='utf-8'))
-x0, y0 = ov['bbox'][0], ov['bbox'][1]
-w, h, dpi = pdfkit.render_clip(ov['page'], ov['bbox'], ov['dpi'], ov['out'], False)
-s = dpi / 72
-im = Image.open(ov['out']).convert('RGB'); d = ImageDraw.Draw(im)
-P = lambda p: ((p[0] - x0) * s, (p[1] - y0) * s)
-for L in ov['lines']:
-    if len(L) > 1: d.line([P(p) for p in L], fill=(255, 0, 200), width=1)
-for c in ov['cps']:
-    (ax, ay), (bx, by) = P(c['xy']), P(c['fit'])
-    d.ellipse([ax - 4, ay - 4, ax + 4, ay + 4], outline=(255, 0, 0), width=2)
-    d.line([ax, ay, bx, by], fill=(0, 160, 0), width=2)
-    d.line([bx - 3, by, bx + 3, by], fill=(0, 120, 0), width=1); d.line([bx, by - 3, bx, by + 3], fill=(0, 120, 0), width=1)
-d.rectangle([0, 0, len(ov['title']) * 6 + 8, 14], fill=(255, 255, 255)); d.text((4, 2), ov['title'], fill=(0, 0, 0))
-im.save(ov['out'])
-print(ov['out'], im.size)
-`;
-      const r = spawnSync(process.env.PYTHON || 'python', ['-I', '-c', py, ovPath, here], { encoding: 'utf8' });
-      if (r.status !== 0) { console.error(r.stderr); return 1; }
-      process.stdout.write(r.stdout);
-    }
-    return 0;
-  }
-  console.log('사용법: node scripts/atlas/georef.mjs --all | --verify <id|all>');
-  return 2;
-}
-
-import { pathToFileURL } from 'node:url';
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  cli(process.argv.slice(2)).then((code) => process.exit(code), (e) => { console.error(e); process.exit(1); });
 }

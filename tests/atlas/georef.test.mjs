@@ -78,3 +78,103 @@ test('작은 지역(도시 규모) 기준점은 기준점 중심의 정거 원�
   const [lon, lat] = invertFit(fit, [x, y]);
   assert.ok(Math.abs(lon - 103.8) < 1e-6 && Math.abs(lat - 1.3) < 1e-6);
 });
+
+// ── 검토 반영(B2 품질) ────────────────────────────────────────────────
+import { geoConicEqualArea, geoPath } from 'd3-geo';
+import { nelderMead, makeConverter, inControlHull, fitProjection, robustFit } from '../../scripts/atlas/georef.mjs';
+
+test('nelderMead: NaN 을 내는 영역을 피하고, 수렴하면 일찍 멈춘다', () => {
+  const r = nelderMead((p) => (p[0] < 0 ? NaN : (p[0] - 3) ** 2 + (p[1] + 1) ** 2), [1, 1], 2, 2000);
+  assert.ok(Math.abs(r.x[0] - 3) < 1e-4 && Math.abs(r.x[1] + 1) < 1e-4, `${r.x}`);
+  assert.ok(r.iters < 2000, `iters ${r.iters}`);
+  const s = nelderMead(() => NaN, [0, 0], 1, 50);
+  assert.ok(Array.isArray(s.x) && s.x.every(Number.isFinite));
+});
+
+test('원뿔 정적 도법(표준위선 25/50)을 되찾는다', () => {
+  const conic = geoConicEqualArea().parallels([25, 50]).rotate([-105, 0]).scale(700).translate([400, 300]);
+  const cps = grid(conic, range(70, 140, 10), range(15, 55, 10));
+  const fit = fitControls(cps);
+  assert.ok(fit.rmsPt < 0.3, `rms ${fit.rmsPt} (${fit.family})`);
+  const [x, y] = applyFit(fit, [118, 33]), [tx, ty] = conic([118, 33]);
+  assert.ok(Math.hypot(x - tx, y - ty) < 0.3);
+});
+
+test('날짜 변경선을 걸친 지도에서 invertFit', () => {
+  const base = geoMiller().rotate([-180, 0]).scale(80).translate([300, 300]);
+  const cps = grid(base, [150, 165, 175, -175, -165, -150], [-30, 0, 30, 50]);
+  const fit = fitControls(cps);
+  const ll = invertFit(fit, base([-170, 20]));
+  assert.ok(ll, 'null 아님');
+  assert.ok(Math.abs(((ll[0] + 170 + 540) % 360) - 180) < 1e-6 && Math.abs(ll[1] - 20) < 1e-6, `${ll}`);
+});
+
+test('invertFit: 엉뚱한 입력·투영 밖 점은 null', () => {
+  const fit = fitControls(grid(truth, range(40, 160, 20), range(-10, 70, 20)));
+  assert.equal(invertFit(fit, [NaN, 0]), null);
+  assert.equal(invertFit(fit, [1e9, -1e9]), null);
+  const warp = ([x, y]) => [x + 3 * Math.sin(y / 200), y + 2 * Math.cos(x / 250)];
+  const tf = fitWithTps(grid((ll) => warp(truth(ll)), range(40, 160, 10), range(-10, 70, 10)));
+  assert.ok(tf.tps);
+  assert.equal(invertFit(tf, [1e9, 1e9]), null);
+  assert.equal(applyFit(tf, [NaN, 3]), null);
+});
+
+test('TPS 는 기준점 범위 밖에서 0 으로 줄어든다 — 30° 바깥 점의 오차가 유한하다', () => {
+  const warp = ([x, y]) => [x + 3 * Math.sin(y / 200), y + 2 * Math.cos(x / 250)];
+  const cps = grid((ll) => warp(truth(ll)), range(40, 160, 10), range(-10, 70, 10));
+  const fit = fitWithTps(cps);
+  const inside = applyFit(fit, [100, 30]);
+  assert.equal(inControlHull(fit, inside), true);
+  const far = [100, -40];                              // 남쪽 끝 기준점(-10°)에서 30° 바깥
+  const p = applyFit(fit, far), plain = fitControls(cps);
+  assert.equal(inControlHull(fit, p), false);
+  assert.deepEqual(p, applyFit(plain, far));           // 여백 너머에서는 보정 0 → 기본 식과 같다
+  const [tx, ty] = warp(truth(far));
+  assert.ok(Math.hypot(p[0] - tx, p[1] - ty) < 6, `오차 ${Math.hypot(p[0] - tx, p[1] - ty)}`);
+  const back = invertFit(fit, p);
+  assert.ok(Math.abs(back[0] - 100) < 1e-6 && Math.abs(back[1] + 40) < 1e-6);
+});
+
+test('TPS: 0.01pt 안에 겹친 기준점이 있어도 풀린다', () => {
+  const warp = ([x, y]) => [x + 3 * Math.sin(y / 200), y + 2 * Math.cos(x / 250)];
+  const cps = grid((ll) => warp(truth(ll)), range(40, 160, 10), range(-10, 70, 10));
+  cps.push({ ...cps[5], xy: [cps[5].xy[0] + 0.001, cps[5].xy[1]] });
+  const fit = fitWithTps(cps);
+  assert.ok(fit.tps && fit.rmsTpsPt < 0.2, `${fit.rmsTpsPt}`);
+});
+
+test('makeConverter: 한 번 만든 변환기를 재사용하고 applyFit/invertFit 과 같은 값', () => {
+  const fit = fitControls(grid(truth, range(40, 160, 20), range(-10, 70, 20)));
+  const cv = makeConverter(fit);
+  assert.equal(makeConverter(fit), cv);
+  assert.deepEqual(cv.apply([120, 30]), applyFit(fit, [120, 30]));
+  assert.deepEqual(cv.invert([400, 300]), invertFit(fit, [400, 300]));
+});
+
+test('fitProjection: geoPath 로 그린 도형이 applyFit 과 맞는다', () => {
+  const fit = fitControls(grid(truth, range(40, 160, 20), range(-10, 70, 20)));
+  const pts = []; const ctx = { moveTo: (x, y) => pts.push([x, y]), lineTo: (x, y) => pts.push([x, y]), closePath() {}, arc() {}, rect() {} };
+  geoPath(fitProjection(fit), ctx)({ type: 'LineString', coordinates: [[100, 30], [101, 30]] });
+  assert.ok(pts.length >= 2);
+  const a = applyFit(fit, [100, 30]), b = applyFit(fit, [101, 30]);
+  assert.ok(Math.hypot(pts[0][0] - a[0], pts[0][1] - a[1]) < 1e-6);
+  assert.ok(Math.hypot(pts.at(-1)[0] - b[0], pts.at(-1)[1] - b[1]) < 1e-6);
+});
+
+test('robustFit: 짝짓기 실수로 튄 경위선 교차점을 뺀다', () => {
+  const cps = grid(truth, range(40, 160, 10), range(-10, 70, 10)).map((c) => ({ ...c, src: 'grid' }));
+  cps[7] = { ...cps[7], xy: [cps[7].xy[0] + 30, cps[7].xy[1]] };
+  const { cps: kept, dropped, fit } = robustFit(cps);
+  assert.equal(dropped.length, 1);
+  assert.equal(kept.length, cps.length - 1);
+  assert.ok(fit.rmsPt < 0.1, `rms ${fit.rmsPt}`);
+});
+
+test('작은 지역의 중심 경도는 원형 평균(날짜 변경선 걸침)', () => {
+  const p = geoAzimuthalEqualArea().rotate([180, -10]).scale(60000).translate([0, 0]);
+  const cps = grid(p, [179.7, 179.9, -179.9, -179.7], [9.9, 10.1]);
+  const fit = fitControls(cps);
+  assert.equal(fit.family, 'equirectangular');
+  assert.ok(Math.abs(Math.abs(fit.params[0]) - 180) < 1e-6, `${fit.params}`);
+});

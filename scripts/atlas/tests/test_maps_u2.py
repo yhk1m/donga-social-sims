@@ -6,7 +6,6 @@ HERE = os.path.dirname(__file__)
 PAGE_W, PAGE_H = 779.53, 722.84  # 모든 쪽 page.rect (pt)
 KINDS = {'general', 'relief', 'climate', 'temp-precip', 'religion', 'density', 'growth', 'resources',
          'exports', 'trade', 'heritage', 'singapore', 'kashmir', 'coloring'}
-NO_CONTROLS_OK = {'p22-kashmir'}  # 양식화된 모식도라 기준점을 만들 수 없음(notes 참고)
 
 
 class MapsU2(unittest.TestCase):
@@ -41,8 +40,13 @@ class MapsU2(unittest.TestCase):
     def test_georef_source(self):
         for m in self.maps:
             with self.subTest(id=m['id']):
-                if m['id'] in NO_CONTROLS_OK: continue
+                if m.get('georef', True) is False: continue  # 양식화된 모식도(p22-kashmir)는 맞추기 없음
                 self.assertTrue(m['graticuleLabels'] or len(m['controls']) >= 4)
+
+    def test_georef_flag(self):
+        # 맞추기 제외 목록의 단일 출처: "georef": false (현재 p22-kashmir 만)
+        self.assertEqual([m['id'] for m in self.maps if m.get('georef', True) is False], ['p22-kashmir'])
+        for m in self.maps: self.assertIn(m.get('georef', True), (True, False))
 
     def test_controls_shape(self):
         for m in self.maps:
