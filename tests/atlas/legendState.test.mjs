@@ -26,3 +26,23 @@ test('selected·reset·onChange(구독 해제 포함)', () => {
   assert.deepEqual(seen, ['A', null]);
   assert.deepEqual(s.classes, ['A', 'B']);
 });
+
+test('모르는 분류는 오류, 이미 전체일 때 reset 은 알리지 않음', () => {
+  const s = createLegendState(['A', 'B']);
+  assert.throws(() => s.toggle('Z'), /모르는 범례 분류/);
+  let n = 0; s.onChange(() => n++);
+  s.reset(); assert.equal(n, 0);
+  s.toggle('A'); s.reset(); assert.equal(n, 2);
+});
+
+test('구독자 하나가 오류를 내도 나머지는 알림을 받고 상태는 바뀜', () => {
+  const s = createLegendState(['A', 'B']);
+  const seen = [], errors = [];
+  s.onChange(() => { throw new Error('구독자 오류'); });
+  s.onChange((v) => seen.push(v));
+  const orig = console.error; console.error = (...a) => errors.push(a);
+  try { s.toggle('A'); } finally { console.error = orig; }
+  assert.deepEqual(seen, ['A']);
+  assert.equal(s.selected(), 'A');
+  assert.equal(errors.length, 1);
+});
