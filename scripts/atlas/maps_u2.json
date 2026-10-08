@@ -25,8 +25,610 @@
   "projection": "람베르트 정적 방위 도법",
   "scale": "1:40,000,000",
   "graticuleLabels": true,
-  "controls": [],
-  "notes": "전면(재단 여백까지) 지도. 경위도 눈금 글자(˚E/˚N/˚S)가 지도 안 가장자리에 30개. 범례=육지 높이·바다 깊이 색띠. 왼쪽 아래 「아시아」 제목 상자(축척·도법)가 지도를 덮는다."
+  "controls": [
+   {
+    "name": "아나디리",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     682.01,
+     82.06
+    ],
+    "lon": 177.475,
+    "lat": 64.737,
+    "ne": "Anadyr"
+   },
+   {
+    "name": "아테네",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     16.52,
+     261.96
+    ],
+    "lon": 23.7314,
+    "lat": 37.9853,
+    "ne": "Athens"
+   },
+   {
+    "name": "페트로파블롭스크캄차츠키",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     710.75,
+     182.23
+    ],
+    "lon": 158.623,
+    "lat": 53.062,
+    "ne": "Petropavlovsk-Kamchatsky"
+   },
+   {
+    "name": "소피아",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     41.05,
+     224.76
+    ],
+    "lon": 23.3147,
+    "lat": 42.6853,
+    "ne": "Sofia"
+   },
+   {
+    "name": "팔라나",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     679.94,
+     141.52
+    ],
+    "lon": 159.95,
+    "lat": 59.084,
+    "ne": "Palana"
+   },
+   {
+    "name": "바르샤바",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     96.81,
+     151.96
+    ],
+    "lon": 21.0053,
+    "lat": 52.2309,
+    "ne": "Warsaw"
+   },
+   {
+    "name": "리가",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     140.14,
+     128.05
+    ],
+    "lon": 24.1,
+    "lat": 56.95,
+    "ne": "Riga"
+   },
+   {
+    "name": "카이로",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     15.79,
+     339.04
+    ],
+    "lon": 31.248,
+    "lat": 30.0519,
+    "ne": "Cairo"
+   },
+   {
+    "name": "헬싱키",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     166.76,
+     110.44
+    ],
+    "lon": 24.9325,
+    "lat": 60.1638,
+    "ne": "Helsinki"
+   },
+   {
+    "name": "마가단",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     646.66,
+     150.24
+    ],
+    "lon": 150.81,
+    "lat": 59.575,
+    "ne": "Magadan"
+   },
+   {
+    "name": "니코시아",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     47.01,
+     300.88
+    ],
+    "lon": 33.3666,
+    "lat": 35.1667,
+    "ne": "Nicosia"
+   },
+   {
+    "name": "앙카라",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     65.86,
+     262.72
+    ],
+    "lon": 32.8624,
+    "lat": 39.9292,
+    "ne": "Ankara"
+   },
+   {
+    "name": "세바스토폴",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     92.77,
+     229.14
+    ],
+    "lon": 33.5244,
+    "lat": 44.6039,
+    "ne": "Sevastopol"
+   },
+   {
+    "name": "모스크바",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     172.08,
+     158.98
+    ],
+    "lon": 37.6136,
+    "lat": 55.7541,
+    "ne": "Moscow"
+   },
+   {
+    "name": "아스마라",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     20.45,
+     470.26
+    ],
+    "lon": 38.9333,
+    "lat": 15.3333,
+    "ne": "Asmara"
+   },
+   {
+    "name": "아르한겔스크",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     237.88,
+     109.46
+    ],
+    "lon": 40.545,
+    "lat": 64.575,
+    "ne": "Archangel"
+   },
+   {
+    "name": "딜리",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     627.2,
+     665.84
+    ],
+    "lon": 125.5795,
+    "lat": -8.5594,
+    "ne": "Dili"
+   },
+   {
+    "name": "바그다드",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     97.75,
+     329.38
+    ],
+    "lon": 44.3919,
+    "lat": 33.3406,
+    "ne": "Baghdad"
+   },
+   {
+    "name": "사나",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     53.47,
+     473.31
+    ],
+    "lon": 44.2046,
+    "lat": 15.3567,
+    "ne": "Sanaa"
+   },
+   {
+    "name": "카잔",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     213.85,
+     174.65
+    ],
+    "lon": 49.1244,
+    "lat": 55.7519,
+    "ne": "Kazan"
+   },
+   {
+    "name": "모가디슈",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     48.94,
+     582.91
+    ],
+    "lon": 45.3647,
+    "lat": 2.0686,
+    "ne": "Mogadishu"
+   },
+   {
+    "name": "자카르타",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     490.94,
+     646.65
+    ],
+    "lon": 106.8275,
+    "lat": -6.1725,
+    "ne": "Jakarta"
+   },
+   {
+    "name": "리야드",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     86.8,
+     399.81
+    ],
+    "lon": 46.7205,
+    "lat": 24.6345,
+    "ne": "Riyadh"
+   },
+   {
+    "name": "마카사르",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     583.58,
+     639.42
+    ],
+    "lon": 119.4301,
+    "lat": -5.138,
+    "ne": "Makassar"
+   },
+   {
+    "name": "반자르마신",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     548.31,
+     625.72
+    ],
+    "lon": 114.5801,
+    "lat": -3.33,
+    "ne": "Bandjarmasin"
+   },
+   {
+    "name": "테헤란",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     143.99,
+     319.1
+    ],
+    "lon": 51.4224,
+    "lat": 35.6739,
+    "ne": "Tehran"
+   },
+   {
+    "name": "시라즈",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     134.97,
+     365.35
+    ],
+    "lon": 52.5681,
+    "lat": 29.6319,
+    "ne": "Shiraz"
+   },
+   {
+    "name": "아부다비",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     133.49,
+     407.33
+    ],
+    "lon": 54.3666,
+    "lat": 24.4667,
+    "ne": "Abu Dhabi"
+   },
+   {
+    "name": "다바오",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     628.11,
+     547.19
+    ],
+    "lon": 125.6281,
+    "lat": 7.112,
+    "ne": "Davao"
+   },
+   {
+    "name": "마슈하드",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     191.74,
+     321.93
+    ],
+    "lon": 59.5681,
+    "lat": 36.272,
+    "ne": "Mashhad"
+   },
+   {
+    "name": "말레",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     245.54,
+     569.36
+    ],
+    "lon": 73.5089,
+    "lat": 4.172,
+    "ne": "Malé"
+   },
+   {
+    "name": "반다르스리브가완",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     550.68,
+     564.61
+    ],
+    "lon": 114.9333,
+    "lat": 4.8833,
+    "ne": "Bandar Seri Begawan"
+   },
+   {
+    "name": "반다아체",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     406.02,
+     559.37
+    ],
+    "lon": 95.32,
+    "lat": 5.55,
+    "ne": "Banda Aceh"
+   },
+   {
+    "name": "마닐라",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     591.67,
+     491.42
+    ],
+    "lon": 120.9803,
+    "lat": 14.6061,
+    "ne": "Manila"
+   },
+   {
+    "name": "칸다하르",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     218.6,
+     360.23
+    ],
+    "lon": 65.6949,
+    "lat": 31.61,
+    "ne": "Kandahar"
+   },
+   {
+    "name": "노보시비르스크",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     358.86,
+     205.59
+    ],
+    "lon": 82.9581,
+    "lat": 55.0319,
+    "ne": "Novosibirsk"
+   },
+   {
+    "name": "카라치",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     215.55,
+     410.59
+    ],
+    "lon": 66.9881,
+    "lat": 24.8719,
+    "ne": "Karachi"
+   },
+   {
+    "name": "카불",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     245.67,
+     341.16
+    ],
+    "lon": 69.1813,
+    "lat": 34.5186,
+    "ne": "Kabul"
+   },
+   {
+    "name": "비슈케크",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     293.13,
+     284.49
+    ],
+    "lon": 74.5833,
+    "lat": 42.875,
+    "ne": "Bishkek"
+   },
+   {
+    "name": "프놈펜",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     476.28,
+     515.7
+    ],
+    "lon": 104.9147,
+    "lat": 11.552,
+    "ne": "Phnom Penh"
+   },
+   {
+    "name": "코지코드",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     264.21,
+     516.1
+    ],
+    "lon": 75.768,
+    "lat": 11.2524,
+    "ne": "Kozhikode"
+   },
+   {
+    "name": "홍콩",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     539.45,
+     435.96
+    ],
+    "lon": 114.1831,
+    "lat": 22.3069,
+    "ne": "Hong Kong"
+   },
+   {
+    "name": "물탄",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     252.51,
+     373.61
+    ],
+    "lon": 71.4531,
+    "lat": 30.2019,
+    "ne": "Multan"
+   },
+   {
+    "name": "양곤",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     412.79,
+     477.38
+    ],
+    "lon": 96.1647,
+    "lat": 16.7853,
+    "ne": "Yangon"
+   },
+   {
+    "name": "자이푸르",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     276.52,
+     399.57
+    ],
+    "lon": 75.808,
+    "lat": 26.9231,
+    "ne": "Jaipur"
+   },
+   {
+    "name": "하노이",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     481.51,
+     446.13
+    ],
+    "lon": 105.8481,
+    "lat": 21.0353,
+    "ne": "Hanoi"
+   },
+   {
+    "name": "칸푸르",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     306.52,
+     404.41
+    ],
+    "lon": 80.3181,
+    "lat": 26.4619,
+    "ne": "Kanpur"
+   },
+   {
+    "name": "만달레이",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     412.53,
+     440.17
+    ],
+    "lon": 96.0831,
+    "lat": 21.9719,
+    "ne": "Mandalay"
+   },
+   {
+    "name": "잠셰드푸르",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     344.07,
+     432.41
+    ],
+    "lon": 86.1956,
+    "lat": 22.7895,
+    "ne": "Jamshedpur"
+   },
+   {
+    "name": "카트만두",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     340.18,
+     396.15
+    ],
+    "lon": 85.3147,
+    "lat": 27.7186,
+    "ne": "Kathmandu"
+   }
+  ],
+  "notes": "전면(재단 여백까지) 지도. 경위도 눈금 글자(˚E/˚N/˚S)가 지도 안 가장자리에 30개. 범례=육지 높이·바다 깊이 색띠. 왼쪽 아래 「아시아」 제목 상자(축척·도법)가 지도를 덮는다.",
+  "controlsNote": "controls 의 src:'city' 는 교과서 도시 기호 위치 ↔ Natural Earth 10m 인구 지점 경위도 짝(scripts/atlas/city_controls.mjs 가 고름). 경위선 교차점(src:'grid')이 지도 안쪽에만 있어 가장자리를 붙잡으려고 더했다. 교과서가 일부러 옮겨 그린 기호(에르데네트·냐짱 등)는 잔차로 걸러 기준점에서 뺐다."
  },
  {
   "id": "p17-coloring",
@@ -168,8 +770,166 @@
   "projection": "람베르트 정각 원뿔 도법",
   "scale": "1:16,000,000",
   "graticuleLabels": true,
-  "controls": [],
-  "notes": "지도 틀 [25.5,25.5,754,697.3] 바깥 여백에 경위도 눈금 15개(위·아래 ˚E, 좌우 ˚N)와 찾기 격자 A~F/1~4. 정각 원뿔이라 위선이 곡선."
+  "controls": [
+   {
+    "name": "이르쿠츠크",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     223.46,
+     42.92
+    ],
+    "lon": 104.2839,
+    "lat": 52.2846,
+    "ne": "Irkutsk"
+   },
+   {
+    "name": "울란우데",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     258.06,
+     56.91
+    ],
+    "lon": 107.625,
+    "lat": 51.825,
+    "ne": "Ulan-Ude"
+   },
+   {
+    "name": "치타",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     321.01,
+     59.1
+    ],
+    "lon": 113.465,
+    "lat": 52.055,
+    "ne": "Chita"
+   },
+   {
+    "name": "소베츠카야가반",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     624.65,
+     79.15
+    ],
+    "lon": 140.2749,
+    "lat": 48.9699,
+    "ne": "Sovetskaya Gavan"
+   },
+   {
+    "name": "유즈노사할린스크",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     663.09,
+     104.93
+    ],
+    "lon": 142.74,
+    "lat": 46.965,
+    "ne": "Yuzhno Sakhalinsk"
+   },
+   {
+    "name": "울란바토르",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     240.88,
+     124.09
+    ],
+    "lon": 106.9147,
+    "lat": 47.9186,
+    "ne": "Ulaanbaatar"
+   },
+   {
+    "name": "사인샨드",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     273.04,
+     180.98
+    ],
+    "lon": 110.15,
+    "lat": 44.8666,
+    "ne": "Buyant-Uhaa"
+   },
+   {
+    "name": "달란자드가드",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     198.97,
+     194.16
+    ],
+    "lon": 104.4403,
+    "lat": 43.5836,
+    "ne": "Dalandzadgad"
+   },
+   {
+    "name": "우수리스크",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     547.58,
+     189.73
+    ],
+    "lon": 132.02,
+    "lat": 43.8,
+    "ne": "Ussuriysk"
+   },
+   {
+    "name": "빈",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     142.03,
+     644.9
+    ],
+    "lon": 105.68,
+    "lat": 18.7,
+    "ne": "Vinh"
+   },
+   {
+    "name": "루앙프라방",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     82.5,
+     611.15
+    ],
+    "lon": 102.1416,
+    "lat": 19.8845,
+    "ne": "Louangphrabang"
+   },
+   {
+    "name": "하이퐁",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     166.56,
+     606.78
+    ],
+    "lon": 106.6781,
+    "lat": 20.832,
+    "ne": "Haiphong"
+   },
+   {
+    "name": "마카오",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     290.35,
+     593.5
+    ],
+    "lon": 113.5444,
+    "lat": 22.1891,
+    "ne": "Macau"
+   }
+  ],
+  "notes": "지도 틀 [25.5,25.5,754,697.3] 바깥 여백에 경위도 눈금 15개(위·아래 ˚E, 좌우 ˚N)와 찾기 격자 A~F/1~4. 정각 원뿔이라 위선이 곡선.",
+  "controlsNote": "controls 의 src:'city' 는 교과서 도시 기호 위치 ↔ Natural Earth 10m 인구 지점 경위도 짝(scripts/atlas/city_controls.mjs 가 고름). 경위선 교차점(src:'grid')이 지도 안쪽에만 있어 가장자리를 붙잡으려고 더했다. 교과서가 일부러 옮겨 그린 기호(에르데네트·냐짱 등)는 잔차로 걸러 기준점에서 뺐다."
  },
  {
   "id": "p19-southeast-asia",
@@ -197,8 +957,658 @@
   "projection": "람베르트 정적 방위 도법",
   "scale": "1:20,000,000",
   "graticuleLabels": true,
-  "controls": [],
-  "notes": "지도 틀 바깥 여백에 경위도 눈금 19개. 범례(육지 높이)는 틀 안 왼쪽 아래."
+  "controls": [
+   {
+    "name": "실롱",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     43.11,
+     101.27
+    ],
+    "lon": 91.88,
+    "lat": 25.5705,
+    "ne": "Shillong"
+   },
+   {
+    "name": "시트웨",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     47.19,
+     182.03
+    ],
+    "lon": 92.88,
+    "lat": 20.14,
+    "ne": "Sittwe"
+   },
+   {
+    "name": "반다아체",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     68.68,
+     400.63
+    ],
+    "lon": 95.32,
+    "lat": 5.55,
+    "ne": "Banda Aceh"
+   },
+   {
+    "name": "프롬",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     77.96,
+     202.71
+    ],
+    "lon": 95.2114,
+    "lat": 18.8165,
+    "ne": "Pyay"
+   },
+   {
+    "name": "몽유와",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     81.65,
+     154.11
+    ],
+    "lon": 95.15,
+    "lat": 22.105,
+    "ne": "Monywa"
+   },
+   {
+    "name": "양곤",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     89.06,
+     233.17
+    ],
+    "lon": 96.1647,
+    "lat": 16.7853,
+    "ne": "Yangon"
+   },
+   {
+    "name": "타웅지",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     106.06,
+     174.44
+    ],
+    "lon": 97.038,
+    "lat": 20.782,
+    "ne": "Taunggyi"
+   },
+   {
+    "name": "미치나",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     117.36,
+     107.47
+    ],
+    "lon": 97.3928,
+    "lat": 25.3596,
+    "ne": "Myitkyina"
+   },
+   {
+    "name": "랑사",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     107.18,
+     414.03
+    ],
+    "lon": 97.9664,
+    "lat": 4.6736,
+    "ne": "Langsa"
+   },
+   {
+    "name": "푸껫",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     114.41,
+     366.27
+    ],
+    "lon": 98.3815,
+    "lat": 7.8765,
+    "ne": "Phuket"
+   },
+   {
+    "name": "메르귀",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     120.35,
+     298.18
+    ],
+    "lon": 98.6115,
+    "lat": 12.4541,
+    "ne": "Myeik"
+   },
+   {
+    "name": "시볼가",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     118.91,
+     457.76
+    ],
+    "lon": 98.8,
+    "lat": 1.75,
+    "ne": "Sibolga"
+   },
+   {
+    "name": "쿠팡",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     485.39,
+     634.67
+    ],
+    "lon": 123.583,
+    "lat": -10.1787,
+    "ne": "Kupang"
+   },
+   {
+    "name": "나콘사완",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     143.8,
+     250.44
+    ],
+    "lon": 100.07,
+    "lat": 15.7,
+    "ne": "Nakhon Sawan"
+   },
+   {
+    "name": "촌부리",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     155.77,
+     285.6
+    ],
+    "lon": 101,
+    "lat": 13.4004,
+    "ne": "Chon Buri"
+   },
+   {
+    "name": "이포",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     152.76,
+     415.38
+    ],
+    "lon": 101.065,
+    "lat": 4.6,
+    "ne": "Ipoh"
+   },
+   {
+    "name": "마타람",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     375.98,
+     610.68
+    ],
+    "lon": 116.135,
+    "lat": -8.5795,
+    "ne": "Mataram"
+   },
+   {
+    "name": "딜리",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     515.2,
+     610.91
+    ],
+    "lon": 125.5795,
+    "lat": -8.5594,
+    "ne": "Dili"
+   },
+   {
+    "name": "스름반",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     165.36,
+     443.56
+    ],
+    "lon": 101.94,
+    "lat": 2.7105,
+    "ne": "Seremban"
+   },
+   {
+    "name": "말랑",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     323.87,
+     601.83
+    ],
+    "lon": 112.6081,
+    "lat": -7.978,
+    "ne": "Malang"
+   },
+   {
+    "name": "욕야카르타",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     290.85,
+     598.97
+    ],
+    "lon": 110.375,
+    "lat": -7.78,
+    "ne": "Yogyakarta"
+   },
+   {
+    "name": "비엔티안",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     182.07,
+     216.64
+    ],
+    "lon": 102.6,
+    "lat": 17.9667,
+    "ne": "Vientiane"
+   },
+   {
+    "name": "쿠알라트렝가누",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     183.23,
+     404.67
+    ],
+    "lon": 103.12,
+    "lat": 5.3304,
+    "ne": "Kuala Terengganu"
+   },
+   {
+    "name": "바탐방",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     187.27,
+     289.54
+    ],
+    "lon": 103.2,
+    "lat": 13.1,
+    "ne": "Battambang"
+   },
+   {
+    "name": "반둥",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     249.25,
+     586.81
+    ],
+    "lon": 107.5681,
+    "lat": -6.9481,
+    "ne": "Bandung"
+   },
+   {
+    "name": "잠비",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     189.97,
+     507.53
+    ],
+    "lon": 103.61,
+    "lat": -1.59,
+    "ne": "Jambi"
+   },
+   {
+    "name": "라오까이",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     204.66,
+     151.62
+    ],
+    "lon": 103.966,
+    "lat": 22.5014,
+    "ne": "Lao Chi"
+   },
+   {
+    "name": "싱가포르",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     193.56,
+     464.66
+    ],
+    "lon": 103.8539,
+    "lat": 1.295,
+    "ne": "Singapore"
+   },
+   {
+    "name": "프놈펜",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     211.53,
+     312.67
+    ],
+    "lon": 104.9147,
+    "lat": 11.552,
+    "ne": "Phnom Penh"
+   },
+   {
+    "name": "마카사르",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     424.96,
+     559.92
+    ],
+    "lon": 119.4301,
+    "lat": -5.138,
+    "ne": "Makassar"
+   },
+   {
+    "name": "빈",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     226.13,
+     207.59
+    ],
+    "lon": 105.68,
+    "lat": 18.7,
+    "ne": "Vinh"
+   },
+   {
+    "name": "하노이",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     229.96,
+     173.47
+    ],
+    "lon": 105.8481,
+    "lat": 21.0353,
+    "ne": "Hanoi"
+   },
+   {
+    "name": "팡칼피낭",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     227.65,
+     514.75
+    ],
+    "lon": 106.15,
+    "lat": -2.08,
+    "ne": "Pangkalpinang"
+   },
+   {
+    "name": "큰다리",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     472.05,
+     542.51
+    ],
+    "lon": 122.5973,
+    "lat": -3.9553,
+    "ne": "Kendari"
+   },
+   {
+    "name": "암본",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     555.01,
+     539.22
+    ],
+    "lon": 128.2,
+    "lat": -3.7167,
+    "ne": "Ambon"
+   },
+   {
+    "name": "반자르마신",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     352.98,
+     533.14
+    ],
+    "lon": 114.5801,
+    "lat": -3.33,
+    "ne": "Bandjarmasin"
+   },
+   {
+    "name": "후에",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     252.23,
+     240.6
+    ],
+    "lon": 107.58,
+    "lat": 16.47,
+    "ne": "Hue"
+   },
+   {
+    "name": "꼰뚬",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     257.27,
+     271.3
+    ],
+    "lon": 107.9833,
+    "lat": 14.3838,
+    "ne": "Kon Tum"
+   },
+   {
+    "name": "홍콩",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     347.75,
+     156.18
+    ],
+    "lon": 114.1831,
+    "lat": 22.3069,
+    "ne": "Hong Kong"
+   },
+   {
+    "name": "판티엣",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     257.95,
+     322.14
+    ],
+    "lon": 108.1001,
+    "lat": 10.9337,
+    "ne": "Phan Thiet"
+   },
+   {
+    "name": "발릭파판",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     386.46,
+     502.39
+    ],
+    "lon": 116.83,
+    "lat": -1.25,
+    "ne": "Balikpapan"
+   },
+   {
+    "name": "고론탈로",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     479.27,
+     475.75
+    ],
+    "lon": 123.07,
+    "lat": 0.55,
+    "ne": "Gorontalo"
+   },
+   {
+    "name": "트르나테",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     542.92,
+     472.1
+    ],
+    "lon": 127.363,
+    "lat": 0.793,
+    "ne": "Ternate"
+   },
+   {
+    "name": "시부",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     312.25,
+     449.83
+    ],
+    "lon": 111.843,
+    "lat": 2.303,
+    "ne": "Sibu"
+   },
+   {
+    "name": "투게가라오",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     455.79,
+     223.93
+    ],
+    "lon": 121.7269,
+    "lat": 17.6131,
+    "ne": "Tuguegarao"
+   },
+   {
+    "name": "타라칸",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     398.37,
+     435.09
+    ],
+    "lon": 117.633,
+    "lat": 3.3,
+    "ne": "Tarakan"
+   },
+   {
+    "name": "다바오",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     516.32,
+     378.33
+    ],
+    "lon": 125.6281,
+    "lat": 7.112,
+    "ne": "Davao"
+   },
+   {
+    "name": "타클로반",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     505.78,
+     317.14
+    ],
+    "lon": 125,
+    "lat": 11.2504,
+    "ne": "Tacloban"
+   },
+   {
+    "name": "반다르스리브가완",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     357.27,
+     411.53
+    ],
+    "lon": 114.9333,
+    "lat": 4.8833,
+    "ne": "Bandar Seri Begawan"
+   },
+   {
+    "name": "마닐라",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     445.82,
+     267.36
+    ],
+    "lon": 120.9803,
+    "lat": 14.6061,
+    "ne": "Manila"
+   },
+   {
+    "name": "산다칸",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     405.31,
+     397.49
+    ],
+    "lon": 118.108,
+    "lat": 5.843,
+    "ne": "Sandakan"
+   },
+   {
+    "name": "나가",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     478.36,
+     282.42
+    ],
+    "lon": 123.1814,
+    "lat": 13.6192,
+    "ne": "Naga"
+   },
+   {
+    "name": "바콜로드",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     476.44,
+     326.5
+    ],
+    "lon": 122.9817,
+    "lat": 10.6317,
+    "ne": "Bacolod"
+   },
+   {
+    "name": "삼보앙가",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     463.96,
+     381.4
+    ],
+    "lon": 122.0781,
+    "lat": 6.9219,
+    "ne": "Zamboanga"
+   }
+  ],
+  "notes": "지도 틀 바깥 여백에 경위도 눈금 19개. 범례(육지 높이)는 틀 안 왼쪽 아래.",
+  "controlsNote": "controls 의 src:'city' 는 교과서 도시 기호 위치 ↔ Natural Earth 10m 인구 지점 경위도 짝(scripts/atlas/city_controls.mjs 가 고름). 경위선 교차점(src:'grid')이 지도 안쪽에만 있어 가장자리를 붙잡으려고 더했다. 교과서가 일부러 옮겨 그린 기호(에르데네트·냐짱 등)는 잔차로 걸러 기준점에서 뺐다."
  },
  {
   "id": "p20-relief",

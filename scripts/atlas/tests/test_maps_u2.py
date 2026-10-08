@@ -57,5 +57,17 @@ class MapsU2(unittest.TestCase):
                     x0, y0, x1, y1 = m['bbox']
                     self.assertTrue(x0 <= c['xy'][0] <= x1 and y0 <= c['xy'][1] <= y1, c['xy'])
 
+    def test_city_controls_only_on_general_maps(self):
+        # 일반도(16·18·19쪽)만 도시 기호 기준점(src:'city', Natural Earth 짝)을 쓰고, 그 까닭을 controlsNote 에 적는다
+        for m in self.maps:
+            city = [c for c in m['controls'] if c.get('src') == 'city']
+            with self.subTest(id=m['id']):
+                if m['id'] in ('p16-asia', 'p18-east-asia', 'p19-southeast-asia'):
+                    self.assertGreaterEqual(len(city), 10)
+                    self.assertIn('Natural Earth', m['controlsNote'])
+                    for c in city: self.assertTrue(c['ne'] and c['name'])
+                else:
+                    self.assertEqual(city, [])
+
 
 if __name__ == '__main__': unittest.main()

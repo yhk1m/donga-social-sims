@@ -8,6 +8,8 @@
     눈금 글자(`120˚E`, `40°N`, `0˚`; ˚ U+02DA 와 ° 둘 다)마다 가장 가까운 선을 찾아 그 선에 경도·위도를 붙이고,
     경선 × 위선 교차점을 선분 교차로 구한다. 같은 (경도, 위도) 교차점이 여럿이면(면으로 그린 선의 두 가장자리 등) 평균한다.
   - 그 밖의 지도: maps_u2.json 의 controls(손으로 적은 해안 특징점·섬 중심)를 그대로 쓴다.
+  - 일반도(p16·p18·p19)는 교차점에 더해 maps_u2.json controls 의 도시 기호 기준점(src:'city', city_controls.mjs 가 Natural Earth 인구
+    지점과 짝지어 고른 것)도 쓴다 — 교차점이 지도 안쪽에만 있어 가장자리를 붙잡으려고.
   - maps_u2.json 에 "georef": false 인 지도(p22-kashmir): 기준점 없음(양식화된 모식도, 계획서 '실행 중 결정' 참고).
 
 CLI
@@ -230,10 +232,11 @@ def grid_controls(m, report=None):
 _grid_cache = {}  # 지도 id → grid_controls 결과(같은 실행 안에서 다시 계산하지 않음)
 
 def controls(map_id, report=None):
-    """지도 id → 기준점 목록. 손 기준점은 src:'manual', 경위선 교차점은 src:'grid'. georef:false 지도는 []."""
+    """지도 id → 기준점 목록. 손 기준점은 src:'manual'(maps_u2.json controls 에 src 가 적혀 있으면 그것: 일반도 도시 기호 'city'),
+    경위선 교차점은 src:'grid'. georef:false 지도는 []."""
     m = maps()[map_id]
     if not georef_enabled(m): return []
-    out = [dict(c, src='manual') for c in m.get('controls', [])]
+    out = [{**c, 'src': c.get('src', 'manual')} for c in m.get('controls', [])]   # src 가 적힌 기준점(city)은 그대로
     if m.get('graticuleLabels'):
         if map_id not in _grid_cache or report is not None:
             _grid_cache[map_id] = grid_controls(m, report=report)

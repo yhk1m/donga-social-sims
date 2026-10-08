@@ -80,8 +80,11 @@ class Controls(unittest.TestCase):
             self.assertEqual(len(c['xy']), 2)
 
     def test_p16_grid_points_on_10deg_lattice(self):
-        for c in ev.controls('p16-asia'):
-            self.assertEqual(c['src'], 'grid')
+        # 경위선 교차점은 10° 격자 위, 그 밖에는 도시 기호 기준점(src:'city', maps_u2.json)만
+        cps = ev.controls('p16-asia')
+        self.assertEqual({c['src'] for c in cps}, {'grid', 'city'})
+        for c in cps:
+            if c['src'] != 'grid': continue
             self.assertEqual(c['lon'] % 10, 0); self.assertEqual(c['lat'] % 10, 0)
 
     def test_p16_known_intersection(self):

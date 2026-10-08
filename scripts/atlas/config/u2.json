@@ -78,6 +78,20 @@
     "maskPxPerPt": 6.0, "hubRadiusPt": 6.0, "maxSnapPt": 1.0, "simplifyPt": 0.2,
     "widthWindow": [0.2, 0.5], "widthSkipEndPt": 3.0}}
  },
+ "cityControls": {
+  "_doc": "일반도(16·18·19쪽) 경위도 맞추기의 도시 기호 기준점(src:'city', city_controls.mjs). 경위선 교차점이 지도 안쪽에만 있어 가장자리 도시가 수십~100km 어긋나서(18쪽 에르데네트 108km), 교과서 도시 기호를 Natural Earth 10m 인구 지점(NAME_KO 같고 아시아 범위에 하나뿐, 그 지도에도 하나뿐)과 짝지어 더한다. 잘못 짝지은 것은 투영식 잔차 MAD(madK) → 이웃 잔차 벡터 일치(localK·localFloorPt) 로 거르고, 교차점 껍질 바깥부터 minSpacingPt 간격으로 성기게 고른다. 고른 점은 maps_u2.json controls 에 적힌다. 겹 나누기(folds) 검증 결과는 계획서 실행 중 결정.",
+  "maps": ["p16-asia", "p18-east-asia", "p19-southeast-asia"],
+  "note": "controls 의 src:'city' 는 교과서 도시 기호 위치 ↔ Natural Earth 10m 인구 지점 경위도 짝(scripts/atlas/city_controls.mjs 가 고름). 경위선 교차점(src:'grid')이 지도 안쪽에만 있어 가장자리를 붙잡으려고 더했다. 교과서가 일부러 옮겨 그린 기호(에르데네트·냐짱 등)는 잔차로 걸러 기준점에서 뺐다.",
+  "neFile": "raw/ne/ne_10m_populated_places.geojson",
+  "neBox": [20, -15, 180, 82],
+  "madK": 3.0,
+  "madFloorPt": 0.3,
+  "localK": 4,
+  "localFloorPt": 3.0,
+  "minSpacingPt": 30,
+  "folds": 5,
+  "seed": 7
+ },
  "places": {
   "_doc": "일반도 지명(Task C2). places.py(PDF → 지면 글자·기호, $ATLAS_WORK/text/places-<map>.json; --index → $ATLAS_WORK/tables/index.json) → build_places.mjs(경위도·중복 합치기·등급·찾아보기 대조 → <out>/places.json). 규칙은 16·18·19쪽 렌더와 글자 양식 표(글꼴·크기·색)를 보고 정했다. ignore 를 먼저 보고, 그다음 styles 에서 처음 맞는 것. 어디에도 안 맞는 글자는 경고로 남는다.",
   "maps": ["p16-asia", "p18-east-asia", "p19-southeast-asia"],
