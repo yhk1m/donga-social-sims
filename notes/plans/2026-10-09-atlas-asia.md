@@ -450,14 +450,14 @@ test('주제 8개, 쪽 16~25 모두 덮음', () => {
   assert.deepEqual(T.map((t) => t.id), ['general', 'coloring', 'relief', 'climate', 'religion', 'population', 'industry', 'heritage']);
   const pages = new Set(T.flatMap((t) => t.pages)); for (let p = 16; p <= 25; p++) assert.ok(pages.has(p), `${p}쪽`);
 });
-test('개수: 지형 핀 8, 기후 그래프 마커 5, 세계유산 11', () => {
+test('개수: 지형 핀 7, 기후 그래프 마커 4, 세계유산 11 (C3·C4 실측)', () => {
   const by = Object.fromEntries(T.map((t) => [t.id, t]));
-  assert.equal(by.relief.markers.length, 8); assert.equal(by.climate.markers.filter((m) => m.chart).length, 5); assert.equal(by.heritage.markers.length, 11);
+  assert.equal(by.relief.markers.length, 7); assert.equal(by.climate.markers.filter((m) => m.chart).length, 4); assert.equal(by.heritage.markers.length, 11);
 });
 test('빈 글 없음, 참조한 레이어·사진·그래프가 모두 있음', () => {
   for (const t of T) {
     for (const l of t.layers) assert.ok(existsSync(`sims/atlas-u2-asia/data/${l.ref}.json`), l.ref);
-    for (const m of t.markers) { assert.ok(m.title && m.text, m.id); if (m.photo) assert.ok(existsSync(`docs/assets/atlas/u2/photo/${m.photo}.jpg`), m.photo); }
+    for (const m of t.markers) { assert.ok(m.title && m.text, m.id); if (m.photo) assert.ok(existsSync(`docs/assets/atlas/u2/photo/${m.photo.id}.jpg`), m.photo.id); }
   }
 });
 ```
@@ -856,3 +856,15 @@ export default function mount(root) {
   - 출력: 경로는 `charts.out`(climate·charts·sheets, 작업 폴더 기준), 읽개 기본값은 `charts.defaults`(colorDE·numberFont·axisResidTol·axisScale·maxGapPt·snapTol·startTolDeg·endTolPt). 경고가 하나라도 있으면 JSON 을 쓰지 않는다(`--force`로만 씀, 종료 코드는 1). 쓰기는 임시 파일 → os.replace. 경고는 중복 없이. 대조표는 뽑은 결과·chart_sheets.py·설정보다 오래됐을 때(또는 다시 뽑았을 때) 다시 그린다. 낡은 산출물 검사 입력에 chart_sheets.py·charts_labels.py 도 든다.
   - 잰 값의 소수 자리 = 정밀도의 한 자리 아래, 그 그래프에 인쇄된 수의 소수 자리 + 1 을 넘지 않는다(눈금이 정수인 선·피라미드는 소수 1, 띠·원은 2, 기후 그래프는 부록 표 자리 + 1 = 2). 피라미드 합은 반올림 전 값으로.
   - 모듈: 글자 도우미(상자 글·줄 묶기·이름 ↔ 수 짝·상자 거리)는 `charts_labels.py`로 나눔. 세계 인구 대조표의 쌓는 순서는 설정 `sheetStackOrder`. 같은 입력으로 두 번 뽑으면 charts-u2.json 이 바이트까지 같다(테스트).
+- (C5) 주제 내용 결정:
+  - 파이프라인: `python -I scripts/atlas/extract_text.py [--labels] [--fill] [--check]`(없으면 --labels --check) → `node scripts/atlas/coloring_quiz.mjs --write` → `node scripts/atlas/build_content.mjs [--force]`. 설정은 `config/u2.json`의 `content`(경로·기대 수 `expect`·보기 범위 `viewGrid`/`viewPercentile`/`markerMargin`·색칠하기 `coloring`). 경고가 있으면 쓰지 않고 종료 코드 1.
+  - 사람이 고치는 원본 `content/atlas/u2/topics.json`: 글은 손으로 쓰지 않고 출처 상자만 적는다 — 어느 객체든 `src`{page,bbox[,skip]} → `text`, `<키>Src` → `<키>`(titleSrc·creditSrc·noteSrc·answerSrc·answerKeySrc). `--fill`이 `pdfkit.box_text`로 채우고, Python 테스트가 원문과 같은지 다시 본다(손으로 고치면 실패). `skip`은 같은 줄에 붙어 나오는 앞 글(「학습 목표 |」, 그래프 제목)을 정확히 떼어 낸다. 사람이 고친 값은 `overrides.json`의 `items`{키: {value, from, why}}(키 `topicId.markerId.field`·`topicId.blocks[i].field`·`topicId.layers[i].field`·`topicId.quiz.field`) — `from`이 지금 원문과 다르면 빌드가 「낡은 고침」으로 멈춘다. 지금 고침 3개: 16쪽 제목 「아 시 아」→「아시아」, 23쪽 「있으나,중국」 띄어쓰기(왼쪽 맞춤 글상자의 첫 줄이 가장 길어 box_text 가 양끝 맞춤 줄바꿈으로 봄), 112쪽 정답의 검은 동그라미 번호 ❶❼❽❾(글꼴 표에 없어 ?로 읽힘).
+  - 주제 8개: 일반도(16·18·19, 바로가기 3 + 도법·축척 글) · 색칠하기(17) · 지형(20) · 기후(21) · 종교·문화(22, 바로가기 종교 분포·싱가포르·카슈미르) · 인구(23) · 산업(24) · 세계유산(25). 개수 실측: 지형 마커 7, 기후 그래프 마커 4, 세계유산 11(계획의 8·5는 조사 어림값 — 위 테스트 고침). 같은 지도 안 레이어 바꾸기는 `group: "map"`(기후 구분·1월·7월, 종교 분포·카슈미르, 인구 분포(밀도 음영 + 1억 명 막대)·증가율, 자원·수출품·교역).
+  - 블록 종류: `text`(role question·goal·section·subtitle·link), `activity`(활동하기·주제도 활동), `card`, `chart`(ref, 교과서 제목·설명·주), `photo`(ref → 사진 제목·설명), `page`(원본 쪽 보기, `bbox`가 있으면 그 부분 — 카슈미르 주민 구성 모식도, 24쪽 신문 스크랩). 주제마다 쪽마다 `page` 블록 하나. `view`가 있는 블록은 그 바로가기에 딸린다.
+  - 마커 위치(`lonlatFrom`): `pin` = 교과서 핀(C3 photos.json, 지도 fit 이 approx 면 `approx`), `place` = 교과서 일반도 지명(places.json) — 기후 그래프 도시 4곳, 22쪽 종교 경관 4곳(핀이 도시에서 87~240km 떨어진 위치도 핀), 20쪽 구이린(109km), `source` = 실제 좌표 + 출처 — 25쪽 세계유산 11곳은 UNESCO 세계유산 목록 좌표(whc.unesco.org 은 봇 차단이라 UNESCO 공개 자료 `data.unesco.org` whc001 의 `coordinates`, 받은 파일 `$ATLAS_WORK/raw/unesco/whc11.json`; 러산 대불은 구성 요소 779-002). 핀이 아닌 위치로 옮긴 마커는 `textbookLonlat`(교과서 핀)을 남긴다. 지형 핀은 지역(평원·사막·고원)이라 그대로(파미르 핀은 실제 고원 중심에서 200km 넘게 떨어져 있지만 「위치 근사」 표시로 둠).
+  - 마커 글: 사진이 있으면 제목 = 사진 굵은 제목(없으면 설명), 글 = 사진 설명(C3 원문). 세계유산은 제목 = 유산 이름, 글 = 「국가: … / 관련 종교: …」(정답에서 만듦). 정답 = 25쪽 인쇄(02~06·10·11, `answerSrc`로 원문 대조) + 112쪽 정답(01·07·08·09, `quiz.answerKey` 원문에 들어 있는지 테스트).
+  - 색칠하기 문제(`content/atlas/u2/coloring.json`, coloring_quiz.mjs 생성): 17쪽 나라 글자 46개(이름 14 + 초성 32) → Natural Earth 10m `ADM0_A3`. 나라 = Natural Earth 한국어 이름(NAME_KO) 초성이 글자 초성과 같은 나라 중 글자 가운데(17쪽 fit 으로 되돌림)에서 600km(`nameKm`) 안 가장 가까운 면, 없으면(터키 ↔ 튀르키예) 글자 자리의 면. 이름 = 교과서 나라 지명(places)에서 초성이 같은 것. 수도 = 17쪽 손글씨 수도 25곳, 나머지는 그 나라 면 안 places 수도 지명. 글자가 다른 나라 면 위에 있으면 `labelIso`(대한민국 글자는 PRK 위, 조지아는 RUS 위 등 7곳).
+  - 보기 범위: `view`/`views` = `{map}`(지도 틀 안 21×21 격자를 fit 으로 되돌린 경위도의 5~95% 범위 — 방위 도법 틀 모서리는 극 가까이라 경도 폭이 300°를 넘어 쓰지 않음, 주제 view 는 마커를 모두 담도록 1° 넓힘) 또는 `{layer}`(카슈미르 = 레이어 도형 범위). 확대 수준(zoom)은 도법마다 달라 정하지 않고 `bounds`를 넘긴다(엔진 D 작업이 화면에 맞춤).
+  - 생성물(`sims/atlas-u2-asia/data/`): `topics.json`(44.7KB, 원본 표기 src·…Src·why·_키는 뺌, 사진은 {id, url(jpg), webp, width, height, mask?, credit?, pin?}, 쪽 이미지 url), `charts.json`(charts-u2.json 17개를 id 열쇠로, 모두 어느 주제가 참조), `layers.js`(참조 레이어 12개 정적 import). 레이어 항목은 파일의 layerType 과 type 이 같아야 하고, label 기본값 = 레이어 제목, 레이어 approx → `approx`·`approxNote: 「위치 근사」`(p22-singapore), 카슈미르는 `note: 「위치: 실제 경계 자료(Natural Earth)」`, 지도 출처 글(「(UN, 「세계 인구 전망」, 2021)」 등)은 `credit`.
+  - 교과서 원문 문제는 앱에 넣지 않고 `content/atlas/u2/issues.md`에 모았다(특허 등록 = 신발 수출, 통신 기기 칸 바뀜, 세계 인구 합계 버림, 카타르 띠 비례 아님, 테헤란 부록 표 없음, 「사우디아리비아」 오탈자, 112쪽 「24쪽 특집」, 위치도 핀 거리, 17쪽 한반도 글자).
+  - 검토 덤프 `$ATLAS_WORK/shots/c5/topics.md`(주제별 글·마커·그래프·레이어·퀴즈)를 쪽 렌더와 대조함 — 빠진 글: 23쪽 「*1억 명 이상 국가만 표시」(인구 막대 레이어 `note`로 넣음), 깨진 글: 112쪽 동그라미 번호(고침). 21쪽 기후 그래프 출처 「『이과연표』, 2023」는 charts.json `source`에 있다.

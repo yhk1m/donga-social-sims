@@ -389,5 +389,28 @@
    "categories": ["콘셉트", "위치", "규모", "총 사업비"],
    "notes": "표에 출처 표기가 없다(아래 사진 출처 「네옴시티 누리집, 2023」은 사진 것). 규모의 위첨자 2 는 km² 로 고쳐 적는다(replace)."}
  }
+},
+"content": {
+ "_doc": "C5 주제 내용. 사람이 고치는 원본은 topics(글은 src 상자에서 extract_text.py --fill 이 원문 그대로 채움)와 overrides(사람이 고친 값, 키 topicId.markerId.field 또는 topicId.blocks[i].field). coloring_quiz.mjs 가 17쪽 글자(labels) → coloring 을 만들고, build_content.mjs 가 topics + overrides + photos + charts + coloringOut → out/topics.json·charts.json·layers.js. 경로: topics·overrides·photos·coloringOut·places·out·pageDir·photoDir 은 저장소 기준, labels·charts 는 작업 폴더 기준.",
+ "topics": "content/atlas/u2/topics.json",
+ "overrides": "content/atlas/u2/overrides.json",
+ "photos": "content/atlas/u2/photos.json",
+ "coloringOut": "content/atlas/u2/coloring.json",
+ "places": "sims/atlas-u2-asia/data/places.json",
+ "out": "sims/atlas-u2-asia/data",
+ "pageDir": "docs/assets/atlas/u2/page",
+ "photoDir": "docs/assets/atlas/u2/photo",
+ "labels": "text/p17-labels.json",
+ "charts": "tables/charts-u2.json",
+ "pages": [16, 25],
+ "expect": {"topics": ["general", "coloring", "relief", "climate", "religion", "population", "industry", "heritage"],
+            "markers": {"relief": 7, "heritage": 11}, "chartMarkers": {"climate": 4}, "coloringCountries": 46},
+ "_expect": "실측(C3·C4): 지형 핀 7, 기후 그래프 4(테헤란·방콕·이르쿠츠크·우한), 세계유산 11, 17쪽 나라 이름 46. 계획의 「지형 8·기후 5」는 조사 어림값.",
+ "viewGrid": 20, "viewPercentile": 5, "markerMargin": 1,
+ "_view": "보기 범위 = 지도 틀 안 21×21 격자점을 되돌린 경위도의 5~95% 범위(틀 모서리는 방위 도법에서 극 가까이라 쓰지 않음). 주제 보기는 마커를 모두 담도록 markerMargin(도)만큼 넓힘.",
+ "coloring": {"page": 17, "map": "p17-coloring", "countryFont": "KCCChassam", "capitalFont": "KyoboHandwriting", "capitalSize": 7.5,
+              "neCountries": "raw/ne/ne_10m_admin_0_countries.geojson", "nePlaces": "raw/ne/ne_10m_populated_places.geojson",
+              "capitalKinds": ["capital"], "countryKinds": ["country"], "nearKm": 150, "nameKm": 600,
+              "_nearKm": "나라 찾기: Natural Earth 이름(NAME_KO) 초성이 글자와 같은 나라 중 nameKm 안 가장 가까운 면(바다 위 글자·지시선 글자 — 레바논 225km, 필리핀 170km), 없으면 글자 자리의 면(nearKm 안). 수도 글자도 nearKm."}
 }
 }
