@@ -8,7 +8,8 @@
     "preview": "vite preview",
     "embed": "node scripts/build-embed.mjs",
     "check:embed": "node scripts/check-embed.mjs",
-    "release": "node scripts/release.mjs"
+    "release": "node scripts/release.mjs",
+    "test": "node --test tests/"
   },
   "keywords": [],
   "author": "",
@@ -22,7 +23,12 @@
   },
   "dependencies": {
     "csat-chart.js": "^2.1.1",
-    "three": "^0.170.0"
+    "d3-geo-projection": "^4.0.0",
+    "d3-interpolate": "^3.0.1",
+    "d3-selection": "^3.0.0",
+    "d3-zoom": "^3.0.0",
+    "three": "^0.170.0",
+    "world-atlas": "^2.0.2"
   },
   "private": true
 }
