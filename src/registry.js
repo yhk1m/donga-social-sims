@@ -16,4 +16,5 @@ export const SIMS = [
   { id: 't1-u5-traffic', book: 't1', unit: 'Ⅴ. 생활공간과 사회', page: null, title: '시간대별 도로 통행 속도', kind: '지도' },
   { id: 't1-u5-extinction', book: 't1', unit: 'Ⅴ. 생활공간과 사회', page: null, title: '지방 소멸 위험 카토그램', kind: '지도' },
   { id: 't1-u5-ballast', book: 't1', unit: 'Ⅴ. 생활공간과 사회', page: 138, title: '선박 평형수와 외래 생물종', kind: '3D' },
+  { id: 'atlas-u2-asia', book: 'atlas', unit: 'Ⅱ. 아시아', page: 16, title: '사회과부도 아시아', kind: '지도' },
 ];
