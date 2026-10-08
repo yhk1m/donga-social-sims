@@ -7,6 +7,7 @@
 #     3. 흰색과 맞닿은 테두리 띠(edgePx)는 부드러운 알파: 흰색 거리 d = 255 − 최소 채널, 기준 d_ref = 띠 밖 음영 화소의
 #        이웃(edgePx + 1) 최댓값 → α = d / d_ref, 색은 흰색을 걷어 낸 값(255 − (255 − c)/α) — 해안의 흰 테두리가 남지 않게
 #   build_overlay(oc, c, warnings)   렌더 → PNG(docs/assets/…) + JSON(sims/…/data/…)
+#   overlay_legend(oc)               지도 범례(maps_u2 legendBbox)의 견본 색 + 글자(legend.py, legendSkip 색 뺌) → [{color, label}] (교과서 순서)
 import json, os, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -14,7 +15,8 @@ sys.path.insert(0, HERE)
 import numpy as np
 from PIL import Image
 import pdfkit
-from atlas_common import WORK, maps
+from atlas_common import WORK, maps, unit_config
+import legend as LG
 from pins import node_lonlat, node_center
 
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
@@ -143,6 +145,13 @@ def blue_pixels(im, over):
     return int(((a[..., 2] - a[..., 0] > over) & (a[..., 3] > 0)).sum())
 
 
+def overlay_legend(oc):
+    """음영 단계 범례 → [{color, label}] (읽는 순서). legendSkip = 같은 범례 상자 안 다른 레이어 견본 색(인구 막대 #0072bc)."""
+    m = maps()[oc['map']]
+    cfg = dict(unit_config()['defaults'], legendSkip=oc.get('legendSkip', []))
+    return [{'color': e['color'], 'label': e['label']} for e in LG.legend(m, cfg)]
+
+
 def build_overlay(oc, c, warnings, root=ROOT):
     """설정 overlays 항목 하나 → PNG + JSON. c = 설정 photos."""
     m = maps()[oc['map']]; bbox = m['bbox']
@@ -166,7 +175,9 @@ def build_overlay(oc, c, warnings, root=ROOT):
     w, e = lon_bounds(ll, node_center(oc['map']))
     bounds = [w, round(min(p[1] for p in ll), 3), e, round(max(p[1] for p in ll), 3)]
     meta = {'url': c['assetBase'] + c['assetPrefix'] + oc['out'], 'page': m['page'], 'bbox': bbox, 'fitId': oc['map'],
-            'width': W, 'height': H, 'bounds': bounds}
+            'width': W, 'height': H, 'bounds': bounds, 'legend': overlay_legend(oc)}
+    if len(meta['legend']) != oc['expectLegend']: warnings.append(f'{oc["id"]}: 범례 {len(meta["legend"])}개 ≠ 지면 {oc["expectLegend"]}개')
+    if not all(e['label'] for e in meta['legend']): warnings.append(f'{oc["id"]}: 이름 없는 범례 견본')
     with open(os.path.join(root, oc['json']), 'w', encoding='utf-8', newline='\n') as f:
         json.dump(meta, f, ensure_ascii=False, indent=1); f.write('\n')
     print(f'{oc["id"]}: {W}×{H}px {os.path.getsize(dst) // 1024}KB, 아이콘 {info["icons"]}개(메움 {info["inpainted"]}), '

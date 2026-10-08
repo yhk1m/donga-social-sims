@@ -310,3 +310,19 @@ class Outputs(unittest.TestCase):
 
 
 if __name__ == '__main__': unittest.main()
+
+
+@NEED_PDF
+class OverlayLegend(unittest.TestCase):
+    """23쪽 인구 밀도 음영의 범례 단계: 지면 범례 견본 수 = 설정 expectLegend = JSON legend."""
+    def test_legend_matches_printed(self):
+        for oc in unit_config()['photos']['overlays']:
+            leg = D.overlay_legend(oc)
+            self.assertEqual(len(leg), oc['expectLegend'], oc['id'])
+            self.assertTrue(all(e['label'] and e['color'].startswith('#') for e in leg))
+            self.assertNotIn('#0072bc', [e['color'] for e in leg])      # 같은 상자의 인구 막대 견본은 빠짐
+            root = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+            with open(os.path.join(root, oc['json']), encoding='utf-8') as f:
+                self.assertEqual(json.load(f)['legend'], leg)
+        self.assertEqual([e['label'] for e in D.overlay_legend(unit_config()['photos']['overlays'][0])],
+                         ['200 이상', '100~200', '50~100', '5~50', '5 미만'])

@@ -274,6 +274,8 @@
   "overlays": [{
    "id": "p23-density", "map": "p23-density", "dpi": 150, "whiteMin": 248, "iconBlueOverRed": 40, "iconDilatePx": 2, "inpaintMinOpaqueFrac": 0.5, "edgePx": 2, "noiseD": 20,
    "out": "overlay/p23-density.png", "json": "sims/atlas-u2-asia/data/overlay-p23-density.json",
+   "legendSkip": ["#0072bc"], "expectLegend": 5,
+   "_legend": "JSON legend = 지도 범례 상자(maps_u2 legendBbox)의 견본 색·글자(legend.py) — 인구 밀도 5단계(200 이상 ~ 5 미만). 같은 상자의 인구 막대 견본(#0072bc 「1억 명」)은 p23-density-cities 레이어 것이라 legendSkip.",
    "_doc": "23쪽 인구 밀도 음영: 지도 틀(maps_u2 bbox)을 래스터만 렌더 → 흰 바탕(세 채널 ≥ whiteMin) 투명 → 파란 사람 아이콘(B − R > iconBlueOverRed, iconDilatePx 넓힘) 지움 → 지운 덩어리 둘레가 inpaintMinOpaqueFrac 이상 음영이면 둘레 색으로 메우고 아니면(바다 위) 투명 → 흰색과 맞닿은 edgePx 띠는 흰색 거리로 부드러운 알파(기준 = 띠 밖 음영 이웃의 흰색 거리 최댓값) + 색은 α≥0.5 면 흰색을 걷어 낸 값, 더 옅으면 이웃 음영 색(해안 흰 테두리 없앰). 둘레에 음영이 없는 띠 화소 중 흰색 거리 < noiseD 는 바다 잡티라 투명(가장 옅은 단계 #fef1e1 의 흰색 거리 30)"
   }]
  },

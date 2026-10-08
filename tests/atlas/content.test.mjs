@@ -220,3 +220,11 @@ test('범례 제목: 교과서가 범례 제목을 인쇄한 레이어에 legend
   }
   for (const l of Object.values(L)) if (!(l.ref in want)) assert.equal(l.legendTitle, undefined, `${l.ref}: 교과서에 범례 제목 없음`);
 });
+
+test('인구 밀도 음영 범례: 지면 범례 단계 수(설정 expectLegend)만큼 색·이름', () => {
+  const ov = JSON.parse(readFileSync(`${DIR}/overlay-p23-density.json`, 'utf8'));
+  const oc = JSON.parse(readFileSync('scripts/atlas/config/u2.json', 'utf8')).photos.overlays.find((o) => o.id === 'p23-density');
+  assert.equal(ov.legend.length, oc.expectLegend);
+  for (const e of ov.legend) { assert.match(e.color, /^#[0-9a-f]{6}$/); assert.ok(e.label.trim()); }
+  assert.equal(by.population.layers.find((l) => l.ref === 'overlay-p23-density').legendTitle, '인구 밀도(명/km²)');
+});
