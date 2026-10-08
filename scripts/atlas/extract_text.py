@@ -113,13 +113,17 @@ def _split_items(s):
 
 
 def write_json(path, obj):
-    """임시 파일 → os.replace(원자적)."""
+    """임시 파일 → os.replace(원자적). 내용이 같으면 쓰지 않는다(수정 시각을 지켜 뒤 단계의 낡은 산출물 검사가 헛돌지 않게)."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    text = dumps(obj) + '\n'
+    if os.path.exists(path):
+        with open(path, encoding='utf-8', newline='') as f:
+            if f.read() == text:
+                print(f'  {path} (같음, 그대로)'); return
     tmp = path + '.tmp'
     try:
-        with open(tmp, 'w', encoding='utf-8') as f:
-            f.write(dumps(obj))
-            f.write('\n')
+        with open(tmp, 'w', encoding='utf-8', newline='\n') as f:   # 줄 끝 LF(운영체제와 상관없이 같은 바이트)
+            f.write(text)
         os.replace(tmp, path)
     finally:
         if os.path.exists(tmp): os.remove(tmp)
