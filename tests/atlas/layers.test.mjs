@@ -137,6 +137,19 @@ test('자원 기호 label = 범례 이름, 인구 막대 label = 나라', () => 
   assert.ok(pop.includes('중국') && pop.includes('인도'));
 });
 
+test('기호 모양(legendShapes)·지시선 막대 자리(barAt)', () => {
+  const res = load('p24-resources').properties.legend;
+  assert.deepEqual(Object.fromEntries(res.map((e) => [e.label, e.shape])), { 철광석: 'diamond', 구리: 'diamond', 주석: 'diamond', 천연가스: 'triangle-down', 석유: 'circle', 석탄: 'square' });
+  assert.equal(load('p23-density-cities').properties.legend[0].shape, 'bar');
+  const bars = load('p23-density-cities').features.map((f) => f.properties);
+  for (const p of bars) {
+    if (p.anchor === 'leader') assert.ok(Array.isArray(p.barAt) && p.barAt.length === 2, p.label);
+    else assert.equal(p.barAt, undefined, p.label);
+  }
+  // 교과서: 파키스탄·방글라데시·필리핀 막대는 지시선으로 바다 쪽에 따로 놓였다
+  assert.deepEqual(bars.filter((p) => p.barAt).map((p) => p.label).sort(), ['방글라데시', '파키스탄', '필리핀']);
+});
+
 test('레이어 합계 용량이 작다(≤ 650KB)', () => {
   const ids = [...Object.keys(EXPECT), 'p22-kashmir'];
   const kb = ids.reduce((a, id) => a + statSync(`${DIR}/layer-${id}.json`).size, 0) / 1024;

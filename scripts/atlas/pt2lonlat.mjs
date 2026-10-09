@@ -4,6 +4,7 @@
 //     in  = {"<지도 id>": [[x, y], ...], ...}
 //     out = {"<지도 id>": [[lon, lat] | null, ...], ...}   (null = 되돌리기 실패, 길이는 입력과 같다)
 //   node scripts/atlas/pt2lonlat.mjs --center <지도 id>   → {"center": 중심 경도}  (투영 중심 경도, 경도 펴기용)
+//   node scripts/atlas/pt2lonlat.mjs --fit <지도 id>      → {"family", "params", "sim", "tps"?}  (앱이 경위도 → 지면 pt 를 직접 계산할 때 — 밀도 음영 역투영)
 //   fit = $ATLAS_WORK/geo/<지도 id>.fit.json (없으면 오류로 멈춘다 — geo_util.loadFit)
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -31,10 +32,23 @@ export function centerLon(fit) {
   return c;
 }
 
+const TPS_KEYS = ['cx', 'cy', 's', 'pts', 'wx', 'wy', 'ax', 'ay', 'hull', 'taper'];
+/** 앱(src/atlas/fitProject.js)이 쓰는 fit 부분만: 도법 이름·매개변수·닮음 변환(+ TPS 보정 계수). 통계·기준점은 뺀다. */
+export function browserFit(fit) {
+  if (!fit?.family || !Array.isArray(fit.params) || !fit.sim) throw new Error(`fit 에 family·params·sim 이 없음: ${fit?.id}`);
+  const out = { family: fit.family, params: fit.params, sim: fit.sim };
+  if (fit.tps) out.tps = Object.fromEntries(TPS_KEYS.map((k) => [k, fit.tps[k]]));
+  return out;
+}
+
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   try {
-    const i = process.argv.indexOf('--center');
-    if (i > 0) {
+    const i = process.argv.indexOf('--center'), f = process.argv.indexOf('--fit');
+    if (f > 0) {
+      const id = process.argv[f + 1];
+      if (!id) throw new Error('--fit 다음에 지도 id 가 필요');
+      process.stdout.write(JSON.stringify(browserFit(loadFit(id))));
+    } else if (i > 0) {
       const id = process.argv[i + 1];
       if (!id) throw new Error('--center 다음에 지도 id 가 필요');
       process.stdout.write(JSON.stringify({ center: centerLon(loadFit(id)) }));

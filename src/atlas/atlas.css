@@ -38,3 +38,35 @@
 
 /* SVG 레이어: 레이어 요소만 누를 수 있다(빈 곳은 지도 끌기) */
 .ds-sim .at-layer { pointer-events: auto; }
+
+/* 주제 레이어(layers.js) — 강조(hover) 윤곽: 면 = 분류 전체 윤곽, 선 = 굵은 테두리 */
+.ds-sim .at-hover { fill: none; pointer-events: none; stroke-linejoin: round; stroke-linecap: round; }
+.ds-sim .at-hover-area { stroke: #1f2a44; stroke-width: 1.8px; stroke-opacity: .9; }
+.ds-sim .at-hover-line { stroke: #1f2a44; stroke-width: 5px; stroke-opacity: .35; }
+/* 기호: 흰 테두리, 누를 수 있음 */
+.ds-sim .at-sym-item { cursor: pointer; }
+.ds-sim .at-sym-shape { stroke: #fff; stroke-width: 1px; stroke-linejoin: round; }
+.ds-sim .at-sym-item.is-hover .at-sym-shape { stroke: #1f2a44; stroke-width: 2px; }
+.ds-sim .at-bar-cell { stroke: #fff; stroke-width: .6px; }
+.ds-sim .at-bar-person { stroke: #fff; stroke-width: .8px; }
+.ds-sim .at-sym-item.is-hover .at-bar-cell, .ds-sim .at-sym-item.is-hover .at-bar-person { stroke: #1f2a44; stroke-width: 1.2px; }
+.ds-sim .at-bar-leader { fill: none; stroke: #3b3b3b; stroke-width: 1px; stroke-dasharray: 2 2; }
+.ds-sim .at-bar-dot { stroke: #fff; stroke-width: 1px; }
+.ds-sim .at-bar-label {
+  font-family: var(--font); font-size: 12px; font-weight: 800; fill: #1f1f1f; text-anchor: middle; dominant-baseline: hanging;
+  paint-order: stroke fill; stroke: rgba(255, 255, 255, .9); stroke-width: 3px; stroke-linejoin: round;
+}
+/* 흐름선: 흰 테두리(halo) 위에 색 선, 화살촉은 marker */
+.ds-sim .at-flow { cursor: pointer; }
+.ds-sim .at-flow-halo { fill: none; stroke: rgba(255, 255, 255, .85); stroke-linecap: round; stroke-linejoin: round; }
+.ds-sim .at-flow-line { fill: none; stroke-linecap: butt; stroke-linejoin: round; }
+.ds-sim .at-flow-head { stroke: rgba(255, 255, 255, .85); stroke-width: 1px; stroke-linejoin: round; paint-order: stroke fill; }
+.ds-sim .at-flow.is-hover .at-flow-halo { stroke: #1f2a44; stroke-opacity: .35; }
+/* 번호 핀(교과서 보라 물방울) */
+.ds-sim .at-pin { cursor: pointer; }
+.ds-sim .at-pin-body { fill: #7251a1; stroke: #fff; stroke-width: 1.4px; }
+.ds-sim .at-pin-hole { fill: #fff; }
+.ds-sim .at-pin-num { font-family: var(--font); font-size: 9px; font-weight: 800; fill: #4b2f78; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.ds-sim .at-pin.is-hover .at-pin-body { fill: #5b3d8a; }
+.ds-sim .at-pin.is-selected .at-pin-body { fill: #e8590c; }
+.ds-sim .at-pin.is-selected .at-pin-num { fill: #a63c06; }

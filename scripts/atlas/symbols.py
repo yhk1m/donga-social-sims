@@ -78,7 +78,7 @@ def with_lines(t, names):
 
 def density_markers(m, mc, warnings):
     """인구 막대 기호: 같은 색 조각을 x 가 겹치는 막대로 묶고, 네모 수 = 억 명, 아래 글자 = 나라,
-    점선 지시선이 있으면 그 끝 = 나라 위치(없으면 막대 밑)."""
+    점선 지시선이 있으면 그 끝 = 나라 위치(없으면 막대 밑), 이때 bar = 막대 밑 가운데."""
     blobs = []
     for d in drawings(m['page']):
         if hexc(d.get('fill')) != mc['color'] or not in_map(d, m): continue
@@ -104,8 +104,11 @@ def density_markers(m, mc, warnings):
         name = min(below, key=lambda t: t['bbox'][1] - b[3])['text'] if below else None
         if name is None: warnings.append(f'인구 막대 {[round(v, 1) for v in b]} 아래 나라 이름 없음')
         anchor = leader_end(chains, b, mc['leaderNearPt'])
-        out.append({'xy': anchor or [round(cx, 2), round(b[3], 2)], 'cls': 'c1', 'kind': mc['kind'], 'color': mc['color'],
-                    'size': round(b[3] - b[1], 2), 'value': len(squares), 'label': name, 'anchor': 'leader' if anchor else 'bar-base'})
+        base = [round(cx, 2), round(b[3], 2)]
+        item = {'xy': anchor or base, 'cls': 'c1', 'kind': mc['kind'], 'color': mc['color'],
+                'size': round(b[3] - b[1], 2), 'value': len(squares), 'label': name, 'anchor': 'leader' if anchor else 'bar-base'}
+        if anchor: item['bar'] = base   # 지시선이 있으면 막대 밑 가운데(지면 pt)도 남긴다 — 앱이 막대를 교과서 자리에 세우고 지시선을 긋는다
+        out.append(item)
     return out
 
 

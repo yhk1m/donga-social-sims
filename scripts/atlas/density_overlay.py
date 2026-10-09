@@ -6,7 +6,7 @@
 #        음영이면 둘레 색을 안쪽으로 번져 메움(아니면 = 바다 위, 투명)
 #     3. 흰색과 맞닿은 테두리 띠(edgePx)는 부드러운 알파: 흰색 거리 d = 255 − 최소 채널, 기준 d_ref = 띠 밖 음영 화소의
 #        이웃(edgePx + 1) 최댓값 → α = d / d_ref, 색은 흰색을 걷어 낸 값(255 − (255 − c)/α) — 해안의 흰 테두리가 남지 않게
-#   build_overlay(oc, c, warnings)   렌더 → PNG(docs/assets/…) + JSON(sims/…/data/…)
+#   build_overlay(oc, c, warnings)   렌더 → PNG(docs/assets/…) + JSON(sims/…/data/…, fit = 앱 역투영용 {family, params, sim, tps?})
 #   overlay_legend(oc)               지도 범례(maps_u2 legendBbox)의 견본 색 + 글자(legend.py, legendSkip 색 뺌) → [{color, label}] (교과서 순서)
 import json, os, sys
 
@@ -17,7 +17,7 @@ from PIL import Image
 import pdfkit
 from atlas_common import WORK, maps, unit_config
 import legend as LG
-from pins import node_lonlat, node_center
+from pins import node_lonlat, node_center, node_fit
 
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 TMP = os.path.join(WORK, 'c3')
@@ -175,7 +175,7 @@ def build_overlay(oc, c, warnings, root=ROOT):
     w, e = lon_bounds(ll, node_center(oc['map']))
     bounds = [w, round(min(p[1] for p in ll), 3), e, round(max(p[1] for p in ll), 3)]
     meta = {'url': c['assetBase'] + c['assetPrefix'] + oc['out'], 'page': m['page'], 'bbox': bbox, 'fitId': oc['map'],
-            'width': W, 'height': H, 'bounds': bounds, 'legend': overlay_legend(oc)}
+            'width': W, 'height': H, 'bounds': bounds, 'legend': overlay_legend(oc), 'fit': node_fit(oc['map'])}
     if 'expectLegend' not in oc: warnings.append(f'{oc["id"]}: 설정 photos.overlays 에 expectLegend(지면 범례 단계 수)가 없음')
     elif len(meta['legend']) != oc['expectLegend']: warnings.append(f'{oc["id"]}: 범례 {len(meta["legend"])}개 ≠ 지면 {oc["expectLegend"]}개')
     if not all(e['label'] for e in meta['legend']): warnings.append(f'{oc["id"]}: 이름 없는 범례 견본')

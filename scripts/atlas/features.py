@@ -3,7 +3,7 @@
 # extract_vectors.py --features <id ...|all> 이 부른다. 결과: $ATLAS_WORK/vec/<id>.features.json
 #   {id, map, page, bbox, legend:[{cls,color,label,kind,pattern?}],
 #    polys:[{cls,color,label,pattern?,polygons:[[바깥 고리, 구멍...], ...]}],
-#    symbols:[{xy,cls,kind,color,size,label?,value?}], lines:[{points,cls,kind,color,width?,value?,dir?,label?}],
+#    symbols:[{xy,cls,kind,color,size,label?,value?,anchor?,bar?}], lines:[{points,cls,kind,color,width?,value?,dir?,label?}],
 #    report:{..., warnings:[...]}}
 # mode: vector(zones.vector_zones) | raster(zones.raster_zones) | symbols(symbols.symbols) | density-markers(symbols.density_markers).
 # 부가: hatch(빗금 분류), isotherm(lines.isotherms), flows(lines.flows).

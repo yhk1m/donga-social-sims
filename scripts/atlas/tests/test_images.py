@@ -151,6 +151,14 @@ class NodeCalls(unittest.TestCase):
         with self.assertRaises(RuntimeError) as cm: P.node_center('no-such-map-id')
         self.assertIn('georef-cli', str(cm.exception))
 
+    def test_fit_missing_fit(self):
+        with self.assertRaises(RuntimeError) as cm: P.node_fit('no-such-map-id')
+        self.assertIn('--fit', str(cm.exception))
+
+    def test_fit_passthrough(self):
+        fit = {'family': 'miller', 'params': [100], 'sim': {'a': 1, 'b': 0, 'tx': 0, 'ty': 0}}
+        self.assertEqual(P.node_fit('m', run=self.fake(json.dumps(fit))), fit)
+
 
 class Density(unittest.TestCase):
     """합성 배열: 왼쪽 음영(200,80,60) | 가운데 50% 섞인 해안 한 줄 | 오른쪽 흰 바다, 음영 위 아이콘·바다 위 아이콘."""
@@ -297,6 +305,8 @@ class Outputs(unittest.TestCase):
             with self.subTest(oc['id']):
                 with open(A(oc['json']), encoding='utf-8') as f: meta = json.load(f)
                 self.assertEqual(meta['fitId'], oc['map'])
+                # 앱 역투영용 fit(pt2lonlat.mjs --fit): 도법·매개변수·닮음 변환만, 통계·기준점은 없음
+                self.assertTrue({'family', 'params', 'sim'} <= set(meta['fit']) <= {'family', 'params', 'sim', 'tps'}, meta.get('fit'))
                 self.assertTrue(meta['url'].startswith(CFG['assetBase']) and meta['url'].endswith(oc['out']))
                 w, s_, e, n = meta['bounds']
                 self.assertTrue(w < e <= w + 360 and -90 <= s_ < n <= 90, meta['bounds'])   # 북쪽 테두리가 극 가까이라 경도 폭은 넓다

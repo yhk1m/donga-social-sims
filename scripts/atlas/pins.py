@@ -79,17 +79,27 @@ def node_lonlat(pts, run=subprocess.run):
     return out
 
 
-def node_center(map_id, run=subprocess.run):
-    """지도 fit 의 투영 중심 경도(pt2lonlat.mjs --center). fit 이 없으면 RuntimeError(무엇을 먼저 돌릴지 포함)."""
+def _node_query(flag, map_id, run):
+    """pt2lonlat.mjs <flag> <지도 id> 의 JSON 출력. node 없음·시간 초과·실패는 RuntimeError."""
     node = shutil.which('node')
     if not node: raise RuntimeError('node 를 찾을 수 없음 — Node.js 를 설치하거나 PATH 에 넣을 것(pt2lonlat.mjs 실행용)')
     try:
-        r = run([node, os.path.join(HERE, 'pt2lonlat.mjs'), '--center', map_id], capture_output=True,
+        r = run([node, os.path.join(HERE, 'pt2lonlat.mjs'), flag, map_id], capture_output=True,
                 text=True, encoding='utf-8', cwd=ROOT, timeout=NODE_TIMEOUT_S)
     except subprocess.TimeoutExpired:
-        raise RuntimeError(f'pt2lonlat.mjs --center 가 {NODE_TIMEOUT_S}초 안에 끝나지 않음')
-    if r.returncode: raise RuntimeError(f'pt2lonlat.mjs --center {map_id} 실패: {r.stderr.strip()}')
-    return json.loads(r.stdout)['center']
+        raise RuntimeError(f'pt2lonlat.mjs {flag} 가 {NODE_TIMEOUT_S}초 안에 끝나지 않음')
+    if r.returncode: raise RuntimeError(f'pt2lonlat.mjs {flag} {map_id} 실패: {r.stderr.strip()}')
+    return json.loads(r.stdout)
+
+
+def node_center(map_id, run=subprocess.run):
+    """지도 fit 의 투영 중심 경도(pt2lonlat.mjs --center). fit 이 없으면 RuntimeError(무엇을 먼저 돌릴지 포함)."""
+    return _node_query('--center', map_id, run)['center']
+
+
+def node_fit(map_id, run=subprocess.run):
+    """앱이 쓰는 fit 부분 {family, params, sim, tps?}(pt2lonlat.mjs --fit). 밀도 음영 JSON 에 실어 브라우저가 역투영한다."""
+    return _node_query('--fit', map_id, run)
 
 
 def place_lonlat(name, places):

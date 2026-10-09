@@ -7,7 +7,8 @@
 //   2. makeConverter(fit).invert 로 점마다 경위도. 실패한 점이 maxDroppedFrac 를 넘거나 면 고리가 점을 잃으면 멈춘다.
 //      고리·선 안에서 경도를 앞 점에 이어 붙이고(±360), 구멍은 바깥 고리와 평균 경도가 같은 쪽으로 맞춘다.
 //   3. $ATLAS_WORK/geo/<id>.raw.geojson → python -I scripts/atlas/clip_land.py <id ...> (한 프로세스: 육지·덮개 단순화·0.001° 격자·감김·날짜변경선 선 나누기)
-//   4. layer-<id>.json. 맨 위 properties: {id, map, page, title, kind, layerType, approx, source, winding:'cw', legend[present]}.
+//   4. layer-<id>.json. 맨 위 properties: {id, map, page, title, kind, layerType, approx, source, winding:'cw', legend[present, shape?]}.
+//      기호 properties 에는 value·anchor, 지시선 막대면 barAt(막대 밑 가운데 경위도)도.
 //   --verify: 레이어를 같은 fit 으로 지면에 되돌려 교과서 렌더와 겹친 그림 $ATLAS_WORK/shots/c1/<id>.png
 //   source:'ne'(p22-kashmir)는 PDF 도형 대신 python -I scripts/atlas/kashmir.py 가 Natural Earth 로 만든다.
 import fs from 'node:fs';
@@ -112,6 +113,12 @@ function convert(layer, feat, fit) {
     const props = { type: 'symbol', cls: s.cls, kind: s.kind, label: s.label ?? s.kind, color: s.color, size: s.size };
     if (s.label != null) props.name = s.label;
     for (const k of ['value', 'anchor']) if (s[k] != null) props[k] = s[k];
+    // 인구 막대: 지시선 끝(나라 위치)과 따로 놓인 막대 밑 가운데(barAt, 경위도)
+    if (s.bar) {
+      const b = cv.invert(s.bar);
+      if (!b) throw new Error(`${layer.id}: 막대 자리 ${s.bar} 를 경위도로 되돌릴 수 없음`);
+      props.barAt = b.map(r3);
+    }
     features.push({ type: 'Feature', properties: props, geometry: { type: 'Point', coordinates: ll } });
   }
   for (const l of feat.lines) {
@@ -175,7 +182,11 @@ function finish(layer, meta) {
   const m = maps[layer.map];
   const clipped = JSON.parse(fs.readFileSync(`${WORK}/geo/${layer.id}.clipped.geojson`, 'utf8'));
   const features = clipped.features.map((f) => ({ type: 'Feature', properties: f.properties, geometry: roundGeom(f.geometry) }));
-  const legend = (meta.legend || []).map(({ box, ...e }) => e);
+  // 기호 모양(설정 legendShapes: 범례 이름 → 'circle'|'square'|'diamond'|'triangle'|'triangle-down'|'bar') — 앱 기호·범례 견본이 쓴다
+  const shapes = layer.legendShapes || {};
+  const legend = (meta.legend || []).map(({ box, ...e }) => (shapes[e.label] ? { ...e, shape: shapes[e.label] } : e));
+  const unknownShape = Object.keys(shapes).filter((k) => !legend.some((e) => e.label === k));
+  if (unknownShape.length) throw new Error(`${layer.id}: legendShapes 에 범례에 없는 이름 ${unknownShape.join(', ')}`);
   const present = new Set(features.map((f) => f.properties.cls));
   const ne = layer.source === 'ne';
   const props = {
