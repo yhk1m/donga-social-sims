@@ -250,3 +250,23 @@ test('지형 음영 훅: 멈출 때 육지·path 를 받고, 10a 면 under 와 �
   assert.equal(calls.length, n, 'relief:false 면 훅을 부르지 않음');
   map.destroy();
 });
+
+test('destroy 뒤: map.destroyed 는 true, setReliefDrawer·invalidate·refreshLayer·setPlaces·setOptions 는 아무것도 안 함(rAF 없음, 오류 없음)', () => {
+  const { map } = setup();
+  map.addLayer({ id: 'a', z: 1, draw() {} });
+  dom.flushRaf();
+  assert.equal(map.destroyed, false);
+  map.destroy();
+  assert.equal(map.destroyed, true);
+  const before = dom.rafPending;
+  let called = 0;
+  map.setReliefDrawer(() => { called++; });
+  map.invalidate();
+  map.invalidate({ svgOnly: true });
+  assert.equal(map.refreshLayer('a'), false);
+  map.setPlaces(places);
+  map.setOptions({ relief: false, labels: false, graticule: false });
+  assert.equal(dom.rafPending, before, 'destroy 뒤에는 rAF 를 걸지 않음');
+  dom.flushRaf();
+  assert.equal(called, 0);
+});

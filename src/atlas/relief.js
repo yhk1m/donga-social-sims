@@ -3,6 +3,7 @@
 //
 //   const data = await loadRelief(url)          // { width, height, data: Uint8Array(회색) } | null(불러오기·픽셀 읽기 실패 → 콘솔 한 줄)
 //   map.setReliefDrawer(createReliefDrawer(data))   // 렌더러가 멈출 때만 fn(ctx, projection, view, { land, under, path, clipOutside }) 로 부른다
+//   attachRelief(map, { url }) → Promise<drawer | null>   // 위 둘을 한 번에(주소 고르기·destroy 지킴). mount 는 이것만 부르면 된다
 //   drawRelief(ctx, projection, view, data, { land, under, path, clipOutside, step }) → { ms, shadeMs, blitMs, step, cols, rows, exact, skipped }
 //
 // 그리는 법: 화면 step px(기본 2) 격자의 표본마다 경위도를 구한다(invertGrid — block 표본마다 놓인 마디만 projection.invert 로 정확히 구하고
@@ -28,23 +29,23 @@ export const RELIEF_BUDGET_MS = 150;
 // ---------- 순수 함수 ----------
 
 /** 경위도 → 이미지 픽셀 좌표(픽셀 가운데 = 정수, 등장방형 −180..180 · 90..−90). 경도는 감싼다([−0.5, w−0.5)). */
-export function lonLatToImage(lon, lat, w, h) {
+export function lonLatToImage(lon, lat, iw, ih) {
   let u = (lon + 180) / 360;
   u -= Math.floor(u);
-  return [u * w - 0.5, ((90 - lat) / 180) * h - 0.5];
+  return [u * iw - 0.5, ((90 - lat) / 180) * ih - 0.5];
 }
 
-/** 회색 이미지(data: 길이 w·h)에서 경위도 자리의 값을 양선형으로. 가로는 날짜변경선을 건너 감싸고, 세로는 첫·끝 행으로 자른다. */
-export function sampleBilinear(data, w, h, lon, lat) {
+/** 회색 이미지(data: 길이 iw·ih)에서 경위도 자리의 값을 양선형으로. 가로는 날짜변경선을 건너 감싸고, 세로는 첫·끝 행으로 자른다. */
+export function sampleBilinear(data, iw, ih, lon, lat) {
   let u = (lon + 180) / 360;
   u -= Math.floor(u);
-  const fx = u * w - 0.5;
-  let fy = ((90 - lat) / 180) * h - 0.5;
-  if (fy < 0) fy = 0; else if (fy > h - 1) fy = h - 1;
+  const fx = u * iw - 0.5;
+  let fy = ((90 - lat) / 180) * ih - 0.5;
+  if (fy < 0) fy = 0; else if (fy > ih - 1) fy = ih - 1;
   const xf = Math.floor(fx), tx = fx - xf;
-  const x0 = xf < 0 ? w - 1 : xf, x1 = xf + 1 >= w ? 0 : xf + 1;
+  const x0 = xf < 0 ? iw - 1 : xf, x1 = xf + 1 >= iw ? 0 : xf + 1;
   const y0 = Math.floor(fy), ty = fy - y0;
-  const r0 = y0 * w, r1 = (y0 + 1 < h ? y0 + 1 : y0) * w;
+  const r0 = y0 * iw, r1 = (y0 + 1 < ih ? y0 + 1 : y0) * iw;
   const a = data[r0 + x0] + (data[r0 + x1] - data[r0 + x0]) * tx;
   const b = data[r1 + x0] + (data[r1 + x1] - data[r1 + x0]) * tx;
   return a + (b - a) * ty;
@@ -153,11 +154,11 @@ export function invertGrid(invert, width, height, { step = 2, block = 4, tol = 0
 
 /** 경위도 격자 → RGBA(out, 길이 cols·rows·4): 회색 = lut[표본], 지도 밖(NaN)은 투명. */
 export function shadeGrid(grid, img, lut, out) {
-  const { lon, lat } = grid, { width: w, height: h, data } = img;
+  const { lon, lat } = grid, { width: iw, height: ih, data } = img;
   for (let k = 0, o = 0; k < lon.length; k++, o += 4) {
     const L = lon[k];
     if (Number.isNaN(L)) { out[o + 3] = 0; continue; }
-    const g = lut[Math.round(sampleBilinear(data, w, h, L, lat[k]))];
+    const g = lut[Math.round(sampleBilinear(data, iw, ih, L, lat[k]))];
     out[o] = g; out[o + 1] = g; out[o + 2] = g; out[o + 3] = 255;
   }
   return out;
@@ -217,8 +218,8 @@ const lutOf = (style) => {
 };
 
 /** 음영 그리기(멈췄을 때 한 번). 육지(land, 10a 면 clipOutside 안의 under 도) 안에만 multiply 로 얹는다. */
-export function drawRelief(ctx, projection, view, img, { land, under = null, path, clipOutside = null, step = 2, style = RELIEF_STYLE } = {}) {
-  const t0 = performance.now();
+export function drawRelief(ctx, projection, view, img, { land, under = null, path, clipOutside = null, step = 2, style = RELIEF_STYLE, clock = () => performance.now() } = {}) {
+  const t0 = clock();
   if (!img || !land || !path || !view?.width || !view?.height) return null;
   const grid = invertGrid((p) => projection.invert(p), view.width, view.height, { step, forward: (ll) => projection(ll) });
   if (!off) { off = h('canvas'); offCtx = off.getContext('2d'); }
@@ -226,7 +227,9 @@ export function drawRelief(ctx, projection, view, img, { land, under = null, pat
   const id = offCtx.createImageData(grid.cols, grid.rows);
   shadeGrid(grid, img, lutOf(style), id.data);
   offCtx.putImageData(id, 0, 0);
-  const tShade = performance.now();
+  const tShade = clock();
+  // 지도 밖 표본(NaN)은 투명이라 drawImage 로 키울 때 지도 가장자리·구드 틈 언저리 반 칸이 반투명으로 섞인다. 곱하기를 옅게 할 뿐이고,
+  // 그 자리는 육지 경로 자르기 밖(바다·지구 밖)이라 보이지 않는다.
   const blit = () => {
     ctx.globalCompositeOperation = 'multiply';
     ctx.globalAlpha = style.opacity;
@@ -244,7 +247,7 @@ export function drawRelief(ctx, projection, view, img, { land, under = null, pat
     blit();
     ctx.restore();
   }
-  const t1 = performance.now();
+  const t1 = clock();
   return { ms: t1 - t0, shadeMs: tShade - t0, blitMs: t1 - tShade, step, cols: grid.cols, rows: grid.rows, exact: grid.exact, skipped: grid.skipped };
 }
 
@@ -252,16 +255,31 @@ export function drawRelief(ctx, projection, view, img, { land, under = null, pat
  * 렌더러 훅용 그리기 함수(setReliefDrawer 에 넘김). 지난 계산 시간으로 격자 크기를 고른다(nextStep, 2~4px).
  * fn.stats = 최근 계산 기록 [{ ms, shadeMs, blitMs, step, cols, rows, exact, skipped }].
  */
-export function createReliefDrawer(img, { style = RELIEF_STYLE, budget = RELIEF_BUDGET_MS } = {}) {
-  let step = 2;
+export function createReliefDrawer(img, { style = RELIEF_STYLE, budget = RELIEF_BUDGET_MS, clock } = {}) {
+  let step = 2, warmed = false;
   const stats = [];
   const fn = (ctx, projection, view, extra = {}) => {
-    const r = drawRelief(ctx, projection, view, img, { ...extra, step, style });
+    const r = drawRelief(ctx, projection, view, img, { ...extra, step, style, ...(clock ? { clock } : {}) });
     if (!r) return;
     stats.push(r);
     if (stats.length > 60) stats.shift();
-    step = nextStep(step, r.ms, { budget });
+    // 첫 계산은 JIT 데우기·처음 할당이 섞여 느리므로 격자 크기 고르기에 쓰지 않는다
+    if (warmed) step = nextStep(step, r.ms, { budget });
+    warmed = true;
   };
   fn.stats = stats;
   return fn;
+}
+
+/**
+ * 지도에 지형 음영 붙이기: 주소 고르기(개발 서버면 저장소 파일, 아니면 공개 주소) → loadRelief → createReliefDrawer → map.setReliefDrawer.
+ * 불러오는 사이(또는 그 전에) 지도가 destroy 되면(map.destroyed) 붙이지 않는다. 돌려주는 값 = drawer(stats 확인용) | null(실패·destroy).
+ */
+export async function attachRelief(map, { url = import.meta.env?.DEV ? RELIEF_DEV_URL : RELIEF_URL, ...opts } = {}) {
+  if (!map || map.destroyed) return null;
+  const img = await loadRelief(url);
+  if (!img || map.destroyed) return null;
+  const drawer = createReliefDrawer(img, opts);
+  map.setReliefDrawer(drawer);
+  return drawer;
 }

@@ -5,7 +5,7 @@ import { createShell, addBlock } from '../../src/shared/shell.js';
 import { h } from '../../src/shared/dom.js';
 import { createMap } from '../../src/atlas/renderer.js';
 import { PROJECTIONS } from '../../src/atlas/projections.js';
-import { loadRelief, createReliefDrawer, RELIEF_URL, RELIEF_DEV_URL } from '../../src/atlas/relief.js';
+import { attachRelief } from '../../src/atlas/relief.js';
 import basemap from './data/basemap.json';
 import places from './data/places.json';
 import topics from './data/topics.json';
@@ -15,14 +15,8 @@ export default function mount(root) {
   const map = createMap(stage, { basemap, places, unitBoxes: basemap.meta.unitBoxes });
   root.atlasMap = map; // 확인용(헤드리스 캡처·성능 측정)
 
-  // 지형 음영: 개발 서버는 저장소의 파일, 조각(빌드)은 공개 주소. 못 불러오면(교차 출처 등) 음영 없이 그대로.
-  const reliefUrl = import.meta.env.DEV ? RELIEF_DEV_URL : RELIEF_URL;
-  loadRelief(reliefUrl).then((img) => {
-    if (!img) return;
-    const drawer = createReliefDrawer(img);
-    root.atlasRelief = drawer; // 확인용(drawer.stats = 계산 시간)
-    map.setReliefDrawer(drawer);
-  });
+  // 지형 음영(개발 서버는 저장소 파일, 조각은 공개 주소, 실패하면 음영 없이 그대로). root.atlasRelief = drawer 는 확인용(drawer.stats = 계산 시간)
+  attachRelief(map).then((d) => { root.atlasRelief = d; });
 
   const seg = (items, cur, onPick) => {
     const btns = items.map(([v, label]) => h('button', {

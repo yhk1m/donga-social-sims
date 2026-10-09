@@ -19,7 +19,8 @@
 //   map.project(lonlat) → [x, y] | null,  map.invert(xy) → lonlat | null
 //   map.view → { key, centerLon, k, x, y, width, height, center, kmPerPx, detail, moving, projection, geoRect }
 //     읽기 전용 객체, 보기가 바뀔 때만 새로 만든다(같으면 같은 객체). center·kmPerPx 는 처음 읽을 때 한 번만 계산(지연 getter).
-//   map.setOptions({ graticule, labels, relief }), map.setReliefDrawer(fn), map.redraw()(전체 다시 그림 + 지명), map.destroy()
+//   map.setOptions({ graticule, labels, relief }), map.setReliefDrawer(fn), map.redraw()(전체 다시 그림 + 지명), map.destroy(), map.destroyed
+//     (destroy 뒤에는 setOptions·setReliefDrawer·setPlaces·invalidate·refreshLayer 가 아무것도 하지 않는다)
 //   map.layers(읽기 전용 getter, z 순서 배열 사본), map.stats(읽기 전용 getter, 시간 측정: render[{ms, detail, k, key, parts}]·labels·
 //     morphFrames·interactiveFrames·countryIndexMs)
 //
@@ -252,6 +253,18 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     for (const bp of boxPolys) path(bp);
     ctx.clip('evenodd');
   }
+  /**
+   * 10a(상자 안)와 50m(상자 밖, evenodd 자르기) 육지가 만나는 상자 테두리: 두 쪽 다 경계 픽셀을 반쯤만 칠해(자르기·도형 끝 안티에일리어싱)
+   * 바다색이 1px 선으로 비친다. 50m 육지 안에서만 상자 테두리를 육지색으로 1.5px 그어 메운다(하천·국경보다 먼저라 덮지 않음).
+   */
+  function sealUnitSeam(path, landU) {
+    ctx.save();
+    ctx.beginPath(); path(landU); ctx.clip();
+    ctx.beginPath();
+    for (const bp of boxPolys) path(bp);
+    ctx.strokeStyle = STYLE.land; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.restore();
+  }
   function begin() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
@@ -302,6 +315,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     const landL = C(L.landIdx), landU = under ? C(under.landIdx) : null;
     outside(() => fillGeo(path, landU, STYLE.land));
     fillGeo(path, landL, STYLE.land);
+    if (under) sealUnitSeam(path, landU);
     mark('land');
     // 지형 음영(D5)
     if (opts.relief && reliefDrawer) {
@@ -683,11 +697,13 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     if (labels) updateLabels();
   }
   function invalidate({ svgOnly = false } = {}) {
+    if (destroyed) return;
     if (!svgOnly) dirty.canvas = true;
     dirty.svgAll = true;
     schedule();
   }
   function refreshLayer(id) {
+    if (destroyed) return false;
     const x = layers.find((l) => l.layer.id === id);
     if (!x) return false;
     if (typeof x.layer.draw === 'function') dirty.canvas = true;
@@ -704,20 +720,23 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     get view() { return viewState(); },
     get layers() { return sortLayers(layers.map((x) => x.layer)); },
     get stats() { return stats; },
+    /** destroy 뒤 true(비동기로 붙는 것 — 지형 음영 attachRelief 등 — 이 늦게 와도 붙지 않게) */
+    get destroyed() { return destroyed; },
     on(type, fn) {
       if (!handlers[type]) throw new Error(`모르는 이벤트: ${type}`);
       handlers[type].add(fn);
       return () => handlers[type].delete(fn);
     },
     setOptions(o = {}) {
+      if (destroyed) return;
       let canvasChanged = false;
       for (const k of ['graticule', 'relief']) if (k in o && opts[k] !== !!o[k]) { opts[k] = !!o[k]; canvasChanged = true; }
       if ('labels' in o && opts.labels !== !!o.labels) { opts.labels = !!o.labels; dirty.labels = true; schedule(); }
       if (canvasChanged) invalidate();
     },
-    setReliefDrawer(fn) { reliefDrawer = typeof fn === 'function' ? fn : null; invalidate(); },
+    setReliefDrawer(fn) { if (destroyed) return; reliefDrawer = typeof fn === 'function' ? fn : null; invalidate(); },
     /** 지명 목록 바꾸기: 바탕 지도 캐시는 그대로 두고 지명만 다시 놓는다(viewchange 없음). */
-    setPlaces(list) { placeItems = toItems(list); dirty.labels = true; schedule(); },
+    setPlaces(list) { if (destroyed) return; placeItems = toItems(list); dirty.labels = true; schedule(); },
     redraw() { if (morph) morph.finish(); settle(); },
     destroy() {
       destroyed = true;

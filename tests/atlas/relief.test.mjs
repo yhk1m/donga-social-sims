@@ -1,10 +1,11 @@
 // tests/atlas/relief.test.mjs — 지형 음영(relief.js) 순수 함수: 경위도 → 이미지 좌표, 양선형 표본(날짜변경선 감싸기·극 자르기),
 // 밝기 곡선(평지 = 흰색), 화면 격자 역투영(마디만 정확히 + 칸 안은 보간, 틈·이음매는 정확히), 격자 크기 고르기, RGBA 만들기.
-// 이미지 불러오기·캔버스 합성은 헤드리스 Chrome 캡처로 본다.
+// 그리기 순서·불러오기 다시 시도·attachRelief 는 가짜 캔버스·가짜 Image 로, 실제 픽셀은 헤드리스 Chrome 캡처로 본다.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   lonLatToImage, sampleBilinear, reliefLut, invertGrid, nextStep, shadeGrid, RELIEF_URL, RELIEF_STYLE,
+  drawRelief, createReliefDrawer, loadRelief, attachRelief,
 } from '../../src/atlas/relief.js';
 
 const near = (a, b, eps, msg) => assert.ok(Math.abs(a - b) <= eps, `${msg ?? ''} ${a} ≠ ${b}`);
@@ -173,4 +174,118 @@ test('invertGrid: forward 를 주면 마디·가운데를 되돌려 검사 — �
 test('invertGrid: 위도가 ±90 을 넘는 역투영 값은 지도 밖', () => {
   const g = invertGrid(([x, y]) => [x, 95], 16, 16, { step: 2, block: 4 });
   assert.ok(g.lon.every(Number.isNaN));
+});
+
+// ---------- 가짜 브라우저(캔버스·Image) ----------
+const log = [];
+function fakeCtx(name) {
+  const c = {
+    save: () => log.push(`${name}.save`), restore: () => log.push(`${name}.restore`), beginPath: () => {}, clip: () => log.push(`${name}.clip`),
+    drawImage: () => log.push(`${name}.drawImage`), putImageData: () => {}, createImageData: (w, hh) => ({ width: w, height: hh, data: new Uint8ClampedArray(w * hh * 4) }),
+    getImageData: (x, y, w, hh) => ({ data: new Uint8ClampedArray(w * hh * 4).fill(200) }),
+  };
+  return c;
+}
+let imageMode = 'load', imagesMade = 0;
+globalThis.document = { createElement: () => { const ctx = fakeCtx('off'); return { width: 0, height: 0, getContext: () => ctx }; } };
+globalThis.Image = class {
+  constructor() { imagesMade++; this.l = {}; this.naturalWidth = 8; this.naturalHeight = 4; }
+  addEventListener(type, fn) { this.l[type] = fn; }
+  set src(v) { this._src = v; const mode = imageMode; setTimeout(() => (mode === 'load' ? this.l.load?.() : this.l.error?.()), 0); }
+  get src() { return this._src; }
+};
+const quietWarn = async (fn) => { const w = console.warn, msgs = []; console.warn = (m) => msgs.push(m); try { return [await fn(), msgs]; } finally { console.warn = w; } };
+const img8 = { width: 8, height: 4, data: new Uint8Array(32).fill(150) };
+const proj = Object.assign(([lon, lat]) => [(lon + 180) * 2, (90 - lat) * 2], { invert: ([x, y]) => [x / 2 - 180, 90 - y / 2] });
+
+test('drawRelief: 육지로 자르고 얹은 뒤, under 는 clipOutside → under 로 자르고 한 번 더 얹음', () => {
+  log.length = 0;
+  const ctx = fakeCtx('ctx');
+  const path = (g) => log.push(`path:${g.name}`);
+  const r = drawRelief(ctx, proj, { width: 64, height: 32 }, img8, { land: { name: 'land' }, under: { name: 'under' }, path, clipOutside: () => log.push('clipOutside') });
+  assert.ok(r && r.ms >= 0 && r.step === 2);
+  assert.deepEqual(log.filter((x) => x.startsWith('ctx.') || x.startsWith('path') || x === 'clipOutside'), [
+    'ctx.save', 'path:land', 'ctx.clip', 'ctx.drawImage', 'ctx.restore',
+    'ctx.save', 'clipOutside', 'path:under', 'ctx.clip', 'ctx.drawImage', 'ctx.restore',
+  ]);
+  assert.equal(ctx.globalCompositeOperation, 'multiply');
+  assert.equal(ctx.globalAlpha, RELIEF_STYLE.opacity);
+});
+
+test('drawRelief: under 가 없으면 육지만, 이미지·view 크기·육지가 없으면 null(그리지 않음)', () => {
+  log.length = 0;
+  const ctx = fakeCtx('ctx');
+  drawRelief(ctx, proj, { width: 64, height: 32 }, img8, { land: {}, path: () => {} });
+  assert.equal(log.filter((x) => x === 'ctx.drawImage').length, 1);
+  log.length = 0;
+  assert.equal(drawRelief(ctx, proj, { width: 64, height: 32 }, null, { land: {}, path: () => {} }), null);
+  assert.equal(drawRelief(ctx, proj, { width: 0, height: 32 }, img8, { land: {}, path: () => {} }), null);
+  assert.equal(drawRelief(ctx, proj, { width: 64, height: 32 }, img8, { path: () => {} }), null);
+  assert.equal(log.length, 0);
+});
+
+test('createReliefDrawer: 첫 계산(JIT 데우기) 시간은 격자 크기 고르기에 쓰지 않음, 그 뒤 예산 넘으면 키움', () => {
+  let t = 0, cost = 500;
+  const clock = () => (t += cost / 2); // drawRelief 안에서 now() 를 부를 때마다 시간이 감
+  const d = createReliefDrawer(img8, { clock });
+  const args = [fakeCtx('ctx'), proj, { width: 64, height: 32 }, { land: {}, path: () => {} }];
+  d(...args);
+  assert.equal(d.stats.at(-1).step, 2);
+  d(...args); // 첫 계산은 무시했으므로 여전히 2px
+  assert.equal(d.stats.at(-1).step, 2);
+  d(...args); // 두 번째 계산(느림)으로 3px
+  assert.equal(d.stats.at(-1).step, 3);
+  cost = 10; // 3px 계산도 느렸으므로 다음은 4px(상한)
+  d(...args); // 4px 로 그림, 빠름 → 3px
+  assert.equal(d.stats.at(-1).step, 4);
+  d(...args); d(...args);
+  assert.equal(d.stats.at(-1).step, 2, '빨라지면 한 단계씩 2px 까지');
+});
+
+test('loadRelief: 실패하면 null + 경고 한 줄, 다음 호출에서 다시 시도, 성공하면 회색 픽셀을 캐시(같은 주소는 한 번만)', async () => {
+  const url = 'https://example.test/relief-a.jpg';
+  imagesMade = 0; imageMode = 'error';
+  const [r1, msgs] = await quietWarn(() => loadRelief(url));
+  assert.equal(r1, null);
+  assert.equal(msgs.length, 1);
+  assert.match(msgs[0], /지형 음영 생략/);
+  imageMode = 'load';
+  const r2 = await loadRelief(url);
+  assert.equal(imagesMade, 2, '실패 뒤 다시 불러옴');
+  assert.deepEqual([r2.width, r2.height, r2.data.length, r2.data[0]], [8, 4, 32, 200]);
+  const r3 = await loadRelief(url);
+  assert.equal(r3, r2);
+  assert.equal(imagesMade, 2, '성공한 주소는 다시 불러오지 않음');
+});
+
+test('attachRelief: 불러와 drawer 를 붙이고 돌려줌 / 실패하면 null / 불러오는 사이 지도가 destroy 되면 붙이지 않음', async () => {
+  const fakeMap = () => ({ destroyed: false, drawers: [], setReliefDrawer(fn) { this.drawers.push(fn); } });
+  imageMode = 'load';
+  const m1 = fakeMap();
+  const d1 = await attachRelief(m1, { url: 'https://example.test/relief-b.jpg' });
+  assert.equal(typeof d1, 'function');
+  assert.deepEqual(m1.drawers, [d1]);
+  imageMode = 'error';
+  const m2 = fakeMap();
+  const [d2] = await quietWarn(() => attachRelief(m2, { url: 'https://example.test/relief-c.jpg' }));
+  assert.equal(d2, null);
+  assert.equal(m2.drawers.length, 0);
+  imageMode = 'load';
+  const m3 = fakeMap();
+  const p = attachRelief(m3, { url: 'https://example.test/relief-d.jpg' });
+  m3.destroyed = true;
+  assert.equal(await p, null);
+  assert.equal(m3.drawers.length, 0);
+  const m4 = fakeMap(); m4.destroyed = true;
+  assert.equal(await attachRelief(m4, { url: 'https://example.test/relief-e.jpg' }), null);
+  assert.equal(m4.drawers.length, 0);
+});
+
+test('attachRelief: 주소를 안 주면 공개 주소(테스트·빌드 환경은 DEV 아님)', async () => {
+  imageMode = 'load';
+  let seen = null;
+  const Orig = globalThis.Image;
+  globalThis.Image = class extends Orig { set src(v) { seen = v; super.src = v; } get src() { return super.src; } };
+  try { await attachRelief({ destroyed: false, setReliefDrawer() {} }); } finally { globalThis.Image = Orig; }
+  assert.equal(seen, RELIEF_URL);
 });
