@@ -1,14 +1,15 @@
-// tests/atlas/viewClip.test.mjs — 렌더러 그리기 줄이기(D3): 화면에 보이는 경위도 상자(viewRect)와
-// 바탕 지도 도형을 그 상자로 미리 자르기(clipPolygon·clipLine·indexGeometry·clipIndexed).
+// tests/atlas/geoClip.test.mjs — 바탕 지도 경위도 도형: 화면에 보이는 경위도 상자(viewRect)와
+// 바탕 지도 도형을 그 상자로 미리 자르기(clipPolygon·clipLine·indexGeometry·clipIndexed), 상자 테두리 호 빼기·상자 면.
 // 구드는 단속 자르기(preclip)가 점마다 무거워, 화면 밖 도형까지 투영하면 10a 확대에서 다시 그리기가 200ms 를 넘는다.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { geoPath } from 'd3-geo';
+import { geoPath, geoArea, geoContains } from 'd3-geo';
 import { feature, mesh } from 'topojson-client';
 import { REPO, readJson } from '../../scripts/atlas/geo_util.mjs';
 import { makeProjection, fitBoundsTransform } from '../../src/atlas/projections.js';
-import { viewProjection, viewRect, clipPolygon, clipLine, indexGeometry, clipIndexed, nearCenter, centerOf } from '../../src/atlas/mapView.js';
+import { viewProjection } from '../../src/atlas/mapView.js';
+import { viewRect, clipPolygon, clipLine, indexGeometry, clipIndexed, dropBoxEdges, boxPolygon } from '../../src/atlas/geoClip.js';
 
 const KEYS = ['miller', 'mercator', 'robinson', 'goode', 'equalEarth'];
 const W = 1024, H = 768;
@@ -158,14 +159,23 @@ for (const lvl of ['50', '10a']) {
   });
 }
 
-test('nearCenter: 화면 가운데가 구드 틈이면 가장 가까운 지도 위 점(상세도 고르기용), 지도 위면 가운데 그대로', () => {
-  const base = makeProjection('goode', { centerLon: 150, width: W, height: H });
-  const vp = viewProjection(base, fitBoundsTransform(base, [[95.587, 16.983], [143.304, 51.551]], W, H, 24), { width: W, height: H });
-  assert.equal(centerOf(vp, W, H), null, '가운데가 틈(110°E 단속선)');
-  const ll = nearCenter(vp, W, H);
-  assert.ok(ll && ll[0] > 90 && ll[0] < 130 && ll[1] > 10 && ll[1] < 60, `${ll}`);
-  const m = makeProjection('miller', { centerLon: 0, width: W, height: H });
-  assert.deepEqual(nearCenter(m, W, H), centerOf(m, W, H));
-  // 화면 전체가 지도 밖이면 null
-  assert.equal(nearCenter(viewProjection(m, { k: 1, x: 5000, y: 0 }, { width: W, height: H }), W, H), null);
+test('dropBoxEdges: 단원 상자 테두리 위 마디는 빼고 줄을 나눔(해안선 강조용)', () => {
+  const boxes = [[20, -15, 180, 82]];
+  const mls = { type: 'MultiLineString', coordinates: [
+    [[30, 10], [20, 10], [20, 20], [30, 20]], // 가운데 마디가 서쪽 테두리 위 → 두 줄
+    [[100, 82], [110, 82]], // 북쪽 테두리 위 → 없어짐
+    [[50, 50], [60, 55]], // 그대로
+  ] };
+  const out = dropBoxEdges(mls, boxes, 1e-3);
+  assert.deepEqual(out.coordinates, [[[30, 10], [20, 10]], [[20, 20], [30, 20]], [[50, 50], [60, 55]]]);
 });
+
+test('boxPolygon: 경위선을 따르는 상자(작은 면, 안·밖 판정)', () => {
+  const poly = boxPolygon([20, -15, 180, 82]);
+  assert.ok(geoArea(poly) < 2 * Math.PI, '반구보다 작아야(시계 방향 고리)');
+  assert.equal(geoContains(poly, [100, 40]), true);
+  assert.equal(geoContains(poly, [100, 81.5]), true); // 위선을 따라야 함(대원이면 빠짐)
+  assert.equal(geoContains(poly, [0, 40]), false);
+  assert.equal(geoContains(boxPolygon([-180, 60, -168, 72]), [-175, 65]), true);
+});
+

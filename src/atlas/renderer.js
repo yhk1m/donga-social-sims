@@ -7,12 +7,21 @@
 //   map.setProjection('robinson', { animate: true })   // 0.6초 보간(110m 육지만), 화면 가운데 경위도·k 유지
 //   map.setCenterLon(150)                              // 대서양(0)·태평양(150) — 애니메이션 없이, 가운데 경위도·k 유지
 //   map.flyTo({ center: [lon, lat], zoom } | { bounds }, ms = 700)   // bounds = [w,s,e,n] 또는 [[w,s],[e,n]]
-//   map.fitBounds(bounds, { ms = 700, pad = 24 })
-//   map.addLayer({ id, z, draw?(ctx, path, view), drawSvg?(g, project, view), hit?(xy, lonlat) }) / removeLayer(id) / clearLayers()
-//   map.on('click' | 'hover' | 'viewchange', fn) → 해제 함수.  click·hover: fn({ lonlat, xy, feature?, layerId? }), viewchange: fn(view)
+//   map.fitBounds(bounds, { ms = 700, pad = 24 })      // 투영할 수 없는 가운데·범위면 console.warn 한 번, 보기는 그대로
+//   map.addLayer(layer) / removeLayer(id) / clearLayers()   // layer = { id, z, draw?, drawSvg?, hit?, destroy? } (아래 레이어 규칙)
+//   map.invalidate({ svgOnly } = {})  // 가벼운 다시 그리기(한 rAF 로 모음): 캔버스 + SVG 레이어, svgOnly 면 SVG 레이어만. 지명은 다시 놓지 않고 viewchange 없음
+//   map.refreshLayer(id)              // 그 레이어만 다시(SVG 레이어면 그 <g> 만, 캔버스 레이어면 캔버스 전체). 없는 id 면 false
+//   map.setPlaces(places)             // 지명 목록 바꾸기(바탕 지도 캐시 그대로, 지명만 다시 놓음)
+//   map.on('click' | 'hover' | 'viewchange', fn) → 해제 함수.
+//     click: fn({ lonlat, xy, feature?, layerId?, detail })  detail = 브라우저 click 의 누른 횟수(1, 두 번째 누름이면 2 …)
+//     hover: fn({ lonlat, xy, feature?, layerId? }) — 움직이는 동안 건너뛰고, 멈추면 마지막 포인터 자리로 한 번 다시. 무대를 벗어나면 {lonlat:null, xy:null}
+//     viewchange: fn(view) — 보기(도법·중심 경도·변환·크기·상세도·움직임 여부)가 실제로 바뀔 때만. 레이어·옵션 변경으로는 나지 않음
 //   map.project(lonlat) → [x, y] | null,  map.invert(xy) → lonlat | null
 //   map.view → { key, centerLon, k, x, y, width, height, center, kmPerPx, detail, moving, projection, geoRect }
-//   map.setOptions({ graticule, labels, relief }), map.setReliefDrawer(fn), map.redraw(), map.destroy(), map.stats(시간 측정)
+//     읽기 전용 객체, 보기가 바뀔 때만 새로 만든다(같으면 같은 객체). center·kmPerPx 는 처음 읽을 때 한 번만 계산(지연 getter).
+//   map.setOptions({ graticule, labels, relief }), map.setReliefDrawer(fn), map.redraw()(전체 다시 그림 + 지명), map.destroy()
+//   map.layers(읽기 전용 getter, z 순서 배열 사본), map.stats(읽기 전용 getter, 시간 측정: render[{ms, detail, k, key, parts}]·labels·
+//     morphFrames·interactiveFrames·countryIndexMs)
 //
 // 레이어 규칙
 //   - 캔버스 레이어 draw(ctx, path, view): ctx 단위 = 화면 CSS px(devicePixelRatio 는 렌더러가 처리), path = geoPath(화면 투영, ctx).
@@ -20,10 +29,12 @@
 //   - SVG 레이어 drawSvg(g, project, view): 레이어마다 자기 <g>(z 순서). 멈출 때와 움직이는 동안 프레임마다 불리므로
 //     요소를 제자리에서 고치게(빠르게) 만든다. 도법 전환 중에는 숨긴다. 자기 요소의 클릭은 스스로 처리하고 stopPropagation.
 //   - hit(xy, lonlat) → feature | null: 캔버스 레이어 맞히기(z 큰 것부터). 아무 레이어도 안 맞으면 바탕 지도 나라(layerId 'basemap').
+//   - destroy?(): removeLayer·clearLayers·destroy 때, 그리고 같은 id 의 다른 객체로 바꿀 때 한 번 불린다. 같은 객체를 다시 addLayer 하면 부르지 않는다.
+//   - 레이어 자료만 바뀌면 addLayer 를 다시 하지 말고 refreshLayer(id)(또는 invalidate)로 다시 그린다.
 //   - 지형 음영 setReliefDrawer(fn): fn(ctx, projection, view, { land, under, path }) — 육지를 칠한 뒤(레이어 아래) 멈출 때만 불린다.
 //     land = 지금 상세도 육지(화면 상자로 자른 것), under = 10a 일 때 단원 상자 밖을 메우는 50m 육지(아니면 null).
 //   - view.geoRect = 마지막 전체 그림 때 화면에 보이는 경위도 상자 [w, s, e, n](+여백, 경도는 중심 경도 기준으로 펴서 ±180 을 넘을 수 있음)
-//     | null(세계 보기). 바탕 지도는 이 상자로 미리 잘라 투영한다(mapView.js clipIndexed — 구드 preclip 이 무거워서). 레이어도 써도 된다.
+//     | null(세계 보기). 바탕 지도는 이 상자로 미리 잘라 투영한다(geoClip.js clipIndexed — 구드 preclip 이 무거워서). 레이어도 써도 된다.
 import { geoPath, geoContains, geoBounds, geoGraticule } from 'd3-geo';
 import { feature, mesh } from 'topojson-client';
 import { h, s } from '../shared/dom.js';
@@ -31,10 +42,11 @@ import { makeProjection, interpolateProjection, fitBoundsTransform, PROJECTIONS 
 import { pickDetail, inUnit, detailObjects } from './lod.js';
 import { placeLabels, createMeasureCache, MIN_K, DEFAULT_RANK } from './labels.js';
 import {
-  viewProjection, transformForCenter, centerOf, invertChecked, relativeTransform, normalizeBounds, kmPerPx,
-  sortLayers, hitTest, dropBoxEdges, boxPolygon, pathBroken, riverStyle, lakeVisible, graticuleStep, fontPx, trimPath, glyphLayout,
-  viewRect, indexGeometry, clipIndexed, nearCenter,
+  viewProjection, transformForCenter, centerOf, invertChecked, relativeTransform, normalizeBounds, kmPerPx, sortLayers, hitTest, nearCenter,
 } from './mapView.js';
+import { viewRect, indexGeometry, clipIndexed, dropBoxEdges, boxPolygon } from './geoClip.js';
+import { riverStyle, lakeVisible, graticuleStep, borderWidth, coastWidth } from './lineStyle.js';
+import { fontPx, trimPath, glyphLayout, pathBroken } from './labelLayout.js';
 import { createZoomer } from './zoomer.js';
 import './atlas.css';
 
@@ -98,10 +110,16 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   let settleTimer = 0, frameRaf = 0, hoverRaf = 0, pendingHover = null;
   let pendingView = null; // 크기를 모를 때 받은 flyTo/fitBounds
   let reliefDrawer = null;
+  let viewCache = null; // map.view 객체(변환·투영·상세도·상태가 바뀔 때만 새로 만듦)
+  let lastViewSig = ''; // 마지막으로 viewchange 를 낸 보기의 서명
+  let hoverSkipped = false; // 움직이는 동안 건너뛴 hover 가 있었나(멈추면 마지막 자리로 한 번 다시)
+  let idleHandle = null; // 나라 색인 미리 만들기 예약
+  const dirty = { raf: 0, canvas: false, svgAll: false, svgIds: new Set(), labels: false }; // invalidate·refreshLayer·setPlaces 를 한 rAF 로
+  const warned = new Set();
   const opts = { graticule: true, labels: true, relief: true };
   const layers = []; // {layer, g}
   const handlers = { click: new Set(), hover: new Set(), viewchange: new Set() };
-  const stats = { render: [], labels: [], labelCount: 0, morphFrames: [], interactiveFrames: [] };
+  const stats = { render: [], labels: [], labelCount: 0, morphFrames: [], interactiveFrames: [], countryIndexMs: null };
   const push = (arr, v) => { arr.push(v); if (arr.length > 60) arr.shift(); };
 
   // ---------- 바탕 지도 자료(상세도별 GeoJSON, 처음 쓸 때 만든다) ----------
@@ -141,8 +159,14 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   };
   // 나라 맞히기(바탕 지도): 50m 나라 + 경위도 상자 미리 거르기
   let countryIndex = null;
+  function buildCountryIndex() {
+    if (countryIndex) return;
+    const t0 = now();
+    countryIndex = level('50').countries.map((f) => ({ f, b: geoBounds(f) }));
+    stats.countryIndexMs = now() - t0;
+  }
   function countryAt(ll) {
-    if (!countryIndex) countryIndex = level('50').countries.map((f) => ({ f, b: geoBounds(f) }));
+    buildCountryIndex();
     for (const { f, b } of countryIndex) {
       const [[w, s0], [e, n]] = b;
       if (ll[1] < s0 || ll[1] > n) continue;
@@ -155,10 +179,11 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   // ---------- 지명 준비(정적 부분) ----------
   const fontFamily = (getComputedStyle(stage).fontFamily || 'sans-serif');
   const measure = createMeasureCache((text, size) => { measureCtx.font = `700 ${size}px ${fontFamily}`; return measureCtx.measureText(text).width; });
-  const placeItems = places.filter((p) => p && p.name && Number.isFinite(p.lon) && Number.isFinite(p.lat)).map((p, i) => ({
+  const toItems = (list) => (list || []).filter((p) => p && p.name && Number.isFinite(p.lon) && Number.isFinite(p.lat)).map((p, i) => ({
     i, p, rank: p.rank ?? DEFAULT_RANK, minK: p.minK ?? MIN_K[p.rank ?? DEFAULT_RANK] ?? 9, px: fontPx(p.size ?? 6),
     kind: p.kind || 'other', symbol: !!p.symbol, path: Array.isArray(p.path) && p.path.length >= 2 ? p.path : null,
   }));
+  let placeItems = toItems(places);
 
   // ---------- 확대·이동 ----------
   // 확대하면(k ≥ 2) 화면의 30% 까지 지도 밖 빈 곳 허용 — 구드·로빈슨에서 아시아를 가운데에 둘 수 있게. k=1 은 세계 전체 고정.
@@ -182,7 +207,9 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   }
   function updateVP() {
     vp = viewProjection(base, T, { width: W, height: H });
+    viewCache = null;
   }
+  function setMode(m) { if (mode !== m) { mode = m; viewCache = null; } }
   /** 변환을 t 로(이벤트 없이, 범위 제한) */
   function setTransform(t) {
     T = zb.set(t);
@@ -199,7 +226,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     if (!base) return;
     updateVP();
     if (morph) return;
-    mode = 'moving';
+    setMode('moving');
     if (!frameRaf) frameRaf = requestAnimationFrame(frame);
     clearTimeout(settleTimer);
     settleTimer = setTimeout(settle, SETTLE_MS);
@@ -230,8 +257,8 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   }
   /** 빠른 그림: 바다 + 110m 육지(도법 전환 프레임, 움직이는 동안 스냅숏 바깥) */
-  function drawFast(proj, { clear = true } = {}) {
-    if (clear) begin(); else ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  function drawFast(proj) {
+    begin();
     const path = geoPath(proj, ctx);
     sphere(path, proj); ctx.fillStyle = STYLE.ocean; ctx.fill();
     fillGeo(path, level('110').land, STYLE.land);
@@ -258,6 +285,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     updateVP();
     detail = currentDetail();
     rect = viewRect(vp, W, H); // 화면에 보이는 경위도 상자(+여백), 세계 보기면 null
+    viewCache = null;
     mark('rect');
     const view = viewState();
     begin();
@@ -303,7 +331,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     lakes(L); rivers(L);
     mark('water');
     // 국경
-    const bw = k < 2 ? 0.6 : k < 4 ? 0.75 : 0.9;
+    const bw = borderWidth(k);
     outside((U) => strokeGeo(path, C(U.bordersIdx), STYLE.border, bw));
     strokeGeo(path, C(L.bordersIdx), STYLE.border, bw);
     mark('borders');
@@ -311,7 +339,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     if (opts.graticule) strokeGeo(path, C(graticuleOf(graticuleStep(k))), STYLE.graticule, 0.5);
     mark('graticule');
     // 해안선 강조
-    const cw = k < 2 ? 0.6 : 0.8;
+    const cw = coastWidth(k);
     outside((U) => strokeGeo(path, C(U.coastIdx), STYLE.coast, cw));
     strokeGeo(path, C(L.coastIdx), STYLE.coast, cw);
     mark('coast');
@@ -349,22 +377,38 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     // 지명: 이동만이면 따라 옮기고, 확대가 바뀌면 숨김(멈추면 다시 놓는다)
     if (labelT && Math.abs(labelT.k - T.k) < 1e-9) gLabels.setAttribute('transform', `translate(${T.x - labelT.x},${T.y - labelT.y})`);
     else gLabels.classList.add('is-hidden');
-    emit('viewchange', viewState());
+    emitView();
   }
   function settle() {
     clearTimeout(settleTimer);
     if (destroyed || !W || morph) return;
-    mode = 'idle';
+    setMode('idle');
     render();
     gLayers.classList.remove('is-hidden');
     drawSvgLayers();
     updateLabels();
+    dirty.canvas = dirty.svgAll = dirty.labels = false; dirty.svgIds.clear(); // 방금 다 그림
+    emitView();
+    // 움직이는 동안 건너뛴 hover 는 멈춘 자리에서 한 번 다시
+    if (hoverSkipped && pendingHover && handlers.hover.size) { hoverSkipped = false; emit('hover', hitAt(pendingHover)); }
+    hoverSkipped = false;
+    // 첫 hover 가 끊기지 않게 나라 색인(50m)을 쉬는 틈에 미리 만든다
+    if (!countryIndex && !idleHandle) {
+      const run = () => { idleHandle = null; if (!destroyed) buildCountryIndex(); };
+      idleHandle = typeof requestIdleCallback === 'function' ? { idle: requestIdleCallback(run, { timeout: 1500 }) } : { timer: setTimeout(run, 300) };
+    }
+  }
+  /** 보기가 실제로 바뀌었을 때만 viewchange(레이어·옵션만 바뀐 다시 그리기는 내지 않음) */
+  function emitView() {
+    const sig = `${key}|${cLon}|${T.k}|${T.x}|${T.y}|${W}|${H}|${detail}|${mode !== 'idle'}`;
+    if (sig === lastViewSig) return;
+    lastViewSig = sig;
     emit('viewchange', viewState());
   }
-  function drawSvgLayers() {
+  function drawSvgLayers(only = null) {
     const view = viewState();
     for (const { layer, g } of layers) {
-      if (!g) continue;
+      if (!g || (only && !only.has(layer.id))) continue;
       try { layer.drawSvg(g, project, view); } catch (err) { console.error(`레이어 ${layer.id} SVG 실패`, err); }
     }
   }
@@ -426,12 +470,17 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   }
 
   // ---------- 도법·중심 경도·이동 ----------
+  /** map.view: 변환·투영·상세도·상태가 바뀔 때만 새로 만든다(updateVP·render·setMode 가 비움). center·kmPerPx 는 처음 읽을 때 한 번만 계산. */
   function viewState() {
-    return {
-      key, centerLon: cLon, k: T.k, x: T.x, y: T.y, width: W, height: H,
-      center: vp ? centerOf(vp, W, H) : null, kmPerPx: vp ? kmPerPx(vp, [W / 2, H / 2]) : null,
-      detail, moving: mode !== 'idle', projection: vp, geoRect: rect,
+    if (viewCache) return viewCache;
+    const pv = vp, w = W, hh = H;
+    let c, cDone = false, km, kmDone = false;
+    viewCache = {
+      key, centerLon: cLon, k: T.k, x: T.x, y: T.y, width: w, height: hh, detail, moving: mode !== 'idle', projection: pv, geoRect: rect,
+      get center() { if (!cDone) { c = pv ? centerOf(pv, w, hh) : null; cDone = true; } return c; },
+      get kmPerPx() { if (!kmDone) { km = pv ? kmPerPx(pv, [w / 2, hh / 2]) : null; kmDone = true; } return km; },
     };
+    return viewCache;
   }
   function project(ll) {
     if (!vp || !ll) return null;
@@ -460,7 +509,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     if (!animate) { setTransform(nt); settle(); return; }
     // 보간: 110m 육지만 프레임마다
     const interp = interpolateProjection(from, to);
-    mode = 'morph';
+    setMode('morph');
     gLabels.classList.add('is-hidden'); gLayers.classList.add('is-hidden');
     clearTimeout(settleTimer);
     const t0 = now();
@@ -471,7 +520,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
         if (!morph) return;
         cancelAnimationFrame(morph.raf);
         morph = null;
-        mode = 'idle';
+        setMode('idle');
         snapT = null;
         setTransform(nt);
         settle();
@@ -503,15 +552,28 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     setTransform(keepView(nb, center, T.k));
     settle();
   }
+  const warnOnce = (msg) => { if (warned.has(msg)) return; warned.add(msg); console.warn(msg); };
+  const project0 = (p, ll) => { const q = p(ll); return q && Number.isFinite(q[0]) && Number.isFinite(q[1]) ? q : null; };
+  /** flyTo 목표 → 변환. 투영할 수 없는 가운데·범위면 경고를 한 번 남기고 null(지금 보기 유지 — 세계 보기로 조용히 튀지 않게). */
   function targetTransform(target) {
-    if (target.bounds) return constrain(fitBoundsTransform(base, normalizeBounds(target.bounds), W, H, target.pad ?? FIT_PAD, { minK: K_MIN, maxK: K_MAX }));
+    if (target.bounds) {
+      const b = normalizeBounds(target.bounds);
+      const [[w0, s0], [e0, n0]] = b, e1 = e0 < w0 ? e0 + 360 : e0;
+      let any = false;
+      for (let i = 0; i <= 4 && !any; i++) for (let j = 0; j <= 4 && !any; j++) any = !!project0(base, [w0 + ((e1 - w0) * i) / 4, s0 + ((n0 - s0) * j) / 4]);
+      if (!any) { warnOnce(`fitBounds: 이 도법(${key})에서 투영할 수 없는 범위라 보기를 그대로 둠: ${JSON.stringify(target.bounds)}`); return null; }
+      return constrain(fitBoundsTransform(base, b, W, H, target.pad ?? FIT_PAD, { minK: K_MIN, maxK: K_MAX }));
+    }
     const center = target.center || (vp && nearCenter(vp, W, H)) || [cLon, 0];
-    return keepView(base, center, target.zoom ?? T.k);
+    const t = transformForCenter(base, center, target.zoom ?? T.k, W, H);
+    if (!t) { warnOnce(`flyTo: 이 도법(${key})에서 투영할 수 없는 가운데라 보기를 그대로 둠: ${JSON.stringify(center)}`); return null; }
+    return constrain(t);
   }
   function flyTo(target, ms = 700) {
     if (morph) morph.finish();
     if (!W) { pendingView = { target, ms: 0 }; return; }
     const t = targetTransform(target);
+    if (!t) return;
     if (!ms) { zb.interrupt(); setTransform(t); settle(); return; }
     zb.flyTo(t, ms);
   }
@@ -523,6 +585,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     const nw = Math.round(r.width), nh = Math.round(r.height);
     const nd = Math.min(3, window.devicePixelRatio || 1);
     if (!nw || !nh || (nw === W && nh === H && nd === dpr)) return;
+    if (morph) morph.finish(); // 보간 목표 변환(nt)은 옛 크기 기준 — 먼저 끝내고 새 크기에서 가운데·k 를 지킨다
     const center = vp ? nearCenter(vp, W, H) : null, k = T.k, first = !W;
     W = nw; H = nh; dpr = nd;
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
@@ -531,7 +594,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     setBase(nb);
     snapT = null;
     setTransform(first || !center ? { k: 1, x: 0, y: 0 } : keepView(nb, center, k));
-    if (pendingView) { const p = pendingView; pendingView = null; setTransform(targetTransform(p.target)); }
+    if (pendingView) { const p = pendingView; pendingView = null; const t = targetTransform(p.target); if (t) setTransform(t); }
     settle();
   }
   const ro = new ResizeObserver(() => { requestAnimationFrame(() => { if (!destroyed) resize(); }); });
@@ -551,19 +614,21 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     // 끌기 직후(100ms) click 은 zoomer 가 먹는다. 휠·끌기가 끝나고 다시 그리기(120ms) 전에도 화면 투영은 지금 변환과 같아 맞히기가 맞으므로 받는다.
     // 도법 전환 보간 중에는 화면 그림과 투영이 달라 무시한다.
     if (e.target !== svg || morph) return;
-    emit('click', hitAt(local(e)));
+    emit('click', { ...hitAt(local(e)), detail: e.detail || 1 }); // detail = 브라우저 누른 횟수(1 = 한 번, 2 = 두 번째 누름)
   }
   function onPointerMove(e) {
-    if (!handlers.hover.size || e.buttons) return;
+    if (!handlers.hover.size) return;
     pendingHover = local(e);
+    if (e.buttons || mode !== 'idle') { hoverSkipped = true; return; } // 끌기·움직이는 중: 멈추면 settle 이 마지막 자리로 다시
     if (hoverRaf) return;
     hoverRaf = requestAnimationFrame(() => {
       hoverRaf = 0;
-      if (destroyed || mode !== 'idle' || !pendingHover) return;
+      if (destroyed || !pendingHover) return;
+      if (mode !== 'idle') { hoverSkipped = true; return; }
       emit('hover', hitAt(pendingHover));
     });
   }
-  function onPointerLeave() { pendingHover = null; if (handlers.hover.size) emit('hover', { lonlat: null, xy: null }); }
+  function onPointerLeave() { pendingHover = null; hoverSkipped = false; if (handlers.hover.size) emit('hover', { lonlat: null, xy: null }); }
   function emit(type, payload) {
     for (const fn of handlers[type]) { try { fn(payload); } catch (err) { console.error(`지도 ${type} 처리 실패`, err); } }
   }
@@ -571,7 +636,8 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   // ---------- 레이어 ----------
   function addLayer(layer) {
     if (!layer?.id) throw new Error('addLayer: id 필요');
-    removeLayer(layer.id, { quiet: true });
+    const same = layers.find((x) => x.layer.id === layer.id)?.layer === layer;
+    removeLayer(layer.id, { quiet: true, keep: same }); // 같은 객체를 다시 넣으면(z 바꿈 등) destroy 하지 않는다
     const g = typeof layer.drawSvg === 'function' ? s('g', { class: 'at-layer', 'data-layer': layer.id }) : null;
     layers.push({ layer, g });
     if (g) {
@@ -579,33 +645,60 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
       const after = order.slice(order.indexOf(layer) + 1).map((l) => layers.find((x) => x.layer === l).g).find(Boolean);
       gLayers.insertBefore(g, after || null);
     }
-    requestSettle();
+    invalidate({ svgOnly: typeof layer.draw !== 'function' });
     return layer;
   }
-  function removeLayer(id, { quiet = false } = {}) {
+  function removeLayer(id, { quiet = false, keep = false } = {}) {
     const i = layers.findIndex((x) => x.layer.id === id);
     if (i < 0) return false;
     const [{ g, layer }] = layers.splice(i, 1);
     g?.remove();
-    try { layer.destroy?.(); } catch (err) { console.error(err); }
-    if (!quiet) requestSettle();
+    if (!keep) { try { layer.destroy?.(); } catch (err) { console.error(`레이어 ${id} destroy 실패`, err); } }
+    if (!quiet) invalidate({ svgOnly: typeof layer.draw !== 'function' });
     return true;
   }
   function clearLayers() {
     for (const { layer } of [...layers]) removeLayer(layer.id, { quiet: true });
-    requestSettle();
+    invalidate();
   }
-  let settleRaf = 0;
-  function requestSettle() {
-    if (settleRaf) return;
-    settleRaf = requestAnimationFrame(() => { settleRaf = 0; if (mode === 'idle') settle(); });
+
+  // ---------- 가벼운 다시 그리기(한 rAF 로 모음) ----------
+  // invalidate(): 캔버스 바탕층 + SVG 레이어, invalidate({svgOnly:true}): SVG 레이어만, refreshLayer(id): 그 레이어만(캔버스 레이어면 캔버스 전체).
+  // 지명은 다시 놓지 않고 viewchange 도 내지 않는다(보기가 그대로라서). 움직이는 중·도법 보간 중이면 멈출 때 settle 이 다 그린다.
+  function schedule() {
+    if (dirty.raf || destroyed) return;
+    dirty.raf = requestAnimationFrame(flushDirty);
+  }
+  function flushDirty() {
+    dirty.raf = 0;
+    if (destroyed || !W || mode !== 'idle') return;
+    const { canvas: c, svgAll, labels } = dirty;
+    const ids = new Set(dirty.svgIds);
+    dirty.canvas = dirty.svgAll = dirty.labels = false; dirty.svgIds.clear();
+    if (c) render();
+    if (c || svgAll) drawSvgLayers();
+    else if (ids.size) drawSvgLayers(ids);
+    if (labels) updateLabels();
+  }
+  function invalidate({ svgOnly = false } = {}) {
+    if (!svgOnly) dirty.canvas = true;
+    dirty.svgAll = true;
+    schedule();
+  }
+  function refreshLayer(id) {
+    const x = layers.find((l) => l.layer.id === id);
+    if (!x) return false;
+    if (typeof x.layer.draw === 'function') dirty.canvas = true;
+    dirty.svgIds.add(id);
+    schedule();
+    return true;
   }
 
   // ---------- 처음 ----------
   resize();
 
   return {
-    setProjection, setCenterLon, flyTo, fitBounds, addLayer, removeLayer, clearLayers, project, invert,
+    setProjection, setCenterLon, flyTo, fitBounds, addLayer, removeLayer, clearLayers, project, invert, invalidate, refreshLayer,
     get view() { return viewState(); },
     get layers() { return sortLayers(layers.map((x) => x.layer)); },
     get stats() { return stats; },
@@ -615,16 +708,23 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
       return () => handlers[type].delete(fn);
     },
     setOptions(o = {}) {
-      for (const k of ['graticule', 'labels', 'relief']) if (k in o) opts[k] = !!o[k];
-      requestSettle();
+      let canvasChanged = false;
+      for (const k of ['graticule', 'relief']) if (k in o && opts[k] !== !!o[k]) { opts[k] = !!o[k]; canvasChanged = true; }
+      if ('labels' in o && opts.labels !== !!o.labels) { opts.labels = !!o.labels; dirty.labels = true; schedule(); }
+      if (canvasChanged) invalidate();
     },
-    setReliefDrawer(fn) { reliefDrawer = typeof fn === 'function' ? fn : null; requestSettle(); },
+    setReliefDrawer(fn) { reliefDrawer = typeof fn === 'function' ? fn : null; invalidate(); },
+    /** 지명 목록 바꾸기: 바탕 지도 캐시는 그대로 두고 지명만 다시 놓는다(viewchange 없음). */
+    setPlaces(list) { placeItems = toItems(list); dirty.labels = true; schedule(); },
     redraw() { if (morph) morph.finish(); settle(); },
     destroy() {
       destroyed = true;
       ro.disconnect();
       clearTimeout(settleTimer);
-      cancelAnimationFrame(frameRaf); cancelAnimationFrame(hoverRaf); cancelAnimationFrame(settleRaf);
+      cancelAnimationFrame(frameRaf); cancelAnimationFrame(hoverRaf); cancelAnimationFrame(dirty.raf);
+      if (idleHandle?.idle != null) cancelIdleCallback(idleHandle.idle);
+      if (idleHandle?.timer != null) clearTimeout(idleHandle.timer);
+      idleHandle = null;
       if (morph) cancelAnimationFrame(morph.raf);
       morph = null;
       zb.destroy();

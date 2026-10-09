@@ -62,3 +62,34 @@ test('flyInterpolator: 끝이 정확히 두 변환, 가운데에서 멀리 갈 �
   const g = flyInterpolator({ k: 1, x: 0, y: 0 }, { k: 1, x: 0, y: 0 }, 1000, 600);
   assert.deepEqual(g(0.5), { k: 1, x: 0, y: 0 });
 });
+
+test('createZoomer(가짜 DOM): 끌기 직후 100ms 안 click 은 캡처에서 막고 그 뒤 click 은 통과, destroy 하면 리스너 0개', async () => {
+  const { installFakeDom } = await import('./helpers/fakeDom.mjs');
+  const dom = installFakeDom();
+  try {
+    const { createZoomer } = await import('../../src/atlas/zoomer.js');
+    const el = document.createElement('div');
+    el._rect = { left: 0, top: 0, width: 1000, height: 600 };
+    const seen = { start: [], zoom: 0, end: [] };
+    const z = createZoomer(el, { onStart: (s) => seen.start.push(s), onZoom: () => seen.zoom++, onEnd: (s) => seen.end.push(s) });
+    z.extent([[0, 0], [1000, 600]]).translateExtent([[-5000, -5000], [5000, 5000]]);
+    let clicks = 0;
+    el.addEventListener('click', () => clicks++);
+    const p = (type, x, extra = {}) => el.dispatch(type, { pointerId: 1, pointerType: 'mouse', button: 0, clientX: x, clientY: 100, ...extra });
+    p('pointerdown', 100); p('pointermove', 101); // 3px 안: 아직 click 후보
+    p('pointerup', 101);
+    el.dispatch('click', {});
+    assert.equal(clicks, 1, '그냥 누르기는 click');
+    assert.equal(seen.zoom, 0);
+    p('pointerdown', 100); p('pointermove', 120); p('pointermove', 160); p('pointerup', 160);
+    assert.deepEqual(z.get(), { k: 1, x: 60, y: 0 });
+    assert.deepEqual([seen.start, seen.end], [['drag'], ['drag']]);
+    el.dispatch('click', {});
+    assert.equal(clicks, 1, '끌기 직후 click 은 막힘');
+    await new Promise((r) => setTimeout(r, 120));
+    el.dispatch('click', {});
+    assert.equal(clicks, 2, '100ms 뒤 click 은 통과');
+    z.destroy();
+    assert.equal(el.listenerCount, 1, '내가 단 click 하나만 남음');
+  } finally { dom.restore(); }
+});

@@ -1,6 +1,6 @@
 /* © 2026 김용현 */
 /* src/atlas/atlas.css — 사회과부도 지도 엔진 스타일. 규칙(EMBED_RULES.md): 모든 선택자는 .ds-sim .at-… 로 시작,
-   태그 선택자·*·!important·position:fixed 금지, z-index ≤ 10. */
+   태그 선택자·*·!important·position:fixed 금지. z-index 는 10 이하로 쓴다(규칙 상한은 100). */
 
 /* 무대: 캔버스 바탕층 + SVG 상호작용층(같은 크기로 겹침) */
 .ds-sim .at-stage { background: #e8e6e1; }
