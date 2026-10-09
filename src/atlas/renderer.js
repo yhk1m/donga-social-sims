@@ -31,8 +31,9 @@
 //   - hit(xy, lonlat) → feature | null: 캔버스 레이어 맞히기(z 큰 것부터). 아무 레이어도 안 맞으면 바탕 지도 나라(layerId 'basemap').
 //   - destroy?(): removeLayer·clearLayers·destroy 때, 그리고 같은 id 의 다른 객체로 바꿀 때 한 번 불린다. 같은 객체를 다시 addLayer 하면 부르지 않는다.
 //   - 레이어 자료만 바뀌면 addLayer 를 다시 하지 말고 refreshLayer(id)(또는 invalidate)로 다시 그린다.
-//   - 지형 음영 setReliefDrawer(fn): fn(ctx, projection, view, { land, under, path }) — 육지를 칠한 뒤(레이어 아래) 멈출 때만 불린다.
-//     land = 지금 상세도 육지(화면 상자로 자른 것), under = 10a 일 때 단원 상자 밖을 메우는 50m 육지(아니면 null).
+//   - 지형 음영 setReliefDrawer(fn): fn(ctx, projection, view, { land, under, path, clipOutside }) — 육지를 칠한 뒤(레이어 아래) 멈출 때만 불린다.
+//     land = 지금 상세도 육지(화면 상자로 자른 것), under = 10a 일 때 단원 상자 밖을 메우는 50m 육지(아니면 null),
+//     clipOutside = under 가 있을 때 ctx 를 단원 상자 밖으로 자르는 함수(under 는 그 안에서만 칠해졌다, 아니면 null). relief.js 참고.
 //   - view.geoRect = 마지막 전체 그림 때 화면에 보이는 경위도 상자 [w, s, e, n](+여백, 경도는 중심 경도 기준으로 펴서 ±180 을 넘을 수 있음)
 //     | null(세계 보기). 바탕 지도는 이 상자로 미리 잘라 투영한다(geoClip.js clipIndexed — 구드 preclip 이 무거워서). 레이어도 써도 된다.
 import { geoPath, geoContains, geoBounds, geoGraticule } from 'd3-geo';
@@ -305,7 +306,8 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     // 지형 음영(D5)
     if (opts.relief && reliefDrawer) {
       ctx.save();
-      try { reliefDrawer(ctx, vp, view, { land: landL, under: landU, path }); } catch (err) { console.error('지형 음영 실패', err); }
+      const clipOutside = under ? () => clipOutsideUnit(path) : null;
+      try { reliefDrawer(ctx, vp, view, { land: landL, under: landU, path, clipOutside }); } catch (err) { console.error('지형 음영 실패', err); }
       ctx.restore();
       mark('relief');
     }
@@ -498,7 +500,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     if (!PROJECTIONS[newKey]) throw new Error(`모르는 도법: ${newKey}`);
     if (morph) morph.finish();
     if (newKey === key) return;
-    if (!W) { key = newKey; return; }
+    if (!W) { key = newKey; viewCache = null; return; }
     const center = nearCenter(vp, W, H) || [cLon, 0];
     const from = vp;
     key = newKey;
@@ -545,7 +547,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     if (lon === cLon) return;
     const center = vp ? nearCenter(vp, W, H) : null;
     cLon = lon;
-    if (!W) return;
+    if (!W) { viewCache = null; return; }
     const nb = makeProjection(key, { centerLon: cLon, width: W, height: H, pad: PAD });
     setBase(nb);
     snapT = null;

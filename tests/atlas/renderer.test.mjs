@@ -216,3 +216,37 @@ test('map.view: 보기가 그대로면 같은 객체, 바뀌면 새 객체, cent
   assert.notEqual(map.view, v);
   map.destroy();
 });
+
+test('크기를 모를 때(W=0) setProjection·setCenterLon 도 view 캐시를 비운다', () => {
+  const { map } = setup({ w: 0, h: 0 });
+  assert.equal(map.view.key, 'miller');
+  map.setProjection('robinson');
+  assert.equal(map.view.key, 'robinson');
+  map.setCenterLon(150);
+  assert.equal(map.view.centerLon, 150);
+  map.destroy();
+});
+
+test('지형 음영 훅: 멈출 때 육지·path 를 받고, 10a 면 under 와 단원 상자 밖 자르기(clipOutside)도, relief:false 면 안 부름', () => {
+  const { map } = setup();
+  const calls = [];
+  map.setReliefDrawer((ctx, projection, view, o) => calls.push({ projection, view, o }));
+  dom.flushRaf();
+  assert.equal(calls.length, 1);
+  assert.ok(calls[0].o.land && typeof calls[0].o.path === 'function');
+  assert.equal(calls[0].o.under, null);
+  assert.equal(calls[0].o.clipOutside, null);
+  assert.equal(calls[0].projection, calls[0].view.projection);
+  map.fitBounds([124, 33, 131.5, 43], { ms: 0 });
+  const last = calls.at(-1);
+  assert.equal(last.view.detail, '10a');
+  assert.ok(last.o.under, '10a 면 단원 상자 밖 50m 육지');
+  assert.equal(typeof last.o.clipOutside, 'function');
+  last.o.clipOutside(); // 가짜 캔버스에서 오류 없이
+  const n = calls.length;
+  map.setOptions({ relief: false });
+  dom.flushRaf();
+  map.redraw();
+  assert.equal(calls.length, n, 'relief:false 면 훅을 부르지 않음');
+  map.destroy();
+});
