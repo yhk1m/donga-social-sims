@@ -11,7 +11,7 @@
 //   map.addLayer({ id, z, draw?(ctx, path, view), drawSvg?(g, project, view), hit?(xy, lonlat) }) / removeLayer(id) / clearLayers()
 //   map.on('click' | 'hover' | 'viewchange', fn) → 해제 함수.  click·hover: fn({ lonlat, xy, feature?, layerId? }), viewchange: fn(view)
 //   map.project(lonlat) → [x, y] | null,  map.invert(xy) → lonlat | null
-//   map.view → { key, centerLon, k, x, y, width, height, center, kmPerPx, detail, moving, projection }
+//   map.view → { key, centerLon, k, x, y, width, height, center, kmPerPx, detail, moving, projection, geoRect }
 //   map.setOptions({ graticule, labels, relief }), map.setReliefDrawer(fn), map.redraw(), map.destroy(), map.stats(시간 측정)
 //
 // 레이어 규칙
@@ -20,7 +20,10 @@
 //   - SVG 레이어 drawSvg(g, project, view): 레이어마다 자기 <g>(z 순서). 멈출 때와 움직이는 동안 프레임마다 불리므로
 //     요소를 제자리에서 고치게(빠르게) 만든다. 도법 전환 중에는 숨긴다. 자기 요소의 클릭은 스스로 처리하고 stopPropagation.
 //   - hit(xy, lonlat) → feature | null: 캔버스 레이어 맞히기(z 큰 것부터). 아무 레이어도 안 맞으면 바탕 지도 나라(layerId 'basemap').
-//   - 지형 음영 setReliefDrawer(fn): fn(ctx, projection, view, { land, path }) — 육지를 칠한 뒤(레이어 아래) 멈출 때만 불린다.
+//   - 지형 음영 setReliefDrawer(fn): fn(ctx, projection, view, { land, under, path }) — 육지를 칠한 뒤(레이어 아래) 멈출 때만 불린다.
+//     land = 지금 상세도 육지(화면 상자로 자른 것), under = 10a 일 때 단원 상자 밖을 메우는 50m 육지(아니면 null).
+//   - view.geoRect = 마지막 전체 그림 때 화면에 보이는 경위도 상자 [w, s, e, n](+여백, 경도는 중심 경도 기준으로 펴서 ±180 을 넘을 수 있음)
+//     | null(세계 보기). 바탕 지도는 이 상자로 미리 잘라 투영한다(mapView.js clipIndexed — 구드 preclip 이 무거워서). 레이어도 써도 된다.
 import { geoPath, geoContains, geoBounds, geoGraticule } from 'd3-geo';
 import { feature, mesh } from 'topojson-client';
 import { h, s } from '../shared/dom.js';
@@ -30,6 +33,7 @@ import { placeLabels, createMeasureCache, MIN_K, DEFAULT_RANK } from './labels.j
 import {
   viewProjection, transformForCenter, centerOf, invertChecked, relativeTransform, normalizeBounds, kmPerPx,
   sortLayers, hitTest, dropBoxEdges, boxPolygon, pathBroken, riverStyle, lakeVisible, graticuleStep, fontPx, trimPath, glyphLayout,
+  viewRect, indexGeometry, clipIndexed, nearCenter,
 } from './mapView.js';
 import { createZoomer } from './zoomer.js';
 import './atlas.css';
@@ -87,6 +91,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   let snapT = null; // 스냅숏을 찍은 때의 T
   let labelT = null; // 지명을 놓은 때의 T
   let detail = '110';
+  let rect = null; // 마지막 전체 그림의 화면 경위도 상자 [w, s, e, n] | null(자르지 않음)
   let mode = 'idle'; // idle | moving | morph
   let destroyed = false;
   let morph = null; // {raf, finish}
@@ -120,14 +125,18 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
         if (g.type === kind) parts.push(g.coordinates);
         else if (g.type === `Multi${kind}`) parts.push(...g.coordinates);
       }
-      return [...m.entries()].sort((a, b) => a[0] - b[0]).map(([sr, coords]) => ({ s: sr, geom: { type: `Multi${kind}`, coordinates: coords } }));
+      return [...m.entries()].sort((a, b) => a[0] - b[0]).map(([sr, coords]) => ({ s: sr, idx: indexGeometry({ type: `Multi${kind}`, coordinates: coords }) }));
     };
-    geo[l] = { land, countries, borders, coast, rivers: bySize(o.rivers, 'LineString'), lakes: bySize(o.lakes, 'Polygon') };
+    // 그리기용은 화면 경위도 상자로 미리 자르는 색인(mapView.js clipIndexed — 구드 preclip 이 무거워서)
+    geo[l] = {
+      land, countries, landIdx: indexGeometry(land), bordersIdx: indexGeometry(borders), coastIdx: indexGeometry(coast),
+      rivers: bySize(o.rivers, 'LineString'), lakes: bySize(o.lakes, 'Polygon'),
+    };
     return geo[l];
   }
   const graticules = new Map();
   const graticuleOf = (step) => {
-    if (!graticules.has(step)) graticules.set(step, geoGraticule().step([step, step]).extentMinor([[-180, -80 - 1e-6], [180, 80 + 1e-6]])());
+    if (!graticules.has(step)) graticules.set(step, indexGeometry(geoGraticule().step([step, step]).extentMinor([[-180, -80 - 1e-6], [180, 80 + 1e-6]])()));
     return graticules.get(step);
   };
   // 나라 맞히기(바탕 지도): 50m 나라 + 경위도 상자 미리 거르기
@@ -236,66 +245,83 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     }
   }
   function currentDetail() {
-    const c = centerOf(vp, W, H);
+    const c = nearCenter(vp, W, H); // 가운데가 구드 틈이면 가까운 지도 위 점
     return pickDetail(T.k, !!c && inUnit(c, boxes));
   }
   /** 전체 그림(멈췄을 때) */
   function render() {
     if (!W || !H || !base) return;
     const t0 = now();
+    const parts = {};
+    let tp = t0;
+    const mark = (name) => { const t = now(); parts[name] = Math.round((t - tp) * 10) / 10; tp = t; };
     updateVP();
     detail = currentDetail();
+    rect = viewRect(vp, W, H); // 화면에 보이는 경위도 상자(+여백), 세계 보기면 null
+    mark('rect');
     const view = viewState();
     begin();
     const path = geoPath(vp, ctx);
     const k = T.k;
     sphere(path, vp); ctx.fillStyle = STYLE.ocean; ctx.fill();
+    mark('sea');
+    const C = (idx) => clipIndexed(idx, rect);
     const L = level(detail);
     const under = detail === '10a' ? level('50') : null; // 단원 상자 밖은 50m
     const outside = (fn) => { if (!under) return; ctx.save(); clipOutsideUnit(path); fn(under); ctx.restore(); };
     // 육지
-    outside((U) => fillGeo(path, U.land, STYLE.land));
-    fillGeo(path, L.land, STYLE.land);
+    const landL = C(L.landIdx), landU = under ? C(under.landIdx) : null;
+    outside(() => fillGeo(path, landU, STYLE.land));
+    fillGeo(path, landL, STYLE.land);
+    mark('land');
     // 지형 음영(D5)
     if (opts.relief && reliefDrawer) {
       ctx.save();
-      try { reliefDrawer(ctx, vp, view, { land: L.land, under: under?.land ?? null, path }); } catch (err) { console.error('지형 음영 실패', err); }
+      try { reliefDrawer(ctx, vp, view, { land: landL, under: landU, path }); } catch (err) { console.error('지형 음영 실패', err); }
       ctx.restore();
+      mark('relief');
     }
     canvasLayers(path, view, false);
+    mark('areaLayers');
     // 호수·하천
     const lakes = (G) => {
       if (!G.lakes) return;
       ctx.beginPath();
-      for (const { s: sr, geom } of G.lakes) if (lakeVisible(sr, k)) path(geom);
+      for (const { s: sr, idx } of G.lakes) if (lakeVisible(sr, k)) path(C(idx));
       ctx.fillStyle = STYLE.lake; ctx.fill();
     };
     const rivers = (G) => {
       if (!G.rivers) return;
       ctx.strokeStyle = STYLE.river;
-      for (const { s: sr, geom } of G.rivers) {
+      for (const { s: sr, idx } of G.rivers) {
         const st = riverStyle(sr, k);
         if (!st.visible) continue;
-        ctx.beginPath(); path(geom); ctx.lineWidth = st.width; ctx.stroke();
+        ctx.beginPath(); path(C(idx)); ctx.lineWidth = st.width; ctx.stroke();
       }
     };
     outside((U) => { lakes(U); rivers(U); });
     lakes(L); rivers(L);
+    mark('water');
     // 국경
     const bw = k < 2 ? 0.6 : k < 4 ? 0.75 : 0.9;
-    outside((U) => strokeGeo(path, U.borders, STYLE.border, bw));
-    strokeGeo(path, L.borders, STYLE.border, bw);
+    outside((U) => strokeGeo(path, C(U.bordersIdx), STYLE.border, bw));
+    strokeGeo(path, C(L.bordersIdx), STYLE.border, bw);
+    mark('borders');
     // 경위선
-    if (opts.graticule) strokeGeo(path, graticuleOf(graticuleStep(k)), STYLE.graticule, 0.5);
+    if (opts.graticule) strokeGeo(path, C(graticuleOf(graticuleStep(k))), STYLE.graticule, 0.5);
+    mark('graticule');
     // 해안선 강조
     const cw = k < 2 ? 0.6 : 0.8;
-    outside((U) => strokeGeo(path, U.coast, STYLE.coast, cw));
-    strokeGeo(path, L.coast, STYLE.coast, cw);
+    outside((U) => strokeGeo(path, C(U.coastIdx), STYLE.coast, cw));
+    strokeGeo(path, C(L.coastIdx), STYLE.coast, cw);
+    mark('coast');
     canvasLayers(path, view, true);
+    mark('topLayers');
     // 지구 테두리
     sphere(path, vp); ctx.strokeStyle = STYLE.sphere; ctx.lineWidth = 0.8; ctx.stroke();
     takeSnapshot();
-    push(stats.render, { ms: now() - t0, detail, k });
+    mark('frame');
+    push(stats.render, { ms: now() - t0, detail, k, key, parts });
   }
   function takeSnapshot() {
     if (snap.width !== canvas.width || snap.height !== canvas.height) { snap.width = canvas.width; snap.height = canvas.height; }
@@ -404,7 +430,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     return {
       key, centerLon: cLon, k: T.k, x: T.x, y: T.y, width: W, height: H,
       center: vp ? centerOf(vp, W, H) : null, kmPerPx: vp ? kmPerPx(vp, [W / 2, H / 2]) : null,
-      detail, moving: mode !== 'idle', projection: vp,
+      detail, moving: mode !== 'idle', projection: vp, geoRect: rect,
     };
   }
   function project(ll) {
@@ -424,7 +450,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     if (morph) morph.finish();
     if (newKey === key) return;
     if (!W) { key = newKey; return; }
-    const center = centerOf(vp, W, H) || [cLon, 0];
+    const center = nearCenter(vp, W, H) || [cLon, 0];
     const from = vp;
     key = newKey;
     const nb = makeProjection(key, { centerLon: cLon, width: W, height: H, pad: PAD });
@@ -468,7 +494,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     if (!Number.isFinite(lon)) throw new Error('setCenterLon: 숫자 필요');
     if (morph) morph.finish();
     if (lon === cLon) return;
-    const center = vp ? centerOf(vp, W, H) : null;
+    const center = vp ? nearCenter(vp, W, H) : null;
     cLon = lon;
     if (!W) return;
     const nb = makeProjection(key, { centerLon: cLon, width: W, height: H, pad: PAD });
@@ -479,7 +505,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   }
   function targetTransform(target) {
     if (target.bounds) return constrain(fitBoundsTransform(base, normalizeBounds(target.bounds), W, H, target.pad ?? FIT_PAD, { minK: K_MIN, maxK: K_MAX }));
-    const center = target.center || (vp && centerOf(vp, W, H)) || [cLon, 0];
+    const center = target.center || (vp && nearCenter(vp, W, H)) || [cLon, 0];
     return keepView(base, center, target.zoom ?? T.k);
   }
   function flyTo(target, ms = 700) {
@@ -497,7 +523,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     const nw = Math.round(r.width), nh = Math.round(r.height);
     const nd = Math.min(3, window.devicePixelRatio || 1);
     if (!nw || !nh || (nw === W && nh === H && nd === dpr)) return;
-    const center = vp ? centerOf(vp, W, H) : null, k = T.k, first = !W;
+    const center = vp ? nearCenter(vp, W, H) : null, k = T.k, first = !W;
     W = nw; H = nh; dpr = nd;
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);

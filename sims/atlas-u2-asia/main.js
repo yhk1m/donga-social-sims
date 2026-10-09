@@ -30,7 +30,7 @@ export default function mount(root) {
     seg([[0, '대서양'], [150, '태평양']], 0, (c) => map.setCenterLon(c)),
   ));
   const general = topics.find((t) => t.id === 'general');
-  const views = [['world', '세계', null], ...(general?.views || []).map((v) => [v.id, v.title || v.id, v.bounds])];
+  const views = [['world', '세계', null], ...(general?.views || []).map((v) => [v.id, v.label || v.title || v.id, v.bounds])];
   addBlock(panel, h('div', { class: 'ds-ctl' },
     h('span', { class: 'ds-label' }, '보기'),
     h('div', { class: 'ds-row' }, views.map(([id, label, b]) => h('button', {
