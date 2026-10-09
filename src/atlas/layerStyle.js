@@ -1,12 +1,12 @@
 // © 2026 김용현
 // src/atlas/layerStyle.js — 주제 레이어(layers.js)의 순수 함수(DOM 없음). 테스트: tests/atlas/layerStyle.test.mjs
-//   범례 투명도(alphaOf), 확대에 따른 크기(zoomScale·symbolPx·flowWidthPx·lineWidthPx·barMetrics), 곡선(bendControl·quadPath)·화살촉(arrowMarker),
+//   범례 투명도(alphaOf), 확대에 따른 크기(zoomScale·symbolPx·flowWidthPx·lineWidthPx·barMetrics), 곡선(bendControl·quadPath)·화살촉(arrowSize·endTangent·arrowHead·trimRunEnd),
 //   선 잇기·나누기(unwrapLine·joinParts·splitJumps), 맞히기 거리(distToPolyline), 선 위 글자 자리(lineLabelAt),
 //   이미지 색인(imageIndex), 색(parseHex·nearestColor), 기호 모양(shapePath·SHAPES), 화면 범례 항목(legendItems).
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
-const r1 = (v) => String(Math.round(v * 10) / 10);
-const fmt = (p) => `${r1(p[0])},${r1(p[1])}`;
+const fmt1 = (v) => String(Math.round(v * 10) / 10); // 소수 한 자리 글자(SVG 경로용)
+const fmt = (p) => `${fmt1(p[0])},${fmt1(p[1])}`;
 
 /** 범례 상태에서 분류 cls 의 투명도: 범례가 없거나 활성이면 1, 다른 분류만 고른 상태면 dimAlpha. */
 export function alphaOf(legend, cls, dimAlpha = 0.15) {
@@ -61,10 +61,39 @@ export function quadPath(pts, { bend = 0.18 } = {}) {
   return `${d}L${fmt(pts[pts.length - 1])}`;
 }
 
-/** 화살촉(SVG marker, userSpaceOnUse): 선 굵기 w px → {len, half, path}. 끝(len, 0)이 화살 끝. */
-export function arrowMarker(w) {
-  const len = Math.round(Math.max(6, 3 * w) * 10) / 10, half = Math.round(Math.max(3, 1.6 * w) * 10) / 10;
-  return { len, half, path: `M0,-${half}L${len},0L0,${half}Z` };
+/** 화살촉 크기: 선 굵기 w px → {len(길이), half(반폭)} px. */
+export function arrowSize(w) {
+  return { len: Math.round(Math.max(6, 3 * w) * 10) / 10, half: Math.round(Math.max(3, 1.6 * w) * 10) / 10 };
+}
+
+/**
+ * quadPath 로 그린 곡선 끝의 접선: {tip, dir(단위 벡터)} | null. 셋 이상이면 마지막 마디(가운데점 → 끝점 직선)의 방향 = 마지막 두 점,
+ * 두 점이면 베지어 조절점(bendControl) → 끝점. 길이 0 이면 null.
+ */
+export function endTangent(run, { bend = 0.18 } = {}) {
+  if (!run || run.length < 2) return null;
+  const tip = run[run.length - 1];
+  const from = run.length === 2 ? bendControl(run[0], run[1], bend) : run[run.length - 2];
+  const dx = tip[0] - from[0], dy = tip[1] - from[1], L = Math.hypot(dx, dy);
+  return L > 1e-9 ? { tip, dir: [dx / L, dy / L] } : null;
+}
+
+/** 화살촉 세모: 끝 tip, 진행 방향 dir(단위), 선 굵기 w → {path, base(밑변 가운데)}. SVG marker(문서 전역 id)를 쓰지 않으려고 경로로 직접 그린다. */
+export function arrowHead(tip, dir, w) {
+  const { len, half } = arrowSize(w);
+  const base = [tip[0] - dir[0] * len, tip[1] - dir[1] * len];
+  const nx = -dir[1] * half, ny = dir[0] * half;
+  return { base, path: `M${fmt(tip)}L${fmt([base[0] + nx, base[1] + ny])}L${fmt([base[0] - nx, base[1] - ny])}Z` };
+}
+
+/** 마지막 점을 마지막 마디 반대쪽으로 by 만큼 당긴 사본(선 끝이 화살촉 끝으로 삐져나오지 않게). 마지막 마디가 by × 1.2 보다 짧으면 그대로. */
+export function trimRunEnd(run, by) {
+  const n = run.length;
+  if (n < 2) return run;
+  const a = run[n - 2], b = run[n - 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  if (L <= by * 1.2) return run;
+  const t = (L - by) / L;
+  return [...run.slice(0, -1), [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]];
 }
 
 /** 선의 경도를 앞 점에 이어 붙인다(±360) — 날짜변경선을 넘어도 끊기지 않게. */

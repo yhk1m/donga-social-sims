@@ -28,7 +28,8 @@ const puts = [];
     return el;
   };
 }
-const { areaLayer, symbolLayer, flowLayer, markerLayer, imageLayer, combineLayers, layerFromRef } = await import('../../src/atlas/layers.js');
+const { areaLayer, symbolLayer, flowLayer, markerLayer, imageLayer } = await import('../../src/atlas/layers.js');
+const { combineLayers, layerFromRef } = await import('../../src/atlas/layerRef.js');
 test.after(() => dom.restore());
 const DATA = path.join(REPO, 'sims/atlas-u2-asia/data');
 const load = (f) => readJson(path.join(DATA, f));
@@ -67,8 +68,23 @@ function fakeMap() {
     refreshLayer(id) { refreshed.push(id); return true; },
     on(type, fn) { handlers[type] ??= new Set(); handlers[type].add(fn); return () => handlers[type].delete(fn); },
     emit(type, e) { for (const fn of handlers[type] || []) fn(e); },
-    get handlerCount() { return Object.values(handlers).reduce((a, s) => a + s.size, 0); },
+    get handlerCount() { return Object.values(handlers).reduce((a, set) => a + set.size, 0); },
   };
+}
+/** 요소 트리 안의 id 속성·url(#…) 참조 모음(문서 전역 id 를 쓰지 않는지) */
+function idsIn(el, out = []) {
+  if (el.getAttribute) {
+    if (el.getAttribute('id') != null) out.push(el.getAttribute('id'));
+    for (const [k, v] of el.attrs || []) if (/url\(#/.test(v)) out.push(`${k}=${v}`);
+  }
+  for (const c of el.childNodes || []) idsIn(c, out);
+  return out;
+}
+/** 범례 흉내(구독 수를 센다) */
+function fakeLegend(classes) {
+  const real = createLegendState(classes);
+  let subs = 0;
+  return { ...real, onChange(fn) { subs++; const off = real.onChange(fn); return () => { subs--; off(); }; }, get subs() { return subs; } };
 }
 const sq = (lon, lat, d = 2) => [[[lon, lat], [lon, lat + d], [lon + d, lat + d], [lon + d, lat], [lon, lat]]]; // 시계 방향(d3)
 const fc = (features, legend) => ({ type: 'FeatureCollection', properties: { id: 't', title: '시험', approx: false, legend }, features });
@@ -231,32 +247,33 @@ const flowFC = () => fc([
   { type: 'Feature', properties: { type: 'flow', cls: 'export', color: '#ed0c6e', width: 0.6, label: '일본' }, geometry: { type: 'LineString', coordinates: [[128, 37], [134, 36], [138, 36]] } },
 ], [{ cls: 'import', color: '#0066b3', kind: 'flow', label: '수입' }, { cls: 'export', color: '#ed0c6e', kind: 'flow', label: '수출' }]);
 
-test('flowLayer: 이차 곡선 경로 + 선마다 화살촉 marker(겹치지 않는 id), 굵기 순서, 날짜변경선은 이음매에서만 끊음', () => {
+test('flowLayer: 이차 곡선 경로 + 선마다 화살촉 경로(같은 <g> 안, id 없음), 굵기 순서, 날짜변경선은 이음매에서만 끊음', () => {
   const L = flowLayer('f', flowFC());
   const g = document.createElementNS('svg', 'g');
   const pac = viewOf({ lon0: 150, W: 1600 });
   L.drawSvg(g, pac.project, pac.view);
-  const root = g.childNodes[0];
-  const defs = root.childNodes[0];
-  assert.equal(defs.childNodes.length, 2);
-  const ids = defs.childNodes.map((m) => m.getAttribute('id'));
-  assert.equal(new Set(ids).size, 2);
-  const flows = root.childNodes.slice(1);
+  const flows = g.childNodes[0].childNodes;
+  assert.equal(flows.length, 2);
+  const part = (el, c) => el.childNodes.find((x) => x.classList.contains(c));
   // 굵은 선(미국, 2pt)이 먼저(아래)
-  const lineOf = (el) => el.childNodes.find((c) => c.classList.contains('at-flow-line'));
-  assert.equal(lineOf(flows[0]).getAttribute('stroke'), '#0066b3');
-  assert.ok(+lineOf(flows[0]).getAttribute('stroke-width') > +lineOf(flows[1]).getAttribute('stroke-width'));
-  assert.equal(lineOf(flows[0]).getAttribute('marker-end'), `url(#${defs.childNodes.find((m) => m.childNodes[0].getAttribute('fill') === '#0066b3').getAttribute('id')})`);
-  const dPac = lineOf(flows[0]).getAttribute('d');
+  assert.equal(part(flows[0], 'at-flow-line').getAttribute('stroke'), '#0066b3');
+  assert.ok(+part(flows[0], 'at-flow-line').getAttribute('stroke-width') > +part(flows[1], 'at-flow-line').getAttribute('stroke-width'));
+  assert.equal(part(flows[0], 'at-flow-head').getAttribute('fill'), '#0066b3');
+  assert.equal(part(flows[0], 'at-flow-line').getAttribute('marker-end'), null);
+  const dPac = part(flows[0], 'at-flow-line').getAttribute('d');
   assert.equal((dPac.match(/M/g) || []).length, 1, '태평양 중심에서는 한 줄');
   assert.match(dPac, /Q/);
+  // 화살촉 끝 = 자료 마지막 점(수입 미국 → 우리나라 128,37), 선 끝은 화살촉 밑변 쪽으로 당겨짐
+  const tip = pac.project([128, 37]);
+  const head = part(flows[0], 'at-flow-head').getAttribute('d');
+  assert.ok(head.startsWith(`M${Math.round(tip[0] * 10) / 10},${Math.round(tip[1] * 10) / 10}L`), head);
+  const lineEnd = dPac.match(/(-?[\d.]+),(-?[\d.]+)$/).slice(1).map(Number);
+  assert.ok(Math.hypot(lineEnd[0] - tip[0], lineEnd[1] - tip[1]) > 2, '선 끝이 화살 끝보다 앞');
   const atl = viewOf({ lon0: 0, W: 1600 });
   L.drawSvg(g, atl.project, atl.view);
-  assert.equal((lineOf(flows[0]).getAttribute('d').match(/M/g) || []).length, 2, '대서양 중심에서는 날짜변경선에서 두 조각');
-  // 화살촉 크기는 굵기를 따른다
-  const mk = defs.childNodes.map((m) => +m.getAttribute('markerWidth'));
-  assert.ok(mk.every((x) => x >= 6));
+  assert.equal((part(flows[0], 'at-flow-line').getAttribute('d').match(/M/g) || []).length, 2, '대서양 중심에서는 날짜변경선에서 두 조각');
   assert.equal(L.hit(atl.project([134, 36])).properties.label, '일본');
+  assert.deepEqual(idsIn(g), [], '문서 전역 id 없음');
 });
 
 test('markerLayer: 번호 = photo.pin, 누르면 고르고 onPick, select(null) 로 풀기, hit 은 label 있는 Feature', () => {
@@ -371,4 +388,109 @@ test('layerFromRef: topics.json 의 모든 레이어 항목 → 맞는 종류의
   trade.legend.toggle('import');
   assert.deepEqual(map.refreshed.at(-1), 'layer-p24-trade');
   assert.throws(() => layerFromRef({ ref: 'layer-p21-climate', type: 'nope' }, data), /모르는 레이어 종류/);
+});
+
+test('같은 레이어 객체를 다른 <g> 에 다시 그려도(렌더러에 다시 올림) 모두 새로 만든다 — 인구 막대 칸·흐름선 굵기·화살촉', () => {
+  const v = viewOf({ lon0: 100, W: 1000, H: 800 });
+  const bars = symbolLayer('p', load('layer-p23-density-cities.json'));
+  const flows = flowLayer('f', flowFC());
+  const pins = markerLayer('m', [{ id: 'a', lonlat: [100, 30], title: '가' }]);
+  for (const L of [bars, flows, pins]) {
+    const g1 = document.createElementNS('svg', 'g'), g2 = document.createElementNS('svg', 'g');
+    L.drawSvg(g1, v.project, v.view);
+    L.drawSvg(g2, v.project, v.view);
+    assert.equal(g2.childNodes.length, 1, L.id);
+    const root = g2.childNodes[0];
+    if (L === bars) {
+      const china = root.childNodes[bars.features.findIndex((f) => f.properties.name === '중국')];
+      const cells = china.childNodes.find((c) => c.classList.contains('at-bar-cells'));
+      assert.equal(cells.childNodes.filter((c) => c.classList.contains('at-bar-cell')).length, 14, '칸 다시 만듦');
+      assert.match(cells.getAttribute('transform'), /^translate\(/);
+      const base = v.project([105.234, 28.942]);
+      assert.ok(bars.hit([base[0], base[1] - 20]));
+    }
+    if (L === flows) {
+      for (const el of root.childNodes) {
+        const line = el.childNodes.find((c) => c.classList.contains('at-flow-line'));
+        assert.ok(+line.getAttribute('stroke-width') > 0, '굵기 다시 씀');
+        assert.match(el.childNodes.find((c) => c.classList.contains('at-flow-head')).getAttribute('d'), /^M.*Z$/);
+      }
+    }
+    if (L === pins) assert.match(root.childNodes[0].getAttribute('transform'), /^translate\(/);
+  }
+});
+
+test('add/remove(=만들기·destroy) 10번 해도 지도·범례 구독 수가 그대로', () => {
+  const topics = load('topics.json');
+  const refs = topics.flatMap((t) => t.layers || []);
+  const data = Object.fromEntries(refs.map((l) => [l.ref, load(`${l.ref}.json`)]));
+  const map = fakeMap();
+  for (const ref of refs) {
+    const lg = fakeLegend(layerFromRef(ref, data, { legend: null, load: async () => null }).legendItems.map((e) => e.cls));
+    for (let i = 0; i < 10; i++) {
+      const L = layerFromRef(ref, data, { map, legend: lg, load: async () => null });
+      assert.equal(lg.subs, 1, `${ref.ref}: 범례 구독은 한 번(묶음 포함)`);
+      L.destroy();
+      assert.equal(lg.subs, 0, ref.ref);
+      assert.equal(map.handlerCount, 0, ref.ref);
+    }
+  }
+  const mk = topics.find((t) => t.markers?.length).markers;
+  for (let i = 0; i < 10; i++) { const L = markerLayer('m', mk, { map }); assert.equal(map.handlerCount, 1); L.destroy(); }
+  assert.equal(map.handlerCount, 0);
+});
+
+test('레이어별 destroy: 흐름선·기호·핀은 hover·범례 구독을 풀고, 그 뒤 범례가 바뀌어도 다시 그리지 않는다', () => {
+  for (const make of [
+    (o) => flowLayer('f', flowFC(), o),
+    (o) => symbolLayer('s', symFC(), o),
+    (o) => markerLayer('m', [{ id: 'a', lonlat: [10, 10], title: '가' }], o),
+  ]) {
+    const map = fakeMap();
+    const lg = fakeLegend(['import', 'export', 'c1', 'c2']);
+    const L = make({ map, legend: lg });
+    const g = document.createElementNS('svg', 'g');
+    const v = viewOf();
+    L.drawSvg(g, v.project, v.view);
+    assert.equal(map.handlerCount, 1, L.id);
+    L.destroy();
+    assert.equal(map.handlerCount, 0, L.id);
+    assert.equal(lg.subs, 0, L.id);
+    lg.toggle('c1');
+    assert.deepEqual(map.refreshed, [], L.id);
+  }
+});
+
+test('imageLayer: 범례만 바뀐 다시 그리기는 역투영 격자를 다시 계산하지 않음, ready 는 성공 여부', async () => {
+  const fit = { family: 'equirectangular', params: [20, 0], sim: { a: 10 * 180 / Math.PI, b: 0, tx: 200, ty: 100 } };
+  const data = new Uint8ClampedArray(4 * 2 * 4).fill(200);
+  const legend = createLegendState(['d1', 'd2']);
+  const L = imageLayer('img', { url: 'u', fit, bbox: [0, -100, 400, 100], legend: [{ color: '#c8c8c8', label: 'A' }, { color: '#000000', label: 'B' }] }, { legend, load: async () => ({ width: 4, height: 2, data }) });
+  assert.equal(await L.ready, true);
+  const v = viewOf({ W: 400, H: 200 });
+  let inv = 0;
+  const p0 = v.view.projection, proj = Object.assign((ll) => p0(ll), { invert: (q) => { inv++; return p0.invert(q); } });
+  const view = { ...v.view, key: 'miller', centerLon: 0, x: 0, y: 0, projection: proj };
+  drawn(L, { view });
+  const first = inv;
+  assert.ok(first > 0);
+  legend.toggle('d2');
+  drawn(L, { view: { ...view } }); // 렌더러는 그릴 때마다 새 view 객체 — 값이 같으면 다시 쓴다
+  assert.equal(inv, first, '역투영 다시 안 함');
+  drawn(L, { view: { ...view, k: 3 } });
+  assert.ok(inv > first, '보기가 바뀌면 다시');
+  const warn = console.warn; console.warn = () => {};
+  try {
+    const bad = imageLayer('x', { url: 'u', fit, bbox: [0, 0, 1, 1] }, { load: async () => { throw new Error('막힘'); } });
+    assert.equal(await bad.ready, false);
+    assert.equal(bad.failed, true);
+  } finally { console.warn = warn; }
+});
+
+test('layerFromRef: layer.meta 는 레이어 자체 meta 위에 덧씌운다(자료 properties 의 source 등이 남음)', () => {
+  const d = load('layer-p21-climate.json');
+  const L = layerFromRef({ ref: 'layer-p21-climate', type: 'area', label: '기후' }, d);
+  assert.equal(L.meta.source, d.properties.source);
+  assert.equal(L.meta.title, '기후');
+  assert.equal(L.meta.legend, undefined);
 });

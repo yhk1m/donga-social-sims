@@ -12,19 +12,9 @@
 //
 // fit 객체는 만든 뒤 바꾸지 않는다(변환기를 객체별로 캐시하므로). 바꾸려면 새 객체를 만든다.
 import * as g from 'd3-geo';
-import * as gp from 'd3-geo-projection';
+import { FAMILIES, applySim, invertSim, tpsKernel as U, inHull, nearestOnHull, tpsRaw, tpsDelta } from '../../src/atlas/fitCore.js';
 
-// 후보: 이름 → (매개변수 → 회전·표준위선까지 정한 d3 투영)
-const FAMILIES = {
-  azimuthalEqualArea: (p) => g.geoAzimuthalEqualArea().rotate([-p[0], -p[1]]),
-  azimuthalEquidistant: (p) => g.geoAzimuthalEquidistant().rotate([-p[0], -p[1]]),
-  conicEqualArea: (p) => g.geoConicEqualArea().rotate([-p[0], 0]).parallels([p[1], p[2]]),
-  conicConformal: (p) => g.geoConicConformal().rotate([-p[0], 0]).parallels([p[1], p[2]]),
-  miller: (p) => gp.geoMiller().rotate([-p[0], 0]),
-  robinson: (p) => gp.geoRobinson().rotate([-p[0], 0]),
-  equirectangular: (p) => g.geoEquirectangular().rotate([-p[0], -(p[1] || 0)]), // p[1]: 작은 지역 지도의 중심 위도(사각 회전)
-  mercator: (p) => g.geoMercator().rotate([-p[0], 0]),
-};
+// 후보 도법(FAMILIES)·닮음 변환·TPS 계산은 앱과 같은 공통 모듈(src/atlas/fitCore.js)에서 — 앱(fitProject.js)과 구성상 같은 값.
 const INIT = { azimuthalEqualArea: [100, 40], azimuthalEquidistant: [100, 40], conicEqualArea: [100, 25, 50], conicConformal: [100, 25, 50], miller: [100], robinson: [100], equirectangular: [100], mercator: [100] };
 export const FAMILY_NAMES = Object.keys(FAMILIES);
 export const PT_MM = 0.3528;
@@ -56,12 +46,6 @@ function similarity(src, dst) {
   a /= d; b /= d;
   return { a, b, tx: dx - (a * sx - b * sy), ty: dy - (b * sx + a * sy) };
 }
-const applySim = (s, [u, v]) => [s.a * u - s.b * v + s.tx, s.b * u + s.a * v + s.ty];
-const invertSim = ({ a, b, tx, ty }, [x, y]) => {
-  const det = a * a + b * b, X = x - tx, Y = y - ty;
-  return [(a * X + b * Y) / det, (-b * X + a * Y) / det];
-};
-
 function evaluate(family, params, cps) {
   if (!params.every(Number.isFinite)) return { rms: Infinity };
   if (family.startsWith('conic') && Math.abs(params[1] + params[2]) < 1e-3) return { rms: Infinity };
@@ -223,7 +207,6 @@ export function robustFit(cps, { minPt = 2.5, k = 4, minN = 12, maxFrac = 0.1, f
 export const TPS_LAMBDA = 1e-6;
 export const TPS_TAPER = 0.1;
 const TPS_DEDUPE_PT = 0.01;
-const U = (r2) => (r2 > 0 ? 0.5 * r2 * Math.log(r2) : 0); // r² log r
 
 function luFactor(A) { // 부분 피벗 LU (제자리)
   const n = A.length, piv = [...Array(n).keys()];
@@ -251,25 +234,6 @@ function convexHull(pts) { // monotone chain, 반시계(화면 좌표에서는 �
   for (const p of P.reverse()) { while (up.length >= 2 && cross(up.at(-2), up.at(-1), p) <= 0) up.pop(); up.push(p); }
   return lo.slice(0, -1).concat(up.slice(0, -1));
 }
-function inHull(H, [x, y]) {
-  if (H.length < 3) return false;
-  for (let i = 0; i < H.length; i++) {
-    const a = H[i], b = H[(i + 1) % H.length];
-    if ((b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0]) < 0) return false;
-  }
-  return true;
-}
-function nearestOnHull(H, p) {
-  let best = null, bd = Infinity;
-  for (let i = 0; i < H.length; i++) {
-    const a = H[i], b = H[(i + 1) % H.length], dx = b[0] - a[0], dy = b[1] - a[1];
-    const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy || 1)));
-    const q = [a[0] + t * dx, a[1] + t * dy], d = Math.hypot(p[0] - q[0], p[1] - q[1]);
-    if (d < bd) { bd = d; best = q; }
-  }
-  return [best, bd];
-}
-
 /** TPS 맞추기: 기본 식 지면 좌표 pts → 보정량 vals. 0.01pt 안에 겹친 점은 평균해 하나로 합친다. */
 export function tpsFit(pts0, vals0, lambda = TPS_LAMBDA) {
   const pts = [], vals = [], cnt = [];
@@ -296,24 +260,7 @@ export function tpsFit(pts0, vals0, lambda = TPS_LAMBDA) {
     hull: convexHull(pts), taper: TPS_TAPER * s };
 }
 
-function tpsRaw(t, [x, y]) {
-  const u = (x - t.cx) / t.s, v = (y - t.cy) / t.s;
-  let dx = t.ax[0] + t.ax[1] * u + t.ax[2] * v, dy = t.ay[0] + t.ay[1] * u + t.ay[2] * v;
-  for (let i = 0; i < t.pts.length; i++) {
-    const k = U((u - t.pts[i][0]) ** 2 + (v - t.pts[i][1]) ** 2); dx += t.wx[i] * k; dy += t.wy[i] * k;
-  }
-  return [dx, dy];
-}
-
-/** 보정량(지면 pt). 껍질 안은 TPS 그대로, 바깥은 껍질 위 가장 가까운 점의 값을 거리에 따라 0 으로(3t²-2t³ 곡선) 줄인다. */
-export function tpsDelta(t, p) {
-  if (inHull(t.hull, p)) return tpsRaw(t, p);
-  const [q, d] = nearestOnHull(t.hull, p);
-  const r = Math.min(1, d / t.taper), w = 1 - r * r * (3 - 2 * r);
-  if (w <= 0) return [0, 0];
-  const dq = tpsRaw(t, q);
-  return [w * dq[0], w * dq[1]];
-}
+export { tpsDelta }; // 예전 이름 그대로(공통 모듈 fitCore.js)
 
 /** 지면 pt 가 TPS 기준점 볼록 껍질 안인가. TPS 가 없는 fit 은 보정 범위 개념이 없어 true. */
 export function inControlHull(fit, xy) {

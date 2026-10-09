@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  alphaOf, zoomScale, symbolPx, flowWidthPx, lineWidthPx, barMetrics, bendControl, quadPath, arrowMarker, unwrapLine, joinParts,
+  alphaOf, zoomScale, symbolPx, flowWidthPx, lineWidthPx, barMetrics, bendControl, quadPath, arrowSize, endTangent, arrowHead, trimRunEnd, unwrapLine, joinParts,
   splitJumps, distToPolyline, lineLabelAt, imageIndex, parseHex, nearestColor, shapePath, legendItems, SHAPES,
 } from '../../src/atlas/layerStyle.js';
 import { createLegendState } from '../../src/atlas/legendState.js';
@@ -69,12 +69,36 @@ test('quadPath: 두 점은 이차 베지어 하나, 셋 이상은 가운데점�
   assert.equal(quadPath([]), '');
 });
 
-test('arrowMarker: 선이 굵을수록 큰 화살촉, 하한이 있고 끝이 (len, 0)', () => {
-  const a = arrowMarker(1), b = arrowMarker(5);
+test('arrowSize: 선이 굵을수록 큰 화살촉, 하한이 있다', () => {
+  const a = arrowSize(1), b = arrowSize(5);
   assert.ok(b.len > a.len && b.half > a.half);
   assert.ok(a.len >= 6 && a.half >= 3);
-  assert.match(a.path, /^M0,-[\d.]+L[\d.]+,0L0,[\d.]+Z$/);
-  assert.ok(a.path.includes(`L${a.len},0`));
+});
+
+test('endTangent: 곡선 끝의 접선 방향(단위 벡터) — 꺾은선 곡선은 마지막 두 점, 두 점 베지어는 조절점 → 끝점', () => {
+  const t = endTangent([[0, 0], [10, 0], [10, 10]]);
+  assert.deepEqual(t.tip, [10, 10]);
+  near(t.dir[0], 0); near(t.dir[1], 1);
+  const u = endTangent([[0, 0], [100, 0]], { bend: 0.2 }); // 조절점 (50, −20) → 끝 (100, 0)
+  near(u.dir[0], 50 / Math.hypot(50, 20)); near(u.dir[1], 20 / Math.hypot(50, 20));
+  assert.equal(endTangent([[1, 1]]), null);
+  assert.equal(endTangent([[1, 1], [1, 1]]), null, '길이 0');
+});
+
+test('arrowHead: 끝점이 화살 끝, 밑변은 진행 반대쪽 len, 폭 2·half 인 세모 경로', () => {
+  const h = arrowHead([100, 50], [1, 0], 2);
+  const { len, half } = arrowSize(2);
+  assert.deepEqual(h.base, [100 - len, 50]);
+  assert.equal(h.path, `M100,50L${100 - len},${50 + half}L${100 - len},${50 - half}Z`);
+  const v = arrowHead([0, 0], [0, -1], 1); // 위쪽으로
+  assert.ok(v.base[1] > 0);
+});
+
+test('trimRunEnd: 마지막 점을 진행 반대쪽으로 by 만큼 당긴다(마지막 마디가 짧으면 그대로), 원본은 그대로', () => {
+  const run = [[0, 0], [10, 0], [30, 0]];
+  assert.deepEqual(trimRunEnd(run, 5), [[0, 0], [10, 0], [25, 0]]);
+  assert.deepEqual(run[2], [30, 0]);
+  assert.deepEqual(trimRunEnd([[0, 0], [3, 0]], 5), [[0, 0], [3, 0]]);
 });
 
 test('unwrapLine·joinParts: 날짜변경선에서 나뉜 선을 경도가 이어지게 하나로', () => {
