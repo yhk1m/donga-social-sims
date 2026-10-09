@@ -401,8 +401,8 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   }
   const r1 = (v) => Math.round(v * 10) / 10;
   function labelNode(L) {
-    const cls = `at-lbl at-lbl-${L.kind}`;
-    const g = s('g', { class: 'at-lbl-g' });
+    const cls = `at-label at-label-${L.kind}`;
+    const g = s('g', { class: 'at-label-group' });
     if (L.symbol && L.xy) {
       const [x, y] = L.xy;
       if (L.kind === 'capital') g.append(s('rect', { class: 'at-sym at-sym-capital', x: r1(x - 3), y: r1(y - 3), width: 6, height: 6 }));
@@ -548,7 +548,9 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     return c ? { ...out, feature: c, layerId: 'basemap' } : out;
   }
   function onClick(e) {
-    if (e.target !== svg || mode !== 'idle') return;
+    // 끌기 직후(100ms) click 은 zoomer 가 먹는다. 휠·끌기가 끝나고 다시 그리기(120ms) 전에도 화면 투영은 지금 변환과 같아 맞히기가 맞으므로 받는다.
+    // 도법 전환 보간 중에는 화면 그림과 투영이 달라 무시한다.
+    if (e.target !== svg || morph) return;
     emit('click', hitAt(local(e)));
   }
   function onPointerMove(e) {

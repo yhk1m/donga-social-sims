@@ -16,19 +16,19 @@
 .ds-sim .at-labels.is-hidden { opacity: 0; transition: none; }
 .ds-sim .at-layers { opacity: 1; transition: opacity .2s ease-out; }
 .ds-sim .at-layers.is-hidden { opacity: 0; transition: none; pointer-events: none; }
-.ds-sim .at-lbl {
+.ds-sim .at-label {
   font-family: var(--font); text-anchor: middle; dominant-baseline: central;
   paint-order: stroke fill; stroke: rgba(255, 255, 255, .88); stroke-width: 3px; stroke-linejoin: round;
   fill: #3b3b3b; font-weight: 500;
 }
-.ds-sim .at-lbl-country { fill: #3d3229; font-weight: 800; stroke-width: 3.5px; }
-.ds-sim .at-lbl-capital { fill: #1f1f1f; font-weight: 700; }
-.ds-sim .at-lbl-city { fill: #3a3a3a; font-weight: 500; }
-.ds-sim .at-lbl-sea, .ds-sim .at-lbl-river { fill: #2f6b9a; font-style: italic; font-weight: 500; stroke: rgba(234, 244, 248, .85); }
-.ds-sim .at-lbl-river { stroke-width: 2.5px; }
-.ds-sim .at-lbl-mountain, .ds-sim .at-lbl-plain, .ds-sim .at-lbl-desert, .ds-sim .at-lbl-region { fill: #7d5b34; font-weight: 600; }
-.ds-sim .at-lbl-island { fill: #5d5048; font-weight: 500; }
-.ds-sim .at-lbl-other { fill: #6b5d52; font-weight: 500; }
+.ds-sim .at-label-country { fill: #3d3229; font-weight: 800; stroke-width: 3.5px; }
+.ds-sim .at-label-capital { fill: #1f1f1f; font-weight: 700; }
+.ds-sim .at-label-city { fill: #3a3a3a; font-weight: 500; }
+.ds-sim .at-label-sea, .ds-sim .at-label-river { fill: #2f6b9a; font-style: italic; font-weight: 500; stroke: rgba(234, 244, 248, .85); }
+.ds-sim .at-label-river { stroke-width: 2.5px; }
+.ds-sim .at-label-mountain, .ds-sim .at-label-plain, .ds-sim .at-label-desert, .ds-sim .at-label-region { fill: #7d5b34; font-weight: 600; }
+.ds-sim .at-label-island { fill: #5d5048; font-weight: 500; }
+.ds-sim .at-label-other { fill: #6b5d52; font-weight: 500; }
 
 /* 지명 기호: 수도 = 네모, 도시 = 점, 산 = 세모 (놓인 지명에만) */
 .ds-sim .at-sym { stroke: #fff; stroke-width: 1.2px; }
