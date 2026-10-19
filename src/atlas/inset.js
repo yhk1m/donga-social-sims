@@ -115,11 +115,11 @@ export function symbolInset(stage, { outline, points, legend = null, legendItems
     tip.show(text, [e.clientX - r.left, e.clientY - r.top]);
   }
   /** 범례 고름: 고르지 않은 분류는 흐리게(큰 지도 기호 레이어와 같은 0.2) */
-  function sync(sel) {
-    for (const q of syms) q.c.setAttribute('opacity', sel == null || sel === q.f.properties.cls ? '1' : '0.2');
+  function sync() { // 묶음 고름(toggleGroup)도 맞게 isActive 로
+    for (const q of syms) q.c.setAttribute('opacity', !legend || legend.isActive(q.f.properties.cls) ? '1' : '0.2');
   }
   const off = legend ? legend.onChange(sync) : null;
-  sync(legend?.selected?.() ?? null);
+  sync();
   let alive = true;
   /** 열기. focus = 사용자가 열었을 때(위치 상자 누름)만 초점을 창 안으로(Esc 가 창의 keydown 에 걸려 있음 — pageViewer 와 같음).
    *  주제·묶음을 만들 때 저절로 열리는 것은 초점을 가져가지 않는다(목차·지도 고르기 단추에서 키보드 자리를 잃지 않게, E2 대조 M3). */

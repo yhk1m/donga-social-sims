@@ -10,7 +10,7 @@
 #   마지막       빙하(육지 화소이고 Natural Earth 빙하 면 안)
 # 육지/바다 = Natural Earth 10m 육지 면(화소 가운데가 안이면 육지), 높이 = ETOPO 2022 60″ 표면 높이(빙하 위는 얼음 표면)를 화소 칸 평균(rasterio average)으로 줄인 것.
 # 회색 = 번호 × codeStep(12) — 브라우저가 PNG 를 조금 다르게 풀어도(색 관리) 반올림으로 번호를 되찾게 간격을 둔다. 8비트 회색, gAMA·iCCP 없음.
-import json, os, sys, hashlib
+import json, os, re, sys, hashlib
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -30,6 +30,27 @@ def classes(t):
         out.append({'kind': 'land', 'lo': lb[i], 'hi': lb[i + 1] if i + 1 < len(lb) else None, 'color': c})
     out.append({'kind': 'glacier', 'lo': None, 'hi': None, 'color': t['glacierColor']})
     return out
+
+
+RELIEF = 'docs/assets/atlas/common/relief-4096.jpg'  # 고도 색은 음영과 같은 격자여야 한다(같은 역투영 표본으로 뽑음)
+HEX = re.compile(r'^#[0-9a-f]{6}$')
+
+
+def validate(t, relief_size=None):
+    """설정 tint 확인 — 틀린 곳 목록(빈 목록이면 통과). 색 수 = 경계 수 + 1, #rrggbb, 경계는 커지는 차례, 크기 = 음영 화상, 번호 × codeStep ≤ 255."""
+    bad = []
+    for k in ('land', 'sea'):
+        br, co = t[f'{k}Breaks'], t[f'{k}Colors']
+        if len(co) != len(br) + 1: bad.append(f'{k}Colors {len(co)}개 ≠ {k}Breaks {len(br)}개 + 1')
+        if any(b2 <= b1 for b1, b2 in zip(br, br[1:])): bad.append(f'{k}Breaks 가 커지는 차례가 아님: {br}')
+    if t['landBreaks'][:1] != [0]: bad.append('landBreaks 는 0 부터(해수면 아래 땅 = 첫 색)')
+    for c in t['landColors'] + t['seaColors'] + [t['glacierColor']]:
+        if not HEX.match(str(c)): bad.append(f'색 형식 #rrggbb 아님: {c}')
+    if relief_size and tuple(relief_size) != (t['width'], t['height']):
+        bad.append(f"크기 {t['width']}×{t['height']} ≠ 음영 화상 {relief_size[0]}×{relief_size[1]}")
+    n = len(t['seaColors']) + len(t['landColors']) + 1
+    if (n - 1) * t['codeStep'] > 255: bad.append(f'분류 {n}개 × codeStep {t["codeStep"]} 가 회색 255 를 넘음')
+    return bad
 
 
 def classify(elev, land, glacier, t):
@@ -56,9 +77,13 @@ def read_inputs(t):
         b = src.bounds
         if abs(b.left + 180) > 0.01 or abs(b.right - 180) > 0.01 or abs(b.top - 90) > 0.01 or abs(b.bottom + 90) > 0.01:
             raise SystemExit(f'DEM 범위가 전 지구가 아님: {b}')
-        elev = src.read(1, out_shape=(H, W), resampling=Resampling.average, out_dtype='float32')
         nod = src.nodata
-    if nod is not None: elev = np.where(elev == nod, 0, elev)
+        elev = src.read(1, out_shape=(H, W), resampling=Resampling.average, out_dtype='float32', masked=nod is not None)
+    if np.ma.isMaskedArray(elev):
+        n = int(np.ma.count_masked(elev))
+        print(f'DEM 값 없음(nodata {nod}) 화소: {n:,}')
+        if n: raise SystemExit(f'DEM 에 값 없는 화소 {n:,}개 — 조용히 0 으로 메우지 않음(DEM 확인)')
+        elev = elev.filled(0)
     tr = from_bounds(-180, -90, 180, 90, W, H)
     def mask(path):
         with open(stamp_path(path), encoding='utf-8') as f:
@@ -76,18 +101,23 @@ def encode_png(idx, t, path):
 
 def main(argv):
     if hasattr(sys.stdout, 'reconfigure'): sys.stdout.reconfigure(encoding='utf-8')
+    from PIL import Image
     t = unit_config()['tint']
     cls = classes(t)
-    if (len(cls) - 1) * t['codeStep'] > 255: raise SystemExit('분류가 너무 많아 회색 255 를 넘음(codeStep 줄이기)')
+    bad = validate(t, Image.open(os.path.join(REPO, RELIEF)).size)
+    if bad: raise SystemExit('설정 tint 오류: ' + ' / '.join(bad))
+    out = os.path.join(REPO, t['out'])
+    if '--check' in argv and not os.path.exists(out):
+        print(f"없음: {t['out']} — python -I scripts/atlas/build_tint.py 로 만들기"); return 1
     elev, land, glacier = read_inputs(t)
     idx = classify(elev, land, glacier, t)
-    out = os.path.join(REPO, t['out'])
     if '--check' in argv:
-        from PIL import Image
         cur = np.asarray(Image.open(out)).astype(np.int32)
         same = cur.shape == idx.shape and np.array_equal(np.rint(cur / t['codeStep']).astype(np.int32), idx)
-        print('같음' if same else '다름 — python -I scripts/atlas/build_tint.py 로 다시 만들기')
-        return 0 if same else 1
+        size = os.path.getsize(out)
+        over = size > t['maxBytes']
+        print('같음' if same else '다름 — python -I scripts/atlas/build_tint.py 로 다시 만들기', f'· {size:,} B' + (f' > maxBytes {t["maxBytes"]:,}' if over else ''))
+        return 0 if same and not over else 1
     os.makedirs(os.path.dirname(out), exist_ok=True)
     encode_png(idx, t, out)
     size = os.path.getsize(out)

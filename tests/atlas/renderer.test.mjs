@@ -270,3 +270,28 @@ test('destroy 뒤: map.destroyed 는 true, setReliefDrawer·invalidate·refreshL
   dom.flushRaf();
   assert.equal(called, 0);
 });
+
+test('고도 색 훅: tint 일 때만 sea → land 차례, 음영과 같은 공유 격자(그림마다 invertGrid 한 번 — miss 1 · hit 2), options 알림, destroy 로 격자 놓아줌', () => {
+  const { map } = setup();
+  const seq = [];
+  const seen = [];
+  map.setReliefDrawer((ctx, projection, view, o) => { seq.push('relief'); seen.push(o.grid()); });
+  map.setTintDrawer((ctx, projection, view, o) => { seq.push(o.phase); seen.push(o.grid()); });
+  const opts = [];
+  const off = map.on('options', (o) => opts.push(o.tint));
+  dom.flushRaf();
+  assert.deepEqual(seq, ['relief'], 'tint 끔이면 고도 색 훅 안 부름');
+  assert.equal(map.tintReady, true);
+  seq.length = 0; seen.length = 0;
+  map.setOptions({ tint: true });
+  dom.flushRaf();
+  assert.deepEqual(seq, ['sea', 'land', 'relief']);
+  assert.ok(seen[0] === seen[1] && seen[1] === seen[2], '같은 격자 객체');
+  const last = map.gridStats.renders.at(-1);
+  assert.deepEqual([last.misses, last.hits], [1, 2]);
+  assert.deepEqual(opts, [true]);
+  map.redraw();
+  assert.notEqual(seen.at(-1), seen[0], '다음 그림은 새 격자');
+  off();
+  map.destroy();
+});

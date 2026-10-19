@@ -153,15 +153,39 @@ export function invertGrid(invert, width, height, { step = 2, block = 4, tol = 0
 }
 
 /**
- * 화면 격자 역투영을 같은 그림 안에서 나눠 쓴다(고도 색 tint.js 와 음영이 같은 view·step 이면 한 번만 계산).
- * view 는 렌더러가 전체 그림마다 새로 만드는 객체라 객체 같음으로 비교한다(다음 그림이면 다시 계산).
+ * 화면 격자 역투영 나눠 쓰기(E2 대조 검토): 렌더러 하나가 하나를 가진다(모듈 전역 캐시 없음 — destroy 때 release).
+ * 그림 하나 동안 격자 크기(step)를 고정하고(begin), 음영·고도 색이 같은 격자를 받는다(grid — 같은 view 면 한 번만 invertGrid).
+ * 그림이 끝나면(end) 두 훅을 합친 시간으로 다음 그림의 격자 크기를 한 번만 고른다(nextStep, 첫 계산은 데우기라 빼고).
+ * stats = { hits, misses, renders: [{ hits, misses, hookMs, step }] } — 무거운 보기에서 그림마다 miss 1 · hit 1(음영 + 고도 색)인지 확인용.
  */
-let lastGrid = null;
-export function gridFor(projection, view, step = 2) {
-  if (lastGrid && lastGrid.view === view && lastGrid.step === step && lastGrid.projection === projection) return lastGrid.grid;
-  const grid = invertGrid((p) => projection.invert(p), view.width, view.height, { step, forward: (ll) => projection(ll) });
-  lastGrid = { view, step, projection, grid };
-  return grid;
+export function createGridShare({ budget = RELIEF_BUDGET_MS, initialStep = 2 } = {}) {
+  let step = initialStep, warmed = false, cur = null, frame = null;
+  const stats = { hits: 0, misses: 0, renders: [] };
+  return {
+    get step() { return step; },
+    stats,
+    begin() { frame = { hits: 0, misses: 0, hookMs: 0, step }; },
+    grid(projection, view) {
+      const st = frame ? frame.step : step;
+      if (cur && cur.view === view && cur.projection === projection && cur.step === st) {
+        stats.hits++; if (frame) frame.hits++;
+        return cur.grid;
+      }
+      stats.misses++; if (frame) frame.misses++;
+      const grid = invertGrid((p) => projection.invert(p), view.width, view.height, { step: st, forward: (ll) => projection(ll) });
+      cur = { view, projection, step: st, grid };
+      return grid;
+    },
+    add(ms) { if (frame) frame.hookMs += ms; },
+    end() {
+      if (!frame) return;
+      stats.renders.push(frame);
+      if (stats.renders.length > 60) stats.renders.shift();
+      if (frame.misses) { if (warmed) step = nextStep(step, frame.hookMs, { budget }); warmed = true; }
+      frame = null;
+    },
+    release() { cur = null; frame = null; },
+  };
 }
 
 /** 경위도 격자 → RGBA(out, 길이 cols·rows·4): 회색 = lut[표본], 지도 밖(NaN)은 투명. */
@@ -230,10 +254,12 @@ const lutOf = (style) => {
 };
 
 /** 음영 그리기(멈췄을 때 한 번). 육지(land, 10a 면 clipOutside 안의 under 도) 안에만 multiply 로 얹는다. */
-export function drawRelief(ctx, projection, view, img, { land, under = null, path, clipOutside = null, step = 2, style = RELIEF_STYLE, clock = () => performance.now() } = {}) {
+export function drawRelief(ctx, projection, view, img, { land, under = null, path, clipOutside = null, step = 2, grid: gridOf = null, style = RELIEF_STYLE, clock = () => performance.now() } = {}) {
   const t0 = clock();
   if (!img || !land || !path || !view?.width || !view?.height) return null;
-  const grid = gridFor(projection, view, step);
+  // grid = 렌더러의 공유 격자(createGridShare — 고도 색과 같은 격자·크기), 없으면 혼자 계산
+  const grid = gridOf ? gridOf() : invertGrid((p) => projection.invert(p), view.width, view.height, { step, forward: (ll) => projection(ll) });
+  step = grid.step;
   if (!off) { off = h('canvas'); offCtx = off.getContext('2d'); }
   if (off.width !== grid.cols || off.height !== grid.rows) { off.width = grid.cols; off.height = grid.rows; }
   const id = offCtx.createImageData(grid.cols, grid.rows);
@@ -264,7 +290,8 @@ export function drawRelief(ctx, projection, view, img, { land, under = null, pat
 }
 
 /**
- * 렌더러 훅용 그리기 함수(setReliefDrawer 에 넘김). 지난 계산 시간으로 격자 크기를 고른다(nextStep, 2~4px).
+ * 렌더러 훅용 그리기 함수(setReliefDrawer 에 넘김). 렌더러가 공유 격자(extra.grid)를 주면 그 격자·크기를 쓰고(격자 크기는 렌더러가 고름),
+ * 혼자 쓸 때만 지난 계산 시간으로 격자 크기를 고른다(nextStep, 2~4px).
  * fn.stats = 최근 계산 기록 [{ ms, shadeMs, blitMs, step, cols, rows, exact, skipped }].
  */
 export function createReliefDrawer(img, { style = RELIEF_STYLE, budget = RELIEF_BUDGET_MS, clock } = {}) {
@@ -275,6 +302,7 @@ export function createReliefDrawer(img, { style = RELIEF_STYLE, budget = RELIEF_
     if (!r) return;
     stats.push(r);
     if (stats.length > 60) stats.shift();
+    if (extra.grid) return; // 공유 격자: 크기는 렌더러(createGridShare)가 두 훅 합계로 고른다
     // 첫 계산은 JIT 데우기·처음 할당이 섞여 느리므로 격자 크기 고르기에 쓰지 않는다
     if (warmed) step = nextStep(step, r.ms, { budget });
     warmed = true;

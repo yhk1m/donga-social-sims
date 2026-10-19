@@ -56,6 +56,7 @@ import { viewRect, indexGeometry, clipIndexed, dropBoxEdges, boxPolygon } from '
 import { riverStyle, lakeVisible, graticuleStep, borderWidth, coastWidth } from './lineStyle.js';
 import { fontPx, trimPath, glyphLayout, pathBroken } from './labelLayout.js';
 import { createZoomer } from './zoomer.js';
+import { createGridShare } from './relief.js';
 import './atlas.css';
 
 export const STYLE = {
@@ -118,6 +119,8 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   let settleTimer = 0, frameRaf = 0, hoverRaf = 0, pendingHover = null;
   let pendingView = null; // 크기를 모를 때 받은 flyTo/fitBounds
   let reliefDrawer = null, tintDrawer = null;
+  // 음영·고도 색이 나눠 쓰는 화면 격자 역투영(그림 하나에 한 번, 격자 크기는 두 훅 합계 시간으로 그림마다 한 번 고름) — destroy 때 놓아줌
+  const gridShare = createGridShare();
   let viewCache = null; // map.view 객체(변환·투영·상세도·상태가 바뀔 때만 새로 만듦)
   let lastViewSig = ''; // 마지막으로 viewchange 를 낸 보기의 서명
   let hoverSkipped = false; // 움직이는 동안 건너뛴 hover 가 있었나(멈추면 마지막 자리로 한 번 다시)
@@ -313,10 +316,14 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     const k = T.k;
     sphere(path, vp); ctx.fillStyle = STYLE.ocean; ctx.fill();
     const tintOn = opts.tint && tintDrawer;
+    gridShare.begin();
+    const grid = () => gridShare.grid(vp, view);
     const callTint = (phase, extra) => {
+      const th = now();
       ctx.save();
-      try { tintDrawer(ctx, vp, view, { phase, path, ...extra }); } catch (err) { console.error('고도 색 실패', err); }
+      try { tintDrawer(ctx, vp, view, { phase, path, grid, ...extra }); } catch (err) { console.error('고도 색 실패', err); }
       ctx.restore();
+      gridShare.add(now() - th);
     };
     if (tintOn) callTint('sea', { clipSphere: () => { sphere(path, vp); ctx.clip(); } });
     mark('sea');
@@ -338,10 +345,13 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     if (opts.relief && reliefDrawer) {
       ctx.save();
       const clipOutside = under ? () => clipOutsideUnit(path) : null;
-      try { reliefDrawer(ctx, vp, view, { land: landL, under: landU, path, clipOutside }); } catch (err) { console.error('지형 음영 실패', err); }
+      const th = now();
+      try { reliefDrawer(ctx, vp, view, { land: landL, under: landU, path, clipOutside, grid }); } catch (err) { console.error('지형 음영 실패', err); }
       ctx.restore();
+      gridShare.add(now() - th);
       mark('relief');
     }
+    gridShare.end();
     canvasLayers(path, view, false);
     mark('areaLayers');
     // 호수·하천
@@ -745,6 +755,8 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     get view() { return viewState(); },
     get layers() { return sortLayers(layers.map((x) => x.layer)); },
     get stats() { return stats; },
+    /** 음영·고도 색 공유 격자 기록 { hits, misses, renders: [{hits, misses, hookMs, step}] } (확인용) */
+    get gridStats() { return gridShare.stats; },
     /** destroy 뒤 true(비동기로 붙는 것 — 지형 음영 attachRelief 등 — 이 늦게 와도 붙지 않게) */
     get destroyed() { return destroyed; },
     /** 지금 옵션 사본 */
@@ -781,6 +793,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
       if (morph) cancelAnimationFrame(morph.raf);
       morph = null;
       zb.destroy();
+      gridShare.release();
       svg.removeEventListener('click', onClick);
       svg.removeEventListener('pointermove', onPointerMove);
       svg.removeEventListener('pointerleave', onPointerLeave);

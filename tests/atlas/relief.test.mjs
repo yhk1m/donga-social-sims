@@ -289,3 +289,24 @@ test('attachRelief: 주소를 안 주면 공개 주소(테스트·빌드 환경�
   try { await attachRelief({ destroyed: false, setReliefDrawer() {} }); } finally { globalThis.Image = Orig; }
   assert.equal(seen, RELIEF_URL);
 });
+
+test('createGridShare: 그림 하나 동안 격자 크기 고정, 같은 view 는 한 번만 계산(hit/miss), 끝날 때 두 훅 합계 시간으로 한 번만 크기 고름(첫 그림은 데우기)', async () => {
+  const { createGridShare } = await import('../../src/atlas/relief.js');
+  const share = createGridShare({ budget: 50 });
+  const view1 = { width: 64, height: 32 }, view2 = { width: 64, height: 32 }, view3 = { width: 64, height: 32 };
+  share.begin();
+  const a = share.grid(proj, view1);
+  share.add(400); // 아주 느림 — 그래도 이 그림 안에서는 크기 그대로
+  const b = share.grid(proj, view1);
+  assert.equal(a, b); assert.equal(a.step, 2);
+  share.end();
+  assert.equal(share.step, 2, '첫 그림은 데우기라 크기 고르기에 안 씀');
+  share.begin(); share.grid(proj, view2); share.add(400); assert.equal(share.grid(proj, view2).step, 2); share.end();
+  assert.equal(share.step, 3, '느린 둘째 그림 뒤에 한 번 키움');
+  share.begin(); const c = share.grid(proj, view3); share.end();
+  assert.equal(c.step, 3);
+  assert.deepEqual(share.stats.renders.map((r) => [r.misses, r.hits, r.step]), [[1, 1, 2], [1, 1, 2], [1, 0, 3]]);
+  share.release();
+  share.begin(); share.grid(proj, view3); share.end();
+  assert.equal(share.stats.renders.at(-1).misses, 1, 'release 뒤에는 다시 계산');
+});

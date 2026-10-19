@@ -130,3 +130,35 @@ test('loadTint·attachTint: 회색 ÷ 12 = 번호로 불러와 붙임 / 실패�
   assert.equal(await p, null);
   assert.equal(TINT_URL, 'https://yhk1m.github.io/donga-social-sims/assets/atlas/common/tint-4096.png');
 });
+
+test('createTintDrawer + 공유 격자: 느린 시계에서도 그림마다 sea·land 계산 한 번(데운 둘째 그림도), 격자 크기는 공유 격자가 정함 / 이웃 단계 색을 섞지 않음(평평한 띠)', async () => {
+  const { createGridShare } = await import('../../src/atlas/relief.js');
+  let t = 0;
+  const clock = () => (t += 500); // 계산마다 500ms — 예전에는 sea 와 land 사이에 격자 크기가 바뀌어 두 번 계산했음
+  const img = { width: 8, height: 4, data: new Uint8Array(32).fill(LAND0) };
+  const proj = Object.assign(([lon, lat]) => [(lon + 180) * 2, (90 - lat) * 2], { invert: ([x, y]) => [x / 2 - 180, 90 - y / 2] });
+  const fn = createTintDrawer(img, { clock });
+  const share = createGridShare();
+  const ctx = fakeCtx('ctx');
+  const pathF = () => {};
+  for (let r = 0; r < 3; r++) {
+    const view = { width: 64, height: 32 };
+    share.begin();
+    const grid = () => share.grid(proj, view);
+    fn(ctx, proj, view, { phase: 'sea', path: pathF, grid });
+    share.add(500);
+    fn(ctx, proj, view, { phase: 'land', path: pathF, land: { name: 'land' }, grid });
+    share.add(500);
+    share.end();
+    assert.equal(fn.stats.length, r + 1, `그림 ${r + 1}: 계산 한 번`);
+    assert.deepEqual([share.stats.renders.at(-1).misses, share.stats.renders.at(-1).hits], [1, 0], '고도 색 두 단계가 격자 하나');
+  }
+  assert.equal(fn.stats[1].step, 2); assert.equal(fn.stats[2].step, 3, '느리면 다음 그림부터 커짐(그림 도중은 아님)');
+  // 평평한 띠: 두 화소 경계 근처 표본은 둘 중 한 색 그대로
+  const img2 = { width: 2, height: 1, data: new Uint8Array([LAND0 + 1, LAND0 + 6]) };
+  const g = { lon: Float64Array.from([-1, 1, -89, 89]), lat: Float64Array.from([0, 0, 0, 0]) };
+  const os = new Uint8ClampedArray(16), ol = new Uint8ClampedArray(16);
+  tintGrid(g, img2, tintLuts(), os, ol);
+  const cols = new Set([0, 4, 8, 12].map((o) => [...ol.slice(o, o + 3)].join(',')));
+  assert.deepEqual([...cols].sort(), ['222,234,174', '224,183,127'], '100~200 m · 3,000~4,000 m 두 색만');
+});

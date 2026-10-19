@@ -8,19 +8,18 @@
 //
 // 자료: docs/assets/atlas/common/tint-4096.png — ETOPO 2022 60″ 표면 높이(NOAA NCEI, public domain)를 Natural Earth 10m 육지·빙하로 나눠
 //   분류 번호 × 12 의 회색으로 담은 등장방형 4096×2048(relief-4096.jpg 와 같은 격자). build_tint.py 가 만든다.
-// 그리는 법: relief.js 와 같은 화면 격자 역투영(gridFor — 같은 그림 안에서 음영과 격자를 나눠 씀) → 표본마다 이웃 네 화소의 분류 색을 양선형으로 섞어
-//   1/step 크기 그림 두 장(바다용·육지용). 바다용 표는 육지 분류를 가장 얕은 바다색으로, 육지용 표는 바다 분류를 가장 낮은 땅 색(0~100 m)으로 바꿔
+// 그리는 법: relief.js 와 같은 화면 격자 역투영(렌더러의 공유 격자 extra.grid — 음영과 같은 격자·크기, 그림마다 한 번) → 표본마다 가장 가까운 화소의
+//   분류 번호를 표로 색으로(교과서처럼 단계 사이가 섞이지 않는 평평한 띠, E2 대조 검토) → 1/step 크기 그림 두 장(바다용·육지용). 바다용 표는 육지 분류를 가장 얕은 바다색으로, 육지용 표는 바다 분류를 가장 낮은 땅 색(0~100 m)으로 바꿔
 //   해안선은 언제나 벡터 해안선이 정한다(분류 화상의 해안 어긋남이 보이지 않음). 바다 그림은 바다를 칠한 직후 지구 안에(육지가 위에 덮음),
 //   육지 그림은 육지를 칠한 직후 육지 경로 안에(10a 일 때 단원 상자 밖은 clipOutside 안의 50m 육지) 그리고, 그 위에 지형 음영(곱하기)이 얹힌다.
 //   10a ↔ 50m 상자 테두리(D5 sealUnitSeam)는 고도 색 그림을 무늬로 한 번 더 그어 메운다(seal).
 // 규칙(EMBED_RULES.md): fetch 없이 new Image() + crossOrigin='anonymous'(음영과 같은 공개 Pages 주소, 교사 승인 예외).
 import { h } from '../shared/dom.js';
-import { gridFor, nextStep } from './relief.js';
+import { invertGrid } from './relief.js';
 
 export const TINT_URL = 'https://yhk1m.github.io/donga-social-sims/assets/atlas/common/tint-4096.png';
 /** 개발 서버(vite, 저장소 루트가 root)에서 쓰는 같은 파일 */
 export const TINT_DEV_URL = '/docs/assets/atlas/common/tint-4096.png';
-export const TINT_BUDGET_MS = 150;
 
 /** 분류 표 — scripts/atlas/config/u2.json tint 와 같은 값(교과서 16쪽 범례 견본 색). */
 export const TINT = Object.freeze({
@@ -105,8 +104,8 @@ export function tintLegend(t = TINT) {
 }
 
 /**
- * 경위도 격자(invertGrid 결과) → 바다용·육지용 RGBA 두 장. 표본마다 이웃 네 화소의 분류 색(표)을 양선형으로 섞는다(가로는 날짜변경선을 건너 감쌈).
- * 지도 밖(NaN)은 투명. img = { width, height, data: 분류 번호 }.
+ * 경위도 격자(invertGrid 결과) → 바다용·육지용 RGBA 두 장. 표본마다 가장 가까운 화소의 분류 번호를 색 표로(단계 사이 섞인 색 없음 — 교과서의 평평한 띠,
+ * 가로는 날짜변경선을 건너 감쌈). 지도 밖(NaN)은 투명. img = { width, height, data: 분류 번호 }. 해안은 육지 자르기가 매끈하게 한다.
  */
 export function tintGrid(grid, img, luts, outSea, outLand) {
   const { lon, lat } = grid, { width: iw, height: ih, data } = img;
@@ -116,18 +115,11 @@ export function tintGrid(grid, img, luts, outSea, outLand) {
     if (Number.isNaN(lo)) { outSea[o + 3] = 0; outLand[o + 3] = 0; continue; }
     let u = (lo + 180) / 360; u -= Math.floor(u);
     const fx = u * iw - 0.5;
-    let fy = ((90 - lat[k]) / 180) * ih - 0.5;
-    if (fy < 0) fy = 0; else if (fy > ih - 1) fy = ih - 1;
-    const xf = Math.floor(fx), tx = fx - xf;
-    const x0 = xf < 0 ? iw - 1 : xf, x1 = xf + 1 >= iw ? 0 : xf + 1;
-    const y0 = Math.floor(fy), ty = fy - y0;
-    const r0 = y0 * iw, r1 = (y0 + 1 < ih ? y0 + 1 : y0) * iw;
-    const c00 = data[r0 + x0] * 3, c10 = data[r0 + x1] * 3, c01 = data[r1 + x0] * 3, c11 = data[r1 + x1] * 3;
-    const w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty), w01 = (1 - tx) * ty, w11 = tx * ty;
-    for (let ch = 0; ch < 3; ch++) {
-      outSea[o + ch] = Sx[c00 + ch] * w00 + Sx[c10 + ch] * w10 + Sx[c01 + ch] * w01 + Sx[c11 + ch] * w11;
-      outLand[o + ch] = L[c00 + ch] * w00 + L[c10 + ch] * w10 + L[c01 + ch] * w01 + L[c11 + ch] * w11;
-    }
+    let x = Math.round(fx); if (x >= iw) x = 0; else if (x < 0) x = iw - 1;
+    let y = Math.round(((90 - lat[k]) / 180) * ih - 0.5); if (y < 0) y = 0; else if (y > ih - 1) y = ih - 1;
+    const c = data[y * iw + x] * 3;
+    outSea[o] = Sx[c]; outSea[o + 1] = Sx[c + 1]; outSea[o + 2] = Sx[c + 2];
+    outLand[o] = L[c]; outLand[o + 1] = L[c + 1]; outLand[o + 2] = L[c + 2];
     outSea[o + 3] = 255; outLand[o + 3] = 255;
   }
 }
@@ -167,17 +159,18 @@ export function loadTint(url = TINT_URL) {
 }
 
 /**
- * 렌더러 훅용(setTintDrawer). 'sea' 단계에서 두 장을 한 번에 계산해 두고(같은 view·격자면) 'land' 단계가 그대로 쓴다.
- * fn.stats = 최근 계산 기록 [{ ms, step, cols, rows }]. 격자 크기는 음영처럼 지난 계산 시간으로(nextStep).
+ * 렌더러 훅용(setTintDrawer). 'sea' 단계에서 두 장을 한 번에 계산해 두고 'land' 단계가 그대로 쓴다(같은 view·같은 격자면 — 그림 하나에 한 번).
+ * 격자와 그 크기는 렌더러의 공유 격자(extra.grid, createGridShare)가 정한다 — 그림 도중 크기가 바뀌지 않는다. 혼자 쓰면 step 2 로 계산.
+ * fn.stats = 최근 계산 기록 [{ ms, step, cols, rows }].
  */
-export function createTintDrawer(img, { budget = TINT_BUDGET_MS, clock = () => performance.now(), luts = tintLuts() } = {}) {
-  let step = 2, warmed = false, cache = null; // cache: { view, step, sea, land, cols, rows }
+export function createTintDrawer(img, { clock = () => performance.now(), luts = tintLuts(), step: ownStep = 2 } = {}) {
+  let cache = null; // cache: { view, grid, cols, rows, step }
   let offS = null, offL = null;
   const stats = [];
-  function compute(projection, view) {
-    if (cache && cache.view === view && cache.step === step) return cache;
+  function compute(projection, view, gridOf) {
+    if (cache && cache.view === view && cache.projection === projection) return cache;
     const t0 = clock();
-    const grid = gridFor(projection, view, step);
+    const grid = gridOf ? gridOf() : invertGrid((p) => projection.invert(p), view.width, view.height, { step: ownStep, forward: (ll) => projection(ll) });
     if (!offS) { offS = h('canvas'); offL = h('canvas'); }
     for (const c of [offS, offL]) if (c.width !== grid.cols || c.height !== grid.rows) { c.width = grid.cols; c.height = grid.rows; }
     const cs = offS.getContext('2d'), cl = offL.getContext('2d');
@@ -185,16 +178,14 @@ export function createTintDrawer(img, { budget = TINT_BUDGET_MS, clock = () => p
     tintGrid(grid, img, luts, ds.data, dl.data);
     cs.putImageData(ds, 0, 0); cl.putImageData(dl, 0, 0);
     const ms = clock() - t0;
-    cache = { view, step, cols: grid.cols, rows: grid.rows, ms };
-    stats.push({ ms, step, cols: grid.cols, rows: grid.rows });
+    cache = { view, projection, step: grid.step, cols: grid.cols, rows: grid.rows, ms };
+    stats.push({ ms, step: grid.step, cols: grid.cols, rows: grid.rows });
     if (stats.length > 60) stats.shift();
-    if (warmed) step = nextStep(step, ms, { budget });
-    warmed = true;
     return cache;
   }
-  const fn = (ctx, projection, view, { phase, land, under = null, path, clipOutside = null, clipSphere = null, seal = null } = {}) => {
+  const fn = (ctx, projection, view, { phase, land, under = null, path, clipOutside = null, clipSphere = null, seal = null, grid = null } = {}) => {
     if (!img || !view?.width || !view?.height || !path) return;
-    const c = compute(projection, view);
+    const c = compute(projection, view, grid);
     const W = c.cols * c.step, H = c.rows * c.step;
     ctx.imageSmoothingEnabled = true;
     if (phase === 'sea') {

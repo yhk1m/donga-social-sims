@@ -28,6 +28,15 @@ class Tint(unittest.TestCase):
         self.assertEqual([c['kind'] for c in cls], ['sea'] * 7 + ['below'] + ['land'] * 9 + ['glacier'])
         self.assertLessEqual((len(cls) - 1) * self.t['codeStep'], 255)
 
+    def test_validate_config(self):
+        from PIL import Image
+        relief = Image.open(os.path.join(REPO, build_tint.RELIEF)).size
+        self.assertEqual(build_tint.validate(self.t, relief), [])
+        bad = dict(self.t, landColors=self.t['landColors'][:-1], seaColors=self.t['seaColors'][:-1] + ['blue'], width=2048)
+        msgs = build_tint.validate(bad, relief)
+        self.assertTrue(any('landColors' in m for m in msgs) and any('#rrggbb' in m for m in msgs) and any('음영 화상' in m for m in msgs), msgs)
+        self.assertTrue(build_tint.validate(dict(self.t, seaBreaks=[200, 100, 2000, 4000, 6000, 8000]), relief))
+
     def test_png_size_codes_and_budget(self):
         from PIL import Image
         p = os.path.join(REPO, self.t['out'])

@@ -224,7 +224,7 @@ export function legendBlock(panel, legend, items, opts = {}) {
       const members = fills.slice(i, j);
       const can = !!legend?.toggleGroup && members.every((e) => e.geometry !== false);
       const head = h('button', {
-        class: 'at-legend-group-head', type: 'button', 'aria-pressed': 'false', disabled: can ? null : true, title: `${g} 기후 묶음만 보기(다시 누르면 전체)`,
+        class: 'at-legend-group-head', type: 'button', 'aria-pressed': 'false', disabled: can ? null : true, title: `「${g}」 묶음만 보기(다시 누르면 전체)`,
         on: { click: () => { if (can) legend.toggleGroup(g, members.map((e) => e.cls)); } },
       }, g);
       groupBtns.push([g, head]);

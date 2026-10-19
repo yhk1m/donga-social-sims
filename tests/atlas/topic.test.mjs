@@ -356,3 +356,17 @@ test('고도 색: 주제 기본값(tint)으로 map.setOptions, 켜져 있고 자
   assert.equal(find(S.body, byClass('at-tint-legend')).hidden, true, '자료를 못 불러왔으면 켜도 범례 없음');
   T2.destroy();
 });
+
+test('확대 창 기호 흐리기는 legend.isActive — 범례 묶음 고름(toggleGroup)에도 맞음', () => {
+  const S = setup();
+  const T = S.build(topicOf('religion'));
+  T.showGroup(T.groups.findIndex((g) => g.refs[0].ref === 'layer-p22-singapore'));
+  const L = T.layers[0];
+  const [c1, c2] = L.legend.classes;
+  L.legend.toggleGroup('둘', [c1, c2]);
+  const syms = findAll(S.stage, byClass('at-inset-sym'));
+  const op = (cls) => new Set(syms.filter((e) => e.getAttribute('data-cls') === cls).map((e) => e.getAttribute('opacity')));
+  assert.deepEqual([...op(c1)], ['1']); assert.deepEqual([...op(c2)], ['1']);
+  assert.deepEqual([...op(L.legend.classes[2])], ['0.2']);
+  T.destroy();
+});
