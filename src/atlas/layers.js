@@ -193,7 +193,7 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
     root = s('g', { class: 'at-symbols' });
     for (const it of items) {
       // 캐시 초기화(새 요소에 맞춰 다시 계산)
-      Object.assign(it, { el: null, xy: null, box: null, r: 0, key: '', h: 0, w: 0, leader: null, dot: null, cells: null, label: null });
+      Object.assign(it, { el: null, xy: null, box: null, base: null, labelY: 0, r: 0, key: '', h: 0, w: 0, leader: null, dot: null, cells: null, label: null });
       const p = it.f.properties;
       const el = s('g', { class: `at-sym-item at-sym-${it.shape}`, on: { click: (e) => { e.stopPropagation(); onPick?.(it.f, e); } } });
       if (it.shape === 'bar') {
@@ -228,12 +228,14 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
       it.cells.replaceChildren(...kids);
       it.h = m.height + m.gap + m.cell * 1.1 + 2 * hr;
       it.w = w;
-      if (it.label) setAttr(it.label, 'y', round1(m.cell * 1.1 + 4));
+      it.labelY = m.cell * 1.1 + 4;
+      if (it.label) setAttr(it.label, 'y', round1(it.labelY));
     }
     setAttr(it.cells, 'transform', `translate(${round1(base[0])},${round1(base[1])})`);
     if (it.label) { setAttr(it.label, 'x', round1(base[0])); setAttr(it.label, 'transform', `translate(0,${round1(base[1])})`); }
     // 막대 상자(맞히기·지시선)
     it.box = [base[0] - it.w / 2, base[1] - it.h, base[0] + it.w / 2, base[1] + (it.label ? 16 : 0)];
+    it.base = base;
     if (anchor) {
       const bx = Math.max(it.box[0], Math.min(anchor[0], it.box[2])), by = Math.max(base[1] - it.h, Math.min(anchor[1], base[1]));
       setAttr(it.leader, 'd', `M${round1(anchor[0])},${round1(anchor[1])}L${round1(bx)},${round1(by)}`);
@@ -283,6 +285,24 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
         } else if (Math.hypot(xy[0] - it.xy[0], xy[1] - it.xy[1]) <= (it.r || 3) + 3) return it.f;
       }
       return null;
+    },
+    /** 지명 자리 피하기(E1): 지금 그린 기호 상자(화면 px) — 막대는 막대·사람·나라 이름까지, 그 밖은 기호 원. 흐린 분류는 뺀다. */
+    labelObstacles() {
+      const out = [];
+      for (const it of items) {
+        if (!it.xy || alphaOf(legend, it.f.properties.cls, 0) === 0) continue;
+        if (it.shape === 'bar') {
+          if (!it.box) continue;
+          out.push([it.box[0], it.box[1], it.box[2], it.base[1]]);
+          if (it.label) { // 나라 이름(12px 굵은 글자, 한글 한 자 ≈ 12px — 어림)
+            const tw = String(it.f.properties.name).length * 12 + 4, y = it.base[1] + it.labelY;
+            out.push([it.base[0] - tw / 2, y, it.base[0] + tw / 2, y + 15]);
+          }
+          if (it.f.properties.barAt) out.push([it.xy[0] - 3, it.xy[1] - 3, it.xy[0] + 3, it.xy[1] + 3]); // 지시선 끝 점
+        }
+        else { const r = (it.r || 3) + 1; out.push([it.xy[0] - r, it.xy[1] - r, it.xy[0] + r, it.xy[1] + r]); }
+      }
+      return out;
     },
     destroy() { offs.forEach((off) => off()); offs.length = 0; },
   };
@@ -419,6 +439,10 @@ export function markerLayer(id, markers, { map = null, layerId = id, onPick = nu
         if (Math.hypot(xy[0] - it.xy[0], xy[1] - (it.xy[1] - 15 * sc)) <= 9 * sc || (Math.abs(xy[0] - it.xy[0]) <= 4 && xy[1] <= it.xy[1] && xy[1] >= it.xy[1] - 15 * sc)) return it.feature;
       }
       return null;
+    },
+    /** 지명 자리 피하기(E1): 핀 머리·꼬리 상자(화면 px) */
+    labelObstacles() {
+      return items.filter((it) => it.xy).map((it) => { const sc = it.m.id === sel ? 1.25 : 1; return [it.xy[0] - 8 * sc, it.xy[1] - 24 * sc, it.xy[0] + 8 * sc, it.xy[1]]; });
     },
     select(mid) { select(mid); if (map && !map.destroyed) map.refreshLayer(layerId); },
     selected: () => sel,

@@ -171,6 +171,10 @@
    "region": "#6a3d9a", "island": "#007a3d", "desert": "#b06000", "plain": "#4a7a00", "other": "#555555"},
   "snapKm": 30,
   "keepTextbookPosition": {},
+  "relocate": {
+   "미국": {"path": [[-102, 39.5], [-94, 39.5]], "why": "16쪽 아시아 지도에는 알래스카만 보여 교과서 글자가 알래스카에 세로로 있다 — 웹지도는 세계 전체가 보이므로 본토 위로(E1, 교사 결정 2026-10-19)"},
+   "대한민국": {"path": [[127.25, 35.75], [128.65, 35.75]], "why": "16쪽은 지면이 좁아 글자를 동해에 썼다 — 확대되는 웹지도에서는 한반도 본토(남한) 위로(E1, 교사 결정 2026-10-19). 위도 35.75 = 아시아 보기(k 2 안팎)에서 서울 기호와 겹치지 않아 지워지지 않는 자리"}
+  },
   "_snap": "바탕 지도가 실제 지리(Natural Earth)라, 교과서가 겹치지 않게 옮겨 그린 도시 기호가 snapKm 넘게 어긋나면 Natural Earth 인구 지점 경위도로 옮긴다(이름이 똑같은 지점이 아시아에 하나뿐이고 places 에도 하나뿐일 때만, snapped: {from, km} 기록). 교과서 위치를 지켜야 할 지명은 keepTextbookPosition 에 {이름: 까닭}. 면·선 지명은 옮기지 않는다.",
   "leakRe": "^\\d|[˚°]|^[A-Z]{1,2}$|높이|깊이|^빙하$|^\\(|km$|도법|축척|북회귀선|북극권|^적도$|변경선|유빙",
   "indexExclude": {},
@@ -404,17 +408,23 @@
  "unitBoxes": [[20, -15, 180, 82], [-180, 60, -168, 72]],
  "_unitBoxes": "[서, 남, 동, 북]. 둘째 상자 = 날짜변경선 동쪽 추코트카(아시아 땅, C1 결정). lod.js inUnit 이 같은 상자를 basemap.json meta.unitBoxes 에서 읽는다.",
  "quantization": 100000,
- "maxBytes": 921600,
+ "maxBytes": 1024000,
  "levels": [
   {"id": "110", "countries": "ne_110m_admin_0_countries"},
   {"id": "50", "countries": "ne_50m_admin_0_countries", "simplify": "20%",
    "rivers": {"file": "ne_50m_rivers_lake_centerlines", "maxRank": 99, "simplify": "20%"},
    "lakes": {"file": "ne_50m_lakes", "maxRank": 99, "simplify": "25%"}},
-  {"id": "10a", "clip": true, "countries": "ne_10m_admin_0_countries", "simplify": "10%",
+  {"id": "10a", "clip": true, "countries": "ne_10m_admin_0_countries", "simplify": "10%", "simplifyByIso": {"KOR": "100%", "PRK": "100%"},
+   "_simplifyByIso": "E1(교사 결정 2026-10-19): 한반도 확대(k 30 안팎)에서 10% 단순화 해안선이 거칠어 대한민국·북한만 Natural Earth 10m 그대로(mapshaper variable percentage, 나라 Feature 마다).",
    "rivers": {"file": "ne_10m_rivers_lake_centerlines", "maxRank": 6, "simplify": "15%"},
    "lakes": {"file": "ne_10m_lakes", "maxRank": 99, "simplify": "12%"}}
  ]
 },
+"insets": [
+ {"id": "p22-singapore", "map": "p22-singapore", "layer": "sims/atlas-u2-asia/data/layer-p22-singapore.json", "landFill": "#e7efc1", "minAreaPt2": 1.0, "tolPt": 0.4,
+  "out": "sims/atlas-u2-asia/data/inset-p22-singapore.json"}
+],
+"_insets": "E1 확대 창(인셋) 바탕 윤곽 — inset_outline.py. 싱가포르 사원 76개는 지도 확대 상한(40배)에서 섬이 30px 남짓이라 한 덩어리로 겹쳐, 종교·문화 주제의 싱가포르 보기에서 무대 위 확대 창에 따로 그린다. 윤곽은 교과서 22쪽 지도 육지(#e7efc1)를 같은 fit 으로 되돌린 것(Natural Earth 10m 싱가포르는 꼭짓점 40개).",
 "content": {
  "_doc": "C5 주제 내용. 사람이 고치는 원본은 topics(글은 src·…Src 상자에서 extract_text.py --fill 이 원문 그대로 채움)와 overrides(사람이 고친 값, 키 topicId.field · topicId.quiz.field · topicId.markers.<id>.field · topicId.blocks.<id>.field · topicId.layers.<ref>.field · topicId.views.<id>.field, from 필수). coloring_quiz.mjs 가 색칠하기 쪽 글자(labels) → coloringOut, build_content.mjs 가 topics + overrides + photos + charts + coloringOut → out/topics.json·charts.json·layers.js. 경로: topics·overrides·photos·coloringOut·places·out·pageDir·photoDir 은 저장소 기준, labels·charts 는 작업 폴더 기준. schema = 생성 전 검사(모르는 키는 오류, …Src·_·why 키는 원본 표기라 허용 후 뺌). stamps = 낡은 산출물 검사(입력 내용 해시, atlas_common.stamp_hash = geo_util.stampHash).",
  "topics": "content/atlas/u2/topics.json",
@@ -453,7 +463,8 @@
   "markerTextOptionalWith": "quiz",
   "lonlatFrom": ["place"],
   "source": ["name", "id", "url", "title", "component"],
-  "markerQuiz": ["country", "religions", "answerFrom", "answer"],
+  "markerQuiz": ["country", "religions", "answerFrom", "answer", "photoCrop"],
+  "_markerQuiz": "photoCrop = 세계유산 퀴즈에서 사진의 교과서 번호·이름(·국가/관련 종교 칸) 띠를 뺀 부분 [x0, y0, x1, y1](사진 너비·높이에 대한 비율). 앱이 CSS 로 잘라 보여 준다(사진 파일은 그대로, 카드는 전체 사진). E1.",
   "blockTypes": {
    "text": {"required": ["text"], "allowed": ["role", "view", "title", "text", "credit"]},
    "activity": {"required": ["text"], "allowed": ["role", "view", "title", "text"]},

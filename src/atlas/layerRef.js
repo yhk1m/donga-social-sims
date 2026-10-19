@@ -23,6 +23,7 @@ export function combineLayers(id, parts, { z = Math.min(...parts.map((p) => p.z 
   const layer = {
     id, z, parts,
     hit(xy, lonlat) { for (let i = parts.length - 1; i >= 0; i--) { const f = parts[i].hit?.(xy, lonlat); if (f) return f; } return null; },
+    labelObstacles: () => parts.flatMap((p) => p.labelObstacles?.() || []),
     destroy() { offs.forEach((off) => off()); offs.length = 0; parts.forEach((p) => p.destroy?.()); },
   };
   if (drawParts.length) layer.draw = (ctx, path, view) => { for (const p of drawParts) { ctx.save(); try { p.draw(ctx, path, view); } finally { ctx.restore(); } } };

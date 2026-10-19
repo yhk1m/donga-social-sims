@@ -43,7 +43,7 @@
 
 /* 말풍선 */
 .ds-sim .at-tip {
-  position: absolute; z-index: 15; pointer-events: none; background: rgba(29, 33, 38, .9); color: #fff; font-size: 12.5px; font-weight: 600;
+  position: absolute; z-index: 17; pointer-events: none; background: rgba(29, 33, 38, .9); color: #fff; font-size: 12.5px; font-weight: 600;
   padding: 3px 8px; border-radius: 6px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0, 0, 0, .2);
 }
 
@@ -156,8 +156,11 @@
 .ds-sim .at-quiz-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .ds-sim .at-quiz-foot .ds-btn { font-size: 13px; padding: 6px 12px; }
 .ds-sim .at-quiz-photo .at-photo-img { max-height: 200px; object-fit: contain; }
+/* 퀴즈 사진: 이름 띠를 뺀 부분만(photoCropStyle — 상자 비율 + 이미지 absolute %) */
+.ds-sim .at-quiz-crop { position: relative; width: 100%; overflow: hidden; border-radius: 8px; background: #eeece6; }
+.ds-sim .at-quiz-photo .at-quiz-crop .at-quiz-crop-img { position: absolute; max-width: none; max-height: none; height: auto; border-radius: 0; object-fit: fill; }
 
-/* ---------- 임시 주제 화면(main.js, E1 에서 바뀜) ---------- */
+/* ---------- 주제 화면(topic.js buildTopic, E1) ---------- */
 .ds-sim .at-topic { display: flex; flex-direction: column; gap: 12px; }
 .ds-sim .at-topic-title { font-size: 17px; margin: 0; font-weight: 800; }
 .ds-sim .at-legends { display: flex; flex-direction: column; gap: 12px; }
@@ -169,3 +172,46 @@
 .ds-sim .at-text-section .at-card-text { font-weight: 800; font-size: 15px; }
 .ds-sim .at-text-activity, .ds-sim .at-text-goal { background: #faf9f6; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
 .ds-sim .at-page-btn { justify-content: flex-start; font-size: 13px; }
+.ds-sim .at-view-btn { align-self: flex-start; font-size: 12px; padding: 3px 9px; gap: 4px; }
+.ds-sim .at-view-btn .ds-icon { width: 14px; height: 14px; }
+
+/* ---------- 막대 하나씩 보기(여러 막대 100% 띠, charts.js barPicker) ---------- */
+.ds-sim .at-barpick { gap: 8px; }
+.ds-sim .at-barpick-seg { border: 0; border-radius: 0; overflow: visible; gap: 4px; flex-wrap: wrap; }
+.ds-sim .at-barpick-seg .ds-seg-btn { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; white-space: nowrap; font-size: 12.5px; }
+.ds-sim .at-barpick-seg .ds-seg-btn + .ds-seg-btn { border-left: 1px solid var(--line); }
+.ds-sim .at-barpick-seg .ds-seg-btn[aria-pressed=true] { border-color: var(--accent); }
+.ds-sim .at-barpick-body { display: flex; flex-direction: column; gap: 6px; }
+.ds-sim .at-barpick-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 8px; }
+.ds-sim .at-barpick-cat { font-size: 14px; font-weight: 700; }
+.ds-sim .at-barpick-total { font-size: 12px; color: var(--ink-2); }
+.ds-sim .at-barpick-svg .at-ct-cell-val { font-size: 11px; paint-order: stroke fill; stroke: rgba(255, 255, 255, .75); stroke-width: 2px; }
+.ds-sim .at-barpick-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-size: 12.5px; }
+.ds-sim .at-barpick-item { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.ds-sim .at-barpick-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ds-sim .at-barpick-val { font-variant-numeric: tabular-nums; font-weight: 700; }
+
+/* ---------- 확대 창(인셋, inset.js) — 무대 왼쪽 위, z 16(지도 도구 10 위 · 말풍선 17 · 원본 쪽 보기 20 아래), 오른쪽 위 도구 카드를 가리지 않는 너비 ---------- */
+.ds-sim .at-inset {
+  position: absolute; top: 10px; left: 10px; z-index: 16; width: min(640px, calc(100% - 300px)); min-width: 260px; max-height: calc(100% - 60px);
+  background: #fff; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 6px 24px rgba(0, 0, 0, .22);
+  display: flex; flex-direction: column; overflow: auto;
+}
+.ds-sim .at-inset-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 6px 6px 12px; border-bottom: 1px solid var(--line); }
+.ds-sim .at-inset-title { font-size: 13.5px; margin: 0; font-weight: 700; }
+.ds-sim .at-inset-close { padding: 4px; }
+.ds-sim .at-inset-svg { display: block; width: 100%; height: auto; }
+.ds-sim .at-inset-sea { fill: #d8ecf2; }
+.ds-sim .at-inset-land-path { fill: #f2efe9; stroke: #8fb5c2; stroke-width: 1; }
+.ds-sim .at-inset-sym { stroke: #fff; stroke-width: 1.4; cursor: pointer; }
+.ds-sim .at-inset-sym:hover { stroke: #1d2a4a; stroke-width: 2; }
+.ds-sim .at-inset-leader { fill: none; stroke: #231f20; stroke-width: .8; }
+.ds-sim .at-inset-name-text { font-size: 12px; font-weight: 700; fill: #231f20; paint-order: stroke fill; stroke: #fff; stroke-width: 3px; }
+.ds-sim .at-inset-scale-line { fill: none; stroke: #231f20; stroke-width: 1.2; }
+.ds-sim .at-inset-scale-text { font-size: 10.5px; fill: #231f20; }
+.ds-sim .at-inset-legend { list-style: none; margin: 0; padding: 6px 12px 0; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; }
+.ds-sim .at-inset-legend-item { display: inline-flex; align-items: center; gap: 4px; }
+.ds-sim .at-inset-legend-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .15); }
+.ds-sim .at-inset-credit { font-size: 11.5px; color: var(--ink-2); margin: 0; padding: 4px 12px 8px; text-align: right; }
+.ds-sim .at-inset-box { fill: rgba(255, 146, 43, .12); stroke: #e8590c; stroke-width: 2; cursor: pointer; pointer-events: all; }
+.ds-sim .at-inset-box-text { font-size: 12px; font-weight: 700; fill: #c2410c; paint-order: stroke fill; stroke: #fff; stroke-width: 3px; cursor: pointer; pointer-events: all; }

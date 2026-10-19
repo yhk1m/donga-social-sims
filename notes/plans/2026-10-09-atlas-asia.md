@@ -723,8 +723,8 @@ export function createLegendState(classes) {
 
 **Files:** Create `sims/atlas-u2-asia/index.html`(템플릿 복사), `sims/atlas-u2-asia/main.js`; Modify `src/registry.js`
 
-- [ ] **Step 1:** registry의 `SIMS`에 `{ id: 'atlas-u2-asia', book: 'atlas', unit: 'Ⅱ. 아시아', page: 16, title: '사회과부도 아시아', kind: '지도' }`를 추가한다.
-- [ ] **Step 2:** `main.js`
+- [x] **Step 1:** registry의 `SIMS`에 `{ id: 'atlas-u2-asia', book: 'atlas', unit: 'Ⅱ. 아시아', page: 16, title: '사회과부도 아시아', kind: '지도' }`를 추가한다.
+- [x] **Step 2:** `main.js`
 ```js
 import { createShell } from '../../src/shared/shell.js';
 import '../../src/atlas/atlas.css';
@@ -747,7 +747,7 @@ export default function mount(root) {
   show(topics[0]);
 }
 ```
-- [ ] **Step 3:** `src/atlas/topic.js`의 `buildTopic`을 구현한다.
+- [x] **Step 3:** `src/atlas/topic.js`의 `buildTopic`을 구현한다.
   1. `map.clearLayers()`
   2. 주제의 layers를 `layers.js` 함수로 추가한다(area는 legend 상태 생성 후 `legendBlock`).
   3. markers는 `markerLayer`로 추가하고, `onPick`이면 `card.show`를 부른다.
@@ -755,7 +755,7 @@ export default function mount(root) {
   5. `map.flyTo(topic.view)`
   6. quiz가 있으면 시작한다.
   - 주제를 바꿀 때 이전 블록은 지운다. 목차와 도구는 유지한다.
-- [ ] **Step 4:** `npm run embed -- atlas-u2-asia` 통과와 크기(≤ 3MB, 목표 1~2MB)를 확인한다. 미리보기를 캡처해 8개 주제를 모두 확인한다. 커밋.
+- [x] **Step 4:** `npm run embed -- atlas-u2-asia` 통과와 크기(≤ 3MB, 목표 1~2MB)를 확인한다. 미리보기를 캡처해 8개 주제를 모두 확인한다. 커밋.
 
 ### Task E2: 교과서 대조표 `compare.mjs`
 
@@ -996,3 +996,19 @@ export default function mount(root) {
   - 임시 mount(`sims/atlas-u2-asia/main.js`, E1 에서 `topic.js buildTopic` 으로 바꿈): 목차 → 주제마다 부품을 만들고 바꿀 때 모두 destroy, 같은 이름 레이어 묶음 고르기, 범례 블록, 핀 → 상세 카드(사진·글·그래프), 사이드바 글·그래프·사진·카드·「원본 쪽 보기」 블록, 퀴즈. 확인용 `root.atlasShowTopic`·`atlasUi`·`atlasQuiz`·`atlasCharts`.
   - 캡처 `C:/Users/Public/atlas-work/shots/d7/`(드라이버 `atlas-work/d6/cdp.mjs`, 장면 `atlas-work/d7/shots.mjs` — hover 는 `button:'none'` 으로 보내야 pointermove 가 버튼 없이 옴): `1440x900-01~18-*.png`(도구·구드·키보드 확대·범례/토글·카드(사진+기후 그래프)·지형 카드·말풍선·원본 쪽/부분·사이드바 그래프·색칠/이름 맞히기/답·세계유산/답·교역 범례), `1440x900-chart-<id>.png` 17장(겹침 창 크게 보기), 태블릿 `1024x768-*.png` 10장. 고치기 전 장면은 `shots/d7/old/`.
   - 남은 것(E1 몫): ① 사이드바 폭(약 290px)에서 여러 막대 100% 띠(자원·수출)는 글자가 4px 남짓이라 못 읽는다 — 「크게 보기」로만 읽힌다. 사이드바에서는 처음부터 크게 보기 단추만 두거나 막대 하나씩 고르는 방법을 E1 에서 정한다. ② 세계 인구 1940→1950 사이 「아시아(1950년 전)」 띠에서 중국·인도·그 밖 아시아 띠로 넘어가는 곳이 범주 축이라 10년 폭의 사선으로 보인다(교과서는 1950 에서 곧게). ③ 세계유산 사진에 교과서 번호·이름 글자가 박혀 있어 「어느 나라?」 문제에서 이름이 보인다(나라는 안 보임). ④ D6 남은 것(싱가포르 인셋, 지명이 기호를 피하지 않음 등) 그대로.
+- (E1) 조각 조립 결정:
+  - 파일: `src/atlas/topic.js`(새 — `buildTopic`·`layerGroups`·`groupView`·`groupBounds`), `src/atlas/inset.js`(새 — `symbolInset`·`insetBoxLayer`·`insetProjection`·`geoBox`), `sims/atlas-u2-asia/main.js`(임시 mount → 조립판), `charts.js`(`barPicker`·`isMultiBar`), `chartCore.js`(`annualSeries`, `toStackedAreaData` 1년 칸), `quiz.js`(퀴즈 사진 자르기·캡션 번호만), `uiCore.js`(`photoCropStyle`), `labels.js`(`obstacles`), `layers.js`·`layerRef.js`(`labelObstacles`), `renderer.js`(지명 장애물 모음), `ui.css`. 파이프라인: `build_basemap.mjs`(`simplifyArgs`·`simplifyByIso`), `build_places.mjs`(`relocate`), `inset_outline.py`(새), 설정 `config/u2.json`(basemap.levels[10a].simplifyByIso·maxBytes, places.relocate, insets, content.schema.markerQuiz 에 photoCrop), 원본 `content/atlas/u2/topics.json`(세계유산 마커 quiz.photoCrop). 테스트 `tests/atlas/topic.test.mjs`(새, 8개) + chartCore·basemap·places·labels·atlasLayers 보강. registry 항목은 이미 있었다.
+  - 조립(main.js): createShell → createMap(stage, {basemap, places, unitBoxes}) → attachRelief → mapTools·tooltip·pageViewer·topicNav·주제 칸(body)·creditBlock(이 다섯은 주제를 바꿔도 그대로) → `show(id)` = 이전 주제 `destroy()` → `buildTopic({ map, stage, body, viewer, credits, tip, topic, charts, layers, countryFeatures, insets, boundsOf, centerLonOf })`. 개발 서버에서만 `?topic=<id>&proj=<도법>`(E2 대조표용, 조각에서는 DEV 가 접혀 없음). 확인용 `root.atlasTopic`(지금 주제 핸들)·`atlasShowTopic`·`atlasMap`·`atlasUi`.
+  - `buildTopic` 순서: clearLayers → 레이어 묶음(같은 label = 한 지도) 중 첫 묶음 `showGroup(0)`(layerFromRef + legendBlock, 출처 줄 갱신, 보기 맞추기) → 핀(markerLayer → 상세 카드) → 퀴즈(색칠하기·세계유산, 블록보다 위) → 블록(text·activity·chart·photo·card·page). 핸들 `{ topic, groups, showGroup(i), group, pins, quiz, layers, inset, card, destroy() }`. destroy 는 묶음(레이어 removeLayer → 렌더러가 레이어 destroy, 범례 블록, 확대 창)·사이드바 부품(카드·그래프·퀴즈)·핀/색칠하기 레이어(clearLayers)·겹침 창·말풍선을 모두 정리하고 본문을 비운다(두 번 불러도 됨). 테스트: 8개 주제 × 2바퀴 만들고 부수기 뒤 지도 레이어 0·구독 처음 그대로·무대에 확대 창 없음·본문 빔.
+  - 묶음 ↔ 바로가기: `groupView` = view.layer 가 묶음 ref 이거나 ref 가 「-<view id>」로 끝남(종교 분포·카슈미르·싱가포르). 보기 범위 = `boundsOf[ref]`(교역 [55, −45, −60, 72]) → 딸린 view → 주제 view. view 가 있는 글 블록(부제 빼고)에는 「지도에서 보기 — <바로가기>」 단추(묶음이 있으면 그 묶음을 고르고, 없으면 그 범위로 — 일반도 아시아·동아시아·동남아시아). 교역 묶음은 `centerLonOf`로 중심 경도 150(교과서 24쪽도 태평양 중심 밀러 — 대서양 중심이면 미국행 흐름선이 지도 끝에서 끊김), 묶음을 떠나면 0 으로 되돌린다(그사이 사용자가 바꿨으면 그대로).
+  - **교사 결정 1 — 한반도 해안선**: 10a 나라 단순화를 나라별로 — 설정 `simplifyByIso: {KOR: 100%, PRK: 100%}` → mapshaper `-simplify variable percentage=iso=='KOR'?1:iso=='PRK'?1:0.1 keep-shapes`(나라 Feature 마다, 해안 호는 그 나라 것). 나머지는 10% 그대로(일본 649점 같음). KOR 129 → 3,060점, PRK 137 → 1,782점(Natural Earth 10m 그대로). basemap.json 888,389 → **922,222 B(+33.8 KB)**, 상한 921,600 → 1,024,000 B. k 30·40 캡처에서 서해안 리아스·섬이 자세히 보인다.
+  - **교사 결정 2 — 지명 위치**: `build_places.mjs relocate`(설정 `places.relocate` {이름: {path, why}}): 면 지명의 글자 줄을 손으로 정한 줄로 바꾸고 lon/lat = 줄 가운데, angle 지움, `moved: {from}`(까닭은 설정에만). 「미국」 = 본토 [−102, 39.5]~[−94, 39.5](알래스카 세로 글자였음), 「대한민국」 = 남한 [127.25, 35.75]~[128.65, 35.75](동해였음). 위도 35.75 는 아시아 보기(k 2 안팎)에서 서울 기호와 겹치지 않는 자리 — 36.4 로 두었을 때는 서울 기호(장애물)에 걸려 아시아 보기·k 30 에서 이름이 지워졌다(캡처에서 발견). places.json 은 이 두 항목만 바뀜. 지면 대조용 fit 은 maps_u2.json 수정 시각 때문에 `georef-cli --all`을 다시 돌렸는데 fit·controls 가 바이트까지 같았다. coloring.json 은 places 도장 때문에 inputsHash 만 바뀜.
+  - **교사 결정 3 — 싱가포르 확대 창**: 종교·문화의 「싱가포르의 종교 사원 분포」 묶음을 고르면 사원 기호 레이어를 큰 지도에 올리지 않고(map 구독도 없음, 범례 상태는 그대로 씀) 무대 왼쪽 위에 확대 창(`symbolInset` — absolute, z 16, 닫기·Esc, 너비 min(640px, 100% − 300px) = 오른쪽 위 도구 카드를 가리지 않음, 1024×768 에서 창 오른쪽 416px ↔ 도구 418px)을 띄운다. 큰 지도에는 싱가포르 자리 상자(`insetBoxLayer`, SVG z 90, 최소 14px, 「확대 창」 글자, 누르면 창 다시 열기). 창 = 국지 등장방형(cos 위도) SVG: 바다·육지(교과서 윤곽)·사원 76개(반지름 5.2, 범례 색, 흰 테두리)·이름 쓴 사원 4곳 지시선 이름(교과서 배치처럼 오른쪽 아래 한 줄씩)·축척 막대(5km)·범례 줄·출처·「위치 근사」 배지. 사이드바 범례를 누르면 창의 기호도 흐려진다(0.2). 기호에 포인터 → 무대 말풍선(이름, 이름 없으면 종교; 말풍선 z 15 → 17 로 올려 창 위에 뜸).
+    - 윤곽: Natural Earth 10m 싱가포르는 꼭짓점 40개라 쓰지 않고, **교과서 22쪽 지도의 육지 채움(#e7efc1) 도형**을 같은 fit 으로 되돌렸다(`inset_outline.py` — 베지어 8마디로 펴기, 하위 경로 = 고리, 1pt² 아래 버림, Douglas–Peucker 0.4pt, 경위도 소수 4자리, fit 이 approx 라 출력 properties.approx). 사원 기호와 같은 지면·같은 fit 이라 기호와 해안이 서로 맞는다. 고리 37개·점 1,105개, `sims/atlas-u2-asia/data/inset-p22-singapore.json` 23,621 B. 교과서의 도로(회색 선)는 넣지 않았다.
+  - **교사 결정 4 — 100% 막대 하나씩 보기**: 사이드바의 여러 막대 100% 띠(자원 생산·상품 수출 비율)는 `barPicker` — 막대 이름 칩(자원: 석탄·석유·천연가스·철광석·희토류 / 수출: 신발·승용차·통신 기기·지식 재산권·특허 등록 — 막대 하나 = 나라가 아니라 자원·상품이라 칩도 그것), 고른 막대 하나를 viewBox 300(≈ 사이드바 실제 px) 띠로(칸에 들어가면 칸 안 비율), 그 아래 칠한 순서대로 「견본 나라 비율%」 두 줄 목록, 막대 위에 합계(「5,438 (백만 톤, 2020년)」). 「크게 보기」는 막대 다섯 줄 전부(교과서 모양 SVG, 겹침 창).
+  - **교사 결정 5 — 세계유산 퀴즈 사진**: 이름 띠의 자리가 사진마다 달라(01·09·11 은 위쪽 + 「국가/관련 종교」 칸 — 11 은 답 「인도, 힌두교」까지 인쇄, 나머지는 아래 띠, 기울어진 사진) **CSS 자르기**로 했다. 비율 상자 `photoCrop: [x0, y0, x1, y1]`을 원본 topics.json 세계유산 마커 `quiz`에 두고(스키마 markerQuiz 에 추가, extract_text --check 도장 다시), 퀴즈는 aspect-ratio 상자 + overflow hidden + 이미지 absolute %(`photoCropStyle`)로 그 부분만 보인다. 사진 파일은 그대로(상세 카드는 전체 사진). 값은 사진 11장을 하나씩 보고 정함(대조 그림 `C:/Users/Public/atlas-work/e1/crops.png`, 값 `e1/crops.json`). 퀴즈 캡션은 번호만, 답한 뒤 유산 이름.
+  - **교사 결정 6 — 세계 인구 1950 넘겨주기**: `annualSeries` — 쌓은 면을 1년 칸(1800~2100, 301칸)으로 펴서 이웃 범주 사이를 선형 보간하고, 끝나는 계열(「아시아(1950년 전)」)은 1949년까지 「시작하는 계열들(중국·인도·그 밖 아시아)의 1950 합」을 향해 보간, 시작하는 계열은 그때까지 0 → 띠 경계가 1년(그래프 너비의 1/300) 안에 바뀌어 곧게 보인다(캡처 확대로 확인, 맨 위 선도 이어짐). 2021 처럼 고르지 않은 해도 이제 제자리에 들어간다(전에는 뺐음). 눈금은 50년마다(빈 이름 칸은 세로 격자 없음).
+  - **D6 남은 것 ② — 지명이 레이어 기호를 피함**: 레이어 계약에 `labelObstacles?()`(화면 px 상자) — 기호 레이어(막대는 막대·사람 + 나라 이름 상자(글자 수 × 12px) + 지시선 끝 점, 그 밖은 기호 원, 흐린 분류 뺌)·핀(머리·꼬리)·묶음(부분 합침). 렌더러가 settle 의 SVG 레이어 그리기 직후 모아 `placeLabels(..., { obstacles })`에 넘기고, 지명보다 먼저 자리를 차지한다(기호 있는 지명은 다른 빈 자리, 못 놓으면 빠짐). 인구 막대 「중국」 ↔ 「하노이」, 「인도」 막대 ↔ 「뉴델리」·「이슬라마바드」 겹침이 없어졌다. 범례만 바꾼 다시 그리기(refreshLayer)에서는 지명을 다시 놓지 않는다(다음 settle 때).
+  - 조각 크기 1,918 → **1,991 KB**(바탕 지도 +34KB, 싱가포르 윤곽 +24KB, 코드 약 +15KB) — 목표 1~2MB 안. 금지 패턴 0건(처음 빌드에서 확대 창 CSS 의 태그 선택자 `path`·`text` 3건이 걸려 클래스로 바꿈).
+  - 캡처 `C:/Users/Public/atlas-work/shots/e1/`(장면 `atlas-work/e1/shots.mjs`, 드라이버 `d6/cdp.mjs`, 조각 미리보기를 `e1/page.html`로 복사): `<크기>-01~08-<주제>.png`(8개 주제 × 1440×900·1024×768), `-20~22`(싱가포르 확대 창·기호 말풍선·범례 고름), `-23~26`(막대 하나씩·크게 보기·교역 태평양 중심), `-27~28`(세계 인구 사이드바·크게 보기), `-29*`(세계유산 퀴즈 4문제), `-30~32`(한반도 k 9·30·40), `-33`(태평양 중심 세계 — 「미국」 본토). 페이지 콘솔 오류 없음.
+  - 남은 것: ① 교역 지도(k ≈ 1.2)는 화면 위쪽에 지도 밖 회색 띠가 남는다(렌더러 이동 제한 — k < 2 는 세계 고정). ② 확대 창은 교과서 도로를 그리지 않는다. ③ 범례를 바꿔도 지명은 다음 settle 까지 그대로(흐려진 기호 자리를 계속 피함). ④ D6 남은 것 ③(카슈미르 겹친 주장 국경)·④(등온선 값 글자 하나) 그대로. ⑤ 교과서 「대한민국」·「미국」 위치를 바꾼 것은 대조표(E2)에서 교사 확인이 필요하다. ⑥ 공개(E3)는 하지 않았다 — 지금 공개된 v1 은 D7 임시 mount 다.

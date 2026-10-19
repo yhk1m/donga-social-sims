@@ -240,6 +240,32 @@ test('symbolLayer 인구 막대: 값만큼 칸 + 사람 아이콘 + 나라 이�
   // 막대 상자 안을 누르면 맞음
   const base = v.project(L.features.find((f) => f.properties.name === '중국').geometry.coordinates);
   assert.equal(L.hit([base[0], base[1] - 20]).properties.name, '중국');
+  // 지명 피하기(E1): 막대 상자 + 나라 이름 상자(+ 지시선 끝 점) — 이름 상자는 이름 글자 수만큼 넓다
+  const obs = L.labelObstacles();
+  const shown = items.filter((e) => e.getAttribute('display') == null).length;
+  const leaders = L.features.filter((f) => f.properties.barAt).length;
+  assert.equal(obs.length, shown * 2 + leaders);
+  const nameBox = obs.find((b) => b[0] < base[0] && b[2] > base[0] && b[1] > base[1]);
+  assert.ok(nameBox && nameBox[2] - nameBox[0] >= 2 * 12, '「중국」 이름 상자');
+});
+
+test('symbolLayer·markerLayer.labelObstacles: 그린 기호·핀 자리(화면 px), 화면 밖·흐린 분류는 뺌', () => {
+  const legend = createLegendState(['c1', 'c2']);
+  const L = symbolLayer('s', symFC(), { legend });
+  const g = document.createElementNS('svg', 'g');
+  const v = viewOf();
+  L.drawSvg(g, v.project, v.view);
+  const o = L.labelObstacles();
+  assert.equal(o.length, 2, '170°E 는 화면 밖');
+  assert.ok(o[0][0] < 440 && o[0][2] > 440 && o[0][1] < 260 && o[0][3] > 260);
+  legend.toggle('c1');
+  assert.equal(L.labelObstacles().length, 1, '고른 분류(c1)만');
+  const P = markerLayer('m', [{ id: 'a', lonlat: [10, 10] }, { id: 'b', lonlat: [170, 10] }]);
+  const pg = document.createElementNS('svg', 'g');
+  P.drawSvg(pg, v.project, v.view);
+  const po = P.labelObstacles();
+  assert.equal(po.length, 1);
+  assert.deepEqual(po[0], [432, 236, 448, 260], '핀 머리·꼬리(끝 = 경위도 점)');
 });
 
 const flowFC = () => fc([

@@ -135,3 +135,12 @@ test('places.json 은 150KB 이하', () => {
   const size = statSync(FILE).size;
   assert.ok(size <= 150 * 1024, `${size} B`);
 });
+
+test('옮긴 나라 이름(relocate, E1): 「미국」은 본토, 「대한민국」은 한반도 남쪽 땅 위 — moved.from 에 교과서 자리', () => {
+  const us = places.find((p) => p.name === '미국');
+  assert.ok(us.lon > -125 && us.lon < -67 && us.lat > 25 && us.lat < 49, `미국 ${us.lon},${us.lat}`);
+  const kr = places.find((p) => p.name === '대한민국');
+  assert.ok(kr.lon > 126.5 && kr.lon < 129.3 && kr.lat > 34.8 && kr.lat < 38.3, `대한민국 ${kr.lon},${kr.lat}`);
+  for (const p of [us, kr]) { assert.equal(p.angle, undefined); assert.ok(Array.isArray(p.moved?.from)); }
+  for (const name of Object.keys(cfg.relocate || {}).filter((n) => !n.startsWith('_'))) assert.ok(places.find((p) => p.name === name)?.moved, name);
+});

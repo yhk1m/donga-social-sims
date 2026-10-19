@@ -12,7 +12,7 @@
 import {
   renderClimateGraph, renderLineGraph, renderPyramidGraph, renderStackedGraph, renderAbsBarGraph, createDefaultGraphOptions, installRoundRectPolyfill,
 } from 'csat-chart.js';
-import { h, s } from '../shared/dom.js';
+import { h, s, icon } from '../shared/dom.js';
 import {
   chartPlan, toClimateData, toLineData, toStackedAreaData, toPyramidData, toPieData, toStackedBarData, toAbsBarData, stackLegend, stackCells, linearScale, arcPath, ringRows, laneLabels,
 } from './chartCore.js';
@@ -181,3 +181,62 @@ export function renderChart(container, spec, { title = undefined, source = true 
   container?.append(el);
   return { el, destroy() { el.remove(); } };
 }
+
+/**
+ * 여러 막대 100% 띠(자원 생산·상품 수출 비율)를 사이드바에서 하나씩(E1, 교사 결정 2026-10-19): 막대 이름 버튼(ds-seg)으로 고르면
+ * 그 막대 하나를 사이드바 너비(viewBox 300 ≈ 실제 px)로 크게 — 칸에 들어가면 칸 안에 비율, 아래에 칠한 순서대로 「견본 이름 비율」 목록.
+ * 「크게 보기」(onExpand)는 막대 전부(교과서 모양, renderChart)를 겹침 창에. spec 은 categories 가 둘 이상인 stackedBar.
+ * → { el, select(k), get current(), destroy() }
+ */
+export function barPicker(container, spec, { onExpand = null, current = 0, title = undefined } = {}) {
+  const rows = stackCells(spec);
+  const total = spec.total ?? 100;
+  const dec = Math.max(0, ...spec.series.flatMap((q) => q.values).filter((v) => v != null).map((v) => (String(v).split('.')[1] || '').length));
+  const fmtV = (v) => v.toFixed(Math.min(dec, 2));
+  const name = title === false ? null : (title ?? spec.title);
+  const btns = rows.map((r, k) => h('button', {
+    class: 'ds-seg-btn at-barpick-btn', type: 'button', 'aria-pressed': 'false', 'data-k': String(k), on: { click: () => select(k) },
+  }, r.category));
+  const box = h('div', { class: 'at-barpick-body' });
+  const el = h('figure', { class: 'at-chart at-barpick', 'data-chart': spec.id },
+    name ? h('figcaption', { class: 'at-chart-title' }, name) : null,
+    h('div', { class: 'ds-seg at-seg-wrap at-barpick-seg', role: 'group', 'aria-label': '막대 고르기' }, btns),
+    box,
+    spec.source ? h('div', { class: 'at-chart-src' }, spec.source) : null,
+    onExpand ? h('button', { class: 'ds-btn at-expand', type: 'button', title: '막대 전부 크게 보기', 'aria-label': '그래프 크게 보기', on: { click: () => onExpand(spec) } }, icon('expand'), '크게 보기') : null);
+  let cur = -1;
+  function select(k) {
+    const r = rows[k];
+    if (!r) return;
+    cur = k;
+    btns.forEach((b, i) => b.setAttribute('aria-pressed', String(i === k)));
+    const W = 300, x0 = 6, x1 = 294, top = 6, barH = 34, fs = 11;
+    const x = linearScale([0, total], [x0, x1]);
+    const cells = r.cells.map((c) => {
+      const a = x(c.x0), w = Math.max(0, x(Math.min(c.x1, total)) - a);
+      const fits = w >= textW(fmtV(c.value), fs) + 4;
+      return s('g', { class: 'at-ct-cell' },
+        s('title', {}, `${c.name} ${fmtV(c.value)}%`),
+        s('rect', { x: a, y: top, width: w, height: barH, fill: c.color, stroke: '#fff', 'stroke-width': 0.8 }),
+        fits ? txt(a + w / 2, top + barH / 2 + 4, fmtV(c.value), { 'text-anchor': 'middle', class: 'at-ct at-ct-cell-val' }) : null);
+    });
+    const ticks = [0, 25, 50, 75, 100].filter((v) => v <= total).map((v) => s('g', {},
+      s('line', { class: 'at-ct-grid', x1: x(v), x2: x(v), y1: top + barH, y2: top + barH + 4 }),
+      txt(x(v), top + barH + 15, String(v), { 'text-anchor': v === 0 ? 'start' : v === total ? 'end' : 'middle', class: 'at-ct at-ct-tick' })));
+    const svg = s('svg', { class: 'at-chart-svg at-barpick-svg', viewBox: `0 0 ${W} ${top + barH + 20}`, role: 'img', 'aria-label': `${spec.title} — ${r.category}` }, cells, ticks);
+    const tot = r.total ? `${fmtNum(r.total.value)} (${r.total.unit}, ${r.total.year}년)` : '';
+    box.replaceChildren(
+      h('div', { class: 'at-barpick-head' }, h('span', { class: 'at-barpick-cat' }, r.category), tot ? h('span', { class: 'at-barpick-total' }, tot) : null),
+      svg,
+      h('ol', { class: 'at-barpick-list', 'aria-label': `${r.category} 비율(칠한 순서)` }, r.cells.map((c) => h('li', { class: 'at-barpick-item' },
+        h('span', { class: 'at-chart-legend-sw', style: { background: c.color }, 'aria-hidden': 'true' }),
+        h('span', { class: 'at-barpick-name' }, c.name),
+        h('span', { class: 'at-barpick-val' }, `${fmtV(c.value)}%`)))));
+  }
+  select(Math.min(Math.max(0, current), rows.length - 1));
+  container?.append(el);
+  return { el, select, get current() { return cur; }, destroy() { el.remove(); } };
+}
+
+/** 사이드바에서 막대 고르기(barPicker)로 보일 그래프인지 — 막대가 둘 이상인 100% 띠 */
+export const isMultiBar = (spec) => spec?.type === 'stackedBar' && (spec.categories?.length ?? 0) > 1;

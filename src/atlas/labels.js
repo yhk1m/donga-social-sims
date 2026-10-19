@@ -19,6 +19,7 @@
 //   각도만 있는 지명(xy + angle, 기호 없음)  그 각도의 곧은 줄로 본다.
 //   충돌: 글자 줄을 따라 표본 상자(글자 높이 크기의 축 정렬 상자)를 늘어놓아 회전한 글자를 어림한다.
 //         보일 수 있는(minK 통과) 기호 자리도 미리 장애물로 넣는다(높은 등급 글자가 낮은 등급 기호를 가리지 않게, 자기 기호는 뺌).
+//         obstacles(화면 px 상자 [x0, y0, x1, y1] 목록)는 레이어가 그린 기호 자리(렌더러가 layer.labelObstacles() 로 모음) — 지명보다 먼저 차지한다.
 //   measure(text, size) → 글자 폭(px) 은 주입한다. 렌더러는 createMeasureCache(오프스크린 캔버스 measureText)로 한 번 만들어 계속 쓴다.
 
 export const MIN_K = { 1: 1, 2: 1, 3: 1.8, 4: 3, 5: 5, 6: 9 };
@@ -154,7 +155,7 @@ function layoutPath(p, P, { measure, pad, maxSpread, straightDeg }) {
  * 반환: 놓인 지명만, 놓은 순서. 각 항목 = 입력 항목(pathXY 는 뺌) + {at, angle, boxes, bbox}
  *       (+ 선·면 지명은 spacing·span, 굽은 줄은 glyphs:[{ch, at, angle}]).
  */
-export function placeLabels(points, { width, height, measure, k, pad = 2, symbolR = 3, maxSpread = 3, straightDeg = 8 }) {
+export function placeLabels(points, { width, height, measure, k, pad = 2, symbolR = 3, maxSpread = 3, straightDeg = 8, obstacles = [] }) {
   const gap = symbolR + pad + 1; // 기호 가장자리 ↔ 글자 상자 사이
   const eligible = [];
   for (let i = 0; i < points.length; i++) {
@@ -164,6 +165,7 @@ export function placeLabels(points, { width, height, measure, k, pad = 2, symbol
   }
   eligible.sort((a, b) => rankOf(points[a]) - rankOf(points[b]) || points[b].size - points[a].size || a - b);
   const taken = createGrid();
+  for (const b of obstacles) if (b && b.every(Number.isFinite)) taken.add(b); // 레이어 기호(인구 막대·자원 기호·핀) 자리 — 지명이 가리지 않게(E1)
   const symbols = createGrid();
   for (const i of eligible) {
     const p = points[i];

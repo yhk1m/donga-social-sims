@@ -10,7 +10,7 @@
 import { geoBounds } from 'd3-geo';
 import { h, icon } from '../shared/dom.js';
 import { indexGeometry, clipIndexed } from './geoClip.js';
-import { mulberry32, quizOptions, pickNext, shuffle } from './uiCore.js';
+import { mulberry32, quizOptions, pickNext, shuffle, photoCropStyle } from './uiCore.js';
 import { imageUrl } from './ui.js';
 
 export const PALETTE = ['#f4a3a8', '#f9c784', '#fbe79a', '#b8dea0', '#9ccbe8', '#c3b1e1'];
@@ -175,6 +175,28 @@ export function coloringQuiz(map, layer, names, { seed = Date.now() % 1e9, onSco
 }
 
 /**
+ * 퀴즈 사진: 교과서 사진에는 번호·유산 이름(01·09·11 은 「국가/관련 종교」 칸까지 — 11 은 답이 적혀 있음)이 박혀 있어
+ * marker.quiz.photoCrop([x0, y0, x1, y1] 비율, C5 원본 topics.json)으로 그 띠를 뺀 부분만 CSS 로 보인다(사진 파일은 그대로 —
+ * 상세 카드는 전체 사진). 캡션은 번호만(이름은 답한 뒤 feedback 과 함께).
+ */
+function quizPhoto(m) {
+  const url = imageUrl(m.photo?.url);
+  const fig = h('figure', { class: 'at-photo at-quiz-figure' });
+  if (url) {
+    const img = h('img', { class: 'at-photo-img', src: url, alt: '세계유산 사진(이름 부분은 가림)', on: { error: () => { fig.hidden = true; } } });
+    const st = photoCropStyle(m.quiz?.photoCrop, m.photo?.width, m.photo?.height);
+    if (st) {
+      img.classList.add('at-quiz-crop-img');
+      Object.assign(img.style, { width: `${st.width}%`, left: `${st.left}%`, top: `${st.top}%` });
+      fig.append(h('div', { class: 'at-quiz-crop', style: { aspectRatio: `${st.aspect}` } }, img));
+    } else fig.append(img);
+  }
+  const cap = h('figcaption', { class: 'at-photo-credit at-quiz-cap' }, `${m.photo?.pin ?? ''}`);
+  fig.append(cap);
+  return { fig, cap };
+}
+
+/**
  * 세계유산 퀴즈. markers = heritage 주제 마커(quiz: {country, religions}). 사진을 보고 나라 또는 종교를 고른다(보기 4개).
  * 종교가 여럿이면 「크리스트교, 이슬람교, 유대교」 처럼 묶음 하나가 정답이다. onFocus(marker) 는 문제를 낼 때마다 부른다.
  */
@@ -182,7 +204,7 @@ export function heritageQuiz(markers, { seed = Date.now() % 1e9, onFocus = null 
   const rand = mulberry32(seed);
   const items = markers.filter((m) => m.quiz);
   const answerOf = (m, kind) => (kind === 'country' ? m.quiz.country : (m.quiz.religions || []).join(', '));
-  let kind = 'country', order = shuffle(items, rand), k = -1, cur = null, answered = false;
+  let kind = 'country', order = shuffle(items, rand), k = -1, cur = null, answered = false, capEl = null; // capEl: 사진 캡션(답한 뒤 이름)
   const score = { right: 0, total: 0 };
   const photoBox = h('div', { class: 'at-quiz-photo' });
   const qText = h('p', { class: 'at-quiz-q' });
@@ -200,9 +222,9 @@ export function heritageQuiz(markers, { seed = Date.now() % 1e9, onFocus = null 
     cur = order[k];
     answered = false;
     feedback.textContent = '';
-    const url = imageUrl(cur.photo?.url);
-    const img = url ? h('img', { class: 'at-photo-img', src: url, loading: 'lazy', alt: cur.title || '세계유산 사진', on: { error: () => { img.hidden = true; } } }) : null;
-    photoBox.replaceChildren(h('figure', { class: 'at-photo' }, img, h('figcaption', { class: 'at-photo-credit' }, `${cur.photo?.pin ?? ''} ${cur.title ?? ''}`.trim())));
+    const ph = quizPhoto(cur);
+    photoBox.replaceChildren(ph.fig);
+    capEl = ph.cap;
     qText.textContent = kind === 'country' ? '이 세계유산이 있는 나라는?' : '이 세계유산과 관련된 종교는?';
     const ans = answerOf(cur, kind);
     const choices = quizOptions(ans, items.map((m) => answerOf(m, kind)), { n: 4, rand });
@@ -222,6 +244,7 @@ export function heritageQuiz(markers, { seed = Date.now() % 1e9, onFocus = null 
       b.disabled = true;
     }
     feedback.textContent = `${ok ? '정답!' : '아쉽다.'} ${cur.title}: ${cur.quiz.country} · ${(cur.quiz.religions || []).join(', ')}`;
+    if (capEl) capEl.textContent = `${cur.photo?.pin ?? ''} ${cur.title ?? ''}`.trim();
     updateScore();
   }
   function setKind(v) {

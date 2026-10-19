@@ -112,3 +112,22 @@ test('받기: 시간 초과·실패는 다시 시도하고, 끝내 실패하면 
   await assert.rejects(fetchWithRetry('http://x', { tries: 2, timeoutMs: 1000, waitMs: 0, fetchImpl: bad }), /500/);
   assert.equal(m, 2);
 });
+
+test('한반도(KOR·PRK)는 10a 에서 덜 단순화(simplifyByIso, E1) — 해안 꼭짓점이 10% 단순화 때(약 130개)보다 훨씬 많다', () => {
+  const lv = CFG.levels.find((l) => l.id === '10a');
+  assert.deepEqual(Object.keys(lv.simplifyByIso || {}).sort(), ['KOR', 'PRK']);
+  const topo = readJson(FILE);
+  const fs10 = feature(topo, topo.objects.countries10a).features;
+  const count = (iso) => { let n = 0; const w = (a) => (typeof a[0] === 'number' ? n++ : a.forEach(w)); w(fs10.find((f) => f.properties.iso === iso).geometry.coordinates); return n; };
+  assert.ok(count('KOR') > 1500, `KOR ${count('KOR')}`);
+  assert.ok(count('PRK') > 1000, `PRK ${count('PRK')}`);
+  assert.ok(count('JPN') < 1500, `JPN ${count('JPN')} (그 밖은 그대로 10%)`);
+});
+
+test('simplifyArgs: 나라별 비율 → mapshaper variable 식, 잘못된 값은 오류', async () => {
+  const { simplifyArgs } = await import('../../scripts/atlas/build_basemap.mjs');
+  assert.deepEqual(simplifyArgs('10%'), ['10%']);
+  assert.deepEqual(simplifyArgs('10%', { KOR: '100%', PRK: '50%' }), ['variable', "percentage=iso=='KOR'?1:iso=='PRK'?0.5:0.1"]);
+  assert.throws(() => simplifyArgs('10%', { kor: '50%' }));
+  assert.throws(() => simplifyArgs('10%', { KOR: '150%' }));
+});

@@ -27,6 +27,7 @@
 // 레이어 규칙
 //   - 캔버스 레이어 draw(ctx, path, view): ctx 단위 = 화면 CSS px(devicePixelRatio 는 렌더러가 처리), path = geoPath(화면 투영, ctx).
 //     z < 50 은 육지(+음영) 바로 위·호수/하천 아래(면 레이어), z ≥ 50 은 해안선 위. 각 호출은 save/restore 로 감싼다.
+//   - 레이어 labelObstacles?() → 화면 px 상자 목록: 지명을 놓을 때 그 자리를 먼저 차지한다(기호 위에 지명이 겹치지 않게, E1).
 //   - SVG 레이어 drawSvg(g, project, view): 레이어마다 자기 <g>(z 순서). 멈출 때와 움직이는 동안 프레임마다 불리므로
 //     요소를 제자리에서 고치게(빠르게) 만든다. 도법 전환 중에는 숨긴다. 자기 요소의 클릭은 스스로 처리하고 stopPropagation.
 //   - hit(xy, lonlat) → feature | null: 캔버스 레이어 맞히기(z 큰 것부터). 아무 레이어도 안 맞으면 바탕 지도 나라(layerId 'basemap').
@@ -449,7 +450,13 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
       if (!pathXY && !onScreenish(xy)) continue;
       items.push({ name: it.p.name, rank: it.rank, minK: it.minK, size: it.px, xy: xy || undefined, pathXY: pathXY || undefined, symbol: it.symbol, kind: it.kind, src: it });
     }
-    const placed = placeLabels(items, { width: W, height: H, measure, k, pad: 2, symbolR: 3 });
+    // 레이어 기호 자리(인구 막대·자원 기호·핀 — 방금 그린 SVG 레이어가 아는 화면 상자)를 지명보다 먼저 차지(E1: 「중국」 막대 이름 ↔ 「하노이」)
+    const obstacles = [];
+    for (const { layer } of layers) {
+      if (typeof layer.labelObstacles !== 'function') continue;
+      try { obstacles.push(...layer.labelObstacles()); } catch (err) { console.error(`레이어 ${layer.id} 지명 장애물 실패`, err); }
+    }
+    const placed = placeLabels(items, { width: W, height: H, measure, k, pad: 2, symbolR: 3, obstacles });
     const t1 = now();
     const nodes = placed.map(labelNode);
     gLabels.replaceChildren(...nodes);
