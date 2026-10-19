@@ -431,22 +431,35 @@ const PIN_D = 'M0,0C-2.2,-5.2 -8,-8.8 -8,-15A8,8 0 1,1 8,-15C8,-8.8 2.2,-5.2 0,0
  * hit 은 Feature 모양 {type:'Feature', properties:{label: title, id, approx}, geometry, marker} 를 돌려준다(말풍선은 properties.label).
  * 핀 id 는 data-id 속성에만 둔다(문서 전역 id 아님).
  */
-export function markerLayer(id, markers, { map = null, layerId = id, onPick = null, numberOf = (m, i) => m.number ?? m.photo?.pin ?? i + 1, z = LAYER_Z.marker } = {}) {
+export function markerLayer(id, markers, {
+  map = null, layerId = id, onPick = null, numberOf = (m, i) => m.number ?? m.photo?.pin ?? i + 1, z = LAYER_Z.marker, hideNumbers = false, onReveal = null,
+} = {}) {
+  // hideNumbers(교과서 20쪽 활동하기 1 — 학생이 사진 번호를 빈 핀에 씀): 처음엔 번호 없는 빈 핀, 말풍선(hover)에도 이름 없음.
+  // 누른 핀은 번호·이름이 보이고(reveal), revealAll(true/false)로 모두 보이기·다시 숨기기. 바뀔 때마다 onReveal(드러난 수, 전체 수).
   const items = (markers || []).filter((m) => Array.isArray(m.lonlat)).map((m, i) => ({
-    m, n: numberOf(m, i), xy: null, el: null,
-    feature: { type: 'Feature', properties: { label: m.title ?? '', id: m.id, approx: !!m.approx }, geometry: { type: 'Point', coordinates: m.lonlat }, marker: m },
+    m, n: numberOf(m, i), xy: null, el: null, num: null, shown: !hideNumbers,
+    feature: { type: 'Feature', properties: { label: hideNumbers ? '' : m.title ?? '', id: m.id, approx: !!m.approx }, geometry: { type: 'Point', coordinates: m.lonlat }, marker: m },
   }));
+  const paint = (it) => {
+    it.feature.properties.label = it.shown ? it.m.title ?? '' : '';
+    if (it.num) setAttr(it.num, 'display', it.shown ? null : 'none');
+    it.el?.classList.toggle('is-blank', !it.shown);
+  };
+  const revealedCount = () => items.filter((it) => it.shown).length;
+  const changed = () => { if (map && !map.destroyed) map.refreshLayer(layerId); onReveal?.(revealedCount(), items.length); };
   const byFeature = new Map(items.map((it) => [it.feature, it]));
   let root = null, sel = null;
   function build(g) {
     root = s('g', { class: 'at-pins' });
     for (const it of items) {
       it.xy = null;
-      it.el = s('g', { class: 'at-pin', 'data-id': it.m.id, on: { click: (e) => { e.stopPropagation(); layer.select(it.m.id); onPick?.(it.m, e); } } },
+      it.num = it.n != null ? s('text', { class: 'at-pin-num', x: 0, y: -15 }, String(it.n)) : null;
+      it.el = s('g', { class: 'at-pin', 'data-id': it.m.id, on: { click: (e) => { e.stopPropagation(); if (!it.shown) layer.reveal(it.m.id); layer.select(it.m.id); onPick?.(it.m, e); } } },
         s('path', { class: 'at-pin-body', d: PIN_D }),
         s('circle', { class: 'at-pin-hole', cx: 0, cy: -15, r: 5.6 }),
-        it.n != null ? s('text', { class: 'at-pin-num', x: 0, y: -15 }, String(it.n)) : null,
+        it.num,
       );
+      paint(it);
       root.append(it.el);
     }
     g.append(root);
@@ -488,6 +501,12 @@ export function markerLayer(id, markers, { map = null, layerId = id, onPick = nu
     },
     select(mid) { select(mid); if (map && !map.destroyed) map.refreshLayer(layerId); },
     selected: () => sel,
+    /** 핀 하나의 번호·이름 보이기(hideNumbers) */
+    reveal(mid) { const it = items.find((x) => x.m.id === mid); if (!it || it.shown) return; it.shown = true; paint(it); changed(); },
+    /** 모두 보이기(true) · 다시 숨기기(false) */
+    revealAll(on = true) { for (const it of items) { it.shown = !!on; paint(it); } changed(); },
+    isRevealed: (mid) => !!items.find((x) => x.m.id === mid)?.shown,
+    get revealed() { return revealedCount(); },
     destroy() { offs.forEach((off) => off()); offs.length = 0; },
   };
   const offs = connect({ map, layerId, onHover });

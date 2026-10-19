@@ -83,7 +83,7 @@ test('mapTools: 도법·중심 경도·옵션·확대 버튼, 축척 막대 갱�
     assert.ok(base.getAttribute('aria-label'));
     assert.equal(overlay.getAttribute('role'), 'group');
     const segBtns = findAll(t.el, byClass('at-tools-seg-btn'));
-    assert.equal(segBtns.length, 7);
+    assert.equal(segBtns.length, 10, '도법 5 · 중심 경도 2 · 바탕 색 3');
     assert.equal(segBtns.find((b) => b.getAttribute('data-v') === 'miller').getAttribute('aria-pressed'), 'true');
     segBtns.find((b) => b.getAttribute('data-v') === 'goode').dispatch('click');
     assert.deepEqual(map.calls.at(-1), ['setProjection', 'goode']);
@@ -107,13 +107,22 @@ test('mapTools: 도법·중심 경도·옵션·확대 버튼, 축척 막대 갱�
     assert.deepEqual(map.calls.at(-1)[1].center, [24, 30]); // invert([400 − 160, 300]) = [24, 30]
     stage.dispatch('keydown', { key: '+', target: segBtns[0] });
     assert.equal(map.calls.length, n + 2);
-    // 고도 색 체크 상자: 누르면 setOptions({tint}), 주제가 옵션을 바꾸면(map 'options') 체크 상자가 따라감
-    const tintBox = findAll(t.el, byClass('at-tools-check-input'))[3];
-    assert.equal(!!tintBox.checked, false);
-    tintBox.checked = true; tintBox.dispatch('change', { target: tintBox });
-    assert.deepEqual(map.calls.at(-1), ['setOptions', { tint: true }]);
+    // 바탕 색 한 묶음(없음·고도 색·자연색): 누르면 setOptions({tint, natural}) 둘을 함께, 주제가 옵션을 바꾸면(map 'options') 단추가 따라감
+    assert.equal(findAll(t.el, byClass('at-tools-check-input')).length, 3, '경위선·지명·음영 체크 상자(고도 색은 바탕 묶음으로)');
+    const baseBtn = (v) => findAll(t.el, byClass('at-tools-seg-btn')).find((b) => b.getAttribute('data-v') === v);
+    const pressed = () => ['none', 'tint', 'natural'].filter((v) => baseBtn(v).getAttribute('aria-pressed') === 'true');
+    assert.deepEqual(pressed(), ['none']);
+    baseBtn('tint').dispatch('click');
+    assert.deepEqual(map.calls.at(-1), ['setOptions', { tint: true, natural: false }]);
+    assert.deepEqual(pressed(), ['tint']);
+    baseBtn('natural').dispatch('click');
+    assert.deepEqual(map.calls.at(-1), ['setOptions', { tint: false, natural: true }]);
+    assert.deepEqual(pressed(), ['natural']);
+    map.setOptions({ tint: false, natural: false });
+    assert.deepEqual(pressed(), ['none'], '지도 옵션을 따라감');
+    map.setOptions({ tint: true });
+    assert.deepEqual(pressed(), ['tint']);
     map.setOptions({ tint: false });
-    assert.equal(!!tintBox.checked, false, '지도 옵션을 따라감');
     t.destroy();
     assert.equal(map.handlerCount, 0, '구독 0');
     assert.equal(stage.listenerCount, 0, '무대 키 리스너 0');

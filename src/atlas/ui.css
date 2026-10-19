@@ -30,6 +30,7 @@
 .ds-sim .at-tools-seg-btn { font-size: 12px; padding: 4px 7px; white-space: nowrap; }
 .ds-sim .at-tools-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .ds-sim .at-tools-check { font-size: 12px; gap: 4px; }
+.ds-sim .at-tools-label { font-size: 12px; color: var(--ink-2); }
 .ds-sim .at-tools-zoom { display: flex; flex-direction: column; gap: 4px; }
 .ds-sim .at-tools-btn { padding: 6px; border-radius: 8px; background: rgba(255, 255, 255, .94); box-shadow: var(--shadow); }
 

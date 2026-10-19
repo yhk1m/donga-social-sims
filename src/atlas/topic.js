@@ -9,9 +9,12 @@
 //     countryFeatures  색칠하기 나라 도형({ '50': [...], '10a': [...] })
 //     insets   { 레이어 ref: 바탕 윤곽 GeoJSON } — 그 레이어는 큰 지도 대신 무대 위 확대 창(symbolInset)에 그리고, 큰 지도에는 위치 상자만
 //     boundsOf { 레이어 ref: [w, s, e, n] } — 그 레이어를 고를 때 맞출 범위(교역 흐름선처럼 주제 view 밖까지 가는 것)
-//     tint     이 주제의 고도 색 기본값(일반도·지형 = true — 교과서처럼 높이·깊이 색, 주제도는 false — 주제 색이 잘 보이게). 주제를 펼칠 때
-//              map.setOptions({ tint }) 로 맞추고, 켜져 있고 고도 색 자료가 붙었으면 사이드바에 고도 색 범례(tintLegendBlock)를 보인다
-//              (지도 도구 「고도 색」으로 바꾸면 범례도 따라감 — map.on('options')).
+//     baseColor 이 주제의 바탕 색 기본값 'none' | 'tint' | 'natural'(일반도 = 고도 색 — 교과서 16쪽처럼 높이·깊이 색, 지형 = 자연색 — 교과서 20쪽
+//              Natural Earth 자연색 화상, 주제도 = 없음 — 주제 색이 잘 보이게). 옛 이름 tint(true = 'tint')도 받는다. 주제를 펼칠 때
+//              map.setOptions({ tint, natural }) 로 맞추고, 고도 색이 켜져 있고 자료가 붙었으면 사이드바에 고도 색 범례(tintLegendBlock),
+//              자연색이 보이면 출처 줄에 Natural Earth II(credits.setNatural) — 지도 도구 「바탕」으로 바꾸면 따라감(map.on('options')).
+//     topic.pinNumbers 'hidden'(20쪽 활동하기 1 — 학생이 사진 번호를 빈 핀에 씀): 핀은 번호·말풍선 이름 없이, 누른 핀만 번호가 보인다.
+//              첫 활동 블록 아래 「번호 모두 보기」·「다시 숨기기」 단추. 주제를 다시 펼치면 처음처럼 숨김.
 //     locators { 레이어 ref: {bounds, names, title} } — 그 레이어를 고르면 무대에 작은 위치도(locatorInset — 레이어의 type 'locator' 면을 강조,
 //              바탕은 countryFeatures['50']). 카슈미르 = 인도 위치도(교과서 22쪽 오른쪽 위).
 //     centerLonOf { 레이어 ref: 중심 경도 } — 그 레이어를 고를 때 지도 중심 경도(교역 = 150, 교과서도 태평양 중심 밀러). 묶음을 떠나면 되돌린다
@@ -30,6 +33,7 @@ import { renderChart, barPicker, isMultiBar } from './charts.js';
 import { coloringLayer, coloringQuiz, heritageQuiz } from './quiz.js';
 import { symbolInset, insetBoxLayer, geoBox, insetAvoidOffset, locatorInset } from './inset.js';
 import { segButtons } from './seg.js';
+import { baseOptions } from './natural.js';
 
 /** 레이어 묶음: 같은 label 의 레이어는 한 지도(함께 올림). [{ label, refs }] */
 export function layerGroups(topic) {
@@ -55,7 +59,7 @@ export function groupBounds(topic, group, boundsOf = {}) {
 
 export function buildTopic({
   map, stage = null, body, viewer = null, credits = null, tip = null, topic, charts = {}, layers: layerData = {}, countryFeatures = null,
-  insets = {}, boundsOf = {}, centerLonOf = {}, locators = {}, tint = false, seed = undefined,
+  insets = {}, boundsOf = {}, centerLonOf = {}, locators = {}, tint = false, baseColor = tint ? 'tint' : 'none', seed = undefined,
 }) {
   const parts = [];            // 주제가 끝날 때 destroy 할 사이드바 부품(카드·그래프·퀴즈)
   let groupParts = [];         // 묶음을 바꿀 때 destroy 할 것(범례 블록·확대 창·지도에 안 올린 레이어)
@@ -83,10 +87,15 @@ export function buildTopic({
     body.append(h('div', { class: 'ds-ctl' }, h('span', { class: 'ds-label' }, '바로가기'),
       h('div', { class: 'ds-row at-topic-views' }, topic.views.map((v) => h('button', { class: 'ds-btn', type: 'button', on: { click: () => goView(v) } }, v.label)))));
   }
-  // 고도 색: 주제 기본값으로 맞추고, 켜져 있고 자료가 붙었을 때만 범례
+  // 바탕 색: 주제 기본값으로 맞추고, 고도 색이 켜져 있고 자료가 붙었을 때만 범례(자연색이 앞서면 범례 없음), 자연색이 보이면 출처 줄
   const tintBox = tintLegendBlock(null, { note: '높이 자료: ETOPO 2022(NOAA), 단계와 색은 교과서 16쪽 범례' });
-  const syncTint = () => tintBox.show(!!(map.options?.tint && map.tintReady));
-  map.setOptions?.({ tint: !!tint });
+  const syncTint = () => {
+    const o = map.options || {};
+    const naturalShown = !!(o.natural && map.naturalReady);
+    tintBox.show(!!(o.tint && map.tintReady && !naturalShown));
+    credits?.setNatural?.(naturalShown);
+  };
+  map.setOptions?.(baseOptions(baseColor));
   let offTint = null;
   try { offTint = map.on('options', syncTint); } catch { offTint = null; } // 옵션 알림이 없는 지도(시험용)면 처음 값만
   syncTint();
@@ -168,9 +177,17 @@ export function buildTopic({
   else { credits?.update([]); if (topic.view?.bounds) map.fitBounds(topic.view.bounds); }
 
   // ---- 3 핀 ----
+  const hideNumbers = topic.pinNumbers === 'hidden';
+  let revealBtn = null;
+  const syncReveal = (n, total) => {
+    if (!revealBtn) return;
+    const all = n >= total;
+    revealBtn.textContent = all ? '다시 숨기기' : '번호 모두 보기';
+    revealBtn.setAttribute('aria-pressed', String(all));
+  };
   if (topic.markers?.length) {
     pins = markerLayer(`markers-${topic.id}`, topic.markers, {
-      map,
+      map, hideNumbers, onReveal: syncReveal,
       onPick: (m) => card.show({
         kicker: `${m.photo?.pin ?? ''}`, title: m.title, photo: m.photo, text: m.text,
         chart: m.chart ? charts[m.chart] : null, approx: m.approx,
@@ -199,11 +216,19 @@ export function buildTopic({
   };
   for (const b of topic.blocks || []) {
     if (b.type === 'text' || b.type === 'activity') {
+      // 핀 번호 숨김 주제: 첫 활동 블록에 「번호 모두 보기」·「다시 숨기기」(다시 숨기면 고른 핀·카드도 지움 — 답이 남지 않게)
+      const reveal = hideNumbers && pins && b.type === 'activity' && !revealBtn
+        ? (revealBtn = h('button', {
+          class: 'ds-btn at-reveal-btn', type: 'button', 'aria-pressed': 'false', title: '지도 핀의 사진 번호',
+          on: { click: () => { const all = pins.revealed >= pins.markers.length; if (all) { pins.select(null); card.hide(); } pins.revealAll(!all); } },
+        }, '번호 모두 보기'))
+        : null;
       // 바로가기에 딸린 글(view)에는 「지도에서 보기」 — 부제(subtitle)는 바로 위 글과 같은 바로가기라 빼고
       body.append(h('div', { class: `at-text at-text-${b.role || b.type}` },
         b.title ? h('h3', { class: 'ds-h2' }, b.title) : null,
         h('p', { class: 'at-card-text' }, b.text),
         b.credit ? h('p', { class: 'at-card-credit' }, b.credit) : null,
+        reveal,
         b.role === 'subtitle' ? null : viewBtn(b)));
     } else if (b.type === 'chart' && charts[b.ref]) {
       const spec = charts[b.ref];
@@ -237,6 +262,7 @@ export function buildTopic({
     alive = false;
     offTint?.();
     tintBox.destroy();
+    credits?.setNatural?.(false);
     clearGroup();
     for (let i = parts.length - 1; i >= 0; i--) parts[i].destroy();
     parts.length = 0;

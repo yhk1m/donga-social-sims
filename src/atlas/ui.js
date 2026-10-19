@@ -3,13 +3,13 @@
 // 주제를 바꿀 때 destroy() 하고 다시 만들면 된다 — 지도·범례 구독, 무대 키 입력 등 붙인 것은 destroy 가 모두 푼다.
 //
 //   topicNav(panel, topics, onSelect, { current })  목차(세로 목록, 지금 주제 강조, 쪽 표시) — update(id)
-//   mapTools(stage, map, { relief })                 무대 오른쪽 위 도구(도법 5·대서양/태평양·경위선/지명/음영·확대/축소/전체) + 왼쪽 아래 축척 막대,
+//   mapTools(stage, map, { relief, tint })           무대 오른쪽 위 도구(도법 5·대서양/태평양·경위선/지명/음영·바탕 색 없음/고도 색/자연색·확대/축소/전체) + 왼쪽 아래 축척 막대,
 //                                                    무대 키보드(무대에 초점이 있을 때만: +/− 확대·축소, 방향키 이동, 0 전체) — update()
 //   legendBlock(panel, legend, items, opts)          범례(색 견본 + 이름, 누르면 legend.toggle) + 제목·출처·위치 근사·이미지 실패 알림
 //   detailCard(panel, { onExpand })                  .show({ title, photo, text, chart | charts, credit, approx }) / .hide()
 //   pageViewer(stage)                                「원본 쪽 보기」 겹침 창(absolute, z 20): .show({ url, title, bbox } | { title, node }) / .hide()
 //   tooltip(stage, { map })                          포인터 자리 이름 말풍선(map 을 주면 hover 를 구독)
-//   creditBlock(panel)                               출처 줄(바탕 지도: Natural Earth + 주제 레이어 출처) — update(credits)
+//   creditBlock(panel)                               출처 줄(바탕 지도: Natural Earth + 주제 레이어 출처) — update(credits), setNatural(on)(자연색 출처 줄)
 // 사진·원본 쪽은 공개 Pages 의 절대 주소 <img src> 로만 연결한다(ASSET_BASE). 개발 서버에서는 아직 공개 전이라 저장소 파일로 바꿔 쓴다.
 import { h, s, icon, append } from '../shared/dom.js';
 import { addBlock } from '../shared/shell.js';
@@ -17,6 +17,7 @@ import { PROJECTIONS } from './projections.js';
 import { renderChart } from './charts.js';
 import { segButtons } from './seg.js';
 import { tintLegend } from './tint.js';
+import { BASE_MODES, baseModeOf, baseOptions, NATURAL_CREDIT } from './natural.js';
 import { scaleBarSpec, hoverLabel, pageCrop, pagesLabel, assetUrl, panTarget, ASSET_BASE } from './uiCore.js';
 import './ui.css';
 
@@ -78,7 +79,10 @@ const PROJ_SHORT = { miller: '밀러', mercator: '메르카토르', robinson: '�
 export function mapTools(stage, map, { relief = true, tint = true } = {}) {
   const proj = seg(Object.keys(PROJECTIONS).map((k) => [k, PROJ_SHORT[k] || PROJECTIONS[k].label, `${PROJECTIONS[k].label} 도법`]), '도법', (k) => { map.setProjection(k); update(); });
   const center = seg([[0, '대서양', '대서양 중심(경도 0°)'], [150, '태평양', '태평양 중심(경도 150°)']], '중심 경도', (c) => { map.setCenterLon(c); update(); });
-  const opts = { graticule: true, labels: true, relief, tint: !!map.options?.tint };
+  const opts = { graticule: true, labels: true, relief };
+  // 바탕 색(없음·고도 색·자연색) 한 묶음 — 렌더러 옵션 tint·natural 두 개를 함께 바꾼다
+  const base = tint ? segButtons(BASE_MODES, { label: '바탕 색', className: 'at-tools-seg at-tools-base', btnClass: 'at-tools-seg-btn', current: baseModeOf(map.options),
+    onPick: (m) => { map.setOptions(baseOptions(m)); base.set(baseModeOf(map.options)); } }) : null;
   const inputs = {};
   const check = (key, text, title = null) => {
     const input = h('input', { type: 'checkbox', class: 'at-tools-check-input', checked: opts[key], on: { change: (e) => { opts[key] = !!e.target.checked; map.setOptions({ [key]: opts[key] }); } } });
@@ -92,8 +96,8 @@ export function mapTools(stage, map, { relief = true, tint = true } = {}) {
     h('div', { class: 'at-tools-card' },
       proj.el,
       h('div', { class: 'at-tools-row' }, center.el,
-        check('graticule', '경위선'), check('labels', '지명'), relief ? check('relief', '음영') : null,
-        tint ? check('tint', '고도 색', '교과서 일반도처럼 높이·깊이에 따라 색(범례는 사이드바)') : null)),
+        check('graticule', '경위선'), check('labels', '지명'), relief ? check('relief', '음영') : null),
+      base ? h('div', { class: 'at-tools-row' }, h('span', { class: 'at-tools-label' }, '바탕'), base.el) : null),
     h('div', { class: 'at-tools-zoom', role: 'group', 'aria-label': '확대·축소' },
       btn('plus', '확대', () => zoomBy(2)), btn('minus', '축소', () => zoomBy(0.5)), btn('globe', '세계 전체 보기', whole)));
   const barLine = h('div', { class: 'at-scale-bar' });
@@ -134,13 +138,14 @@ export function mapTools(stage, map, { relief = true, tint = true } = {}) {
     if (sp) { barLine.style.width = `${Math.round(sp.px)}px`; barText.textContent = sp.label; }
   }
   const off = map.on('viewchange', update);
-  // 주제가 고도 색을 켜고 끄면(일반도·지형은 켬) 체크 상자도 따라간다
+  // 주제가 바탕 색을 바꾸면(일반도 = 고도 색, 지형 = 자연색) 단추·체크 상자도 따라간다
   const offOpt = map.on('options', (o) => {
     for (const [k, input] of Object.entries(inputs)) if (k in o && input.checked !== !!o[k]) { input.checked = !!o[k]; opts[k] = !!o[k]; }
+    base?.set(baseModeOf(o));
   });
   update();
   return {
-    el, scale, update,
+    el, scale, update, base,
     destroy() {
       off(); offOpt();
       stage.removeEventListener('keydown', onKey);
@@ -368,11 +373,14 @@ export function tooltip(stage, { map = null, offset = 14 } = {}) {
 // ---------- 출처 줄 ----------
 export function creditBlock(panel) {
   const list = h('ul', { class: 'at-credits-list' });
-  const el = h('footer', { class: 'at-credits' }, h('p', { class: 'at-credits-base' }, '바탕 지도: Natural Earth (공공 저작물) · 지형 음영: Natural Earth'), list);
+  const natural = h('p', { class: 'at-credits-base at-credits-natural', hidden: true }, NATURAL_CREDIT);
+  const el = h('footer', { class: 'at-credits' }, h('p', { class: 'at-credits-base' }, '바탕 지도: Natural Earth (공공 저작물) · 지형 음영: Natural Earth'), natural, list);
   if (panel) addBlock(panel, el);
   function update(credits = []) {
     list.replaceChildren(...[...new Set(credits.filter(Boolean))].map((c) => h('li', { class: 'at-credits-item' }, c)));
   }
   update();
-  return { el, update, destroy() { el.remove(); } };
+  /** 자연색 바탕이 보일 때 그 출처 줄(Natural Earth II) */
+  const setNatural = (on) => { natural.hidden = !on; };
+  return { el, update, setNatural, destroy() { el.remove(); } };
 }

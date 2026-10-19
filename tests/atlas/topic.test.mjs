@@ -33,9 +33,9 @@ function fakeMap() {
   const handlers = { click: new Set(), hover: new Set(), viewchange: new Set(), options: new Set() };
   const layers = new Map();
   const calls = [];
-  const opts = { tint: false };
+  const opts = { tint: false, natural: false };
   return {
-    tintReady: true,
+    tintReady: true, naturalReady: true,
     get options() { return { ...opts }; },
     calls, destroyed: false,
     view: { key: 'miller', centerLon: 0, k: 2, x: 0, y: 0, width: 800, height: 600, kmPerPx: 10 },
@@ -340,7 +340,7 @@ test('카슈미르 묶음: 무대에 인도 위치도(분홍 = 레이어 locator
 test('고도 색: 주제 기본값(tint)으로 map.setOptions, 켜져 있고 자료가 붙었을 때만 범례, 지도 도구로 끄면 범례도 숨김, destroy 로 구독 해제', () => {
   const S = setup();
   const T = S.build(topicOf('general'), { tint: true });
-  assert.deepEqual(S.map.calls.find((c) => c[0] === 'setOptions'), ['setOptions', { tint: true }]);
+  assert.deepEqual(S.map.calls.find((c) => c[0] === 'setOptions'), ['setOptions', { tint: true, natural: false }]);
   const lg = find(S.body, byClass('at-tint-legend'));
   assert.ok(lg && !lg.hidden, '일반도 = 고도 색 범례');
   assert.equal(findAll(lg, byClass('at-tint-row')).length, 18, '빙하·육지 9·해수면 아래·바다 7');
@@ -349,12 +349,85 @@ test('고도 색: 주제 기본값(tint)으로 map.setOptions, 켜져 있고 자
   T.destroy();
   assert.equal(S.map.handlerCount, S.base);
   const T2 = S.build(topicOf('climate'), { tint: false });
-  assert.deepEqual(S.map.calls.filter((c) => c[0] === 'setOptions').at(-1), ['setOptions', { tint: false }], '주제도는 끔');
+  assert.deepEqual(S.map.calls.filter((c) => c[0] === 'setOptions').at(-1), ['setOptions', { tint: false, natural: false }], '주제도는 끔');
   assert.equal(find(S.body, byClass('at-tint-legend')).hidden, true);
   S.map.tintReady = false;
   S.map.setOptions({ tint: true });
   assert.equal(find(S.body, byClass('at-tint-legend')).hidden, true, '자료를 못 불러왔으면 켜도 범례 없음');
   T2.destroy();
+});
+
+test('바탕 색 baseColor: 지형 = 자연색(고도 색 범례 없음·출처 줄에 Natural Earth II), 고도 색으로 바꾸면 범례, 자료가 없으면 출처 줄 없음, 주제를 바꾸면 숨김', () => {
+  const S = setup();
+  const natCredit = () => find(S.credits.el, byClass('at-credits-natural'));
+  const tintLg = () => find(S.body, byClass('at-tint-legend'));
+  const T = S.build(topicOf('relief'), { baseColor: 'natural' });
+  assert.deepEqual(S.map.calls.filter((c) => c[0] === 'setOptions').at(-1), ['setOptions', { tint: false, natural: true }]);
+  assert.equal(tintLg().hidden, true, '자연색이면 고도 색 범례 없음');
+  assert.equal(natCredit().hidden, false);
+  assert.match(natCredit().textContent, /Natural Earth II/);
+  S.map.setOptions({ tint: true, natural: false });
+  assert.equal(tintLg().hidden, false, '고도 색으로 바꾸면 범례');
+  assert.equal(natCredit().hidden, true);
+  S.map.setOptions({ tint: true, natural: true });
+  assert.equal(tintLg().hidden, true, '둘 다 켜지면 자연색이 앞섬');
+  S.map.naturalReady = false;
+  S.map.setOptions({ graticule: false });
+  assert.equal(natCredit().hidden, true, '자연색 화상을 못 불러왔으면 출처 줄 없음');
+  assert.equal(tintLg().hidden, false, '그때 보이는 고도 색의 범례');
+  S.map.naturalReady = true;
+  T.destroy();
+  assert.equal(natCredit().hidden, true, '주제를 바꾸면 숨김');
+  S.build(topicOf('climate')).destroy();
+  assert.deepEqual(S.map.calls.filter((c) => c[0] === 'setOptions').at(-1), ['setOptions', { tint: false, natural: false }], '기본 = 없음');
+});
+
+test('지형 핀 번호 숨김(pinNumbers hidden): 빈 핀·말풍선 이름 없음 → 누른 핀만 번호·이름, 「번호 모두 보기」·「다시 숨기기」(고른 핀·카드 지움), 다시 펼치면 숨김, 다른 주제는 그대로', () => {
+  const S = setup();
+  const relief = topicOf('relief');
+  assert.equal(relief.pinNumbers, 'hidden');
+  const proj = (ll) => [400 + ll[0], 300 - ll[1]];
+  let T = S.build(relief);
+  let svg = document.createElementNS('svg', 'g');
+  T.pins.drawSvg(svg, proj, S.map.view);
+  const pinEls = () => findAll(svg, byClass('at-pin'));
+  const numShown = (el) => find(el, byClass('at-pin-num')).getAttribute('display') !== 'none';
+  assert.equal(pinEls().length, 7);
+  assert.ok(pinEls().every((el) => !numShown(el) && el.classList.contains('is-blank')), '처음엔 모두 빈 핀');
+  const feats = () => relief.markers.map((m) => { const q = proj(m.lonlat); return T.pins.hit([q[0], q[1] - 15]); });
+  assert.ok(feats().every((f) => f && f.properties.label === ''), '말풍선 이름도 없음');
+  const btn = find(S.body, byClass('at-reveal-btn'));
+  assert.ok(btn, '활동하기 1 에 단추');
+  assert.equal(btn.textContent, '번호 모두 보기');
+  const first = pinEls().find((el) => el.getAttribute('data-id') === relief.markers[0].id);
+  first.dispatch('click');
+  assert.equal(numShown(first), true, '누른 핀은 번호');
+  assert.equal(pinEls().filter(numShown).length, 1);
+  assert.equal(feats()[0].properties.label, relief.markers[0].title, '누른 핀은 이름도');
+  assert.equal(T.card.el.hidden, false, '카드는 그대로 열림');
+  btn.dispatch('click');
+  assert.equal(pinEls().filter(numShown).length, 7);
+  assert.equal(btn.textContent, '다시 숨기기');
+  assert.equal(btn.getAttribute('aria-pressed'), 'true');
+  btn.dispatch('click');
+  assert.equal(pinEls().filter(numShown).length, 0);
+  assert.equal(T.pins.selected(), null, '고른 핀 지움');
+  assert.equal(T.card.el.hidden, true, '카드 지움(답이 남지 않게)');
+  assert.equal(btn.textContent, '번호 모두 보기');
+  for (const el of pinEls()) el.dispatch('click');
+  assert.equal(btn.textContent, '다시 숨기기', '하나씩 다 누르면 「다시 숨기기」');
+  T.destroy();
+  T = S.build(relief);
+  svg = document.createElementNS('svg', 'g');
+  T.pins.drawSvg(svg, proj, S.map.view);
+  assert.equal(pinEls().filter(numShown).length, 0, '주제를 다시 펼치면 처음처럼 숨김');
+  T.destroy();
+  const H = S.build(topicOf('heritage'));
+  svg = document.createElementNS('svg', 'g');
+  H.pins.drawSvg(svg, proj, S.map.view);
+  assert.ok(pinEls().length > 0 && pinEls().every((el) => !el.classList.contains('is-blank') && numShown(el)), '세계유산 핀은 번호 그대로');
+  assert.equal(find(S.body, byClass('at-reveal-btn')), null);
+  H.destroy();
 });
 
 test('확대 창 기호 흐리기는 legend.isActive — 범례 묶음 고름(toggleGroup)에도 맞음', () => {

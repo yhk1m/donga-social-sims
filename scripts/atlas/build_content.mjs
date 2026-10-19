@@ -300,6 +300,11 @@ export function buildContent(inp) {
     if (t0.views) o.views = t0.views.map((v) => ({ id: v.id, label: v.label, ...ctx.view(v, `${at}.views.${v.id}`) }));
     o.layers = resolveLayers(ctx, t, at);
     o.markers = resolveMarkers(ctx, t0, at);
+    // 핀 번호 보이기(20쪽 활동하기 1 은 'hidden' — 교과서 핀이 번호 없는 빈칸, 학생이 사진 번호를 씀). 'shown' 이 기본이라 적지 않음
+    if (t.pinNumbers != null) {
+      if (t.pinNumbers === 'hidden' || t.pinNumbers === 'shown') { if (t.pinNumbers === 'hidden') o.pinNumbers = 'hidden'; }
+      else ctx.W.push(`${at}.pinNumbers: 'hidden' | 'shown' 이어야 함 — ${JSON.stringify(t.pinNumbers)}`);
+    }
     if (o.view) for (const m of o.markers) if (m.lonlat) {   // 주제 보기 범위는 마커를 모두 담도록 넓힌다
       const g = inp.cfg.markerMargin, b = o.view.bounds;
       o.view.bounds = [Math.min(b[0], m.lonlat[0] - g), Math.min(b[1], m.lonlat[1] - g), Math.max(b[2], m.lonlat[0] + g), Math.max(b[3], m.lonlat[1] + g)].map(r3);

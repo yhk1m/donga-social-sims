@@ -21,9 +21,9 @@ export const RELIEF_URL = 'https://yhk1m.github.io/donga-social-sims/assets/atla
 export const RELIEF_DEV_URL = '/docs/assets/atlas/common/relief-4096.jpg';
 /**
  * 모양값. opacity = 곱하기 투명도, ref = 흰색으로 볼 회색(원본 평지·바다 = 206, 그보다 조금 위로 잡아 해 드는 비탈도 살짝 남김),
- * gamma = 그늘 대비(1 보다 크면 그늘이 더 짙게).
+ * gamma = 그늘 대비(1 보다 크면 그늘이 더 짙게). naturalOpacity = 자연색 바탕(natural.js — 화상에 음영이 이미 있음) 위의 곱하기 투명도(0 이면 음영 생략).
  */
-export const RELIEF_STYLE = Object.freeze({ opacity: 0.45, ref: 206, gamma: 1.25 });
+export const RELIEF_STYLE = Object.freeze({ opacity: 0.45, ref: 206, gamma: 1.25, naturalOpacity: 0.2 });
 export const RELIEF_BUDGET_MS = 150;
 
 // ---------- 순수 함수 ----------
@@ -298,7 +298,10 @@ export function createReliefDrawer(img, { style = RELIEF_STYLE, budget = RELIEF_
   let step = 2, warmed = false;
   const stats = [];
   const fn = (ctx, projection, view, extra = {}) => {
-    const r = drawRelief(ctx, projection, view, img, { ...extra, step, style, ...(clock ? { clock } : {}) });
+    // 자연색 바탕이면 화상에 음영이 이미 있으므로 겹 음영을 옅게(naturalOpacity, 0 이면 생략)
+    const st = extra.natural ? { ...style, opacity: style.naturalOpacity ?? 0 } : style;
+    if (!(st.opacity > 0)) return;
+    const r = drawRelief(ctx, projection, view, img, { ...extra, step, style: st, ...(clock ? { clock } : {}) });
     if (!r) return;
     stats.push(r);
     if (stats.length > 60) stats.shift();

@@ -8,6 +8,7 @@ import { h } from '../../src/shared/dom.js';
 import { createMap } from '../../src/atlas/renderer.js';
 import { attachRelief } from '../../src/atlas/relief.js';
 import { attachTint } from '../../src/atlas/tint.js';
+import { attachNatural } from '../../src/atlas/natural.js';
 import { topicNav, mapTools, pageViewer, tooltip, creditBlock } from '../../src/atlas/ui.js';
 import { buildTopic } from '../../src/atlas/topic.js';
 import basemap from './data/basemap.json';
@@ -23,8 +24,9 @@ const CENTER_LON_OF = { 'layer-p24-trade': 150 }; // 교과서 24쪽 교역 지�
 // 무대 위 확대 창으로 그릴 레이어(큰 지도에서는 섬이 30px 남짓이라 기호 76개가 겹침) → 바탕 윤곽
 const INSETS = { 'layer-p22-singapore': singaporeOutline };
 // 작은 위치도(교과서 22쪽 카슈미르 지도 오른쪽 위의 인도 위치도) — 레이어의 type 'locator' 면(분쟁 지역)을 분홍으로
-// 고도 색을 기본으로 켜는 주제(교과서 16·18·19쪽 일반도·20쪽 지형처럼 높이 색) — 주제도는 주제 색이 잘 보이게 끔(지도 도구로 켤 수 있음)
-const TINT_TOPICS = new Set(['general', 'relief']);
+// 주제별 바탕 색 기본값(지도 도구 「바탕」으로 바꿀 수 있음): 일반도 = 고도 색(교과서 16·18·19쪽 높이·깊이 색), 지형 = 자연색(교과서 20쪽
+// Natural Earth 자연색 화상), 나머지 주제도 = 없음(주제 색이 잘 보이게)
+const BASE_COLOR = { general: 'tint', relief: 'natural' };
 const LOCATORS = { 'layer-p22-kashmir': { bounds: [60, 5, 99, 38], names: { PAK: '파키스탄', IND: '인도' }, title: '인도 위치 — 분홍이 카슈미르' } };
 
 export default function mount(root) {
@@ -32,6 +34,12 @@ export default function mount(root) {
   const map = createMap(stage, { basemap, places, unitBoxes: basemap.meta.unitBoxes });
   attachRelief(map).then((d) => { root.atlasRelief = d; }); // 공개 Pages 의 음영 이미지(실패하면 음영 없이 그대로)
   attachTint(map).then((d) => { root.atlasTint = d; });     // 공개 Pages 의 고도 색 분류 화상(실패하면 고도 색 없이 그대로)
+  // 자연색 화상(1 MB)은 처음 자연색을 켤 때 불러온다(실패하면 자연색 없이 그대로 — 다음에 켜면 다시 시도)
+  let naturalLoading = null;
+  map.on('options', (o) => {
+    if (!o.natural || map.naturalReady || naturalLoading) return;
+    naturalLoading = attachNatural(map).then((d) => { root.atlasNatural = d; naturalLoading = null; });
+  });
 
   const tools = mapTools(stage, map);
   const tip = tooltip(stage, { map });
@@ -50,7 +58,7 @@ export default function mount(root) {
     current?.destroy();
     nav.update(topic.id);
     current = buildTopic({
-      map, stage, body, viewer, credits, tip, topic, charts, layers: layerData, countryFeatures, insets: INSETS, boundsOf: BOUNDS_OF, centerLonOf: CENTER_LON_OF, locators: LOCATORS, tint: TINT_TOPICS.has(topic.id),
+      map, stage, body, viewer, credits, tip, topic, charts, layers: layerData, countryFeatures, insets: INSETS, boundsOf: BOUNDS_OF, centerLonOf: CENTER_LON_OF, locators: LOCATORS, baseColor: BASE_COLOR[topic.id] || 'none',
     });
     root.atlasTopic = current; // 확인용(헤드리스 캡처)
     return current;

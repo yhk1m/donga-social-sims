@@ -86,7 +86,12 @@ async function open(topic, proj) {
   for (let i = 0; i < 150; i++) { await sleep(100); try { if (await evaluate(`!!${R}?.atlasTopic`)) break; } catch { /* 불러오는 중 */ } }
   for (let i = 0; i < 60; i++) { await sleep(100); if (await evaluate(`!!${R}.atlasRelief`)) break; }
   for (let i = 0; i < 60; i++) { await sleep(100); if (await evaluate(`!!${R}.atlasTint`)) break; } // 고도 색 분류 화상(E2 대조 반영)
+  await waitNatural();
   await evaluate(IDLE); await sleep(600);
+}
+// 자연색 화상(지형 주제 기본 — 처음 켤 때 불러옴)
+async function waitNatural() {
+  for (let i = 0; i < 100; i++) { if (!(await evaluate(`${R}.atlasMap.options.natural && !${R}.atlasMap.naturalReady`))) break; await sleep(100); }
 }
 const scrollTop = () => evaluate(`${R}.querySelector('.ds-panel').scrollTop=0`);
 const scrollTo = (sel, i = 0) => evaluate(`(()=>{const e=[...${R}.querySelectorAll(${JSON.stringify(sel)})][${i}]; if(!e) return false; e.scrollIntoView({block:'start'}); return true;})()`);
@@ -127,11 +132,28 @@ async function scenes() {
       }
       if (proj !== 'robinson') continue;
       // 덧붙임 장면
-      // 고도 색 켬/끔(E2 대조 반영 — 일반도·지형은 기본 켬): 같은 보기에서 끈 그림
-      if (['general', 'relief'].includes(t.id) && want(`${t.id}-tint-off`)) {
-        await evaluate(`${R}.atlasMap.setOptions({tint:false})`); await evaluate(IDLE); await sleep(400); await scrollTop();
-        await take(`${t.id}-tint-off`, { topic: t.id, proj, kind: 'extra', note: '고도 색 끔(같은 보기)' });
-        await evaluate(`${R}.atlasMap.setOptions({tint:true})`); await evaluate(IDLE);
+      // 바탕 색 바꾸기(E2 대조 반영 — 일반도 = 고도 색, 지형 = 자연색이 기본): 같은 보기에서 다른 바탕
+      if (t.id === 'general' && want('general-tint-off')) {
+        await evaluate(`${R}.atlasMap.setOptions({tint:false, natural:false})`); await evaluate(IDLE); await sleep(400); await scrollTop();
+        await take('general-tint-off', { topic: t.id, proj, kind: 'extra', note: '바탕 색 없음(같은 보기)' });
+        await evaluate(`${R}.atlasMap.setOptions({tint:true, natural:false})`); await evaluate(IDLE);
+      }
+      if (t.id === 'relief') {
+        for (const [mode, note] of [['tint', '고도 색(같은 보기)'], ['none', '바탕 색 없음(같은 보기)']]) {
+          if (!want(`relief-base-${mode}`)) continue;
+          await evaluate(`${R}.atlasMap.setOptions({tint:${mode === 'tint'}, natural:false})`); await evaluate(IDLE); await sleep(400); await scrollTop();
+          await take(`relief-base-${mode}`, { topic: t.id, proj, kind: 'extra', note });
+        }
+        await evaluate(`${R}.atlasMap.setOptions({tint:false, natural:true})`); await evaluate(IDLE);
+        // 활동하기 1: 핀 번호 숨김 → 하나 누름 → 모두 보기
+        if (want('relief-pins')) {
+          await scrollTo('.at-reveal-btn'); await take('relief-pins-hidden', { topic: t.id, proj, kind: 'extra', note: '핀 번호 숨김(처음)' });
+          await evaluate(`${R}.atlasTopic.pins.reveal(${R}.atlasTopic.pins.markers[1].id)`); await sleep(300);
+          await take('relief-pins-one', { topic: t.id, proj, kind: 'extra', note: '핀 하나 번호 보임' });
+          await evaluate(`${R}.querySelector('.at-reveal-btn').click()`); await sleep(300);
+          await take('relief-pins-all', { topic: t.id, proj, kind: 'extra', note: '번호 모두 보기' });
+          await evaluate(`${R}.querySelector('.at-reveal-btn').click()`); await sleep(200);
+        }
       }
       if (t.id === 'religion' && want('religion-inset-hover')) {
         const gi = groups.findIndex((g) => g.refs.includes('layer-p22-singapore'));
