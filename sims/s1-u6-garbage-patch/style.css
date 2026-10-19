@@ -1,0 +1,51 @@
+/* © 2026 김용현 */
+/* 태평양 거대 쓰레기 지대 자료 전용 스타일 — 모든 선택자는 .ds-sim + gp- 접두 클래스(태그 선택자 없음) */
+
+.ds-sim .gp-maphost { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.ds-sim .gp-map { cursor: crosshair; touch-action: none; }
+
+.ds-sim .gp-card { position: absolute; left: 12px; top: 12px; z-index: 2; display: grid; grid-template-columns: auto auto; align-items: baseline; gap: 2px 10px;
+  background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 8px 14px; max-width: calc(100% - 24px); }
+.ds-sim .gp-time-k { font-size: 13px; color: var(--ink-2); }
+.ds-sim .gp-time-v { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--ink); min-width: 120px; }
+.ds-sim .gp-model { grid-column: 1 / -1; font-size: 12px; color: var(--ink-2); }
+.ds-sim .gp-msg { grid-column: 1 / -1; font-size: 13px; font-weight: 700; color: var(--warn); }
+
+.ds-sim .gp-legend { position: absolute; left: 12px; bottom: 26px; z-index: 2; margin: 0; padding: 6px 10px; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 14px;
+  background: rgba(255,255,255,.9); border-radius: 8px; font-size: 12px; color: var(--ink-2); max-width: calc(100% - 24px); box-sizing: border-box; }
+.ds-sim .gp-li { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ds-sim .gp-line { width: 22px; height: 4px; border-radius: 2px; display: inline-block; }
+.ds-sim .gp-line.gp-sub { background: #d9508a; }
+.ds-sim .gp-line.gp-polar { background: #2f86d0; }
+.ds-sim .gp-dots { display: inline-flex; gap: 2px; }
+.ds-sim .gp-dot { width: 6px; height: 6px; display: inline-block; border-radius: 1px; }
+.ds-sim .gp-dot.gp-gray { background: #6f6a60; opacity: .7; }
+.ds-sim .gp-zone-sw { width: 20px; height: 11px; border-radius: 50%; border: 1.5px dashed rgba(95,80,60,.8); background: rgba(120,110,95,.1); display: inline-block; box-sizing: border-box; }
+.ds-sim .gp-grad { display: inline-flex; height: 10px; border-radius: 3px; overflow: hidden; border: 1px solid rgba(0,0,0,.12); }
+.ds-sim .gp-grad-c { width: 14px; height: 100%; display: inline-block; }
+.ds-sim .gp-grad-t { color: var(--ink-2); }
+
+.ds-sim .gp-tip { position: absolute; z-index: 3; pointer-events: none; display: flex; flex-direction: column; gap: 1px; font-size: 12.5px; color: var(--ink);
+  background: rgba(255,255,255,.96); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; box-shadow: var(--shadow); white-space: nowrap; }
+.ds-sim .gp-tip[hidden] { display: none; }
+
+.ds-sim .gp-lead { margin: 0; }
+.ds-sim .gp-checks { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.ds-sim .gp-small { margin: 2px 0 0; font-size: 12.5px; color: var(--ink-2); line-height: 1.55; }
+
+.ds-sim .gp-share { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.ds-sim .gp-share-bar { height: 8px; border-radius: 999px; background: #eceae4; overflow: hidden; display: block; }
+.ds-sim .gp-share-fill { display: block; height: 100%; width: 0; background: #8a6a42; border-radius: inherit; transition: width .2s; }
+.ds-sim .gp-share-t { font-size: 12.5px; color: var(--ink-2); }
+
+.ds-sim .gp-bars { display: grid; grid-template-columns: auto 1fr auto; gap: 5px 8px; align-items: center; font-size: 12.5px; }
+.ds-sim .gp-bar-row { display: contents; }
+.ds-sim .gp-bar-k { color: var(--ink-2); white-space: nowrap; }
+.ds-sim .gp-bar { height: 8px; border-radius: 999px; background: #eceae4; overflow: hidden; display: block; min-width: 40px; }
+.ds-sim .gp-bar-fill { display: block; height: 100%; border-radius: inherit; background: #2f6fae; }
+.ds-sim .gp-bar-v { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; color: var(--ink); white-space: nowrap; }
+.ds-sim .gp-zone .gp-bar-k, .ds-sim .gp-zone .gp-bar-v { color: #8a5a22; font-weight: 700; }
+.ds-sim .gp-zone .gp-bar-fill { background: #c47a2c; }
+
+.ds-sim .gp-facts { margin: 0; padding-left: 18px; font-size: 13px; color: var(--ink); display: flex; flex-direction: column; gap: 4px; line-height: 1.5; }
+.ds-sim .gp-src { margin: 0; font-size: 11.5px; color: var(--ink-2); line-height: 1.55; border-top: 1px solid var(--line); padding-top: 10px; }

@@ -1,0 +1,128 @@
+/* © 2026 김용현 */
+/* 초국적 기업의 발달 과정 — 이 자료만의 스타일. 모든 선택자는 .ds-sim 으로 시작(빌드 때 .ds-s1-u5-tnc), 태그 선택자 없음 */
+.ds-sim .tnc-stage { display: flex; flex-direction: column; background: #f3f1ea; }
+
+/* 위쪽 단계 제목 */
+.ds-sim .tnc-hud { padding: 12px 18px 6px; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.ds-sim .tnc-hud-top { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-2); }
+.ds-sim .tnc-hud-n { font-weight: 800; color: #fff; background: var(--accent); border-radius: 999px; padding: 1px 10px; font-variant-numeric: tabular-nums; }
+.ds-sim .tnc-hud-t { margin: 0; font-size: 21px; font-weight: 800; letter-spacing: -0.3px; line-height: 1.3; }
+
+/* 지도 */
+.ds-sim .tnc-map { position: relative; flex: 1 1 auto; min-height: 220px; overflow: hidden; }
+.ds-sim .tnc-svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+.ds-sim .tnc-ocean { fill: #d6e7f0; stroke: #b9d0dd; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.ds-sim .tnc-grat { fill: none; stroke: rgba(40, 80, 110, .13); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.ds-sim .tnc-land { fill: #f4efe2; stroke: #bdb39c; stroke-width: .8; vector-effect: non-scaling-stroke; }
+.ds-sim .tnc-flow { stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: .95; transition: opacity .4s; }
+.ds-sim .tnc-flow.tnc-off { opacity: .28; stroke-width: 1.6; }
+.ds-sim .tnc-arrow { transition: opacity .4s; }
+.ds-sim .tnc-dot { stroke: #fff; stroke-width: 1; vector-effect: non-scaling-stroke; }
+
+.ds-sim .tnc-ov { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+.ds-sim .tnc-company { position: absolute; left: 12px; bottom: 10px; font-size: 12.5px; color: var(--ink-2); background: rgba(255, 255, 255, .85); border: 1px solid var(--line); border-radius: 8px; padding: 3px 9px; pointer-events: none; }
+.ds-sim .tnc-company-name { color: var(--ink); margin-right: 4px; }
+
+/* 시설 표시 */
+.ds-sim .tnc-mk { position: absolute; left: 0; top: 0; width: 0; height: 0; pointer-events: auto; z-index: 2; }
+.ds-sim .tnc-mk[hidden] { display: none; }
+.ds-sim .tnc-mk.tnc-new { z-index: 10; }
+.ds-sim .tnc-mk:hover { z-index: 20; }
+.ds-sim .tnc-badge { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 2px solid var(--c, #868e96); color: var(--c, #868e96); box-shadow: 0 1px 3px rgba(0, 0, 0, .25); flex-shrink: 0; }
+.ds-sim .tnc-mk > .tnc-badge { position: absolute; left: -13px; top: -13px; cursor: default; }
+.ds-sim .tnc-ti { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ds-sim .tnc-badge-sm { width: 24px; height: 24px; }
+.ds-sim .tnc-badge-sm .tnc-ti { width: 15px; height: 15px; }
+.ds-sim .tnc-badge-info { border-color: var(--ink-2); color: var(--ink-2); }
+.ds-sim .tnc-new > .tnc-badge { box-shadow: 0 0 0 4px rgba(255, 255, 255, .7), 0 0 0 7px var(--c); }
+
+.ds-sim .tnc-xmark { position: absolute; left: -15px; top: -15px; width: 30px; height: 30px; fill: none; stroke: #e03131; stroke-width: 3; stroke-linecap: round; display: none; }
+.ds-sim .tnc-closed > .tnc-badge { border-color: #adb5bd; color: #adb5bd; background: #f1f3f5; }
+.ds-sim .tnc-closed > .tnc-xmark { display: block; }
+
+/* 시설 이름표: 새로 생긴 시설·마우스를 올린 시설·'모두 보기'일 때 보인다 */
+.ds-sim .tnc-lab { position: absolute; display: flex; flex-direction: column; white-space: nowrap; font-size: 12px; line-height: 1.25; background: rgba(255, 255, 255, .94); border: 1px solid var(--line); border-left: 3px solid var(--c); border-radius: 6px; padding: 3px 7px; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); opacity: 0; transition: opacity .25s; pointer-events: none; }
+/* --sx·--sy: 지도 밖으로 나가지 않게 main.js 가 밀어 넣는 거리 */
+.ds-sim .tnc-lab-r { left: 17px; top: 0; transform: translate(var(--sx, 0px), calc(-50% + var(--sy, 0px))); }
+.ds-sim .tnc-lab-l { right: 17px; top: 0; transform: translate(var(--sx, 0px), calc(-50% + var(--sy, 0px))); }
+.ds-sim .tnc-lab-t { left: 0; bottom: 17px; transform: translate(calc(-50% + var(--sx, 0px)), var(--sy, 0px)); }
+.ds-sim .tnc-lab-b { left: 0; top: 17px; transform: translate(calc(-50% + var(--sx, 0px)), var(--sy, 0px)); }
+.ds-sim .tnc-lab-name { font-weight: 700; color: var(--c); }
+.ds-sim .tnc-lab-place { color: var(--ink); font-weight: 600; }
+.ds-sim .tnc-lab-why { color: var(--ink-2); font-size: 11.5px; }
+.ds-sim .tnc-lab-why[hidden] { display: none; }
+.ds-sim .tnc-new > .tnc-lab, .ds-sim .tnc-mk:hover > .tnc-lab, .ds-sim .tnc-all .tnc-mk > .tnc-lab { opacity: 1; }
+.ds-sim .tnc-new.tnc-hascall > .tnc-lab { opacity: 0; }
+.ds-sim .tnc-mk.tnc-hascall:hover > .tnc-lab { opacity: 1; }
+.ds-sim .tnc-all .tnc-mk:not(.tnc-new) > .tnc-lab { font-size: 11px; padding: 1px 6px; }
+.ds-sim .tnc-all .tnc-mk:not(.tnc-new) .tnc-lab-place { font-weight: 500; }
+
+.ds-sim .tnc-pop > .tnc-badge { animation: tnc-pop .45s cubic-bezier(.3, 1.6, .5, 1) var(--d, 0s) both; }
+.ds-sim .tnc-pop:not(.tnc-hascall) > .tnc-lab { animation: tnc-fade .4s ease-out calc(var(--d, 0s) + .2s) both; }
+@keyframes tnc-pop { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes tnc-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* 흐름 이름(이윤) */
+.ds-sim .tnc-note { position: absolute; left: 0; top: 0; margin: -10px 0 0 -16px; font-size: 11.5px; font-weight: 700; color: #fff; background: var(--c); border-radius: 999px; padding: 1px 8px; z-index: 3; }
+.ds-sim .tnc-note[hidden] { display: none; }
+
+/* 말풍선 */
+.ds-sim .tnc-call { position: absolute; left: 0; top: 0; z-index: 30; max-width: 190px; display: flex; flex-direction: column; gap: 1px; background: #fffdf5; border: 1.5px solid #e9b949; border-radius: 9px; padding: 5px 9px; font-size: 12.5px; line-height: 1.35; box-shadow: 0 2px 8px rgba(0, 0, 0, .15); }
+.ds-sim .tnc-call[hidden] { display: none; }
+.ds-sim .tnc-call-head { font-size: 11px; color: #a86b00; font-weight: 800; }
+.ds-sim .tnc-call-text { font-weight: 600; }
+.ds-sim .tnc-call-bad { border-color: #e03131; background: #fff5f5; }
+.ds-sim .tnc-call-bad .tnc-call-head { color: #c92a2a; }
+.ds-sim .tnc-call-good { border-color: #2f9e44; background: #f2fbf3; }
+.ds-sim .tnc-call-good .tnc-call-head { color: #2b8a3e; }
+.ds-sim .tnc-call.tnc-pop { animation: tnc-fade .45s ease-out var(--d, 0s) both; }
+
+/* 아래쪽 설명 카드 */
+.ds-sim .tnc-card { flex-shrink: 0; margin: 4px 14px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; max-height: 42%; overflow-y: auto; box-sizing: border-box; }
+.ds-sim .tnc-quote-box { border-left: 4px solid #e9b949; background: #fffaeb; border-radius: 0 8px 8px 0; padding: 7px 12px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+.ds-sim .tnc-quote { margin: 0; font-size: 14.5px; font-weight: 600; line-height: 1.55; flex: 1 1 300px; }
+.ds-sim .tnc-quote-src { font-size: 12px; color: var(--ink-2); white-space: nowrap; margin-left: auto; }
+.ds-sim .tnc-points { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px 16px; }
+.ds-sim .tnc-point { display: flex; gap: 8px; align-items: flex-start; }
+.ds-sim .tnc-point-body { display: flex; flex-direction: column; font-size: 13.5px; line-height: 1.5; }
+.ds-sim .tnc-point-head { font-weight: 700; color: var(--c, var(--ink)); }
+.ds-sim .tnc-point-text { color: var(--ink); }
+
+/* 사이드바 */
+.ds-sim .tnc-ctlrow { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; }
+.ds-sim .tnc-ctlrow > .ds-btn { white-space: nowrap; }
+.ds-sim .tnc-prog { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.ds-sim .tnc-prog-fill { display: block; height: 100%; width: 0; background: var(--accent); }
+.ds-sim .ds-btn:disabled { opacity: .4; cursor: default; }
+.ds-sim .tnc-steps { display: flex; flex-direction: column; gap: 10px; }
+.ds-sim .tnc-group { display: flex; flex-direction: column; gap: 3px; }
+.ds-sim .tnc-group-name { font-size: 12px; font-weight: 700; color: var(--ink-2); display: flex; justify-content: space-between; padding: 0 2px 2px; }
+.ds-sim .tnc-group-page { font-weight: 500; }
+.ds-sim .tnc-step { font: inherit; font-size: 14px; display: flex; align-items: center; gap: 9px; padding: 6px 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink); cursor: pointer; text-align: left; }
+.ds-sim .tnc-step:hover { background: #f4f3ee; }
+.ds-sim .tnc-step-n { box-sizing: border-box; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--ink-2); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.ds-sim .tnc-step.tnc-done .tnc-step-n { background: var(--accent-soft); border-color: var(--accent-soft); color: var(--accent); }
+.ds-sim .tnc-step[aria-current=step] { background: var(--accent-soft); border-color: #bcd3fb; font-weight: 700; color: var(--accent); }
+.ds-sim .tnc-step[aria-current=step] .tnc-step-n { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.ds-sim .tnc-legend-box { display: flex; flex-direction: column; gap: 8px; }
+.ds-sim .tnc-legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; font-size: 12.5px; }
+.ds-sim .tnc-legend-flow { grid-template-columns: 1fr 1fr 1fr; padding-top: 6px; border-top: 1px dashed var(--line); }
+.ds-sim .tnc-leg { display: flex; align-items: center; gap: 6px; line-height: 1.25; }
+.ds-sim .tnc-leg .tnc-badge-sm { width: 22px; height: 22px; box-shadow: none; }
+.ds-sim .tnc-leg .tnc-badge-sm .tnc-ti { width: 13px; height: 13px; }
+.ds-sim .tnc-leg-line { width: 30px; height: 10px; flex-shrink: 0; }
+.ds-sim .tnc-all-chk { font-size: 13px; }
+.ds-sim .tnc-chk { accent-color: var(--accent); margin: 0; }
+.ds-sim .tnc-def { line-height: 1.6; }
+.ds-sim .tnc-def-src { color: var(--ink-2); }
+
+@media (max-width: 1100px) {
+  .ds-sim .tnc-mk > .tnc-badge { width: 22px; height: 22px; left: -11px; top: -11px; }
+  .ds-sim .tnc-mk .tnc-ti { width: 14px; height: 14px; }
+  .ds-sim .tnc-lab { font-size: 11.5px; }
+  .ds-sim .tnc-hud-t { font-size: 18px; }
+  .ds-sim .tnc-quote { font-size: 13.5px; }
+  .ds-sim .tnc-point-body { font-size: 13px; }
+  .ds-sim .tnc-card { padding: 10px 12px; gap: 8px; margin: 2px 10px 10px; }
+}

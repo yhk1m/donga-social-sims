@@ -1,0 +1,111 @@
+/* © 2026 김용현 */
+/* 북극 영유권 지도 전용 스타일. 규칙: 모든 선택자는 .ds-sim 으로 시작, 클래스만 */
+.ds-sim .arc-stage { background: #e9eef1; touch-action: none; }
+.ds-sim .arc-map { display: block; width: 100%; height: 100%; cursor: grab; user-select: none; }
+.ds-sim .arc-map.arc-dragging { cursor: grabbing; }
+
+.ds-sim .arc-ocean { fill: #d6e9f3; }
+.ds-sim .arc-rim { fill: none; stroke: #9fb6c3; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.ds-sim .arc-grat { fill: none; stroke: rgba(40, 90, 120, .18); stroke-width: .8; vector-effect: non-scaling-stroke; pointer-events: none; }
+.ds-sim .arc-ctx { fill: #e4e7ea; stroke: #ffffff; stroke-width: .6; vector-effect: non-scaling-stroke; pointer-events: none; }
+.ds-sim .arc-reg { stroke: #ffffff; stroke-width: .9; vector-effect: non-scaling-stroke; stroke-linejoin: round; cursor: pointer; }
+.ds-sim .arc-k-eez { fill-opacity: .85; }
+.ds-sim .arc-off { display: none; }
+.ds-sim .arc-land-own { fill: #e9e4d6; stroke: #7f7562; stroke-width: .7; vector-effect: non-scaling-stroke; }
+.ds-sim .arc-land-other { fill: #e3e1dc; stroke: #9a9385; stroke-width: .6; vector-effect: non-scaling-stroke; }
+.ds-sim .arc-hov { fill: rgba(255, 255, 255, .25); stroke: #1d2126; stroke-width: 1.8; vector-effect: non-scaling-stroke; pointer-events: none; stroke-linejoin: round; }
+.ds-sim .arc-sel { fill: none; stroke: #111111; stroke-width: 3; vector-effect: non-scaling-stroke; pointer-events: none; stroke-linejoin: round; stroke-dasharray: none; }
+.ds-sim .arc-famp { fill: none; stroke-width: 3.2; vector-effect: non-scaling-stroke; pointer-events: none; stroke-linejoin: round; }
+.ds-sim .arc-lomo-line { fill: none; stroke: #6a4e9c; stroke-width: 2; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; pointer-events: none; }
+.ds-sim .arc-lomo-text { fill: #4b3576; font-weight: 600; paint-order: stroke; stroke: rgba(255, 255, 255, .9); stroke-width: 3px; vector-effect: non-scaling-stroke; pointer-events: none; }
+
+.ds-sim .arc-lab { text-anchor: middle; dominant-baseline: central; pointer-events: none; fill: #3a3f45; font-weight: 700; paint-order: stroke; stroke: rgba(255, 255, 255, .85); stroke-width: 3px; vector-effect: non-scaling-stroke; letter-spacing: -.02em; }
+.ds-sim .arc-lab-l { font-size: 1.15em; }
+.ds-sim .arc-lab-s { font-size: .9em; font-weight: 600; }
+.ds-sim .arc-lab-sea { font-size: .9em; font-weight: 500; fill: #2f6f92; font-style: italic; }
+
+.ds-sim .arc-mk { cursor: pointer; }
+.ds-sim .arc-mk-hit { fill: transparent; }
+.ds-sim .arc-mk-dot { fill: #ffffff; stroke: #1d2126; stroke-width: 2.4; vector-effect: non-scaling-stroke; }
+.ds-sim .arc-mk-base .arc-mk-dot { fill: #e0457b; stroke: #ffffff; }
+.ds-sim .arc-mk-solved .arc-mk-dot { fill: #1aa39a; stroke: #ffffff; }
+.ds-sim .arc-mk-pole .arc-mk-dot { fill: #1d2126; stroke: #ffffff; }
+.ds-sim .arc-mk-text { font-weight: 700; fill: #1d2126; paint-order: stroke; stroke: #ffffff; stroke-width: 3.5px; vector-effect: non-scaling-stroke; }
+.ds-sim .arc-mk-base .arc-mk-text { fill: #b8285c; }
+.ds-sim .arc-mk:hover .arc-mk-dot, .ds-sim .arc-mk-on .arc-mk-dot { stroke: #111111; stroke-width: 3.5; }
+
+.ds-sim .arc-layers { position: absolute; left: 12px; top: 12px; display: flex; flex-direction: column; gap: 4px; background: rgba(255, 255, 255, .94); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; box-shadow: var(--shadow); font-size: 13px; }
+.ds-sim .arc-chk { display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }
+.ds-sim .arc-chk-in { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; }
+.ds-sim .arc-zoom { position: absolute; right: 12px; top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.ds-sim .arc-zbtn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow); padding: 0; }
+.ds-sim .arc-zbtn:hover { background: #f1f0eb; }
+
+.ds-sim .arc-legend { position: absolute; left: 12px; bottom: 30px; background: rgba(255, 255, 255, .94); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; box-shadow: var(--shadow); font-size: 12.5px; max-width: 300px; }
+.ds-sim .arc-leg-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+.ds-sim .arc-leg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; }
+.ds-sim .arc-leg-row { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ds-sim .arc-leg-row:last-child { grid-column: 1 / 3; }
+.ds-sim .arc-leg-pair { display: inline-flex; gap: 2px; }
+.ds-sim .arc-sw { width: 14px; height: 14px; border-radius: 3px; display: block; }
+.ds-sim .arc-leg-note { margin-top: 5px; color: var(--ink-2); font-size: 11.5px; line-height: 1.4; }
+.ds-sim .arc-credit { position: absolute; left: 12px; right: 12px; bottom: 8px; font-size: 11px; color: #56636c; text-align: left; pointer-events: none; }
+
+.ds-sim .arc-tip { position: absolute; z-index: 5; pointer-events: none; background: #ffffff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 8px 10px; font-size: 13px; max-width: 260px; }
+.ds-sim .arc-tip[hidden] { display: none; }
+.ds-sim .arc-tip-k { font-size: 11.5px; color: var(--ink-2); }
+.ds-sim .arc-tip-n { font-weight: 700; margin: 1px 0 4px; line-height: 1.35; }
+.ds-sim .arc-tip-own { display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* 사이드바 */
+.ds-sim .arc-h { font-size: 14px; font-weight: 700; margin: 0 0 8px; }
+.ds-sim .arc-intro { margin: 0 0 12px; font-size: 14px; color: var(--ink); background: var(--accent-soft); border-radius: 8px; padding: 10px 12px; }
+.ds-sim .arc-detail { display: flex; flex-direction: column; }
+.ds-sim .arc-d-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.ds-sim .arc-kind { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #eef0f2; color: #3f474f; }
+.ds-sim .arc-kind-ov, .ds-sim .arc-kind-dis { background: #fdeee6; color: #b1420f; }
+.ds-sim .arc-kind-solved { background: #e0f4f2; color: #12756e; }
+.ds-sim .arc-kind-base { background: #fde7ef; color: #b8285c; }
+.ds-sim .arc-x { font: inherit; font-size: 12px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 3px 8px; cursor: pointer; color: var(--ink-2); }
+.ds-sim .arc-x:hover { background: #f1f0eb; }
+.ds-sim .arc-d-title { font-size: 17px; margin: 0 0 6px; line-height: 1.35; }
+.ds-sim .arc-d-own { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-bottom: 8px; }
+.ds-sim .arc-d-own-k { font-size: 12px; color: var(--ink-2); margin-right: 2px; }
+.ds-sim .arc-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; padding: 1px 8px 1px 6px; border-radius: 999px; border: 1px solid var(--line); background: #ffffff; }
+.ds-sim .arc-chip-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); display: inline-block; flex-shrink: 0; }
+.ds-sim .arc-lead { margin: 0 0 10px; font-size: 14px; }
+.ds-sim .arc-fact { border-top: 1px solid var(--line); padding: 8px 0; }
+.ds-sim .arc-fact-h { font-size: 13px; font-weight: 700; color: #2b3138; margin-bottom: 2px; }
+.ds-sim .arc-fact-t { margin: 0 0 4px; font-size: 14px; line-height: 1.55; }
+.ds-sim .arc-src { font-size: 11.5px; color: #59626b; line-height: 1.45; display: flex; gap: 6px; }
+.ds-sim .arc-src-k { flex-shrink: 0; font-weight: 700; color: #2f6f92; background: #e6f1f7; border-radius: 4px; padding: 0 5px; height: fit-content; }
+.ds-sim .arc-geo-note { font-size: 11.5px; color: var(--ink-2); background: #faf9f6; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; margin-top: 4px; }
+
+.ds-sim .arc-why-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.ds-sim .arc-why-btn { font: inherit; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); cursor: pointer; color: var(--ink); }
+.ds-sim .arc-why-btn:hover { background: #f1f0eb; }
+.ds-sim .arc-why-btn[aria-pressed=true] { border-color: var(--c); box-shadow: inset 0 0 0 1px var(--c); font-weight: 700; }
+.ds-sim .arc-why-lead { margin: 2px 0 2px; font-size: 12.5px; color: var(--ink-2); }
+
+.ds-sim .arc-grp { margin-bottom: 8px; }
+.ds-sim .arc-grp-t { font-size: 12px; color: var(--ink-2); font-weight: 700; margin: 2px 0 3px; }
+.ds-sim .arc-li { width: 100%; display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: center; font: inherit; font-size: 13px; text-align: left; background: none; border: 0; border-radius: 6px; padding: 4px 6px; cursor: pointer; color: var(--ink); }
+.ds-sim .arc-li:hover, .ds-sim .arc-li[aria-current=true] { background: var(--accent-soft); }
+.ds-sim .arc-li:focus-visible, .ds-sim .arc-why-btn:focus-visible, .ds-sim .arc-zbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ds-sim .arc-li-sw { display: flex; height: 14px; border-radius: 3px; overflow: hidden; border: 1px solid rgba(0, 0, 0, .08); }
+.ds-sim .arc-li-sw-part { flex: 1; }
+.ds-sim .arc-li-sw-pt { width: 10px; height: 10px; margin: auto; border-radius: 50%; background: #1d2126; }
+.ds-sim .arc-li-pt-base { background: #e0457b; }
+.ds-sim .arc-li-pt-solved { background: #1aa39a; }
+.ds-sim .arc-li-n { line-height: 1.35; }
+
+.ds-sim .arc-all-src { font-size: 12px; color: var(--ink-2); }
+.ds-sim .arc-all-src-s { cursor: pointer; font-weight: 700; color: var(--ink); font-size: 13px; }
+.ds-sim .arc-all-src-ol { margin: 6px 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; line-height: 1.45; }
+.ds-sim .arc-all-src-p { margin: 4px 0 0; }
+
+@media (max-width: 1100px) {
+  .ds-sim .arc-legend { max-width: 250px; font-size: 12px; }
+  .ds-sim .arc-leg-grid { grid-template-columns: 1fr; }
+  .ds-sim .arc-leg-row:last-child { grid-column: auto; }
+}

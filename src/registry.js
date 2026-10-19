@@ -16,4 +16,8 @@ export const SIMS = [
   { id: 't1-u5-traffic', book: 't1', unit: 'Ⅴ. 생활공간과 사회', page: null, title: '시간대별 도로 통행 속도', kind: '지도' },
   { id: 't1-u5-extinction', book: 't1', unit: 'Ⅴ. 생활공간과 사회', page: null, title: '지방 소멸 위험 카토그램', kind: '지도' },
   { id: 't1-u5-ballast', book: 't1', unit: 'Ⅴ. 생활공간과 사회', page: 138, title: '선박 평형수와 외래 생물종', kind: '3D' },
+  { id: 's1-u5-tnc', book: 's1', unit: 'Ⅴ. 아메리카', page: 94, title: '초국적 기업의 발달 과정', kind: '지도' },
+  { id: 's1-u6-garbage-patch', book: 's1', unit: 'Ⅵ. 오세아니아와 극지방', page: 108, title: '태평양 거대 쓰레기 지대의 형성', kind: '지도' },
+  { id: 's1-u6-northeast-route', book: 's1', unit: 'Ⅵ. 오세아니아와 극지방', page: 113, title: '북동 항로와 기존 항로 비교', kind: '지도' },
+  { id: 's1-u6-arctic-claims', book: 's1', unit: 'Ⅵ. 오세아니아와 극지방', page: 115, title: '북극 영유권 주장', kind: '지도' },
 ];

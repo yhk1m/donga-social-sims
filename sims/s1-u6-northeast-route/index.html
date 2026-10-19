@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- © 2026 김용현 -->
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>북동 항로와 기존 항로 비교</title>
+</head>
+<!-- 개발 서버(npm run dev)용 미리보기 틀. 배포물은 npm run embed 가 만드는 embed/<id>.html 조각이다. -->
+<body style="margin:0">
+  <div class="ds-sim" id="root"></div>
+  <script type="module">
+    // ?warm=1&day=20&knot=14 로 확인용 상태 고정 가능
+    import mount from './main.js';
+    const q = new URLSearchParams(location.search);
+    const debug = {};
+    for (const k of ['warm', 'day', 'knot']) if (q.has(k)) debug[k] = +q.get(k);
+    mount(document.getElementById('root'), { debug });
+  </script>
+</body>
+</html>

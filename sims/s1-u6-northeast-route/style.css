@@ -1,0 +1,102 @@
+/* © 2026 김용현 */
+/* 북동 항로와 기존 항로 비교. 모든 선택자는 .ds-sim 으로 시작, 태그 선택자 금지 */
+.ds-sim {
+  --nr-suez: #1f63c6;
+  --nr-nsr: #d6247a;
+  --nr-off: #9a9ea4;
+  --nr-fuel: #e08a1e;
+  --nr-ops: #6d7f99;
+  --nr-extra: #8a5cc2;
+}
+.ds-sim .nr-map { position: absolute; inset: 0; background: linear-gradient(#f3f6f8, #e8eef2); }
+.ds-sim .nr-globe { cursor: grab; touch-action: none; }
+.ds-sim .nr-globe.nr-grab { cursor: grabbing; }
+
+/* 계기판(왼쪽 위) */
+.ds-sim .nr-hud { position: absolute; left: 14px; top: 14px; z-index: 5; width: 300px; max-width: calc(100% - 28px); box-sizing: border-box; background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.ds-sim .nr-day { display: flex; align-items: baseline; gap: 4px; }
+.ds-sim .nr-day-k, .ds-sim .nr-day-u { font-size: 13px; color: var(--ink-2); }
+.ds-sim .nr-day-v { font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; min-width: 1.4em; text-align: right; }
+.ds-sim .nr-run { display: flex; flex-direction: column; gap: 4px; }
+.ds-sim .nr-run-t { white-space: nowrap; display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; }
+.ds-sim .nr-run-s { white-space: nowrap; margin-left: auto; font-weight: 500; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.ds-sim .nr-run.nr-off .nr-run-t { color: var(--nr-off); }
+.ds-sim .nr-bar { display: block; height: 8px; border-radius: 4px; background: #e9ebee; overflow: hidden; }
+.ds-sim .nr-fill { display: block; height: 100%; border-radius: 4px; }
+.ds-sim .nr-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.ds-sim .nr-d-suez { background: var(--nr-suez); }
+.ds-sim .nr-d-nsr { background: var(--nr-nsr); }
+.ds-sim .nr-d-off { background: var(--nr-off); }
+
+/* 결과 알림(위 가운데) */
+.ds-sim .nr-banner { position: absolute; right: 14px; top: 14px; z-index: 6; max-width: min(380px, calc(100% - 350px)); background: #1d2126; color: #fff; font-size: 14px; line-height: 1.5; padding: 10px 14px; border-radius: 10px; box-shadow: var(--shadow); }
+.ds-sim .nr-banner[hidden] { display: none; }
+
+/* 범례(왼쪽 아래) */
+.ds-sim .nr-legend { position: absolute; left: 14px; bottom: 14px; z-index: 5; margin: 0; padding: 8px 12px; list-style: none; background: rgba(255,255,255,.92); border: 1px solid var(--line); border-radius: 10px; display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; pointer-events: none; }
+.ds-sim .nr-li { display: flex; align-items: center; gap: 8px; }
+.ds-sim .nr-li.nr-off { color: var(--nr-off); }
+.ds-sim .nr-sw { display: inline-block; width: 26px; height: 0; border-top: 3px solid; flex-shrink: 0; }
+.ds-sim .nr-sw-suez { border-top-style: dashed; border-color: var(--nr-suez); }
+.ds-sim .nr-sw-nsr { border-color: var(--nr-nsr); }
+.ds-sim .nr-sw-off { border-top-style: dotted; border-color: var(--nr-off); }
+.ds-sim .nr-sw-ice { height: 10px; border: 1px solid #8fbcd8; background: #fff; box-sizing: border-box; }
+
+/* 지도 조작(오른쪽 아래) */
+.ds-sim .nr-viewbtns { position: absolute; right: 14px; bottom: 14px; z-index: 5; display: flex; gap: 6px; }
+.ds-sim .nr-mini { padding: 6px 9px; font-size: 13px; background: rgba(255,255,255,.95); }
+.ds-sim .nr-hint { position: absolute; right: 14px; bottom: 54px; z-index: 5; font-size: 12px; color: var(--ink-2); background: rgba(255,255,255,.85); padding: 3px 8px; border-radius: 6px; pointer-events: none; transition: opacity .4s; }
+.ds-sim .nr-hint.nr-hide { opacity: 0; }
+
+/* 사이드바 */
+.ds-sim .nr-era { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 8px 6px; }
+.ds-sim .nr-era-t { font-size: 14px; }
+.ds-sim .nr-era-s { font-size: 11.5px; font-weight: 500; opacity: .8; }
+.ds-sim .nr-era-note { margin: 2px 0 0; font-size: 13px; color: var(--ink-2); line-height: 1.5; }
+.ds-sim .nr-gap { margin-top: 6px; }
+.ds-sim .nr-small { margin: 0; font-size: 12px; color: var(--ink-2); line-height: 1.5; }
+.ds-sim .nr-b { font-weight: 700; }
+.ds-sim .nr-tag { display: inline-block; font-size: 11px; font-weight: 700; color: #8a5a00; background: #fff1d6; border: 1px solid #f0d49b; border-radius: 4px; padding: 0 5px; margin: 0 6px 0 0; vertical-align: 1px; }
+.ds-sim .ds-h2 .nr-tag { margin: 0 0 0 6px; }
+.ds-sim .nr-assume .ds-h2 .nr-tag { margin: 0 6px 0 0; }
+.ds-sim .nr-h2s { font-weight: 500; color: var(--ink-2); font-size: 12px; }
+
+.ds-sim .nr-cmp { display: flex; flex-direction: column; gap: 8px; }
+.ds-sim .nr-grid { display: grid; grid-template-columns: auto 1fr 1fr; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-size: 13px; }
+.ds-sim .nr-c { white-space: nowrap; padding: 6px 7px; border-top: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+.ds-sim .nr-hd { border-top: 0; text-align: center; font-size: 13px; background: #f7f7f4; }
+.ds-sim .nr-hd-suez { color: var(--nr-suez); }
+.ds-sim .nr-hd-nsr { color: var(--nr-nsr); }
+.ds-sim .nr-k { text-align: left; font-weight: 500; color: var(--ink-2); font-size: 12.5px; }
+.ds-sim .nr-na { color: var(--nr-off); font-weight: 500; }
+.ds-sim .nr-sum { margin: 0; font-size: 13.5px; line-height: 1.55; background: #fdf0f6; border: 1px solid #f3c6db; border-radius: 8px; padding: 8px 10px; }
+.ds-sim .nr-sum-off { background: #f4f5f7; border-color: var(--line); color: var(--ink-2); }
+.ds-sim .nr-sum-s { color: var(--ink-2); }
+
+.ds-sim .nr-cost { display: flex; flex-direction: column; gap: 6px; }
+.ds-sim .nr-crow { display: grid; grid-template-columns: 62px 1fr auto; align-items: center; gap: 8px; font-size: 13px; }
+.ds-sim .nr-cname { font-weight: 700; }
+.ds-sim .nr-t-suez { color: var(--nr-suez); }
+.ds-sim .nr-t-nsr { color: var(--nr-nsr); }
+.ds-sim .nr-cval { font-weight: 700; font-variant-numeric: tabular-nums; min-width: 62px; text-align: right; }
+.ds-sim .nr-stack { display: flex; height: 14px; border-radius: 4px; overflow: hidden; background: #eef0f2; }
+.ds-sim .nr-stack-off { background: repeating-linear-gradient(45deg, #eef0f2 0 6px, #e2e4e8 6px 12px); }
+.ds-sim .nr-seg { display: block; height: 100%; }
+.ds-sim .nr-seg-fuel { background: var(--nr-fuel); }
+.ds-sim .nr-seg-ops { background: var(--nr-ops); }
+.ds-sim .nr-seg-extra { background: var(--nr-extra); }
+.ds-sim .nr-dl { display: grid; grid-template-columns: 1fr auto; gap: 1px 10px; margin: 0 0 4px 70px; font-size: 12px; color: var(--ink-2); }
+.ds-sim .nr-dt { display: flex; align-items: center; gap: 5px; }
+.ds-sim .nr-dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.ds-sim .nr-dt .nr-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+.ds-sim .nr-assume { display: flex; flex-direction: column; gap: 6px; border: 1px dashed #e3c98f; background: #fffbf1; border-radius: 8px; padding: 10px 12px; }
+.ds-sim .nr-ul { margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--ink-2); line-height: 1.5; display: flex; flex-direction: column; gap: 2px; }
+.ds-sim .nr-limit { display: flex; flex-direction: column; gap: 4px; }
+.ds-sim .nr-limit .nr-b { color: var(--ink); }
+.ds-sim .nr-src { margin: 0; font-size: 11.5px; color: var(--ink-2); line-height: 1.55; }
+
+@media (max-width: 1100px) {
+  .ds-sim .nr-hud { width: 280px; }
+  .ds-sim .nr-banner { max-width: calc(100% - 320px); font-size: 13px; }
+}
