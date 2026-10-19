@@ -96,7 +96,7 @@ function fakeContext(canvas) {
   };
   const noop = () => {};
   return new Proxy(target, {
-    get(t, k) { return k in t ? t[k] : noop; },
+    get(t, k) { return k in t || typeof k === 'symbol' ? t[k] : noop; }, // 기호 열쇠(라이브러리의 내부 표지 확인 등)는 없는 값으로
     set(t, k, v) { t[k] = v; return true; },
   });
 }

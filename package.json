@@ -22,7 +22,7 @@
     "vite": "^6.4.4"
   },
   "dependencies": {
-    "csat-chart.js": "^2.1.1",
+    "csat-chart.js": "^2.2.2",
     "d3-geo-polygon": "^2.0.1",
     "d3-geo-projection": "^4.0.0",
     "d3-interpolate": "^3.0.1",

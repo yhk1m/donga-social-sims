@@ -1,0 +1,171 @@
+/* © 2026 김용현 */
+/* src/atlas/ui.css — 아틀라스 화면 부품(ui.js·charts.js·quiz.js). 규칙(EMBED_RULES.md): 모든 선택자는 .ds-sim .at-… 로 시작,
+   태그 선택자·*·!important·position:fixed 금지, z-index 는 20 이하(규칙 상한 100). */
+
+.ds-sim .at-stage:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+/* hidden 속성: 부품 클래스의 display(flex 등)가 브라우저 기본 [hidden]{display:none} 을 이기지 않게(속성 두 번 = 명시도 0,3,0) */
+.ds-sim [hidden][hidden] { display: none; }
+
+/* ---------- 목차 ---------- */
+.ds-sim .at-toc { display: flex; flex-direction: column; gap: 8px; }
+.ds-sim .at-toc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.ds-sim .at-toc-item { margin: 0; }
+.ds-sim .at-toc-btn {
+  width: 100%; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font: inherit; font-size: 14px;
+  padding: 7px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); cursor: pointer; text-align: left;
+  border-left: 3px solid transparent;
+}
+.ds-sim .at-toc-btn:hover { background: #f1f0eb; }
+.ds-sim .at-toc-btn.is-current { background: var(--accent-soft); color: var(--accent); font-weight: 700; border-left-color: var(--accent); }
+.ds-sim .at-toc-page { font-size: 12px; color: var(--ink-2); font-weight: 400; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* ---------- 지도 도구(무대 오른쪽 위) ---------- */
+.ds-sim .at-tools { position: absolute; top: 10px; right: 10px; z-index: 10; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; pointer-events: none; }
+.ds-sim .at-tools-card, .ds-sim .at-tools-zoom { pointer-events: auto; }
+.ds-sim .at-tools-card {
+  background: rgba(255, 255, 255, .94); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow);
+  padding: 6px; display: flex; flex-direction: column; gap: 6px; font-size: 12px;
+}
+.ds-sim .at-tools-seg { background: var(--panel); }
+.ds-sim .at-tools-seg-btn { font-size: 12px; padding: 4px 7px; white-space: nowrap; }
+.ds-sim .at-tools-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ds-sim .at-tools-check { font-size: 12px; gap: 4px; }
+.ds-sim .at-tools-zoom { display: flex; flex-direction: column; gap: 4px; }
+.ds-sim .at-tools-btn { padding: 6px; border-radius: 8px; background: rgba(255, 255, 255, .94); box-shadow: var(--shadow); }
+
+/* 축척 막대(무대 왼쪽 아래) */
+.ds-sim .at-scale {
+  position: absolute; left: 10px; bottom: 10px; z-index: 10; pointer-events: none; display: flex; flex-direction: column; gap: 2px;
+  background: rgba(255, 255, 255, .8); border-radius: 4px; padding: 3px 6px 2px;
+}
+.ds-sim .at-scale-bar { height: 5px; border: 1.5px solid #333; border-top: 0; box-sizing: border-box; }
+.ds-sim .at-scale-text { font-size: 11px; color: #333; font-variant-numeric: tabular-nums; }
+
+/* 말풍선 */
+.ds-sim .at-tip {
+  position: absolute; z-index: 15; pointer-events: none; background: rgba(29, 33, 38, .9); color: #fff; font-size: 12.5px; font-weight: 600;
+  padding: 3px 8px; border-radius: 6px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0, 0, 0, .2);
+}
+
+/* ---------- 범례 ---------- */
+.ds-sim .at-legend { display: flex; flex-direction: column; gap: 6px; }
+.ds-sim .at-legend-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ds-sim .at-legend-title { margin: 0; }
+.ds-sim .at-legend-sub { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+.ds-sim .at-legend-list { display: flex; flex-direction: column; gap: 1px; }
+.ds-sim .at-legend-item {
+  display: flex; align-items: center; gap: 8px; font: inherit; font-size: 13px; text-align: left; padding: 3px 6px; border: 1px solid transparent;
+  border-radius: 6px; background: transparent; color: var(--ink); cursor: pointer;
+}
+.ds-sim .at-legend-item:hover:not(:disabled) { background: #f1f0eb; }
+.ds-sim .at-legend-item[aria-pressed=true] { border-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+.ds-sim .at-legend-item:disabled { cursor: default; color: var(--ink-2); }
+.ds-sim .at-swatch { width: 22px; height: 14px; flex-shrink: 0; box-sizing: border-box; }
+.ds-sim .at-swatch-fill { border: 1px solid rgba(0, 0, 0, .18); border-radius: 2px; }
+.ds-sim .at-swatch-sym { width: 14px; height: 14px; margin: 0 4px; }
+.ds-sim .at-legend-widths { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--ink-2); align-items: center; }
+.ds-sim .at-legend-width { display: inline-flex; align-items: center; gap: 3px; }
+.ds-sim .at-legend-reset { align-self: flex-start; font-size: 12px; padding: 4px 10px; }
+.ds-sim .at-legend-note, .ds-sim .at-legend-credit { font-size: 12px; color: var(--ink-2); margin: 0; }
+.ds-sim .at-legend-fail { font-size: 12px; color: var(--warn); margin: 0; }
+.ds-sim .at-badge {
+  display: inline-block; font-size: 11px; font-weight: 600; color: #8a4b00; background: #fff3d6; border: 1px solid #f0d08a; border-radius: 999px;
+  padding: 0 7px; line-height: 18px; vertical-align: middle; margin-left: 6px;
+}
+
+/* ---------- 상세 카드 ---------- */
+.ds-sim .at-card { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; background: #fff; }
+.ds-sim .at-card-kicker { font-size: 12px; color: var(--accent); font-weight: 700; }
+.ds-sim .at-card-title { font-size: 15px; margin: 0; font-weight: 700; line-height: 1.4; }
+.ds-sim .at-card-text { font-size: 13.5px; margin: 0; line-height: 1.6; }
+.ds-sim .at-card-credit { font-size: 12px; color: var(--ink-2); margin: 0; }
+.ds-sim .at-card-chart { display: flex; flex-direction: column; gap: 4px; }
+.ds-sim .at-expand { align-self: flex-end; font-size: 12px; padding: 3px 8px; }
+.ds-sim .at-photo { margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.ds-sim .at-photo-img { display: block; width: 100%; height: auto; border-radius: 8px; background: #eeece6; }
+.ds-sim .at-photo-circle .at-photo-img { width: 60%; align-self: center; border-radius: 50%; aspect-ratio: 1 / 1; object-fit: cover; }
+.ds-sim .at-photo-credit { font-size: 11px; color: var(--ink-2); text-align: right; }
+
+/* ---------- 원본 쪽 보기(겹침 창) ---------- */
+.ds-sim .at-viewer {
+  position: absolute; inset: 12px; z-index: 20; background: #fff; border-radius: var(--radius); box-shadow: 0 8px 32px rgba(0, 0, 0, .25);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.ds-sim .at-viewer[hidden] { display: none; }
+.ds-sim .at-viewer-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px 8px 16px; border-bottom: 1px solid var(--line); }
+.ds-sim .at-viewer-title { font-size: 15px; margin: 0; font-weight: 700; }
+.ds-sim .at-viewer-close { padding: 6px; }
+.ds-sim .at-viewer-body { flex: 1; overflow: auto; padding: 12px; display: flex; flex-direction: column; align-items: center; }
+.ds-sim .at-viewer-img { display: block; max-width: 100%; height: auto; }
+.ds-sim .at-viewer-crop { position: relative; width: min(100%, 760px); overflow: hidden; }
+.ds-sim .at-viewer-body .at-chart { width: min(100%, 820px); align-items: center; }
+.ds-sim .at-viewer-body .at-chart-canvas { width: auto; max-width: 100%; max-height: calc(100vh - 180px); }
+.ds-sim .at-viewer-body .at-chart-svg { max-height: calc(100vh - 180px); }
+
+/* ---------- 그래프 ---------- */
+.ds-sim .at-chart { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.ds-sim .at-chart-title { font-size: 13.5px; font-weight: 700; }
+.ds-sim .at-chart-sub { font-weight: 400; color: var(--ink-2); }
+.ds-sim .at-chart-canvas, .ds-sim .at-chart-svg { display: block; width: 100%; height: auto; background: #fff; }
+.ds-sim .at-chart-src, .ds-sim .at-chart-note { font-size: 11.5px; color: var(--ink-2); }
+.ds-sim .at-chart-src { text-align: right; }
+.ds-sim .at-ct { font-family: 'HY신명조', 'HYSinMyeongJo-Medium', 'Noto Serif KR', 'Batang', '바탕', serif; fill: #231f20; font-size: 11.5px; }
+.ds-sim .at-ct-tick { font-size: 11px; }
+.ds-sim .at-ct-cat { font-size: 13px; font-weight: 700; }
+.ds-sim .at-ct-sub { font-size: 9.5px; fill: #444; }
+.ds-sim .at-ct-cell-name { font-size: 11px; }
+.ds-sim .at-ct-cell-val { font-size: 11px; font-weight: 700; }
+.ds-sim .at-ct-val { font-size: 17px; font-weight: 700; paint-order: stroke fill; stroke: #fff; stroke-width: 3px; }
+.ds-sim .at-ct-legend { font-size: 15px; }
+.ds-sim .at-ct-leader { fill: none; stroke: #231f20; stroke-width: .7; }
+.ds-sim .at-ct-dot { fill: #231f20; }
+.ds-sim .at-ct-out-text { font-size: 10.5px; paint-order: stroke fill; stroke: #fff; stroke-width: 2.5px; }
+.ds-sim .at-ct-grid { stroke: #231f20; stroke-width: .6; stroke-dasharray: 1.5 2.5; }
+.ds-sim .at-chart-legend {
+  list-style: none; margin: 0; padding: 6px 8px; display: flex; flex-wrap: wrap; gap: 3px 12px; border: 1px solid #231f20; background: #fff;
+  font-family: 'HY신명조', 'HYSinMyeongJo-Medium', 'Noto Serif KR', 'Batang', '바탕', serif; font-size: 12.5px; color: #231f20;
+}
+.ds-sim .at-chart-legend-item { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.ds-sim .at-chart-legend-sw { width: 13px; height: 11px; border: 1px solid #231f20; box-sizing: border-box; flex-shrink: 0; }
+.ds-sim .at-viewer-body .at-chart-legend { justify-content: center; }
+.ds-sim .at-chart-table { border-collapse: collapse; width: 100%; font-size: 13px; border-top: 2px solid #8a7a5a; border-bottom: 2px solid #8a7a5a; background: #fffbe5; }
+.ds-sim .at-chart-th { text-align: center; padding: 6px 8px; font-weight: 700; border-bottom: 1px solid #c9bf9e; border-right: 1px solid #c9bf9e; white-space: nowrap; }
+.ds-sim .at-chart-td { padding: 6px 8px; border-bottom: 1px solid #c9bf9e; }
+
+/* ---------- 출처 ---------- */
+.ds-sim .at-credits { font-size: 11.5px; color: var(--ink-2); border-top: 1px solid var(--line); padding-top: 8px; }
+.ds-sim .at-credits-base { margin: 0 0 4px; }
+.ds-sim .at-credits-list { margin: 0; padding-left: 16px; }
+
+/* ---------- 퀴즈 ---------- */
+.ds-sim .at-quiz { display: flex; flex-direction: column; gap: 10px; }
+.ds-sim .at-quiz-palette { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.ds-sim .at-quiz-color {
+  width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); cursor: pointer; padding: 0;
+}
+.ds-sim .at-quiz-color[aria-pressed=true] { box-shadow: 0 0 0 2px var(--ink); }
+.ds-sim .at-quiz-erase { font-size: 12px; padding: 4px 8px; }
+.ds-sim .at-quiz-erase[aria-pressed=true] { border-color: var(--ink); font-weight: 700; }
+.ds-sim .at-quiz-q { font-size: 14px; font-weight: 700; margin: 0; }
+.ds-sim .at-quiz-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ds-sim .at-quiz-opt { font-size: 13.5px; padding: 8px 6px; }
+.ds-sim .at-quiz-opt.is-right { background: #e6f6ea; border-color: #2f9e44; color: #1b6e2e; font-weight: 700; }
+.ds-sim .at-quiz-opt.is-wrong { background: #fdecea; border-color: #e03131; color: #a51d1d; }
+.ds-sim .at-quiz-feedback { font-size: 13px; margin: 0; min-height: 1.5em; }
+.ds-sim .at-quiz-score { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.ds-sim .at-quiz-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ds-sim .at-quiz-foot .ds-btn { font-size: 13px; padding: 6px 12px; }
+.ds-sim .at-quiz-photo .at-photo-img { max-height: 200px; object-fit: contain; }
+
+/* ---------- 임시 주제 화면(main.js, E1 에서 바뀜) ---------- */
+.ds-sim .at-topic { display: flex; flex-direction: column; gap: 12px; }
+.ds-sim .at-topic-title { font-size: 17px; margin: 0; font-weight: 800; }
+.ds-sim .at-legends { display: flex; flex-direction: column; gap: 12px; }
+.ds-sim .at-legends:empty { display: none; }
+.ds-sim .at-seg-wrap { flex-wrap: wrap; }
+.ds-sim .at-seg-wrap .ds-seg-btn { font-size: 12.5px; }
+.ds-sim .at-text { display: flex; flex-direction: column; gap: 4px; }
+.ds-sim .at-text-question .at-card-text { font-weight: 700; color: var(--accent); }
+.ds-sim .at-text-section .at-card-text { font-weight: 800; font-size: 15px; }
+.ds-sim .at-text-activity, .ds-sim .at-text-goal { background: #faf9f6; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.ds-sim .at-page-btn { justify-content: flex-start; font-size: 13px; }

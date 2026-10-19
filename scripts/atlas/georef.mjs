@@ -11,7 +11,6 @@
 //   fitProjection(fit)        d3 geoPath 용 투영 객체(잘라내기·재표본 포함)
 //
 // fit 객체는 만든 뒤 바꾸지 않는다(변환기를 객체별로 캐시하므로). 바꾸려면 새 객체를 만든다.
-import * as g from 'd3-geo';
 import { FAMILIES, applySim, invertSim, tpsKernel as U, inHull, nearestOnHull, tpsRaw, tpsDelta } from '../../src/atlas/fitCore.js';
 
 // 후보 도법(FAMILIES)·닮음 변환·TPS 계산은 앱과 같은 공통 모듈(src/atlas/fitCore.js)에서 — 앱(fitProject.js)과 구성상 같은 값.

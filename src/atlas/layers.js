@@ -332,7 +332,11 @@ export function flowLayer(id, lines, { legend = null, map = null, layerId = id, 
         }
         it.runs = splitJumps(it.geo, project);
         const last = it.runs.length ? it.runs[it.runs.length - 1] : null;
-        const tan = last && endTangent(last, { bend });
+        // 화살촉은 마지막 조각이 자료의 끝점까지 닿을 때만 — 이음매(날짜변경선·구드 틈)에서 끝이 잘렸으면 잘린 자리에 달지 않는다
+        const endS = last && project(it.geo[it.geo.length - 1]);
+        const lastPt = last && last[last.length - 1];
+        const reaches = !!(endS && Math.hypot(lastPt[0] - endS[0], lastPt[1] - endS[1]) < 0.5);
+        const tan = reaches && endTangent(last, { bend });
         const drawn = tan ? [...it.runs.slice(0, -1), trimRunEnd(last, arrowSize(w).len * 0.6)] : it.runs;
         const d = drawn.map((r) => quadPath(r, { bend })).join('') || null;
         setAttr(it.line, 'd', d); setAttr(it.halo, 'd', d);

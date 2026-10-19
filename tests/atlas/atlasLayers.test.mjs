@@ -276,6 +276,22 @@ test('flowLayer: 이차 곡선 경로 + 선마다 화살촉 경로(같은 <g> �
   assert.deepEqual(idsIn(g), [], '문서 전역 id 없음');
 });
 
+test('flowLayer: 선 끝이 이음매(날짜변경선·구드 틈) 너머로 잘리면 잘린 자리에 화살촉을 달지 않는다', () => {
+  // 마지막 마디(170 → −170)가 대서양 중심의 날짜변경선을 건너 끝점 하나만 남은 조각은 버려진다 → 마지막 조각 끝 ≠ 자료 끝점
+  const L = flowLayer('f', fc([
+    { type: 'Feature', properties: { type: 'flow', cls: 'export', color: '#ed0c6e', width: 1, label: '미국' }, geometry: { type: 'LineString', coordinates: [[150, 40], [170, 42], [-170, 44]] } },
+  ], [{ cls: 'export', color: '#ed0c6e', kind: 'flow', label: '수출' }]));
+  const g = document.createElementNS('svg', 'g');
+  const head = () => g.childNodes[0].childNodes[0].childNodes.find((x) => x.classList.contains('at-flow-head')).getAttribute('d');
+  const atl = viewOf({ lon0: 0, W: 1600 });
+  L.drawSvg(g, atl.project, atl.view);
+  assert.ok(g.childNodes[0].childNodes[0].childNodes.find((x) => x.classList.contains('at-flow-line')).getAttribute('d'), '선은 그린다');
+  assert.equal(head(), null, '잘린 끝에는 화살촉 없음');
+  const pac = viewOf({ lon0: 150, W: 1600 });
+  L.drawSvg(g, pac.project, pac.view);
+  assert.match(head(), /^M.*Z$/, '태평양 중심에서는 끝까지 이어져 화살촉 있음');
+});
+
 test('markerLayer: 번호 = photo.pin, 누르면 고르고 onPick, select(null) 로 풀기, hit 은 label 있는 Feature', () => {
   const picked = [];
   const markers = [{ id: 'm1', lonlat: [10, 10], title: '하나', photo: { pin: 3 } }, { id: 'm2', lonlat: [20, 10], title: '둘' }];

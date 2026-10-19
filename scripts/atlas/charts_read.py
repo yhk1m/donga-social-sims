@@ -128,8 +128,8 @@ def read_climograph(cid, c, ctx):
     meas_t = [rnd(v, AX.decimals_for(tp, cap)) for v in mtemp]; meas_p = [rnd(v, AX.decimals_for(pp, cap)) for v in mprec]
     if row:
         at = f'p{row["page"]} 표'
-        out['series'] = [series_entry('기온', row['temp'], 'printed', unit='℃', printedAt=at),
-                         series_entry('강수량', row['prec'], 'printed', unit='mm', printedAt=at)]
+        out['series'] = [series_entry('기온', row['temp'], 'printed', unit='℃', printedAt=at, color=c['tempColor']),
+                         series_entry('강수량', row['prec'], 'printed', unit='mm', printedAt=at, color=c['precColor'])]
         out['measured'] = {'기온': meas_t, '강수량': meas_p, 'precision': {'기온': round(tp, 3), '강수량': round(pp, 3)}}
         dt = max(abs(a - b) for a, b in zip(mtemp, row['temp'])); dp = max(abs(a - b) for a, b in zip(mprec, row['prec']))
         out['check'] = {'maxTempDiff': round(dt, 2), 'maxPrecDiff': round(dp, 1)}
@@ -139,8 +139,8 @@ def read_climograph(cid, c, ctx):
     else:
         if city not in ctx['notInTable']:
             W.append(f'{cid}: {city} 가 {ctx["climatePage"]}쪽 표에 없음(설정 climateTable.notInTable 에도 없음)')
-        out['series'] = [series_entry('기온', meas_t, 'measured', unit='℃', precision=round(tp, 3)),
-                         series_entry('강수량', meas_p, 'measured', unit='mm', precision=round(pp, 3))]
+        out['series'] = [series_entry('기온', meas_t, 'measured', unit='℃', precision=round(tp, 3), color=c['tempColor']),
+                         series_entry('강수량', meas_p, 'measured', unit='mm', precision=round(pp, 3), color=c['precColor'])]
         if ctx['notInTable'].get(city): out.setdefault('notes', ctx['notInTable'][city])
     return out
 
@@ -167,7 +167,7 @@ def read_line(cid, c, ctx):
         paths = [P for x in lines for P in x['paths'] if len(P) >= 2]
         if not paths:
             W.append(f'{cid}: {s["name"]} 선({s["color"]})을 못 찾음')
-            out['series'].append(series_entry(s['name'], [None] * len(cats), 'measured', precision=round(prec, 3))); continue
+            out['series'].append(series_entry(s['name'], [None] * len(cats), 'measured', precision=round(prec, 3), color=s['color'])); continue
         vals, missing = [], []
         for yr in cats:
             x = xax.pos(yr)
@@ -180,7 +180,7 @@ def read_line(cid, c, ctx):
             vals.append(rnd(yax.val(sum(ys) / len(ys)), nd))
         if missing: W.append(f'{cid}: {s["name"]} 선이 닿지 않는 해 {missing}')
         out['series'].append(series_entry(s['name'], vals, 'measured', precision=round(prec, 3),
-                                          xPrecisionYears=round(AX.precision(xax), 2)))
+                                          xPrecisionYears=round(AX.precision(xax), 2), color=s['color']))
     return out
 
 
@@ -204,7 +204,7 @@ def read_bar(cid, c, ctx):
     out['axes'] = {'x': xax.to_json()}
     if c.get('subtitleBox'): out['subtitle'] = text(p, c['subtitleBox'])
     out['series'] = [series_entry(c['seriesName'], [rnd(xax.val(f['rect'][2]) - xax.val(f['rect'][0]), nd) for f in bars],
-                                  'measured', precision=round(prec, 3))]
+                                  'measured', precision=round(prec, 3), color=c['barColor'])]
     return out
 
 
@@ -270,7 +270,7 @@ def read_stacked_bar(cid, c, ctx):
     if lonen: W.append(f'{cid}: 수 없는 이름 {lonen}')
     _anchor_labels(cid, c, rows, labels, lo, hi, W)
     prec = AX.precision(xax); nd = AX.decimals_for(prec, cap_from(labels))
-    series_order, values, measured, orders, dropped, gaps = [], {}, {}, {}, [], []
+    series_order, values, measured, colors, orders, dropped, gaps = [], {}, {}, {}, {}, [], []
     maxdiff = 0.0
     for k, r in enumerate(rows):
         cat = cats[k]
@@ -294,8 +294,8 @@ def read_stacked_bar(cid, c, ctx):
         for i, j in sorted(m.items(), key=lambda t: segs[t[1]]['x0']):
             L, s = mine[i], segs[j]
             nm = L['name']
-            if nm not in values: series_order.append(nm); values[nm] = {}; measured[nm] = {}
-            values[nm][cat] = L['value']; measured[nm][cat] = rnd(s['m'], nd)
+            if nm not in values: series_order.append(nm); values[nm] = {}; measured[nm] = {}; colors[nm] = {}
+            values[nm][cat] = L['value']; measured[nm][cat] = rnd(s['m'], nd); colors[nm][cat] = s.get('color')
             maxdiff = max(maxdiff, abs(L['value'] - s['m']))
             orders[cat].append(nm)
     out['categories'] = cats
@@ -304,7 +304,8 @@ def read_stacked_bar(cid, c, ctx):
     out['stackOrder'] = orders
     out['axes'] = {'x': xax.to_json()}
     out['series'] = [series_entry(n, [values[n].get(k) for k in cats], 'printed',
-                                  measured=[measured[n].get(k) for k in cats], precision=round(prec, 3)) for n in series_order]
+                                  measured=[measured[n].get(k) for k in cats], precision=round(prec, 3),
+                                  colors=[colors[n].get(k) for k in cats]) for n in series_order]
     out['check'] = {'maxAbsDiff': round(maxdiff, 3), 'measuredPrecision': round(prec, 3), 'droppedSegments': dropped, 'gaps': gaps}
     if maxdiff > c['warnDiff']: W.append(f'{cid}: 칸 너비와 인쇄 비율 차 최대 {maxdiff:.2f}%p (허용 {c["warnDiff"]})')
     return out
@@ -379,8 +380,9 @@ def read_stacked_area(cid, c, ctx):
         j = cats.index(yr)
         tot_check[yr] = {'printed': v, 'measuredSum': round(sum(vals[n][j] or 0 for n in names), 2)}
     out['categories'] = cats; out['categoryKind'] = 'year'
+    if c.get('sheetStackOrder'): out['stackOrder'] = list(c['sheetStackOrder'])   # 쌓는 순서(아래 → 위), 교과서 그림 차례
     out['axes'] = {'x': xax.to_json(), 'height': hgt.to_json()}
-    out['series'] = [series_entry(s['name'], vals[s['name']], 'measured', precision=round(prec, 3),
+    out['series'] = [series_entry(s['name'], vals[s['name']], 'measured', precision=round(prec, 3), color=s['color'],
                                   **({'note': s['note']} if s.get('note') else {})) for s in c['series']]
     out['printed'] = {'totals': printed_tot, 'shares': {yr: {n: d['printed'] for n, d in v.items()} for yr, v in shares.items()}}
     out['check'] = {'shares': shares, 'totals': tot_check, 'maxShareDiff': round(maxd, 2), 'heightAxisResidPt': round(hgt.resid, 2)}
@@ -422,7 +424,7 @@ def read_pyramid(cid, c, ctx):
         if s['name'] not in legend: W.append(f'{cid}: 범례에 「{s["name"]}」 없음')
         raw = [abs(xax.val(f['rect'][2]) - xax.val(f['rect'][0])) for f in rows[side]]
         tot += sum(raw)                                   # 합은 반올림 전 값으로
-        out['series'].append(series_entry(s['name'], [rnd(v, nd) for v in raw], 'measured', precision=round(prec, 3)))
+        out['series'].append(series_entry(s['name'], [rnd(v, nd) for v in raw], 'measured', precision=round(prec, 3), color=s['color']))
     out['check'] = {'sum': round(tot, 2)}
     if abs(tot - 100) > c['sumTol']: W.append(f'{cid}: 피라미드 합 {tot:.1f}% (100 ± {c["sumTol"]})')
     return out
@@ -466,6 +468,7 @@ def read_radial(cid, c, ctx):
             if R['startDeg'] > tol_deg or R['dir'] != want_dir:
                 W.append(f'{cid} {part["name"]}: 고리(r={R["r"]:.1f})가 12시에서 {want_dir} 로 시작하지 않음 '
                          f'(시작 {R["startDeg"]:.1f}°, 방향 {R["dir"]})')
+            R['color'] = f['color']
             rings.append(R)
         legend = label_lines(p, part['legendBox'])
         nums = [t for t in AX.number_tokens(p, part['box'], font=opt(c, ctx, 'numberFont')) if not cin(t['bbox'], part['legendBox'])]
@@ -481,16 +484,16 @@ def read_radial(cid, c, ctx):
             W.append(f'{cid} {part["name"]}: 고리 {len(rings)}·수 {len(nums)}·짝 {len(mm)}')
         for i, j in mm.items():
             R = rings[j]
-            per.setdefault(R['name'], {})[part['name']] = (nums[i]['value'], R['pct'])
+            per.setdefault(R['name'], {})[part['name']] = (nums[i]['value'], R['pct'], R['color'])
             maxd = max(maxd, abs(nums[i]['value'] - R['pct']))
     names = list(c['series'])
     for n in per:
         if n not in names: W.append(f'{cid}: 설정에 없는 계열 「{n}」')
     nd = cap_from(all_nums)
-    get = lambda n, k, ix: per.get(n, {}).get(k, (None, None))[ix]
+    get = lambda n, k, ix: per.get(n, {}).get(k, (None, None, None))[ix]
     out['categories'] = cats
     out['series'] = [series_entry(n, [get(n, k, 0) for k in cats], 'printed', measured=[rnd(get(n, k, 1), nd) for k in cats],
-                                  precision=PRINTED_PREC) for n in names]
+                                  precision=PRINTED_PREC, colors=[get(n, k, 2) for k in cats]) for n in names]
     out['check'] = {'maxAbsDiff': round(maxd, 3)}
     if maxd > c['warnDiff']: W.append(f'{cid}: 고리 각과 인쇄 비율 차 최대 {maxd:.2f}%p')
     return out
@@ -509,7 +512,7 @@ def read_pie(cid, c, ctx):
         fl = G.fills(p, c['bbox'], s['color'], geom=True, de=opt(c, ctx, 'colorDE'))
         if len(fl) != 1:
             W.append(f'{cid}: {s["name"]} 부채꼴({s["color"]}) {len(fl)}개')
-            out['series'].append(series_entry(s['name'], [None], 'printed')); continue
+            out['series'].append(series_entry(s['name'], [None], 'printed', color=s['color'])); continue
         f = fl[0]
         R = ring_measure(f)
         if R is None: W.append(f'{cid}: {s["name"]} 부채꼴에 원호가 없음 — 각을 잴 수 없음')
@@ -521,7 +524,7 @@ def read_pie(cid, c, ctx):
         mv = R['pct'] if R else None
         if v is not None and mv is not None: maxd = max(maxd, abs(v - mv))
         if mv is not None: msum += mv
-        out['series'].append(series_entry(s['name'], [v], 'printed', measured=[rnd(mv, nd)], precision=PRINTED_PREC))
+        out['series'].append(series_entry(s['name'], [v], 'printed', measured=[rnd(mv, nd)], precision=PRINTED_PREC, color=s['color']))
     out['check'] = {'maxAbsDiff': round(maxd, 3), 'measuredSum': round(msum, 2)}
     if maxd > c['warnDiff']: W.append(f'{cid}: 부채꼴 각과 인쇄 비율 차 최대 {maxd:.2f}%p')
     if abs(msum - 100) > c['warnDiff']: W.append(f'{cid}: 부채꼴 각 합 {msum:.2f}% ≠ 100 (겹치거나 빈 조각)')
@@ -544,12 +547,12 @@ def read_stacked_printed(cid, c, ctx):
         nm = ' '.join(s['text'] for s in spans if cin(s['bbox'], f['rect']) and HANGUL.search(s['text']) and not s['text'].startswith('('))
         vs = [t for t in toks if cin(t['bbox'], f['rect'])]
         if len(vs) != 1 or not nm: W.append(f'{cid}: 칸 {[round(v, 1) for v in f["rect"]]} 글자 「{nm}」·수 {len(vs)}개'); continue
-        rows.append((nm, vs[0]['value'], (f['rect'][3] - f['rect'][1]) / total_h))
-    tot = sum(v for _, v, _ in rows)
+        rows.append((nm, vs[0]['value'], (f['rect'][3] - f['rect'][1]) / total_h, f['color']))
+    tot = sum(r[1] for r in rows)
     out['categories'] = [c['category']]
     out['total'] = tot
-    out['series'] = [series_entry(n, [v], 'printed', measured=[rnd(fr * tot, nd)]) for n, v, fr in rows]
-    d = max(abs(fr * tot - v) for _, v, fr in rows) if rows else None
+    out['series'] = [series_entry(n, [v], 'printed', measured=[rnd(fr * tot, nd)], color=col) for n, v, fr, col in rows]
+    d = max(abs(fr * tot - v) for _, v, fr, _ in rows) if rows else None
     out['check'] = {'printedSum': round(tot, 2), 'heightVsPrintedMaxDiff': rnd(d, 2), 'toScale': c.get('toScale', True)}
     return out
 
