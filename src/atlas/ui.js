@@ -16,6 +16,7 @@ import { addBlock } from '../shared/shell.js';
 import { PROJECTIONS } from './projections.js';
 import { renderChart } from './charts.js';
 import { segButtons } from './seg.js';
+import { tintLegend } from './tint.js';
 import { scaleBarSpec, hoverLabel, pageCrop, pagesLabel, assetUrl, panTarget, ASSET_BASE } from './uiCore.js';
 import './ui.css';
 
@@ -74,13 +75,15 @@ const seg = (items, label, onPick) => segButtons(items, { label, onPick, classNa
 
 const PROJ_SHORT = { miller: '밀러', mercator: '메르카토르', robinson: '로빈슨', goode: '구드', equalEarth: '이퀄어스' };
 
-export function mapTools(stage, map, { relief = true } = {}) {
+export function mapTools(stage, map, { relief = true, tint = true } = {}) {
   const proj = seg(Object.keys(PROJECTIONS).map((k) => [k, PROJ_SHORT[k] || PROJECTIONS[k].label, `${PROJECTIONS[k].label} 도법`]), '도법', (k) => { map.setProjection(k); update(); });
   const center = seg([[0, '대서양', '대서양 중심(경도 0°)'], [150, '태평양', '태평양 중심(경도 150°)']], '중심 경도', (c) => { map.setCenterLon(c); update(); });
-  const opts = { graticule: true, labels: true, relief };
-  const check = (key, text) => {
+  const opts = { graticule: true, labels: true, relief, tint: !!map.options?.tint };
+  const inputs = {};
+  const check = (key, text, title = null) => {
     const input = h('input', { type: 'checkbox', class: 'at-tools-check-input', checked: opts[key], on: { change: (e) => { opts[key] = !!e.target.checked; map.setOptions({ [key]: opts[key] }); } } });
-    return h('label', { class: 'ds-check at-tools-check' }, input, text);
+    inputs[key] = input;
+    return h('label', { class: 'ds-check at-tools-check', title }, input, text);
   };
   const zoomBy = (f) => { const v = map.view; map.flyTo({ zoom: Math.max(1, Math.min(40, v.k * f)) }, 300); };
   const whole = () => map.flyTo({ center: [map.view.centerLon, 0], zoom: 1 }, 500);
@@ -89,7 +92,8 @@ export function mapTools(stage, map, { relief = true } = {}) {
     h('div', { class: 'at-tools-card' },
       proj.el,
       h('div', { class: 'at-tools-row' }, center.el,
-        check('graticule', '경위선'), check('labels', '지명'), relief ? check('relief', '음영') : null)),
+        check('graticule', '경위선'), check('labels', '지명'), relief ? check('relief', '음영') : null,
+        tint ? check('tint', '고도 색', '교과서 일반도처럼 높이·깊이에 따라 색(범례는 사이드바)') : null)),
     h('div', { class: 'at-tools-zoom', role: 'group', 'aria-label': '확대·축소' },
       btn('plus', '확대', () => zoomBy(2)), btn('minus', '축소', () => zoomBy(0.5)), btn('globe', '세계 전체 보기', whole)));
   const barLine = h('div', { class: 'at-scale-bar' });
@@ -130,17 +134,43 @@ export function mapTools(stage, map, { relief = true } = {}) {
     if (sp) { barLine.style.width = `${Math.round(sp.px)}px`; barText.textContent = sp.label; }
   }
   const off = map.on('viewchange', update);
+  // 주제가 고도 색을 켜고 끄면(일반도·지형은 켬) 체크 상자도 따라간다
+  const offOpt = map.on('options', (o) => {
+    for (const [k, input] of Object.entries(inputs)) if (k in o && input.checked !== !!o[k]) { input.checked = !!o[k]; opts[k] = !!o[k]; }
+  });
   update();
   return {
     el, scale, update,
     destroy() {
-      off();
+      off(); offOpt();
       stage.removeEventListener('keydown', onKey);
       if (hadTab == null) stage.removeAttribute('tabindex'); else stage.setAttribute('tabindex', hadTab);
       stage.removeAttribute('aria-label');
       el.remove(); scale.remove();
     },
   };
+}
+
+// ---------- 고도 색 범례(교과서 16쪽 「육지 높이·바다 깊이」 상자) ----------
+/**
+ * 세로 색띠 + 칸 경계 숫자(m). 위에서부터 빙하 · 5,000 … 0 · 해수면 아래 땅 · 바다 200 … 8,000(교과서 차례).
+ * → { el, show(on), destroy() }. 누를 것 없음(그림과 글).
+ */
+export function tintLegendBlock(panel, { title = '높이와 깊이', note = null } = {}) {
+  const rows = tintLegend();
+  const items = rows.map((r, i) => h('div', { class: `at-tint-row at-tint-${r.kind}${i === rows.length - 1 ? ' at-tint-last' : ''}`, title: r.title },
+    h('span', { class: 'at-tint-top' }, r.top ?? ''),
+    h('span', { class: 'at-tint-sw', style: { background: r.kind === 'glacier' ? `repeating-linear-gradient(135deg, rgba(0, 0, 0, .08) 0 2px, transparent 2px 5px), ${r.color}` : r.color }, 'aria-hidden': 'true' }),
+    r.label ? h('span', { class: 'at-tint-label' }, r.label) : null));
+  const el = h('section', { class: 'at-legend at-tint-legend', 'aria-label': `${title} 범례` },
+    h('div', { class: 'at-legend-head' }, h('h3', { class: 'ds-h2 at-legend-title' }, title)),
+    h('div', { class: 'at-tint-cols' },
+      h('div', { class: 'at-tint-caption' }, h('span', {}, '육지 높이 (m)'), h('span', {}, '바다 깊이 (m)')),
+      h('div', { class: 'at-tint-ramp', role: 'img', 'aria-label': '육지 높이 0·100·200·500·1,000·2,000·3,000·4,000·5,000 m, 빙하, 해수면 아래 땅, 바다 깊이 200·1,000·2,000·4,000·6,000·8,000 m' },
+        items)),
+    note ? h('p', { class: 'at-legend-note' }, note) : null);
+  if (panel) addBlock(panel, el);
+  return { el, show(on) { el.hidden = !on; }, destroy() { el.remove(); } };
 }
 
 // ---------- 범례 ----------

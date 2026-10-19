@@ -134,7 +134,7 @@ function mapChecks(mapId, refs, shot, topicId) {
       const miss = legend.filter((e) => !box.includes(squash(e.label)));
       const onMap = miss.filter((e) => pageHay[page].includes(squash(e.label))).map((e) => e.label); // 지면에서는 지도 위 글자
       const absent = miss.filter((e) => !pageHay[page].includes(squash(e.label))).map((e) => e.label);
-      out.push(check(`${tag}범례 분류 수`, '추출 없음', legend.length, INFO, isOverlay ? '래스터 음영 — 범례는 C3 에서 지면 색을 읽음' : '실제 경계 자료(Natural Earth) — 교과서 색·범례 이름만 씀'));
+      out.push(check(`${tag}범례 분류 수`, '추출 없음', legend.length, INFO, isOverlay ? '래스터 음영 — 범례는 C3 에서 지면 색을 읽음' : '경계는 실제 자료(Natural Earth), 종교 면·지명은 교과서 모식도에서 옮김 — 교과서 범례 7항목(주장 국경 3·정전 라인·종교 3)'));
       out.push(check(`${tag}범례 글자 ↔ 지면 범례`, '범례 상자 글', absent.length ? `지면에 없는 글자: ${list(absent)}` : '모두 지면에 있음', absent.length ? DIFF : OK,
         absent.length ? `지면 범례 상자: 「${short(TB[page]?.legend?.[mapId], 140)}」` : ''));
       if (onMap.length) out.push(check(`${tag}지도 위 글자 → 범례`, '지도 위에 쓴 이름', `범례 항목으로: ${list(onMap)}`, KNOWN, 'C1 결정 — 관할 지역 면은 Natural Earth 분쟁 지역, 교과서의 지도 위 이름을 범례로'));

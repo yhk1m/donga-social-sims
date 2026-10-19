@@ -9,6 +9,9 @@
 //     countryFeatures  색칠하기 나라 도형({ '50': [...], '10a': [...] })
 //     insets   { 레이어 ref: 바탕 윤곽 GeoJSON } — 그 레이어는 큰 지도 대신 무대 위 확대 창(symbolInset)에 그리고, 큰 지도에는 위치 상자만
 //     boundsOf { 레이어 ref: [w, s, e, n] } — 그 레이어를 고를 때 맞출 범위(교역 흐름선처럼 주제 view 밖까지 가는 것)
+//     tint     이 주제의 고도 색 기본값(일반도·지형 = true — 교과서처럼 높이·깊이 색, 주제도는 false — 주제 색이 잘 보이게). 주제를 펼칠 때
+//              map.setOptions({ tint }) 로 맞추고, 켜져 있고 고도 색 자료가 붙었으면 사이드바에 고도 색 범례(tintLegendBlock)를 보인다
+//              (지도 도구 「고도 색」으로 바꾸면 범례도 따라감 — map.on('options')).
 //     locators { 레이어 ref: {bounds, names, title} } — 그 레이어를 고르면 무대에 작은 위치도(locatorInset — 레이어의 type 'locator' 면을 강조,
 //              바탕은 countryFeatures['50']). 카슈미르 = 인도 위치도(교과서 22쪽 오른쪽 위).
 //     centerLonOf { 레이어 ref: 중심 경도 } — 그 레이어를 고를 때 지도 중심 경도(교역 = 150, 교과서도 태평양 중심 밀러). 묶음을 떠나면 되돌린다
@@ -22,7 +25,7 @@
 import { h, icon } from '../shared/dom.js';
 import { markerLayer } from './layers.js';
 import { layerFromRef } from './layerRef.js';
-import { legendBlock, detailCard } from './ui.js';
+import { legendBlock, detailCard, tintLegendBlock } from './ui.js';
 import { renderChart, barPicker, isMultiBar } from './charts.js';
 import { coloringLayer, coloringQuiz, heritageQuiz } from './quiz.js';
 import { symbolInset, insetBoxLayer, geoBox, insetAvoidOffset, locatorInset } from './inset.js';
@@ -52,7 +55,7 @@ export function groupBounds(topic, group, boundsOf = {}) {
 
 export function buildTopic({
   map, stage = null, body, viewer = null, credits = null, tip = null, topic, charts = {}, layers: layerData = {}, countryFeatures = null,
-  insets = {}, boundsOf = {}, centerLonOf = {}, locators = {}, seed = undefined,
+  insets = {}, boundsOf = {}, centerLonOf = {}, locators = {}, tint = false, seed = undefined,
 }) {
   const parts = [];            // 주제가 끝날 때 destroy 할 사이드바 부품(카드·그래프·퀴즈)
   let groupParts = [];         // 묶음을 바꿀 때 destroy 할 것(범례 블록·확대 창·지도에 안 올린 레이어)
@@ -80,7 +83,14 @@ export function buildTopic({
     body.append(h('div', { class: 'ds-ctl' }, h('span', { class: 'ds-label' }, '바로가기'),
       h('div', { class: 'ds-row at-topic-views' }, topic.views.map((v) => h('button', { class: 'ds-btn', type: 'button', on: { click: () => goView(v) } }, v.label)))));
   }
-  body.append(legendBox, card.el);
+  // 고도 색: 주제 기본값으로 맞추고, 켜져 있고 자료가 붙었을 때만 범례
+  const tintBox = tintLegendBlock(null, { note: '높이 자료: ETOPO 2022(NOAA), 단계와 색은 교과서 16쪽 범례' });
+  const syncTint = () => tintBox.show(!!(map.options?.tint && map.tintReady));
+  map.setOptions?.({ tint: !!tint });
+  let offTint = null;
+  try { offTint = map.on('options', syncTint); } catch { offTint = null; } // 옵션 알림이 없는 지도(시험용)면 처음 값만
+  syncTint();
+  body.append(legendBox, tintBox.el, card.el);
 
   function goView(v) {
     const gi = groups.findIndex((g) => groupView(topic, g) === v);
@@ -225,6 +235,8 @@ export function buildTopic({
   function destroy() {
     if (!alive) return;
     alive = false;
+    offTint?.();
+    tintBox.destroy();
     clearGroup();
     for (let i = parts.length - 1; i >= 0; i--) parts[i].destroy();
     parts.length = 0;

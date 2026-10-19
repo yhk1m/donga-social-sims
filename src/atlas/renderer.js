@@ -17,10 +17,12 @@
 //     click: fn({ lonlat, xy, feature?, layerId?, detail })  detail = 브라우저 click 의 누른 횟수(1, 두 번째 누름이면 2 …)
 //     hover: fn({ lonlat, xy, feature?, layerId? }) — 움직이는 동안 건너뛰고, 멈추면 마지막 포인터 자리로 한 번 다시. 무대를 벗어나면 {lonlat:null, xy:null}
 //     viewchange: fn(view) — 보기(도법·중심 경도·변환·크기·상세도·움직임 여부)가 실제로 바뀔 때만. 레이어·옵션 변경으로는 나지 않음
+//     options: fn(options) — setOptions 로 값이 바뀌었을 때·고도 색 그리기 함수가 붙었을 때(지도 도구 체크 상자·고도 색 범례가 따라감)
 //   map.project(lonlat) → [x, y] | null,  map.invert(xy) → lonlat | null
 //   map.view → { key, centerLon, k, x, y, width, height, center, kmPerPx, detail, moving, projection, geoRect }
 //     읽기 전용 객체, 보기가 바뀔 때만 새로 만든다(같으면 같은 객체). center·kmPerPx 는 처음 읽을 때 한 번만 계산(지연 getter).
-//   map.setOptions({ graticule, labels, relief }), map.setReliefDrawer(fn), map.redraw()(전체 다시 그림 + 지명), map.destroy(), map.destroyed
+//   map.setOptions({ graticule, labels, relief, tint }), map.options(사본), map.setReliefDrawer(fn), map.setTintDrawer(fn), map.tintReady,
+//   map.redraw()(전체 다시 그림 + 지명), map.destroy(), map.destroyed
 //     (destroy 뒤에는 setOptions·setReliefDrawer·setPlaces·invalidate·refreshLayer 가 아무것도 하지 않는다)
 //   map.layers(읽기 전용 getter, z 순서 배열 사본), map.stats(읽기 전용 getter, 시간 측정: render[{ms, detail, k, key, parts}]·labels·
 //     morphFrames·interactiveFrames·countryIndexMs)
@@ -37,6 +39,8 @@
 //   - 지형 음영 setReliefDrawer(fn): fn(ctx, projection, view, { land, under, path, clipOutside }) — 육지를 칠한 뒤(레이어 아래) 멈출 때만 불린다.
 //     land = 지금 상세도 육지(화면 상자로 자른 것), under = 10a 일 때 단원 상자 밖을 메우는 50m 육지(아니면 null),
 //     clipOutside = under 가 있을 때 ctx 를 단원 상자 밖으로 자르는 함수(under 는 그 안에서만 칠해졌다, 아니면 null). relief.js 참고.
+//   - 고도 색 setTintDrawer(fn): fn(ctx, projection, view, { phase, land, under, path, clipOutside, clipSphere, seal }) — 옵션 tint 일 때 멈출 때만,
+//     phase 'sea' = 바다를 칠한 직후(clipSphere 로 지구 안), phase 'land' = 육지를 칠한 직후·음영 전(seal(무늬) = 10a↔50m 상자 테두리 메우기). tint.js 참고.
 //   - view.geoRect = 마지막 전체 그림 때 화면에 보이는 경위도 상자 [w, s, e, n](+여백, 경도는 중심 경도 기준으로 펴서 ±180 을 넘을 수 있음)
 //     | null(세계 보기). 바탕 지도는 이 상자로 미리 잘라 투영한다(geoClip.js clipIndexed — 구드 preclip 이 무거워서). 레이어도 써도 된다.
 import { geoPath, geoContains, geoBounds, geoGraticule } from 'd3-geo';
@@ -113,16 +117,16 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   let morph = null; // {raf, finish}
   let settleTimer = 0, frameRaf = 0, hoverRaf = 0, pendingHover = null;
   let pendingView = null; // 크기를 모를 때 받은 flyTo/fitBounds
-  let reliefDrawer = null;
+  let reliefDrawer = null, tintDrawer = null;
   let viewCache = null; // map.view 객체(변환·투영·상세도·상태가 바뀔 때만 새로 만듦)
   let lastViewSig = ''; // 마지막으로 viewchange 를 낸 보기의 서명
   let hoverSkipped = false; // 움직이는 동안 건너뛴 hover 가 있었나(멈추면 마지막 자리로 한 번 다시)
   let idleHandle = null; // 나라 색인 미리 만들기 예약
   const dirty = { raf: 0, canvas: false, svgAll: false, svgIds: new Set(), labels: false }; // invalidate·refreshLayer·setPlaces 를 한 rAF 로
   const warned = new Set();
-  const opts = { graticule: true, labels: true, relief: true };
+  const opts = { graticule: true, labels: true, relief: true, tint: false };
   const layers = []; // {layer, g}
-  const handlers = { click: new Set(), hover: new Set(), viewchange: new Set() };
+  const handlers = { click: new Set(), hover: new Set(), viewchange: new Set(), options: new Set() };
   const stats = { render: [], labels: [], labelCount: 0, morphFrames: [], interactiveFrames: [], countryIndexMs: null };
   const push = (arr, v) => { arr.push(v); if (arr.length > 60) arr.shift(); };
 
@@ -259,12 +263,12 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
    * 10a(상자 안)와 50m(상자 밖, evenodd 자르기) 육지가 만나는 상자 테두리: 두 쪽 다 경계 픽셀을 반쯤만 칠해(자르기·도형 끝 안티에일리어싱)
    * 바다색이 1px 선으로 비친다. 50m 육지 안에서만 상자 테두리를 육지색으로 1.5px 그어 메운다(하천·국경보다 먼저라 덮지 않음).
    */
-  function sealUnitSeam(path, landU) {
+  function sealUnitSeam(path, landU, strokeStyle = STYLE.land) {
     ctx.save();
     ctx.beginPath(); path(landU); ctx.clip();
     ctx.beginPath();
     for (const bp of boxPolys) path(bp);
-    ctx.strokeStyle = STYLE.land; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.strokeStyle = strokeStyle; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.restore();
   }
   function begin() {
@@ -308,6 +312,13 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     const path = geoPath(vp, ctx);
     const k = T.k;
     sphere(path, vp); ctx.fillStyle = STYLE.ocean; ctx.fill();
+    const tintOn = opts.tint && tintDrawer;
+    const callTint = (phase, extra) => {
+      ctx.save();
+      try { tintDrawer(ctx, vp, view, { phase, path, ...extra }); } catch (err) { console.error('고도 색 실패', err); }
+      ctx.restore();
+    };
+    if (tintOn) callTint('sea', { clipSphere: () => { sphere(path, vp); ctx.clip(); } });
     mark('sea');
     const C = (idx) => clipIndexed(idx, rect);
     const L = level(detail);
@@ -319,6 +330,10 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     fillGeo(path, landL, STYLE.land);
     if (under) sealUnitSeam(path, landU);
     mark('land');
+    if (tintOn) {
+      callTint('land', { land: landL, under: landU, clipOutside: under ? () => clipOutsideUnit(path) : null, seal: under ? (st) => sealUnitSeam(path, landU, st) : null });
+      mark('tint');
+    }
     // 지형 음영(D5)
     if (opts.relief && reliefDrawer) {
       ctx.save();
@@ -732,6 +747,10 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     get stats() { return stats; },
     /** destroy 뒤 true(비동기로 붙는 것 — 지형 음영 attachRelief 등 — 이 늦게 와도 붙지 않게) */
     get destroyed() { return destroyed; },
+    /** 지금 옵션 사본 */
+    get options() { return { ...opts }; },
+    /** 고도 색 그리기 함수가 붙었는지(불러오기 실패면 false — 켜도 그림은 그대로) */
+    get tintReady() { return !!tintDrawer; },
     on(type, fn) {
       if (!handlers[type]) throw new Error(`모르는 이벤트: ${type}`);
       handlers[type].add(fn);
@@ -740,11 +759,14 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     setOptions(o = {}) {
       if (destroyed) return;
       let canvasChanged = false;
-      for (const k of ['graticule', 'relief']) if (k in o && opts[k] !== !!o[k]) { opts[k] = !!o[k]; canvasChanged = true; }
-      if ('labels' in o && opts.labels !== !!o.labels) { opts.labels = !!o.labels; dirty.labels = true; schedule(); }
+      let changed = false;
+      for (const k of ['graticule', 'relief', 'tint']) if (k in o && opts[k] !== !!o[k]) { opts[k] = !!o[k]; canvasChanged = true; }
+      if ('labels' in o && opts.labels !== !!o.labels) { opts.labels = !!o.labels; dirty.labels = true; schedule(); changed = true; }
       if (canvasChanged) invalidate();
+      if (canvasChanged || changed) emit('options', { ...opts });
     },
     setReliefDrawer(fn) { if (destroyed) return; reliefDrawer = typeof fn === 'function' ? fn : null; invalidate(); },
+    setTintDrawer(fn) { if (destroyed) return; tintDrawer = typeof fn === 'function' ? fn : null; if (opts.tint) invalidate(); emit('options', { ...opts }); },
     /** 지명 목록 바꾸기: 바탕 지도 캐시는 그대로 두고 지명만 다시 놓는다(viewchange 없음). */
     setPlaces(list) { if (destroyed) return; placeItems = toItems(list); dirty.labels = true; schedule(); },
     redraw() { if (morph) morph.finish(); settle(); },

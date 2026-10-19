@@ -152,6 +152,18 @@ export function invertGrid(invert, width, height, { step = 2, block = 4, tol = 0
   return { cols, rows, step, lon, lat, exact, skipped };
 }
 
+/**
+ * 화면 격자 역투영을 같은 그림 안에서 나눠 쓴다(고도 색 tint.js 와 음영이 같은 view·step 이면 한 번만 계산).
+ * view 는 렌더러가 전체 그림마다 새로 만드는 객체라 객체 같음으로 비교한다(다음 그림이면 다시 계산).
+ */
+let lastGrid = null;
+export function gridFor(projection, view, step = 2) {
+  if (lastGrid && lastGrid.view === view && lastGrid.step === step && lastGrid.projection === projection) return lastGrid.grid;
+  const grid = invertGrid((p) => projection.invert(p), view.width, view.height, { step, forward: (ll) => projection(ll) });
+  lastGrid = { view, step, projection, grid };
+  return grid;
+}
+
 /** 경위도 격자 → RGBA(out, 길이 cols·rows·4): 회색 = lut[표본], 지도 밖(NaN)은 투명. */
 export function shadeGrid(grid, img, lut, out) {
   const { lon, lat } = grid, { width: iw, height: ih, data } = img;
@@ -221,7 +233,7 @@ const lutOf = (style) => {
 export function drawRelief(ctx, projection, view, img, { land, under = null, path, clipOutside = null, step = 2, style = RELIEF_STYLE, clock = () => performance.now() } = {}) {
   const t0 = clock();
   if (!img || !land || !path || !view?.width || !view?.height) return null;
-  const grid = invertGrid((p) => projection.invert(p), view.width, view.height, { step, forward: (ll) => projection(ll) });
+  const grid = gridFor(projection, view, step);
   if (!off) { off = h('canvas'); offCtx = off.getContext('2d'); }
   if (off.width !== grid.cols || off.height !== grid.rows) { off.width = grid.cols; off.height = grid.rows; }
   const id = offCtx.createImageData(grid.cols, grid.rows);

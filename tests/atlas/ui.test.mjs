@@ -23,8 +23,9 @@ const div = () => document.createElement('div');
 
 /** 렌더러 흉내: on() 구독 수, 부른 메서드 기록 */
 function fakeMap() {
-  const handlers = { click: new Set(), hover: new Set(), viewchange: new Set() };
+  const handlers = { click: new Set(), hover: new Set(), viewchange: new Set(), options: new Set() };
   const calls = [];
+  const opts = { graticule: true, labels: true, relief: true, tint: false };
   let view = { key: 'miller', centerLon: 0, k: 2, x: 0, y: 0, width: 800, height: 600, kmPerPx: 10 };
   return {
     calls, destroyed: false,
@@ -35,7 +36,8 @@ function fakeMap() {
     get handlerCount() { return Object.values(handlers).reduce((a, x) => a + x.size, 0); },
     setProjection(k) { calls.push(['setProjection', k]); view = { ...view, key: k }; },
     setCenterLon(c) { calls.push(['setCenterLon', c]); view = { ...view, centerLon: c }; },
-    setOptions(o) { calls.push(['setOptions', o]); },
+    setOptions(o) { calls.push(['setOptions', o]); Object.assign(opts, o); for (const fn of handlers.options) fn({ ...opts }); },
+    get options() { return { ...opts }; },
     flyTo(t, ms) { calls.push(['flyTo', t, ms]); },
     fitBounds(b, o) { calls.push(['fitBounds', b, o]); },
     invert(xy) { return [xy[0] / 10, xy[1] / 10]; },
@@ -105,6 +107,13 @@ test('mapTools: 도법·중심 경도·옵션·확대 버튼, 축척 막대 갱�
     assert.deepEqual(map.calls.at(-1)[1].center, [24, 30]); // invert([400 − 160, 300]) = [24, 30]
     stage.dispatch('keydown', { key: '+', target: segBtns[0] });
     assert.equal(map.calls.length, n + 2);
+    // 고도 색 체크 상자: 누르면 setOptions({tint}), 주제가 옵션을 바꾸면(map 'options') 체크 상자가 따라감
+    const tintBox = findAll(t.el, byClass('at-tools-check-input'))[3];
+    assert.equal(!!tintBox.checked, false);
+    tintBox.checked = true; tintBox.dispatch('change', { target: tintBox });
+    assert.deepEqual(map.calls.at(-1), ['setOptions', { tint: true }]);
+    map.setOptions({ tint: false });
+    assert.equal(!!tintBox.checked, false, '지도 옵션을 따라감');
     t.destroy();
     assert.equal(map.handlerCount, 0, '구독 0');
     assert.equal(stage.listenerCount, 0, '무대 키 리스너 0');

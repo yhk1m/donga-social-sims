@@ -467,6 +467,22 @@
   "out": "sims/atlas-u2-asia/data/inset-p22-singapore.json"}
 ],
 "_insets": "E1 확대 창(인셋) 바탕 윤곽 — inset_outline.py. 싱가포르 사원 76개는 지도 확대 상한(40배)에서 섬이 30px 남짓이라 한 덩어리로 겹쳐, 종교·문화 주제의 싱가포르 보기에서 무대 위 확대 창에 따로 그린다. 윤곽은 교과서 22쪽 지도 육지(#e7efc1)를 같은 fit 으로 되돌린 것(Natural Earth 10m 싱가포르는 꼭짓점 40개).",
+"tint": {
+ "_doc": "고도 색(E2 대조 반영, 교사 요청 「교과서처럼 고도에 따라 색이 다르게」) — build_tint.py. 교과서 16쪽 일반도 범례(육지 높이·바다 깊이, 벡터 견본 색)를 그대로: DEM 을 단계로 나눈 분류 화상(회색 = 분류 번호 × codeStep)을 relief-4096.jpg 와 같은 등장방형 4096×2048 로. 앱(tint.js)이 분류 번호 → 색을 표(육지용·바다용)로 바꿔 바다는 바다 위에, 육지는 육지 안에만 칠한다(해안선은 벡터가 정하고, 분류 화상의 해안 어긋남은 반대쪽 표가 가장 낮은 단계 색으로 메움).",
+ "dem": {"file": "@work/raw/etopo2022/ETOPO_2022_v1_60s_N90W180_surface.tif",
+  "url": "https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2022/data/60s/60s_surface_elev_gtif/ETOPO_2022_v1_60s_N90W180_surface.tif",
+  "source": "NOAA NCEI, ETOPO 2022 Global Relief Model, 60 arc-second surface elevation (doi:10.25921/fd45-gt74)", "licence": "public domain (U.S. Government work, NOAA NCEI)"},
+ "land": "@work/raw/ne/ne_10m_land.geojson",
+ "glaciers": "@work/raw/ne/ne_10m_glaciated_areas.geojson",
+ "width": 4096, "height": 2048, "codeStep": 12,
+ "landBreaks": [0, 100, 200, 500, 1000, 2000, 3000, 4000, 5000],
+ "landColors": ["#88b986", "#c4df9f", "#deeaae", "#f0f3c5", "#f7e1ad", "#efd2a1", "#e9c58f", "#e0b77f", "#d7ad70", "#cfa361"],
+ "glacierColor": "#ffffff",
+ "seaBreaks": [200, 1000, 2000, 4000, 6000, 8000],
+ "seaColors": ["#d4effc", "#c9e7f9", "#b1dcf6", "#96d0f1", "#7ac3ec", "#62bae9", "#3baee3"],
+ "_colors": "교과서 16쪽 범례 상자 벡터 견본(쪽 그림 #28644~28661): 육지 = 0 미만(해수면 아래 땅 — 범례 0 칸의 짙은 초록 언덕 그림) · 0~100 · 100~200 · 200~500 · 500~1,000 · 1,000~2,000 · 2,000~3,000 · 3,000~4,000 · 4,000~5,000 · 5,000 이상, 빙하 = 흰색(교과서는 흰 바탕 회색 결), 바다 = 0~200 · 200~1,000 · 1,000~2,000 · 2,000~4,000 · 4,000~6,000 · 6,000~8,000 · 8,000 이상. 18·19쪽 일반도도 같은 범례, 20쪽 지형은 Natural Earth 위성 느낌 화상(범례 없음).",
+ "out": "docs/assets/atlas/common/tint-4096.png", "maxBytes": 1048576
+},
 "content": {
  "_doc": "C5 주제 내용. 사람이 고치는 원본은 topics(글은 src·…Src 상자에서 extract_text.py --fill 이 원문 그대로 채움)와 overrides(사람이 고친 값, 키 topicId.field · topicId.quiz.field · topicId.markers.<id>.field · topicId.blocks.<id>.field · topicId.layers.<ref>.field · topicId.views.<id>.field, from 필수). coloring_quiz.mjs 가 색칠하기 쪽 글자(labels) → coloringOut, build_content.mjs 가 topics + overrides + photos + charts + coloringOut → out/topics.json·charts.json·layers.js. 경로: topics·overrides·photos·coloringOut·places·out·pageDir·photoDir 은 저장소 기준, labels·charts 는 작업 폴더 기준. schema = 생성 전 검사(모르는 키는 오류, …Src·_·why 키는 원본 표기라 허용 후 뺌). stamps = 낡은 산출물 검사(입력 내용 해시, atlas_common.stamp_hash = geo_util.stampHash).",
  "topics": "content/atlas/u2/topics.json",

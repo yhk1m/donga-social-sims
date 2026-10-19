@@ -30,10 +30,13 @@ const TRADE = [55, -45, -60, 72];
 
 /** 렌더러 흉내: 레이어 목록(addLayer·removeLayer·clearLayers 가 destroy 를 부름 — 렌더러 계약), on() 구독 수, fitBounds 기록 */
 function fakeMap() {
-  const handlers = { click: new Set(), hover: new Set(), viewchange: new Set() };
+  const handlers = { click: new Set(), hover: new Set(), viewchange: new Set(), options: new Set() };
   const layers = new Map();
   const calls = [];
+  const opts = { tint: false };
   return {
+    tintReady: true,
+    get options() { return { ...opts }; },
     calls, destroyed: false,
     view: { key: 'miller', centerLon: 0, k: 2, x: 0, y: 0, width: 800, height: 600, kmPerPx: 10 },
     on(type, fn) { handlers[type].add(fn); return () => handlers[type].delete(fn); },
@@ -46,7 +49,7 @@ function fakeMap() {
     fitBounds(b, o) { calls.push(['fitBounds', b, o]); },
     flyTo(t) { calls.push(['flyTo', t]); },
     setCenterLon(c) { calls.push(['setCenterLon', c]); this.view = { ...this.view, centerLon: c }; },
-    setOptions() {}, invalidate() {},
+    setOptions(o) { calls.push(['setOptions', o]); Object.assign(opts, o); for (const fn of handlers.options) fn({ ...opts }); }, invalidate() {},
   };
 }
 const find = (el, pred) => {
@@ -111,14 +114,14 @@ test('묶음 바꾸기: 앞 묶음 레이어·범례 블록을 내리고 새 묶
   const t = topicOf('population');
   const T = S.build(t);
   assert.deepEqual(S.map.layers.map((L) => L.id).sort(), ['layer-p23-density-cities', 'overlay-p23-density']);
-  assert.equal(findAll(S.body, byClass('at-legend')).length, 2);
+  assert.equal(findAll(S.body, byClass('at-legend')).filter((e) => !e.classList.contains('at-tint-legend')).length, 2);
   const seg = findAll(S.body, byClass('ds-seg-btn')).filter((b) => b.getAttribute('title'));
   assert.equal(seg.length, 2);
   assert.equal(seg[0].getAttribute('aria-pressed'), 'true');
   seg[1].dispatch('click');
   assert.equal(T.group, 1);
   assert.deepEqual(S.map.layers.map((L) => L.id), ['layer-p23-growth']);
-  assert.equal(findAll(S.body, byClass('at-legend')).length, 1);
+  assert.equal(findAll(S.body, byClass('at-legend')).filter((e) => !e.classList.contains('at-tint-legend')).length, 1);
   assert.equal(seg[1].getAttribute('aria-pressed'), 'true');
   assert.deepEqual(S.map.calls.at(-1), ['fitBounds', t.view.bounds, undefined]);
   assert.match(find(S.panel, byClass('at-credits-list')).textContent, /세계 인구 전망/);
@@ -332,4 +335,24 @@ test('카슈미르 묶음: 무대에 인도 위치도(분홍 = 레이어 locator
   T.showGroup(0);
   assert.equal(find(S.stage, byClass('at-locator')), null);
   T.destroy();
+});
+
+test('고도 색: 주제 기본값(tint)으로 map.setOptions, 켜져 있고 자료가 붙었을 때만 범례, 지도 도구로 끄면 범례도 숨김, destroy 로 구독 해제', () => {
+  const S = setup();
+  const T = S.build(topicOf('general'), { tint: true });
+  assert.deepEqual(S.map.calls.find((c) => c[0] === 'setOptions'), ['setOptions', { tint: true }]);
+  const lg = find(S.body, byClass('at-tint-legend'));
+  assert.ok(lg && !lg.hidden, '일반도 = 고도 색 범례');
+  assert.equal(findAll(lg, byClass('at-tint-row')).length, 18, '빙하·육지 9·해수면 아래·바다 7');
+  S.map.setOptions({ tint: false });
+  assert.equal(lg.hidden, true, '끄면 범례도 숨김');
+  T.destroy();
+  assert.equal(S.map.handlerCount, S.base);
+  const T2 = S.build(topicOf('climate'), { tint: false });
+  assert.deepEqual(S.map.calls.filter((c) => c[0] === 'setOptions').at(-1), ['setOptions', { tint: false }], '주제도는 끔');
+  assert.equal(find(S.body, byClass('at-tint-legend')).hidden, true);
+  S.map.tintReady = false;
+  S.map.setOptions({ tint: true });
+  assert.equal(find(S.body, byClass('at-tint-legend')).hidden, true, '자료를 못 불러왔으면 켜도 범례 없음');
+  T2.destroy();
 });

@@ -85,6 +85,7 @@ async function open(topic, proj) {
   await send('Page.navigate', { url: `${BASE}/sims/atlas-u2-asia/?topic=${topic}&proj=${proj}` });
   for (let i = 0; i < 150; i++) { await sleep(100); try { if (await evaluate(`!!${R}?.atlasTopic`)) break; } catch { /* 불러오는 중 */ } }
   for (let i = 0; i < 60; i++) { await sleep(100); if (await evaluate(`!!${R}.atlasRelief`)) break; }
+  for (let i = 0; i < 60; i++) { await sleep(100); if (await evaluate(`!!${R}.atlasTint`)) break; } // 고도 색 분류 화상(E2 대조 반영)
   await evaluate(IDLE); await sleep(600);
 }
 const scrollTop = () => evaluate(`${R}.querySelector('.ds-panel').scrollTop=0`);
@@ -126,6 +127,12 @@ async function scenes() {
       }
       if (proj !== 'robinson') continue;
       // 덧붙임 장면
+      // 고도 색 켬/끔(E2 대조 반영 — 일반도·지형은 기본 켬): 같은 보기에서 끈 그림
+      if (['general', 'relief'].includes(t.id) && want(`${t.id}-tint-off`)) {
+        await evaluate(`${R}.atlasMap.setOptions({tint:false})`); await evaluate(IDLE); await sleep(400); await scrollTop();
+        await take(`${t.id}-tint-off`, { topic: t.id, proj, kind: 'extra', note: '고도 색 끔(같은 보기)' });
+        await evaluate(`${R}.atlasMap.setOptions({tint:true})`); await evaluate(IDLE);
+      }
       if (t.id === 'religion' && want('religion-inset-hover')) {
         const gi = groups.findIndex((g) => g.refs.includes('layer-p22-singapore'));
         await evaluate(`${R}.atlasTopic.showGroup(${gi})`); await evaluate(IDLE); await sleep(500);
@@ -163,6 +170,17 @@ async function scenes() {
       if (t.id === 'coloring' && want('coloring-quiz')) {
         await scrollTo('.at-quiz'); await sleep(400);
         await take('coloring-quiz', { topic: t.id, proj, kind: 'extra', note: '색칠하기 활동' });
+      }
+    }
+    // 고도 색: 구드(단속)·밀러 동아시아에서 켬/끔
+    if (t.id === 'general') {
+      for (const proj of ['goode', 'miller']) {
+        if (!want(`general-${proj}-tint`)) continue;
+        await open('general', proj);
+        if (proj === 'miller') { await evaluate(`${R}.atlasMap.fitBounds(${JSON.stringify(t.views.find((v) => v.id === 'east-asia').bounds)})`); await evaluate(IDLE); await sleep(400); }
+        await take(`general-${proj}-tint`, { topic: 'general', proj, kind: 'extra', note: `고도 색 켬(${proj})` });
+        await evaluate(`${R}.atlasMap.setOptions({tint:false})`); await evaluate(IDLE); await sleep(400);
+        await take(`general-${proj}-tint-off`, { topic: 'general', proj, kind: 'extra', note: `고도 색 끔(${proj})` });
       }
     }
     // 교역: 교과서와 같은 밀러(태평양 중심은 묶음이 스스로 맞춤)
