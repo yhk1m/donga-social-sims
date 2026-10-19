@@ -46,3 +46,19 @@ test('구독자 하나가 오류를 내도 나머지는 알림을 받고 상태�
   assert.equal(s.selected(), 'A');
   assert.equal(errors.length, 1);
 });
+
+test('toggleGroup: 묶음 분류만 활성(selected = group:이름), 다시 누르면 전체, 한 분류 누르면 묶음 풀림, 모르는 분류면 오류', () => {
+  const s = createLegendState(['a', 'b', 'c']);
+  const seen = [];
+  s.onChange((v) => seen.push(v));
+  s.toggleGroup('열대', ['a', 'b']);
+  assert.equal(s.selected(), 'group:열대');
+  assert.deepEqual(['a', 'b', 'c'].map(s.isActive), [true, true, false]);
+  s.toggle('c');
+  assert.deepEqual(['a', 'b', 'c'].map(s.isActive), [false, false, true]);
+  s.toggleGroup('열대', ['a', 'b']); s.toggleGroup('열대', ['a', 'b']);
+  assert.equal(s.selected(), null);
+  assert.deepEqual(['a', 'b', 'c'].map(s.isActive), [true, true, true]);
+  assert.deepEqual(seen, ['group:열대', 'c', 'group:열대', null]);
+  assert.throws(() => s.toggleGroup('x', ['a', 'z']), /모르는 범례 분류/);
+});

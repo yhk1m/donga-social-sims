@@ -445,7 +445,7 @@
     "type": "area",
     "legend": true,
     "group": "map",
-    "note": "위치: 실제 경계 자료(Natural Earth)",
+    "note": "색이 흐린 지역은 비율이 낮은 지역. 경계·정전 라인은 실제 자료(Natural Earth), 종교 분포 안쪽 경계는 교과서 모식도에서 옮긴 근사",
     "creditSrc": {
      "page": 22,
      "bbox": [672, 553, 732, 563]

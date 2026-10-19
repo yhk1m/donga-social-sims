@@ -110,13 +110,19 @@ test('흐름선: 수입은 우리나라로, 수출은 우리나라에서, 굵기
   }
 });
 
-test('카슈미르는 Natural Earth 자료, 교과서 범례 이름을 쓴다', () => {
+test('카슈미르는 Natural Earth 경계 + 교과서 종교 면(진한·흐린)·지명·범례 이름(…교도)', () => {
   const gj = load('p22-kashmir');
   assert.equal(gj.properties.source, 'Natural Earth');
+  assert.equal(gj.properties.approx, true);
   const labels = gj.features.map((f) => f.properties.label);
-  for (const l of ['파키스탄 지배 지역', '인도 지배 지역', '파키스탄이 주장하는 국경', '인도가 주장하는 국경', '중국이 주장하는 국경', '인도-파키스탄 정전 라인']) {
-    assert.ok(labels.includes(l), l);
-  }
+  for (const l of ['파키스탄이 주장하는 국경', '인도가 주장하는 국경', '중국이 주장하는 국경', '인도-파키스탄 정전 라인']) assert.ok(labels.includes(l), l);
+  assert.deepEqual(gj.properties.legend.filter((e) => e.kind === 'fill').map((e) => e.label), ['이슬람교도 비율이 높은 지역', '힌두교도 비율이 높은 지역', '불교도 비율이 높은 지역']);
+  assert.ok(gj.properties.legend.every((e) => e.geometry !== false), '종교 3분류도 면이 있음');
+  const shades = gj.features.filter((f) => f.properties.type === 'area').map((f) => `${f.properties.cls}:${f.properties.shade}`);
+  assert.deepEqual(shades.sort(), ['rel-buddhism:buddhism', 'rel-hindu:hindu', 'rel-islam:faint', 'rel-islam:strong']);
+  const texts = gj.features.filter((f) => f.properties.type === 'label').map((f) => f.properties.text);
+  for (const t of ['카', '슈', '미', '르', '파키스탄 지배 지역', '인도 지배 지역', '중국-인도 분쟁 지역', '중국', '파키스탄', '인도']) assert.ok(texts.includes(t), t);
+  assert.equal(gj.features.filter((f) => f.properties.type === 'locator').length, 1);
   for (const f of gj.features) {
     const [lon, lat] = JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*/g).map(Number);
     assert.ok(lon > 70 && lon < 82 && lat > 31 && lat < 38);

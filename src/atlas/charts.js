@@ -13,6 +13,7 @@ import {
   renderClimateGraph, renderLineGraph, renderPyramidGraph, renderStackedGraph, renderAbsBarGraph, createDefaultGraphOptions, installRoundRectPolyfill,
 } from 'csat-chart.js';
 import { h, s, icon } from '../shared/dom.js';
+import { segButtons } from './seg.js';
 import {
   chartPlan, toClimateData, toLineData, toStackedAreaData, toPyramidData, toPieData, toStackedBarData, toAbsBarData, stackLegend, stackCells, linearScale, arcPath, ringRows, laneLabels, shareFormatter, totalText,
 } from './chartCore.js';
@@ -191,13 +192,11 @@ export function barPicker(container, spec, { onExpand = null, current = 0, title
   const total = spec.total ?? 100;
   const fmtV = shareFormatter(spec);
   const name = title === false ? null : (title ?? spec.title);
-  const btns = rows.map((r, k) => h('button', {
-    class: 'ds-seg-btn at-barpick-btn', type: 'button', 'aria-pressed': 'false', 'data-k': String(k), on: { click: () => select(k) },
-  }, r.category));
+  const seg = segButtons(rows.map((r, k) => [k, r.category]), { onPick: (k) => select(k), label: '막대 고르기', className: 'at-seg-wrap at-barpick-seg', btnClass: 'at-barpick-btn' });
   const box = h('div', { class: 'at-barpick-body' });
   const el = h('figure', { class: 'at-chart at-barpick', 'data-chart': spec.id },
     name ? h('figcaption', { class: 'at-chart-title' }, name) : null,
-    h('div', { class: 'ds-seg at-seg-wrap at-barpick-seg', role: 'group', 'aria-label': '막대 고르기' }, btns),
+    seg.el,
     box,
     spec.source ? h('div', { class: 'at-chart-src' }, spec.source) : null,
     onExpand ? h('button', { class: 'ds-btn at-expand', type: 'button', title: '막대 전부 크게 보기', 'aria-label': '그래프 크게 보기', on: { click: () => onExpand(spec) } }, icon('expand'), '크게 보기') : null);
@@ -206,7 +205,7 @@ export function barPicker(container, spec, { onExpand = null, current = 0, title
     const r = rows[k];
     if (!r) return;
     cur = k;
-    btns.forEach((b, i) => b.setAttribute('aria-pressed', String(i === k)));
+    seg.set(k);
     const W = 300, x0 = 6, x1 = 294, top = 6, barH = 34, fs = 11;
     const x = linearScale([0, total], [x0, x1]);
     const cells = r.cells.map((c) => {

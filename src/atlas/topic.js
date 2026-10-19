@@ -9,6 +9,8 @@
 //     countryFeatures  색칠하기 나라 도형({ '50': [...], '10a': [...] })
 //     insets   { 레이어 ref: 바탕 윤곽 GeoJSON } — 그 레이어는 큰 지도 대신 무대 위 확대 창(symbolInset)에 그리고, 큰 지도에는 위치 상자만
 //     boundsOf { 레이어 ref: [w, s, e, n] } — 그 레이어를 고를 때 맞출 범위(교역 흐름선처럼 주제 view 밖까지 가는 것)
+//     locators { 레이어 ref: {bounds, names, title} } — 그 레이어를 고르면 무대에 작은 위치도(locatorInset — 레이어의 type 'locator' 면을 강조,
+//              바탕은 countryFeatures['50']). 카슈미르 = 인도 위치도(교과서 22쪽 오른쪽 위).
 //     centerLonOf { 레이어 ref: 중심 경도 } — 그 레이어를 고를 때 지도 중심 경도(교역 = 150, 교과서도 태평양 중심 밀러). 묶음을 떠나면 되돌린다
 //              (그사이 사용자가 중심 경도를 바꿨으면 그대로 둔다).
 //   → { topic, groups, showGroup(i), group, pins, quiz, layers, inset, card, destroy() }
@@ -23,7 +25,7 @@ import { layerFromRef } from './layerRef.js';
 import { legendBlock, detailCard } from './ui.js';
 import { renderChart, barPicker, isMultiBar } from './charts.js';
 import { coloringLayer, coloringQuiz, heritageQuiz } from './quiz.js';
-import { symbolInset, insetBoxLayer, geoBox } from './inset.js';
+import { symbolInset, insetBoxLayer, geoBox, insetAvoidOffset, locatorInset } from './inset.js';
 import { segButtons } from './seg.js';
 
 /** 레이어 묶음: 같은 label 의 레이어는 한 지도(함께 올림). [{ label, refs }] */
@@ -50,7 +52,7 @@ export function groupBounds(topic, group, boundsOf = {}) {
 
 export function buildTopic({
   map, stage = null, body, viewer = null, credits = null, tip = null, topic, charts = {}, layers: layerData = {}, countryFeatures = null,
-  insets = {}, boundsOf = {}, centerLonOf = {}, seed = undefined,
+  insets = {}, boundsOf = {}, centerLonOf = {}, locators = {}, seed = undefined,
 }) {
   const parts = [];            // 주제가 끝날 때 destroy 할 사이드바 부품(카드·그래프·퀴즈)
   let groupParts = [];         // 묶음을 바꿀 때 destroy 할 것(범례 블록·확대 창·지도에 안 올린 레이어)
@@ -128,6 +130,10 @@ export function buildTopic({
         map.addLayer(L);
         groupLayerIds.push(L.id);
       }
+      const loc = locators[ref.ref];
+      if (loc && L.locator && countryFeatures?.['50']) {
+        groupParts.push(locatorInset(stage || body, { ...loc, countries: countryFeatures['50'], highlight: L.locator }));
+      }
       if (L.legendItems?.length) {
         const lb = legendBlock(null, L.legend, L.legendItems, {
           ...L.meta, title: L.meta.legendTitle || L.meta.title, lineTitle: L.meta.lineLegendTitle, ready: L.ready,
@@ -139,7 +145,12 @@ export function buildTopic({
     credits?.update(made.map((L) => L.meta?.credit));
     const c = g.refs.map((r) => centerLonOf[r.ref]).find((v) => v != null);
     if (c != null && map.view && map.view.centerLon !== c) { centerRestore = { from: map.view.centerLon, to: c }; map.setCenterLon(c); }
-    if (fit) { const b = groupBounds(topic, g, boundsOf); if (b) map.fitBounds(b); }
+    if (fit) {
+      const b = groupBounds(topic, g, boundsOf);
+      // 확대 창이 떠 있으면 위치 상자가 창 밑에 깔리지 않게 창이 없는 쪽으로 옮겨 맞춘다
+      const offset = inset ? insetAvoidOffset(stage?.getBoundingClientRect?.(), inset.el.getBoundingClientRect?.()) : null;
+      if (b) map.fitBounds(b, offset ? { offset } : undefined);
+    }
   }
 
   // ---- 1·2 레이어 ----

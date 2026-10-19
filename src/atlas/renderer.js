@@ -7,7 +7,8 @@
 //   map.setProjection('robinson', { animate: true })   // 0.6초 보간(110m 육지만), 화면 가운데 경위도·k 유지
 //   map.setCenterLon(150)                              // 대서양(0)·태평양(150) — 애니메이션 없이, 가운데 경위도·k 유지
 //   map.flyTo({ center: [lon, lat], zoom } | { bounds }, ms = 700)   // bounds = [w,s,e,n] 또는 [[w,s],[e,n]]
-//   map.fitBounds(bounds, { ms = 700, pad = 24 })      // 투영할 수 없는 가운데·범위면 console.warn 한 번, 보기는 그대로
+//   map.fitBounds(bounds, { ms = 700, pad = 24, offset })  // 투영할 수 없는 가운데·범위면 console.warn 한 번, 보기는 그대로
+//                                                      offset = [dx, dy] 화면 px — 범위 가운데를 무대 가운데에서 그만큼 옮김(확대 창이 가리는 쪽을 피할 때)
 //   map.addLayer(layer) / removeLayer(id) / clearLayers()   // layer = { id, z, draw?, drawSvg?, hit?, destroy? } (아래 레이어 규칙)
 //   map.invalidate({ svgOnly } = {})  // 가벼운 다시 그리기(한 rAF 로 모음): 캔버스 + SVG 레이어, svgOnly 면 SVG 레이어만. 지명은 다시 놓지 않고 viewchange 없음
 //   map.refreshLayer(id)              // 그 레이어만 다시(SVG 레이어면 그 <g> 만, 캔버스 레이어면 캔버스 전체). 없는 id 면 false
@@ -585,7 +586,9 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
       let any = false;
       for (let i = 0; i <= 4 && !any; i++) for (let j = 0; j <= 4 && !any; j++) any = !!project0(base, [w0 + ((e1 - w0) * i) / 4, s0 + ((n0 - s0) * j) / 4]);
       if (!any) { warnOnce(`fitBounds: 이 도법(${key})에서 투영할 수 없는 범위라 보기를 그대로 둠: ${JSON.stringify(target.bounds)}`); return null; }
-      return constrain(fitBoundsTransform(base, b, W, H, target.pad ?? FIT_PAD, { minK: K_MIN, maxK: K_MAX }));
+      const t = fitBoundsTransform(base, b, W, H, target.pad ?? FIT_PAD, { minK: K_MIN, maxK: K_MAX });
+      if (target.offset) { t.x += target.offset[0] || 0; t.y += target.offset[1] || 0; }
+      return constrain(t);
     }
     const center = target.center || (vp && nearCenter(vp, W, H)) || [cLon, 0];
     const t = transformForCenter(base, center, target.zoom ?? T.k, W, H);
@@ -600,7 +603,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     if (!ms) { zb.interrupt(); setTransform(t); settle(); return; }
     zb.flyTo(t, ms);
   }
-  function fitBounds(bounds, { ms = 700, pad = FIT_PAD } = {}) { flyTo({ bounds, pad }, ms); }
+  function fitBounds(bounds, { ms = 700, pad = FIT_PAD, offset = null } = {}) { flyTo({ bounds, pad, offset }, ms); }
 
   // ---------- 크기 ----------
   function resize() {

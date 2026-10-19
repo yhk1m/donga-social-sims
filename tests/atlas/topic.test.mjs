@@ -7,6 +7,7 @@ import path from 'node:path';
 import { register } from 'node:module';
 import { REPO, readJson } from '../../scripts/atlas/geo_util.mjs';
 import { installFakeDom } from './helpers/fakeDom.mjs';
+import { feature } from 'topojson-client';
 
 register('./helpers/cssHooks.mjs', import.meta.url);
 const dom = installFakeDom();
@@ -257,7 +258,7 @@ test('주제를 바꾸면 말풍선을 숨김(destroy → tip.hide)', () => {
   assert.equal(S.tip.el.hidden, true);
 });
 
-test('확대 창: 열 때 닫기 단추로 초점(Esc 가 창에 걸림), Esc 로 닫힘, 도로(고속·일반)를 사원 아래에, 위치 상자는 지명 장애물(상자 + 글자)', () => {
+test('확대 창: 저절로 열릴 때는 초점 그대로, 상자를 눌러 열면 닫기 단추로 초점(Esc 가 창에 걸림), Esc 로 닫힘, 도로(고속·일반)를 사원 아래에, 위치 상자는 지명 장애물(상자 + 글자)', () => {
   const S = setup();
   const proto = Object.getPrototypeOf(document.createElement('div'));
   let focused = null;
@@ -266,7 +267,7 @@ test('확대 창: 열 때 닫기 단추로 초점(Esc 가 창에 걸림), Esc �
     const T = S.build(topicOf('religion'));
     T.showGroup(T.groups.findIndex((g) => g.refs[0].ref === 'layer-p22-singapore'));
     const inset = find(S.stage, byClass('at-inset'));
-    assert.ok(focused?.classList.contains('at-inset-close'), '닫기 단추에 초점');
+    assert.equal(focused, null, '저절로 열릴 때는 초점을 가져가지 않음');
     const svg = find(inset, byClass('at-inset-svg'));
     const kids = svg.children.map((c) => c.getAttribute('class'));
     assert.ok(kids.indexOf('at-inset-roads') > kids.indexOf('at-inset-land') && kids.indexOf('at-inset-roads') < kids.findIndex((c) => c === 'at-inset-sym'), `그리는 차례 ${kids.slice(0, 5)}`);
@@ -280,10 +281,14 @@ test('확대 창: 열 때 닫기 단추로 초점(Esc 가 창에 걸림), Esc �
     focused = null;
     const box = S.map.layers.find((L) => L.id === 'layer-p22-singapore:box');
     assert.deepEqual(box.labelObstacles(), [], '그리기 전엔 없음');
-    box.drawSvg(document.createElementNS('svg', 'g'), ([lon, lat]) => [lon * 10, -lat * 10]);
+    const boxG = document.createElementNS('svg', 'g');
+    box.drawSvg(boxG, ([lon, lat]) => [lon * 10, -lat * 10]);
     const ob = box.labelObstacles();
     assert.equal(ob.length, 2);
     assert.ok(ob[1][0] > ob[0][2], '글자 상자는 상자 오른쪽');
+    find(boxG, byClass('at-inset-box')).dispatch('click', { stopPropagation() {} });
+    assert.equal(inset.hidden, false);
+    assert.ok(focused?.classList.contains('at-inset-close'), '사용자가 열면(상자 누름 → show()) 닫기 단추에 초점');
     T.destroy();
   } finally { delete proto.focus; }
 });
@@ -295,11 +300,36 @@ test('segButtons: 단추마다 ds-seg-btn·data-v·aria-pressed, set 은 표시�
   assert.equal(sg.el.getAttribute('class'), 'ds-seg x');
   assert.equal(sg.el.getAttribute('aria-label'), '고르기');
   assert.deepEqual(sg.btns.map((b) => [b.getAttribute('class'), b.getAttribute('data-v'), b.getAttribute('aria-pressed'), b.getAttribute('title')]),
-    [['ds-seg-btn y', '0', 'false', '가 제목'], ['ds-seg-btn y', '1', 'true', null]]);
+    [['ds-seg-btn y', '0', 'false', '가 제목'], ['ds-seg-btn y', '1', 'true', '나']]);
   sg.btns[0].dispatch('click');
   assert.deepEqual(picked, [0]);
   assert.equal(sg.btns[0].getAttribute('aria-pressed'), 'false', '누르기만으로는 표시 안 바뀜(부르는 쪽이 set)');
   sg.set(0);
   assert.equal(sg.value, 0);
   assert.equal(sg.btns[0].getAttribute('aria-pressed'), 'true');
+});
+
+test('insetAvoidOffset: 창 오른쪽에 자리가 있으면 그 가운데로(dx), 좁으면 창 아래로(dy), 크기 모르면 null', async () => {
+  const { insetAvoidOffset } = await import('../../src/atlas/inset.js');
+  const stage = { left: 0, top: 0, right: 1120, bottom: 900, width: 1120, height: 900 };
+  assert.deepEqual(insetAvoidOffset(stage, { left: 10, top: 10, right: 650, bottom: 480, width: 640, height: 470 }), [325, 0]);
+  assert.deepEqual(insetAvoidOffset({ ...stage, right: 700, width: 700 }, { left: 10, top: 10, right: 650, bottom: 480, width: 640, height: 470 }), [0, 240]);
+  assert.equal(insetAvoidOffset({ width: 0, height: 0 }, { width: 10 }), null);
+  assert.equal(insetAvoidOffset(stage, null), null);
+});
+
+test('카슈미르 묶음: 무대에 인도 위치도(분홍 = 레이어 locator 면, 파키스탄·인도 이름), 묶음을 바꾸면 사라짐', () => {
+  const S = setup();
+  const basemap = readJson(path.join(DATA, 'basemap.json'));
+  const countries50 = feature(basemap, basemap.objects.countries50).features;
+  const T = S.build(topicOf('religion'), { countryFeatures: { 50: countries50 }, locators: { 'layer-p22-kashmir': { bounds: [60, 5, 99, 38], names: { PAK: '파키스탄', IND: '인도' }, title: '인도 위치' } } });
+  const gi = T.groups.findIndex((g) => g.refs[0].ref === 'layer-p22-kashmir');
+  T.showGroup(gi);
+  const loc = find(S.stage, byClass('at-locator'));
+  assert.ok(loc, '위치도');
+  assert.ok(find(loc, byClass('at-locator-hl')).getAttribute('d').length > 50, '강조 면');
+  assert.deepEqual(findAll(loc, byClass('at-locator-name')).map((t) => t.textContent).sort(), ['인도', '파키스탄']);
+  T.showGroup(0);
+  assert.equal(find(S.stage, byClass('at-locator')), null);
+  T.destroy();
 });

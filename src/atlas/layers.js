@@ -31,6 +31,8 @@ export { imageLayer, loadImageData } from './imageLayer.js';
 const HALO = 'rgba(255,255,255,.9)';
 const LINE_PT = { isotherm: 0.8, line: 1.2 }; // 주제도 선 기본 굵기(pt) — lineWidthPx 로 화면 px
 const LABEL_FONT = '700 10px "Pretendard", "Malgun Gothic", sans-serif';
+/** 면 레이어 지명 글자 크기(px): 교과서 pt × 역할 배율 — 나라(분홍 6.7pt)·「카 슈 미 르」는 크게, 관할 이름(4.8pt)은 작게 */
+export const labelPx = (p) => Math.round(Math.min(22, Math.max(10, (p.size || 6) * ({ name: 2.7, country: 2.2, region: 2.4 }[p.role] ?? 2.2))));
 
 // ---------- 빗금(고산 기후) ----------
 const hatchTiles = new Map();
@@ -58,9 +60,13 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
   const feats = featuresOf(geojson);
   const legendList = legendItems(geojson);
   const dashed = new Set(legendList.filter((e) => e.dashed).map((e) => e.cls));
-  const areas = feats.filter((f) => isPoly(f) && !f.properties.pattern);
+  // type 'locator' 면(카슈미르 위치도 강조)은 큰 지도에 그리지 않는다 — topic.js 위치도가 쓴다(layer.locator)
+  const areas = feats.filter((f) => isPoly(f) && !f.properties.pattern && f.properties.type !== 'locator');
   const hatches = feats.filter((f) => isPoly(f) && f.properties.pattern === 'hatch');
   const lines = feats.filter(isLine);
+  // 지명(Point {type:'label', text, lines?, size(pt), color, role}) — 카슈미르 「카 슈 미 르」·관할 이름·나라 이름(교과서 글자 자리를 옮긴 것)
+  const labels = feats.filter((f) => f.geometry?.type === 'Point' && f.properties.type === 'label');
+  let labelBoxes = []; // 마지막 그림의 지명 상자(화면 px) — 바탕 지명이 피함
   const polys = [...areas, ...hatches]; // 맞히기 순서(위에 그린 것부터 거꾸로)
   const own = new Set(feats);
   const cache = new Map(); // f → {idx, bounds}
@@ -103,8 +109,37 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
     }
   }
 
+  /** 지명 글자: 흰 테두리 굵은 글자, 크기 = 교과서 pt × 역할 배율(나라·이름은 크게), 여러 줄이면 가운데 맞춰 쌓음. 범례와 상관없이 그대로. */
+  function drawPointLabels(ctx, view) {
+    labelBoxes = [];
+    if (!labels.length) return;
+    const proj = view.projection;
+    ctx.setLineDash([]); ctx.globalAlpha = 1; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+    for (const f of labels) {
+      const q = proj(f.geometry.coordinates);
+      if (!q || !Number.isFinite(q[0])) continue;
+      const p = f.properties;
+      const px = labelPx(p);
+      const lines = p.lines?.length ? p.lines : [p.text];
+      ctx.font = `${p.role === 'region' ? 600 : 800} ${px}px "Pretendard", "Malgun Gothic", sans-serif`;
+      const lh = px * 1.15, top = q[1] - ((lines.length - 1) * lh) / 2;
+      let wMax = 0;
+      lines.forEach((t, i) => {
+        const y = top + i * lh;
+        ctx.strokeStyle = HALO; ctx.lineWidth = Math.max(2.5, px * 0.28); ctx.strokeText(t, q[0], y);
+        ctx.fillStyle = p.color || '#231f20'; ctx.fillText(t, q[0], y);
+        wMax = Math.max(wMax, ctx.measureText ? ctx.measureText(t).width || t.length * px : t.length * px);
+      });
+      labelBoxes.push([q[0] - wMax / 2 - 2, top - lh / 2, q[0] + wMax / 2 + 2, top + (lines.length - 0.5) * lh]);
+    }
+  }
+
   const layer = {
     id, z, meta: metaOf(geojson), legendItems: legendList, features: feats,
+    /** 위치도 강조 면(type 'locator', 카슈미르) — 없으면 null */
+    locator: feats.find((f) => isPoly(f) && f.properties.type === 'locator') || null,
+    /** 지명 자리 피하기: 그린 지명 글자 상자 */
+    labelObstacles: () => labelBoxes.map((b) => [...b]),
     draw(ctx, path, view) {
       lastView = view;
       const rect = view.geoRect;
@@ -124,6 +159,7 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
       ctx.lineJoin = 'round'; ctx.lineCap = 'round';
       for (const f of lines) drawLine(ctx, path, f, view, alphaOf(legend, f.properties.cls, dimAlpha));
       drawIsoLabels(ctx, view);
+      drawPointLabels(ctx, view);
     },
     drawSvg(g, project, view) { // 강조 윤곽 하나(제자리에서 고침)
       if (!hoverEl || hoverEl.parentNode !== g) { hoverEl = s('path', { class: 'at-hover' }); g.append(hoverEl); }
@@ -185,6 +221,10 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
   const feats = featuresOf(points).filter((f) => f.geometry?.type === 'Point');
   const legendList = legendItems(points);
   const shapeOf = iconOf || defaultIconOf(legendList);
+  // 레이어별 크기(자료 properties.symbolStyle {pxPerPt, minPx, maxPx} — 24쪽 자원처럼 작은 기호를 키울 때)·분류별 테두리(범례 항목 stroke)
+  const symStyle = metaOf(points).symbolStyle || {};
+  const sizeOpts = { ...(symStyle.pxPerPt ? { pxPerPt: symStyle.pxPerPt } : {}), ...(symStyle.minPx ? { min: symStyle.minPx } : {}), ...(symStyle.maxPx ? { max: symStyle.maxPx } : {}) };
+  const strokeOf = new Map(legendList.filter((e) => e.stroke).map((e) => [e.cls, e.stroke]));
   const items = feats.map((f) => ({ f, shape: shapeOf(f) }));
   const byF = new Map(items.map((it) => [it.f, it]));
   let root = null;
@@ -203,7 +243,9 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
         it.label = p.name ? s('text', { class: 'at-bar-label' }, p.name) : null;
         el.append(it.leader, it.dot, it.cells, ...(it.label ? [it.label] : []));
       } else {
-        el.append(s('path', { class: 'at-sym-shape', d: shapePath(it.shape), fill: p.color, 'vector-effect': 'non-scaling-stroke' }));
+        const shape = s('path', { class: `at-sym-shape${strokeOf.has(p.cls) ? ' has-stroke' : ''}`, d: shapePath(it.shape), fill: p.color, 'vector-effect': 'non-scaling-stroke' });
+        if (strokeOf.has(p.cls)) shape.style?.setProperty?.('--at-sym-stroke', strokeOf.get(p.cls)); // CSS 변수 — 강조(hover) 테두리는 CSS 가 그대로 이김
+        el.append(shape);
       }
       it.el = el;
       root.append(el);
@@ -263,7 +305,7 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
         } else {
           shown = shown && q[0] > -20 && q[0] < W + 20 && q[1] > -20 && q[1] < H + 20;
           if (shown) {
-            it.r = symbolPx(sizeOf(it.f) || 3, view.k) / 2;
+            it.r = symbolPx(sizeOf(it.f) || 3, view.k, sizeOpts) / 2;
             setAttr(it.el, 'transform', `translate(${round1(q[0])},${round1(q[1])}) scale(${round2(it.r)})`);
           }
         }

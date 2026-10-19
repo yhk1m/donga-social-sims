@@ -311,3 +311,24 @@ test('퀴즈: 빈 목록이면 문제를 내지 않고 알림(오류 없음) —
   assert.match(find(hq.el, byClass('at-quiz-feedback')).textContent, /없습니다/);
   hq.destroy();
 });
+
+test('legendBlock 묶음: 기후 범례는 열대·건조·온대·냉대·한대 제목 아래(고산은 따로), 제목을 누르면 그 묶음만, 항목 누르기도 그대로', () => {
+  const data = readJson(path.join(DATA, 'layer-p21-climate.json'));
+  const items = data.properties.legend.map(({ present, ...e }) => e);
+  const lg = createLegendState(items.map((e) => e.cls));
+  const b = legendBlock(div(), lg, items, { title: '기후 구분' });
+  const heads = findAll(b.el, byClass('at-legend-group-head'));
+  assert.deepEqual(heads.map((x) => x.textContent), ['열대', '건조', '온대', '냉대', '한대']);
+  const groups = findAll(b.el, byClass('at-legend-group'));
+  assert.deepEqual(groups.map((g) => findAll(g, byClass('at-legend-item')).length), [3, 2, 4, 2, 2]);
+  assert.equal(findAll(b.el, byClass('at-legend-item')).length, 14, '고산 기후는 묶음 밖');
+  heads[1].dispatch('click');
+  assert.equal(lg.selected(), 'group:건조');
+  assert.equal(heads[1].getAttribute('aria-pressed'), 'true');
+  const dry = items.filter((e) => e.group === '건조').map((e) => e.cls);
+  assert.ok(dry.every(lg.isActive) && !lg.isActive(items[0].cls));
+  findAll(b.el, byClass('at-legend-item'))[0].dispatch('click');
+  assert.equal(lg.selected(), items[0].cls);
+  assert.equal(heads[1].getAttribute('aria-pressed'), 'false');
+  b.destroy();
+});

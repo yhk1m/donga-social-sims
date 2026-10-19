@@ -158,7 +158,7 @@ function swatch(e) {
   if (e.shape) {
     const d = { circle: null, square: 'M2,2H10V10H2Z', diamond: 'M6,1L11,6L6,11L1,6Z', triangle: 'M6,1L11,10H1Z', 'triangle-down': 'M1,2H11L6,11Z' }[e.shape];
     return s('svg', { class: 'at-swatch at-swatch-sym', viewBox: '0 0 12 12', 'aria-hidden': 'true' },
-      d ? s('path', { d, fill: e.color, stroke: '#fff', 'stroke-width': 0.8 }) : s('circle', { cx: 6, cy: 6, r: 4.5, fill: e.color, stroke: '#fff', 'stroke-width': 0.8 }));
+      d ? s('path', { d, fill: e.color, stroke: e.stroke || '#fff', 'stroke-width': e.stroke ? 1 : 0.8 }) : s('circle', { cx: 6, cy: 6, r: 4.5, fill: e.color, stroke: e.stroke || '#fff', 'stroke-width': e.stroke ? 1 : 0.8 }));
   }
   const st = { background: e.color || '#ccc' };
   if (e.pattern === 'hatch') st.background = `repeating-linear-gradient(45deg, ${e.color || '#ba703d'} 0 1.5px, transparent 1.5px 4px)`;
@@ -183,6 +183,26 @@ export function legendBlock(panel, legend, items, opts = {}) {
     return b;
   };
   const fills = items.filter((e) => !lineKinds.has(e.kind));
+  // 묶음(항목 group — 기후 열대·건조·온대·냉대·한대): 이어진 같은 묶음을 제목 아래로. 제목을 누르면 그 묶음만(legend.toggleGroup).
+  const groupBtns = [];
+  const fillRows = () => {
+    const out = [];
+    for (let i = 0; i < fills.length;) {
+      const g = fills[i].group;
+      if (!g) { out.push(row(fills[i])); i++; continue; }
+      let j = i; while (j < fills.length && fills[j].group === g) j++;
+      const members = fills.slice(i, j);
+      const can = !!legend?.toggleGroup && members.every((e) => e.geometry !== false);
+      const head = h('button', {
+        class: 'at-legend-group-head', type: 'button', 'aria-pressed': 'false', disabled: can ? null : true, title: `${g} 기후 묶음만 보기(다시 누르면 전체)`,
+        on: { click: () => { if (can) legend.toggleGroup(g, members.map((e) => e.cls)); } },
+      }, g);
+      groupBtns.push([g, head]);
+      out.push(h('div', { class: 'at-legend-group', role: 'group', 'aria-label': g }, head, h('div', { class: 'at-legend-group-items' }, members.map(row))));
+      i = j;
+    }
+    return out;
+  };
   const lines = items.filter((e) => lineKinds.has(e.kind));
   const reset = h('button', { class: 'ds-btn at-legend-reset', type: 'button', on: { click: () => legend?.reset() } }, '전체 보기');
   const notice = h('p', { class: 'at-legend-fail', role: 'status' }, '이미지를 불러오지 못했습니다. 지도의 다른 내용은 그대로 볼 수 있습니다.');
@@ -198,7 +218,7 @@ export function legendBlock(panel, legend, items, opts = {}) {
     opts.approx ? h('span', { class: 'at-badge', title: opts.approxReason || '교과서 지도의 위치를 눈으로 맞춘 근사' }, opts.approxNote || '위치 근사') : null);
   const el = h('section', { class: 'at-legend', 'aria-label': opts.title || '범례' },
     head,
-    fills.length ? h('div', { class: 'at-legend-list' }, fills.map(row)) : null,
+    fills.length ? h('div', { class: `at-legend-list${fills.some((e) => e.group) ? ' has-groups' : ''}` }, fillRows()) : null,
     lines.length ? h('div', { class: 'at-legend-sub' }, opts.lineTitle || null) : null,
     lines.length ? h('div', { class: 'at-legend-list' }, lines.map(row)) : null,
     widthRow,
@@ -208,13 +228,14 @@ export function legendBlock(panel, legend, items, opts = {}) {
   if (panel) addBlock(panel, el);
   const sync = (sel) => {
     for (const [e, b] of btns) b.setAttribute('aria-pressed', String(sel === e.cls));
+    for (const [g, b] of groupBtns) b.setAttribute('aria-pressed', String(sel === `group:${g}`));
     reset.hidden = sel == null;
   };
   const off = legend ? legend.onChange(sync) : null;
   sync(legend?.selected?.() ?? null);
   let alive = true;
   opts.ready?.then?.((ok) => { if (alive && ok === false) notice.hidden = false; });
-  return { el, update: sync, destroy() { alive = false; off?.(); el.remove(); btns.length = 0; } };
+  return { el, update: sync, destroy() { alive = false; off?.(); el.remove(); btns.length = 0; groupBtns.length = 0; } };
 }
 
 // ---------- 상세 카드 ----------

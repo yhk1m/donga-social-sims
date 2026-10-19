@@ -21,6 +21,8 @@ const BOUNDS_OF = { 'layer-p24-trade': [55, -45, -60, 72] };
 const CENTER_LON_OF = { 'layer-p24-trade': 150 }; // 교과서 24쪽 교역 지도도 태평양 중심(밀러) — 미국행 흐름선이 지도 끝에서 끊기지 않게
 // 무대 위 확대 창으로 그릴 레이어(큰 지도에서는 섬이 30px 남짓이라 기호 76개가 겹침) → 바탕 윤곽
 const INSETS = { 'layer-p22-singapore': singaporeOutline };
+// 작은 위치도(교과서 22쪽 카슈미르 지도 오른쪽 위의 인도 위치도) — 레이어의 type 'locator' 면(분쟁 지역)을 분홍으로
+const LOCATORS = { 'layer-p22-kashmir': { bounds: [60, 5, 99, 38], names: { PAK: '파키스탄', IND: '인도' }, title: '인도 위치 — 분홍이 카슈미르' } };
 
 export default function mount(root) {
   const { stage, panel } = createShell(root, 'atlas-u2-asia');
@@ -44,7 +46,7 @@ export default function mount(root) {
     current?.destroy();
     nav.update(topic.id);
     current = buildTopic({
-      map, stage, body, viewer, credits, tip, topic, charts, layers: layerData, countryFeatures, insets: INSETS, boundsOf: BOUNDS_OF, centerLonOf: CENTER_LON_OF,
+      map, stage, body, viewer, credits, tip, topic, charts, layers: layerData, countryFeatures, insets: INSETS, boundsOf: BOUNDS_OF, centerLonOf: CENTER_LON_OF, locators: LOCATORS,
     });
     root.atlasTopic = current; // 확인용(헤드리스 캡처)
     return current;

@@ -153,7 +153,7 @@ function toRaw(layer) {
   const m = maps[layer.map];
   if (layer.source === 'ne') {
     const raw = JSON.parse(fs.readFileSync(`${WORK}/geo/${layer.id}.raw.geojson`, 'utf8'));
-    return { meta: { ...raw.properties, approx: false, convert: null, warnings: [] } };
+    return { meta: { ...raw.properties, approx: !!raw.properties.approx, convert: null, warnings: [] } }; // 카슈미르: 종교 면 안쪽 경계가 근사(kashmir.py)
   }
   const feat = JSON.parse(fs.readFileSync(`${WORK}/vec/${layer.id}.features.json`, 'utf8'));
   const fit = loadFit(layer.map);
@@ -184,9 +184,16 @@ function finish(layer, meta) {
   const features = clipped.features.map((f) => ({ type: 'Feature', properties: f.properties, geometry: roundGeom(f.geometry) }));
   // 기호 모양(설정 legendShapes: 범례 이름 → 'circle'|'square'|'diamond'|'triangle'|'triangle-down'|'bar') — 앱 기호·범례 견본이 쓴다
   const shapes = layer.legendShapes || {};
-  const legend = (meta.legend || []).map(({ box, ...e }) => (shapes[e.label] ? { ...e, shape: shapes[e.label] } : e));
-  const unknownShape = Object.keys(shapes).filter((k) => !legend.some((e) => e.label === k));
-  if (unknownShape.length) throw new Error(`${layer.id}: legendShapes 에 범례에 없는 이름 ${unknownShape.join(', ')}`);
+  // 기호 테두리(설정 legendStrokes: 범례 이름 → 색 — 회색 석탄처럼 바탕에 묻히는 기호), 범례 묶음(설정 legendGroups: 묶음 이름 → [범례 이름] — 기후 열대·건조…)
+  const strokes = layer.legendStrokes || {};
+  const groupOf = Object.fromEntries(Object.entries(layer.legendGroups || {}).flatMap(([g, names]) => names.map((n) => [n, g])));
+  const legend = (meta.legend || []).map(({ box, ...e }) => ({
+    ...e, ...(shapes[e.label] ? { shape: shapes[e.label] } : {}), ...(strokes[e.label] ? { stroke: strokes[e.label] } : {}), ...(groupOf[e.label] ? { group: groupOf[e.label] } : {}),
+  }));
+  for (const [key, names] of [['legendShapes', Object.keys(shapes)], ['legendStrokes', Object.keys(strokes)], ['legendGroups', Object.keys(groupOf)]]) {
+    const unknown = names.filter((k) => !legend.some((e) => e.label === k));
+    if (unknown.length) throw new Error(`${layer.id}: ${key} 에 범례에 없는 이름 ${unknown.join(', ')}`);
+  }
   const present = new Set(features.map((f) => f.properties.cls));
   const ne = layer.source === 'ne';
   const props = {
@@ -194,6 +201,7 @@ function finish(layer, meta) {
     approx: meta.approx, ...(meta.approxReason ? { approxReason: meta.approxReason } : {}),
     source: ne ? 'Natural Earth' : meta.source, ...(ne ? { sourceDetail: meta.source, note: meta.note } : {}),
     winding: 'cw', // 면 바깥 고리 시계 방향(d3-geo 규약), 구멍 반시계
+    ...(layer.symbolStyle ? { symbolStyle: layer.symbolStyle } : {}), // 기호 크기 배율·최소/최대 지름(px) — symbolLayer 가 읽음
     legend: legend.map((e) => ({ ...e, present: present.has(e.cls) })),
   };
   fs.mkdirSync(OUT, { recursive: true });

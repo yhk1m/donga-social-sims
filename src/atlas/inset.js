@@ -8,6 +8,9 @@
 //     {cls, color, label, name?}), legend = 그 레이어의 legendState(범례 블록과 같은 것 — 고르면 창의 기호도 흐려짐), tip = ui.tooltip(무대 말풍선).
 //     → { el, open, show(), hide(), destroy() }. 창은 absolute(무대 왼쪽 위), z 16(말풍선 17 아래 — 창 기호 말풍선이 창 위에 뜸, 원본 쪽 보기 20 아래), 닫기 단추·Esc.
 //   insetBoxLayer(id, bounds, { onClick }) → 렌더러 레이어(SVG 사각형 + 「확대 창」 글자, z 90). 누르면 onClick(창 다시 열기).
+//   locatorInset(stage, { countries, highlight, bounds, names, title }) → 무대 오른쪽 아래 작은 위치도(교과서 22쪽 카슈미르 지도의 인도 위치도, E2 대조).
+//     countries = 바탕 지도 50m 나라 Feature(properties.iso), highlight = 강조 면(카슈미르 분쟁 지역 — 레이어 type 'locator'), names = {iso: 이름}
+//     (그 나라는 밝은 크림색 + 분홍 이름, 나머지는 회색 — 교과서 색). → { el, destroy() }. 누를 것 없음(aria 그림).
 // 규칙: h()/s() 로만 만들고(innerHTML 없음), 문서 전역 id 없음, 구독은 destroy 가 모두 푼다.
 import { h, s, icon } from '../shared/dom.js';
 import { LAYER_Z } from './layerCommon.js';
@@ -118,14 +121,64 @@ export function symbolInset(stage, { outline, points, legend = null, legendItems
   const off = legend ? legend.onChange(sync) : null;
   sync(legend?.selected?.() ?? null);
   let alive = true;
-  function show() { if (!alive) return; el.hidden = false; close.focus?.(); } // 초점을 창 안으로(Esc 가 창의 keydown 에 걸려 있음 — pageViewer 와 같음)
+  /** 열기. focus = 사용자가 열었을 때(위치 상자 누름)만 초점을 창 안으로(Esc 가 창의 keydown 에 걸려 있음 — pageViewer 와 같음).
+   *  주제·묶음을 만들 때 저절로 열리는 것은 초점을 가져가지 않는다(목차·지도 고르기 단추에서 키보드 자리를 잃지 않게, E2 대조 M3). */
+  function show({ focus = true } = {}) { if (!alive) return; el.hidden = false; if (focus) close.focus?.(); }
   function hide() { el.hidden = true; tip?.hide(); onClose?.(); }
-  show(); // 만들자마자 열림 — 초점도 창으로
+  show({ focus: false }); // 만들자마자 열림 — 초점은 그대로
   return {
     el, show, hide,
     get open() { return !el.hidden; },
     destroy() { alive = false; off?.(); el.removeEventListener('keydown', onKey); el.remove(); },
   };
+}
+
+/**
+ * 확대 창이 무대를 가리는 쪽을 피하는 fitBounds offset(E2 대조 ②: 창이 위치 상자를 덮어 「…대 창」만 보였음).
+ * 창 오른쪽에 120px 넘게 남으면 그 남은 칸 가운데로(dx = 창 오른쪽 끝 / 2), 아니면 창 아래 남은 칸 가운데로(dy = 창 아래 끝 / 2).
+ * stageRect·insetRect = getBoundingClientRect 꼴 { left, top, right, bottom, width, height }. 크기를 모르면 null.
+ */
+export function insetAvoidOffset(stageRect, insetRect) {
+  if (!stageRect?.width || !stageRect?.height || !insetRect?.width) return null;
+  const right = insetRect.right - stageRect.left, bottom = insetRect.bottom - stageRect.top;
+  if (stageRect.width - right >= 120) return [Math.round(right / 2), 0];
+  if (stageRect.height - bottom >= 80) return [0, Math.round(bottom / 2)];
+  return null;
+}
+
+/** 위치도: 무대 오른쪽 아래 작은 SVG(국지 등장방형). 교과서 22쪽 오른쪽 위 인도 위치도처럼 나라 회색 바탕·이름 나라 크림색·강조 분홍·축척 막대. */
+export function locatorInset(stage, { countries = [], highlight = null, bounds = [60, 5, 99, 38], names = {}, title = '위치' } = {}) {
+  const P = insetProjection(bounds, { width: 180, pad: 4 });
+  const [w, s0, e, n] = bounds;
+  const inBox = (f) => {
+    let hit = false;
+    const walk = (c) => { if (hit) return; if (typeof c[0] === 'number') { if (c[0] >= w - 5 && c[0] <= e + 5 && c[1] >= s0 - 5 && c[1] <= n + 5) hit = true; } else c.forEach(walk); };
+    walk(f.geometry?.coordinates || []);
+    return hit;
+  };
+  const pathOf = (g) => {
+    const polys = g?.type === 'Polygon' ? [g.coordinates] : g?.type === 'MultiPolygon' ? g.coordinates : [];
+    return polys.map((rings) => rings.map((r) => ringPath(r, P.project)).join('')).join('');
+  };
+  const shown = countries.filter((f) => f.geometry && inBox(f));
+  const land = shown.map((f) => s('path', { class: `at-locator-land${names[f.properties?.iso] ? ' is-named' : ''}`, d: pathOf(f.geometry), 'fill-rule': 'evenodd' }));
+  const hl = highlight ? s('path', { class: 'at-locator-hl', d: pathOf(highlight.geometry), 'fill-rule': 'evenodd' }) : null;
+  // 이름: 그 나라 가장 큰 고리의 점 평균 자리(작은 지도라 대충이면 됨)
+  const labels = shown.filter((f) => names[f.properties?.iso]).map((f) => {
+    const g = f.geometry, polys = g.type === 'Polygon' ? [g.coordinates] : g.coordinates;
+    const ring = polys.map((r) => r[0]).sort((a, b) => b.length - a.length)[0];
+    const xy = ring.map(P.project), cx = xy.reduce((a, q) => a + q[0], 0) / xy.length, cy = xy.reduce((a, q) => a + q[1], 0) / xy.length;
+    return s('text', { class: 'at-locator-name', x: cx.toFixed(1), y: cy.toFixed(1), 'text-anchor': 'middle' }, names[f.properties.iso]);
+  });
+  const km = niceKm(P.unitKm, 50), barW = km / P.unitKm;
+  const scale = s('g', { class: 'at-inset-scale', transform: `translate(${(P.width - barW - 24).toFixed(1)},14)` },
+    s('path', { class: 'at-inset-scale-line', d: `M0,-4V0H${barW.toFixed(1)}V-4` }),
+    s('text', { class: 'at-locator-scale-text', x: 0, y: -6 }, '0'), s('text', { class: 'at-locator-scale-text', x: barW.toFixed(1), y: -6, 'text-anchor': 'middle' }, `${km}km`));
+  const svg = s('svg', { class: 'at-locator-svg', viewBox: `0 0 ${P.width} ${P.height}`, role: 'img', 'aria-label': title },
+    s('rect', { class: 'at-locator-sea', x: 0, y: 0, width: P.width, height: P.height }), land, hl, labels, scale);
+  const el = h('figure', { class: 'at-locator', 'aria-label': title }, svg);
+  stage.append(el);
+  return { el, destroy() { el.remove(); } };
 }
 
 /** 큰 지도의 확대 창 자리 상자(SVG). bounds = [w, s, e, n]. 화면에서 너무 작으면 최소 14px 로 그리고 「확대 창」 글자를 단다. */
