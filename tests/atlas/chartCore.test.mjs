@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { REPO, readJson } from '../../scripts/atlas/geo_util.mjs';
 import {
-  chartPlan, climoRanges, toClimateData, tickLabels, valueRange, toLineData, taperNulls, annualSeries, toStackedAreaData, stackLegend, toPyramidData,
+  chartPlan, climoRanges, toClimateData, tickLabels, valueRange, toLineData, taperNulls, annualSeries, toStackedAreaData, shareFormatter, totalText, fmtThousands, stackLegend, toPyramidData,
   toPieData, toStackedBarData, toAbsBarData, stackCells, linearScale, arcPath, ringRows, laneLabels,
 } from '../../src/atlas/chartCore.js';
 
@@ -198,4 +198,14 @@ test('laneLabels: 칸에 안 들어가는 글자를 막대 위·아래 두 줄�
     const xs = many.filter((o) => o.lane === lane).map((o) => o.x);
     for (let i = 1; i < xs.length; i++) assert.ok(xs[i] - xs[i - 1] >= 32 - 1e-9, '같은 줄에서는 겹치지 않음');
   }
+});
+
+test('shareFormatter·totalText·fmtThousands: 100% 띠 비율 소수 자리(인쇄값 최대, 2 넘지 않음)·합계 글자', () => {
+  assert.equal(shareFormatter({ series: [{ values: [50.5, 9, null] }, { values: [1.25] }] })(7), '7.00');
+  assert.equal(shareFormatter({ series: [{ values: [1.2345] }] })(3.14159), '3.14');
+  assert.equal(shareFormatter({ series: [{ values: [3, 4] }] })(3.6), '4');
+  assert.equal(shareFormatter(charts['p24-resources'])(50.5), '50.5');
+  assert.equal(totalText({ value: 146339, unit: '백만 달러', year: 2021 }), '146,339 (백만 달러, 2021년)');
+  assert.equal(totalText(null), '');
+  assert.equal(fmtThousands(1234567.5), '1,234,567.5');
 });

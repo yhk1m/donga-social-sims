@@ -15,6 +15,7 @@ import { h, s, icon, append } from '../shared/dom.js';
 import { addBlock } from '../shared/shell.js';
 import { PROJECTIONS } from './projections.js';
 import { renderChart } from './charts.js';
+import { segButtons } from './seg.js';
 import { scaleBarSpec, hoverLabel, pageCrop, pagesLabel, assetUrl, panTarget, ASSET_BASE } from './uiCore.js';
 import './ui.css';
 
@@ -68,14 +69,8 @@ export function topicNav(panel, topics, onSelect, { current = null } = {}) {
 }
 
 // ---------- 지도 도구 ----------
-function seg(items, label, onPick) {
-  const btns = items.map(([v, text, title]) => h('button', {
-    class: 'ds-seg-btn at-tools-seg-btn', type: 'button', 'aria-pressed': 'false', title: title || text, 'data-v': String(v),
-    on: { click: () => onPick(v) },
-  }, text));
-  const el = h('div', { class: 'ds-seg at-tools-seg', role: 'group', 'aria-label': label }, btns);
-  return { el, set(v) { btns.forEach((b) => b.setAttribute('aria-pressed', String(b.getAttribute('data-v') === String(v)))); } };
-}
+/** 지도 도구 고르기 단추(도법·중심 경도) — seg.js segButtons, 지금 값은 update() 가 view 로 맞춘다 */
+const seg = (items, label, onPick) => segButtons(items, { label, onPick, className: 'at-tools-seg', btnClass: 'at-tools-seg-btn' });
 
 const PROJ_SHORT = { miller: '밀러', mercator: '메르카토르', robinson: '로빈슨', goode: '구드', equalEarth: '이퀄어스' };
 

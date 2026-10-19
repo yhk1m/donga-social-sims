@@ -422,6 +422,7 @@
 },
 "insets": [
  {"id": "p22-singapore", "map": "p22-singapore", "layer": "sims/atlas-u2-asia/data/layer-p22-singapore.json", "landFill": "#e7efc1", "minAreaPt2": 1.0, "tolPt": 0.4,
+  "roads": {"stroke": "#d1d3d4", "kinds": {"0.45": "expressway", "0.22": "road"}},
   "out": "sims/atlas-u2-asia/data/inset-p22-singapore.json"}
 ],
 "_insets": "E1 확대 창(인셋) 바탕 윤곽 — inset_outline.py. 싱가포르 사원 76개는 지도 확대 상한(40배)에서 섬이 30px 남짓이라 한 덩어리로 겹쳐, 종교·문화 주제의 싱가포르 보기에서 무대 위 확대 창에 따로 그린다. 윤곽은 교과서 22쪽 지도 육지(#e7efc1)를 같은 fit 으로 되돌린 것(Natural Earth 10m 싱가포르는 꼭짓점 40개).",

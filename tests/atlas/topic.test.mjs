@@ -247,3 +247,59 @@ test('photoCropStyle·insetProjection·geoBox 순수 계산', () => {
   assert.ok(Math.abs(x0 - 10) < 1e-9 && Math.abs(y0 - 10) < 1e-9 && Math.abs(x1 - 510) < 1e-9 && Math.abs(y1 - (P.height - 10)) < 1);
   assert.ok(P.unitKm > 0.05 && P.unitKm < 0.2, `viewBox 1 = ${P.unitKm}km`);
 });
+
+test('주제를 바꾸면 말풍선을 숨김(destroy → tip.hide)', () => {
+  const S = setup();
+  const T = S.build(topicOf('religion'));
+  S.tip.show('술탄 모스크', [10, 10]);
+  assert.equal(S.tip.el.hidden, false);
+  T.destroy();
+  assert.equal(S.tip.el.hidden, true);
+});
+
+test('확대 창: 열 때 닫기 단추로 초점(Esc 가 창에 걸림), Esc 로 닫힘, 도로(고속·일반)를 사원 아래에, 위치 상자는 지명 장애물(상자 + 글자)', () => {
+  const S = setup();
+  const proto = Object.getPrototypeOf(document.createElement('div'));
+  let focused = null;
+  proto.focus = function focus() { focused = this; };
+  try {
+    const T = S.build(topicOf('religion'));
+    T.showGroup(T.groups.findIndex((g) => g.refs[0].ref === 'layer-p22-singapore'));
+    const inset = find(S.stage, byClass('at-inset'));
+    assert.ok(focused?.classList.contains('at-inset-close'), '닫기 단추에 초점');
+    const svg = find(inset, byClass('at-inset-svg'));
+    const kids = svg.children.map((c) => c.getAttribute('class'));
+    assert.ok(kids.indexOf('at-inset-roads') > kids.indexOf('at-inset-land') && kids.indexOf('at-inset-roads') < kids.findIndex((c) => c === 'at-inset-sym'), `그리는 차례 ${kids.slice(0, 5)}`);
+    const nRoads = outline.features.filter((f) => f.geometry.type === 'LineString').length;
+    assert.ok(nRoads > 10);
+    assert.equal(findAll(inset, byClass('at-inset-road')).length, nRoads);
+    assert.equal(findAll(inset, byClass('at-inset-road-casing')).length, nRoads);
+    assert.ok(findAll(inset, byClass('at-inset-road-expressway')).length > 0, '고속 도로');
+    inset.dispatch('keydown', { key: 'Escape' });
+    assert.equal(inset.hidden, true);
+    focused = null;
+    const box = S.map.layers.find((L) => L.id === 'layer-p22-singapore:box');
+    assert.deepEqual(box.labelObstacles(), [], '그리기 전엔 없음');
+    box.drawSvg(document.createElementNS('svg', 'g'), ([lon, lat]) => [lon * 10, -lat * 10]);
+    const ob = box.labelObstacles();
+    assert.equal(ob.length, 2);
+    assert.ok(ob[1][0] > ob[0][2], '글자 상자는 상자 오른쪽');
+    T.destroy();
+  } finally { delete proto.focus; }
+});
+
+test('segButtons: 단추마다 ds-seg-btn·data-v·aria-pressed, set 은 표시만, 누르면 onPick(값)', async () => {
+  const { segButtons } = await import('../../src/atlas/seg.js');
+  const picked = [];
+  const sg = segButtons([[0, '가', '가 제목'], [1, '나']], { onPick: (v) => picked.push(v), label: '고르기', className: 'x', btnClass: 'y', current: 1 });
+  assert.equal(sg.el.getAttribute('class'), 'ds-seg x');
+  assert.equal(sg.el.getAttribute('aria-label'), '고르기');
+  assert.deepEqual(sg.btns.map((b) => [b.getAttribute('class'), b.getAttribute('data-v'), b.getAttribute('aria-pressed'), b.getAttribute('title')]),
+    [['ds-seg-btn y', '0', 'false', '가 제목'], ['ds-seg-btn y', '1', 'true', null]]);
+  sg.btns[0].dispatch('click');
+  assert.deepEqual(picked, [0]);
+  assert.equal(sg.btns[0].getAttribute('aria-pressed'), 'false', '누르기만으로는 표시 안 바뀜(부르는 쪽이 set)');
+  sg.set(0);
+  assert.equal(sg.value, 0);
+  assert.equal(sg.btns[0].getAttribute('aria-pressed'), 'true');
+});

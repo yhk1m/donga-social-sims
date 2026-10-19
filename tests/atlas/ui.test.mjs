@@ -294,3 +294,20 @@ test('heritageQuiz: 사진 + 나라/종교 보기 4개, 여러 종교는 묶음�
   assert.deepEqual(q.score, { right: 1, total: 2 });
   q.destroy();
 });
+
+test('퀴즈: 빈 목록이면 문제를 내지 않고 알림(오류 없음) — 색칠하기 이름 맞히기·세계유산', () => {
+  const map = fakeMap();
+  const layer = coloringLayer([]);
+  const q = coloringQuiz(map, layer, [], { seed: 1 });
+  q.setMode('name');
+  assert.equal(q.current, null);
+  assert.match(find(q.el, byClass('at-quiz-feedback')).textContent, /없습니다/);
+  q.answer('아무 나라');
+  assert.deepEqual(q.score, { right: 0, total: 0 });
+  q.destroy();
+  const hq = heritageQuiz([], { seed: 1 });
+  hq.setKind('religion');
+  assert.equal(hq.current, null);
+  assert.match(find(hq.el, byClass('at-quiz-feedback')).textContent, /없습니다/);
+  hq.destroy();
+});

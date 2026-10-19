@@ -128,6 +128,17 @@ export function simplifyArgs(base, byIso) {
   return ['variable', `percentage=${terms.join('')}${d}`];
 }
 
+/** simplifyByIso 의 나라 열쇠가 만든 위상의 그 상세도 나라(countries<id>) iso 에 모두 있는지 — 없는 열쇠(오타·자르기 밖)는 오류. */
+export function checkByIso(topo, levels) {
+  for (const lv of levels) {
+    const keys = Object.keys(lv.simplifyByIso || {});
+    if (!keys.length) continue;
+    const have = new Set((topo.objects[`countries${lv.id}`]?.geometries || []).map((g) => g.properties?.iso));
+    const missing = keys.filter((k) => !have.has(k));
+    if (missing.length) throw new Error(`simplifyByIso: 상세도 ${lv.id} 나라에 없는 iso ${missing.join(', ')} — 설정 basemap.levels 확인`);
+  }
+}
+
 /** 상세도 하나의 mapshaper 단계들 → 만든 조각 파일 이름 목록. */
 function buildLevel(cfg, lv, cwd, raw) {
   const clip = lv.clip ? ['-clip', 'unit-boxes.json'] : [];
@@ -194,6 +205,7 @@ export async function buildBasemap({ force = false } = {}) {
   const parts = [];
   for (const lv of cfg.levels) { console.log(`상세도 ${lv.id}`); parts.push(...buildLevel(cfg, lv, cwd, raw)); }
   const topo = combine(cfg, cwd, parts, inputsHash);
+  checkByIso(topo, cfg.levels);
   const text = JSON.stringify(topo);
   const bytes = Buffer.byteLength(text);
   const sizes = Object.fromEntries(Object.keys(topo.objects).map((n) => [n, Buffer.byteLength(JSON.stringify(topo.objects[n]))]));

@@ -326,3 +326,21 @@ export function laneLabels(items, { gap = 4, maxShift = 60 } = {}) {
   }
   return out;
 }
+
+/** 천 단위 쉼표(정수 부분만): 146339 → 「146,339」 */
+export const fmtThousands = (v) => {
+  const [i, f] = String(v).split('.');
+  return i.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (f ? `.${f}` : '');
+};
+
+/** 100% 띠 칸 비율 글자: 그래프에 인쇄된 값 중 가장 긴 소수 자리(최대 2)로 맞춘다 → (v) => 글자 */
+export function shareFormatter(spec) {
+  const dec = Math.max(0, ...(spec.series || []).flatMap((q) => q.values).filter((v) => v != null).map((v) => (String(v).split('.')[1] || '').length));
+  const d = Math.min(dec, 2);
+  return (v) => v.toFixed(d);
+}
+
+/** 막대 합계 글자(stackCells 의 total {value, unit, year}) → 「5,438 (백만 톤, 2020년)」, 없으면 '' */
+export function totalText(total) {
+  return total ? `${fmtThousands(total.value)} (${total.unit}, ${total.year}년)` : '';
+}

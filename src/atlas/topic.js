@@ -24,6 +24,7 @@ import { legendBlock, detailCard } from './ui.js';
 import { renderChart, barPicker, isMultiBar } from './charts.js';
 import { coloringLayer, coloringQuiz, heritageQuiz } from './quiz.js';
 import { symbolInset, insetBoxLayer, geoBox } from './inset.js';
+import { segButtons } from './seg.js';
 
 /** 레이어 묶음: 같은 label 의 레이어는 한 지도(함께 올림). [{ label, refs }] */
 export function layerGroups(topic) {
@@ -68,13 +69,10 @@ export function buildTopic({
   const groups = layerGroups(topic);
 
   // ---- 지도 고르기(묶음이 둘 이상) ----
-  let segBtns = [];
-  if (groups.length > 1) {
-    segBtns = groups.map((g, i) => h('button', {
-      class: 'ds-seg-btn', type: 'button', 'aria-pressed': 'false', title: g.label, on: { click: () => showGroup(i) },
-    }, g.label));
-    body.append(h('div', { class: 'ds-ctl at-topic-maps' }, h('span', { class: 'ds-label' }, '지도'), h('div', { class: 'ds-seg at-seg-wrap', role: 'group', 'aria-label': '지도 고르기' }, segBtns)));
-  }
+  const groupSeg = groups.length > 1
+    ? segButtons(groups.map((g, i) => [i, g.label, g.label]), { onPick: (i) => showGroup(i), label: '지도 고르기', className: 'at-seg-wrap', btnClass: 'at-group-btn' })
+    : null;
+  if (groupSeg) body.append(h('div', { class: 'ds-ctl at-topic-maps' }, h('span', { class: 'ds-label' }, '지도'), groupSeg.el));
   // ---- 바로가기(묶음이 없는 주제의 view — 일반도 아시아·동아시아·동남아시아) ----
   if (topic.views?.length && !groups.length) {
     body.append(h('div', { class: 'ds-ctl' }, h('span', { class: 'ds-label' }, '바로가기'),
@@ -105,7 +103,7 @@ export function buildTopic({
     if (!alive || !g) return;
     clearGroup();
     cur = i;
-    segBtns.forEach((b, j) => b.setAttribute('aria-pressed', String(j === i)));
+    groupSeg?.set(i);
     for (const ref of g.refs) {
       const outline = insets[ref.ref];
       // 확대 창 레이어는 큰 지도에 올리지 않으므로 map 구독도 하지 않는다(범례는 창이 구독)
@@ -122,7 +120,8 @@ export function buildTopic({
           title: `${L.meta.title}(확대)`, credit: L.meta.credit, approx: L.meta.approx, approxNote: L.meta.approxNote, approxReason: L.meta.approxReason, tip,
         });
         groupParts.push(inset);
-        const box = insetBoxLayer(`${ref.ref}:box`, geoBox(outline, 0.02), { onClick: () => inset?.show() });
+        const vl = groupView(topic, g)?.label; // 상자 글자: 「싱가포르 확대 창」(상자가 지명 장애물이라 그 자리 지명이 빠지므로 이름을 함께)
+        const box = insetBoxLayer(`${ref.ref}:box`, geoBox(outline, 0.02), { onClick: () => inset?.show(), label: vl ? `${vl} 확대 창` : '확대 창' });
         map.addLayer(box);
         groupLayerIds.push(box.id);
       } else {

@@ -12,6 +12,7 @@ import { h, icon } from '../shared/dom.js';
 import { indexGeometry, clipIndexed } from './geoClip.js';
 import { mulberry32, quizOptions, pickNext, shuffle, photoCropStyle } from './uiCore.js';
 import { imageUrl } from './ui.js';
+import { segButtons } from './seg.js';
 
 export const PALETTE = ['#f4a3a8', '#f9c784', '#fbe79a', '#b8dea0', '#9ccbe8', '#c3b1e1'];
 const TARGET = { fill: '#ff922b', stroke: '#c2410c' };
@@ -117,6 +118,7 @@ export function coloringQuiz(map, layer, names, { seed = Date.now() % 1e9, onSco
   updateScore();
 
   function ask() {
+    if (!names.length) { cur = null; opts.replaceChildren(); feedback.textContent = '문제로 낼 나라가 없습니다.'; return; } // 빈 목록 지킴
     cur = pickNext(names, rand, cur);
     answered = false;
     feedback.textContent = '';
@@ -143,12 +145,10 @@ export function coloringQuiz(map, layer, names, { seed = Date.now() % 1e9, onSco
     updateScore();
   }
 
-  const modeBtns = [['paint', '색칠하기'], ['name', '이름 맞히기']].map(([v, t]) => h('button', {
-    class: 'ds-seg-btn', type: 'button', 'aria-pressed': String(v === mode), 'data-v': v, on: { click: () => setMode(v) },
-  }, t));
+  const modeSeg = segButtons([['paint', '색칠하기'], ['name', '이름 맞히기']], { onPick: (v) => setMode(v), label: '퀴즈 방식', current: mode });
   function setMode(m) {
     mode = m;
-    modeBtns.forEach((b) => b.setAttribute('aria-pressed', String(b.getAttribute('data-v') === m)));
+    modeSeg.set(m);
     paintPane.hidden = m !== 'paint';
     namePane.hidden = m !== 'name';
     if (m === 'name') ask();
@@ -163,7 +163,7 @@ export function coloringQuiz(map, layer, names, { seed = Date.now() % 1e9, onSco
     refresh();
   });
   const el = h('section', { class: 'at-quiz', 'aria-label': '색칠하기 퀴즈' },
-    h('div', { class: 'ds-seg', role: 'group', 'aria-label': '퀴즈 방식' }, modeBtns), paintPane, namePane);
+    modeSeg.el, paintPane, namePane);
   return {
     el,
     setMode,
@@ -212,11 +212,10 @@ export function heritageQuiz(markers, { seed = Date.now() % 1e9, onFocus = null 
   const feedback = h('p', { class: 'at-quiz-feedback', role: 'status' });
   const scoreOut = h('span', { class: 'at-quiz-score' });
   const nextBtn = h('button', { class: 'ds-btn ds-primary', type: 'button', on: { click: () => ask() } }, icon('next'), '다음 문제');
-  const kindBtns = [['country', '어느 나라?'], ['religion', '어느 종교?']].map(([v, t]) => h('button', {
-    class: 'ds-seg-btn', type: 'button', 'aria-pressed': String(v === kind), 'data-v': v, on: { click: () => setKind(v) },
-  }, t));
+  const kindSeg = segButtons([['country', '어느 나라?'], ['religion', '어느 종교?']], { onPick: (v) => setKind(v), label: '묻는 것', current: kind });
   const updateScore = () => { scoreOut.textContent = `맞힌 수 ${score.right} / ${score.total}`; };
   function ask() {
+    if (!order.length) { cur = null; opts.replaceChildren(); photoBox.replaceChildren(); feedback.textContent = '문제로 낼 세계유산이 없습니다.'; return; } // 빈 목록 지킴
     k = (k + 1) % order.length;
     if (k === 0 && cur) order = shuffle(items, rand);
     cur = order[k];
@@ -249,12 +248,12 @@ export function heritageQuiz(markers, { seed = Date.now() % 1e9, onFocus = null 
   }
   function setKind(v) {
     kind = v;
-    kindBtns.forEach((b) => b.setAttribute('aria-pressed', String(b.getAttribute('data-v') === v)));
+    kindSeg.set(v);
     k = -1; cur = null; order = shuffle(items, rand);
     ask();
   }
   const el = h('section', { class: 'at-quiz', 'aria-label': '세계유산 퀴즈' },
-    h('div', { class: 'ds-seg', role: 'group', 'aria-label': '묻는 것' }, kindBtns),
+    kindSeg.el,
     photoBox, qText, opts, feedback, h('div', { class: 'at-quiz-foot' }, scoreOut, nextBtn));
   updateScore();
   if (items.length) ask();

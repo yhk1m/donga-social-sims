@@ -150,7 +150,7 @@ function main(argv) {
   const ne = neIndex(NE_FILE);
   if (!ne) warnings.push(`Natural Earth 인구 지점 파일이 없어 옮겨 그린 기호 바로잡기(snapToNe)를 못 함: ${NE_FILE}`);
   const snapped = ne ? snapToNe(places, ne) : [];
-  const moved = relocate(places, PC.relocate || {}, warnings);
+  const moved = relocate(places, PC.relocate || {});
   const inIdx = new Set(mapRows.map((r) => key(r.name)));
   for (const p of places) p.inIndex = inIdx.has(key(p.name));
   places.sort((a, b) => cmp(a.rank, b.rank) || cmp(b.size, a.size) || a.name.localeCompare(b.name, 'ko') || cmp(a.lon, b.lon) || cmp(a.lat, b.lat));
@@ -215,13 +215,15 @@ export function snapToNe(places, ne, { snapKm = PC.snapKm, keep = PC.keepTextboo
 
 /** 면 지명 옮기기(relocate, 설정 {이름: {path:[[lon,lat]...], why}}): 교과서 지면이 좁아 땅 밖에 쓴 나라 이름(「대한민국」은 동해,
  *  아시아 지도에는 알래스카만 보여 「미국」은 알래스카)을 웹지도(세계 전체·확대)에서 그 나라 본토 위로. lon/lat = path 가운데,
- *  angle 은 지움(가로 글자), moved: {from} 을 남긴다(까닭은 설정 why). 점 지명(기호)은 받지 않는다(snapToNe 몫). 이름이 없으면 경고. 옮긴 목록을 돌려준다. */
-export function relocate(places, table, warnings = []) {
+ *  angle 은 지움(가로 글자), moved: {from} 을 남긴다(까닭은 설정 why). 점 지명(기호)은 받지 않는다(snapToNe 몫). 이름이 없거나 둘 이상이면 오류('_' 로 시작하는 열쇠는 설명이라 건너뜀). 옮긴 목록을 돌려준다. */
+export function relocate(places, table) {
   const out = [];
   for (const [name, r] of Object.entries(table)) {
     if (name.startsWith('_')) continue;
-    const p = places.find((x) => x.name === name && !x.symbol);
-    if (!p) { warnings.push(`relocate: 면 지명 「${name}」 없음`); continue; }
+    const found = places.filter((x) => x.name === name && !x.symbol);
+    if (!found.length) throw new Error(`relocate: 면 지명 「${name}」 없음 — 설정 places.relocate 확인`);
+    if (found.length > 1) throw new Error(`relocate: 면 지명 「${name}」 이 ${found.length}개 — 어느 것을 옮길지 모름`);
+    const p = found[0];
     if (!Array.isArray(r.path) || r.path.length < 2 || !r.why) throw new Error(`relocate.${name}: path(2점 이상)·why 필요`);
     const n = r.path.length;
     const mid = n % 2 ? r.path[(n - 1) / 2] : [(r.path[n / 2 - 1][0] + r.path[n / 2][0]) / 2, (r.path[n / 2 - 1][1] + r.path[n / 2][1]) / 2];

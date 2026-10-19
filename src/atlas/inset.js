@@ -4,7 +4,7 @@
 //   싱가포르 보기에서는 섬만 따로 크게 그린 창을 무대에 띄우고, 큰 지도에는 싱가포르 자리에 상자(insetBoxLayer)만 둔다.
 //
 //   symbolInset(stage, { outline, points, legend, legendItems, title, credit, approx, approxNote, tip, onClose })
-//     outline = 바탕 윤곽 GeoJSON(inset_outline.py — 교과서 지도 육지를 같은 fit 으로 되돌린 것), points = 기호 레이어 자료(Point Feature 들, properties
+//     outline = 바탕 GeoJSON(inset_outline.py — 교과서 지도 육지(Polygon)·도로(LineString {kind: expressway|road})를 같은 fit 으로 되돌린 것), points = 기호 레이어 자료(Point Feature 들, properties
 //     {cls, color, label, name?}), legend = 그 레이어의 legendState(범례 블록과 같은 것 — 고르면 창의 기호도 흐려짐), tip = ui.tooltip(무대 말풍선).
 //     → { el, open, show(), hide(), destroy() }. 창은 absolute(무대 왼쪽 위), z 16(말풍선 17 아래 — 창 기호 말풍선이 창 위에 뜸, 원본 쪽 보기 20 아래), 닫기 단추·Esc.
 //   insetBoxLayer(id, bounds, { onClick }) → 렌더러 레이어(SVG 사각형 + 「확대 창」 글자, z 90). 누르면 onClick(창 다시 열기).
@@ -53,6 +53,13 @@ export function symbolInset(stage, { outline, points, legend = null, legendItems
     const polys = g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : [];
     return polys.map((rings) => s('path', { class: 'at-inset-land-path', d: rings.map((r) => ringPath(r, P.project)).join(''), 'fill-rule': 'evenodd' }));
   }));
+  // 도로(교과서 22쪽처럼 어두운 테두리 + 밝은 선, 고속 도로는 굵게): 테두리를 모두 먼저, 그 위에 밝은 선 — 사원 기호 아래
+  const roadD = (outline.features || []).filter((f) => f.geometry?.type === 'LineString')
+    .map((f) => ({ kind: f.properties?.kind === 'expressway' ? 'expressway' : 'road', d: f.geometry.coordinates.map((p, i) => { const [x, y] = P.project(p); return `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`; }).join('') }));
+  const roadOrder = [...roadD.filter((r) => r.kind === 'road'), ...roadD.filter((r) => r.kind === 'expressway')];
+  const roads = s('g', { class: 'at-inset-roads' },
+    roadOrder.map((r) => s('path', { class: `at-inset-road-casing at-inset-road-casing-${r.kind}`, d: r.d })),
+    roadOrder.map((r) => s('path', { class: `at-inset-road at-inset-road-${r.kind}`, d: r.d })));
   const feats = (points?.features || []).filter((f) => f.geometry?.type === 'Point');
   const R = 5.2;
   const syms = feats.map((f) => {
@@ -86,7 +93,7 @@ export function symbolInset(stage, { outline, points, legend = null, legendItems
     s('path', { class: 'at-inset-scale-line', d: `M0,-5V0H${barW.toFixed(1)}V-5` }),
     s('text', { class: 'at-inset-scale-text', x: 0, y: -8 }, '0'), s('text', { class: 'at-inset-scale-text', x: barW.toFixed(1), y: -8, 'text-anchor': 'middle' }, `${km}km`));
   const svg = s('svg', { class: 'at-inset-svg', viewBox: `0 0 ${P.width} ${P.height}`, role: 'img', 'aria-label': `${title} — 기호 ${feats.length}개` },
-    s('rect', { class: 'at-inset-sea', x: 0, y: 0, width: P.width, height: P.height }), land, names, syms.map((q) => q.c), scale);
+    s('rect', { class: 'at-inset-sea', x: 0, y: 0, width: P.width, height: P.height }), land, roads, names, syms.map((q) => q.c), scale);
   const close = h('button', { class: 'ds-btn at-inset-close', type: 'button', 'aria-label': '확대 창 닫기', title: '닫기(Esc)', on: { click: () => hide() } }, icon('close'));
   const legendRow = legendItems.length ? h('ul', { class: 'at-inset-legend', 'aria-label': '범례' }, legendItems.map((e) => h('li', { class: 'at-inset-legend-item' },
     h('span', { class: 'at-inset-legend-dot', style: { background: e.color }, 'aria-hidden': 'true' }), e.label))) : null;
@@ -111,8 +118,9 @@ export function symbolInset(stage, { outline, points, legend = null, legendItems
   const off = legend ? legend.onChange(sync) : null;
   sync(legend?.selected?.() ?? null);
   let alive = true;
-  function show() { if (alive) el.hidden = false; }
+  function show() { if (!alive) return; el.hidden = false; close.focus?.(); } // 초점을 창 안으로(Esc 가 창의 keydown 에 걸려 있음 — pageViewer 와 같음)
   function hide() { el.hidden = true; tip?.hide(); onClose?.(); }
+  show(); // 만들자마자 열림 — 초점도 창으로
   return {
     el, show, hide,
     get open() { return !el.hidden; },
@@ -122,7 +130,7 @@ export function symbolInset(stage, { outline, points, legend = null, legendItems
 
 /** 큰 지도의 확대 창 자리 상자(SVG). bounds = [w, s, e, n]. 화면에서 너무 작으면 최소 14px 로 그리고 「확대 창」 글자를 단다. */
 export function insetBoxLayer(id, [w, s0, e, n], { onClick = null, label = '확대 창', z = LAYER_Z.marker + 10 } = {}) {
-  let g = null, rect = null, text = null;
+  let g = null, rect = null, text = null, boxes = []; // boxes: 지명 장애물(상자 + 글자, 화면 px)
   const click = (ev) => { ev.stopPropagation?.(); onClick?.(); };
   return {
     id, z,
@@ -135,15 +143,19 @@ export function insetBoxLayer(id, [w, s0, e, n], { onClick = null, label = '확�
         group.replaceChildren(rect, text);
       }
       const a = project([w, n]), b = project([e, s0]);
-      if (!a || !b) { rect.setAttribute('display', 'none'); text.setAttribute('display', 'none'); return; }
+      if (!a || !b) { rect.setAttribute('display', 'none'); text.setAttribute('display', 'none'); boxes = []; return; }
       const cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2;
       const bw = Math.max(14, Math.abs(b[0] - a[0])), bh = Math.max(14, Math.abs(b[1] - a[1]));
       rect.removeAttribute('display'); text.removeAttribute('display');
       rect.setAttribute('x', (cx - bw / 2).toFixed(1)); rect.setAttribute('y', (cy - bh / 2).toFixed(1));
       rect.setAttribute('width', bw.toFixed(1)); rect.setAttribute('height', bh.toFixed(1));
       text.setAttribute('x', (cx + bw / 2 + 4).toFixed(1)); text.setAttribute('y', (cy + 4).toFixed(1));
+      const tw = label.length * 12 + 4; // 12px 굵은 글자 어림
+      boxes = [[cx - bw / 2, cy - bh / 2, cx + bw / 2, cy + bh / 2], [cx + bw / 2 + 2, cy - 9, cx + bw / 2 + 4 + tw, cy + 7]];
     },
     hit: () => null,
-    destroy() { g?.replaceChildren(); g = null; },
+    /** 지명 자리 피하기: 상자와 「확대 창」 글자 */
+    labelObstacles: () => boxes.map((b) => [...b]),
+    destroy() { g?.replaceChildren(); g = null; boxes = []; },
   };
 }

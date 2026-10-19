@@ -2,7 +2,9 @@
 # scripts/atlas/inset_outline.py — 확대 창(인셋) 바탕 윤곽: 교과서 지도 안의 육지 채움 도형 → 경위도 GeoJSON (E1)
 #   python -I scripts/atlas/inset_outline.py            설정 insets 의 모든 항목
 #   python -I scripts/atlas/inset_outline.py <id> ...   그 항목만
-#   설정: scripts/atlas/config/u2.json 의 insets[] = {id, map, layer, landFill, minAreaPt2, tolPt, out}
+#   설정: scripts/atlas/config/u2.json 의 insets[] = {id, map, layer, landFill, minAreaPt2, tolPt, roads?, out}
+#     roads    = {stroke: 밝은 도로 선 색, kinds: {선 굵기(pt): 종류}} — 교과서는 어두운 테두리(#58595b) 위에 밝은 선(#d1d3d4)을 겹쳐 그리고,
+#                고속 도로는 굵게(0.7/0.45pt), 일반 도로는 가늘게(0.5/0.22pt). 밝은 선만 따서 LineString {kind} 로(E1 검토, 교사 결정).
 #     layer    = 같은 지도의 레이어 생성물(그 properties.approx 를 따라 출력에 approx)
 #     map      = maps_u2.json 지도 id(지도 틀 bbox 안 도형만, 그 지도 fit 으로 경위도)
 #     landFill = 육지 채움색(#rrggbb, 싱가포르 22쪽 = #e7efc1)
@@ -32,8 +34,8 @@ def _bez(p0, p1, p2, p3, n=BEZIER_STEPS):
     return out
 
 
-def rings_of(drawing):
-    """PyMuPDF 도형 하나 → 고리 목록(지면 pt 점 목록). 시작점이 앞 끝점과 다르면 새 고리."""
+def paths_of(drawing, min_pts):
+    """PyMuPDF 도형 하나 → 하위 경로 목록(지면 pt 점 목록). 시작점이 앞 끝점과 다르면 새 경로. min_pts 보다 짧은 것은 버림."""
     rings, cur, last = [], [], None
     for it in drawing['items']:
         kind = it[0]
@@ -43,15 +45,37 @@ def rings_of(drawing):
             r = it[1]; a = r.tl; pts = [(r.x1, r.y0), (r.x1, r.y1), (r.x0, r.y1), (r.x0, r.y0)]
         else: continue
         if last is None or math.hypot(a.x - last[0], a.y - last[1]) > 0.05:
-            if len(cur) >= 4: rings.append(cur)
+            if len(cur) >= min_pts: rings.append(cur)
             cur = [(a.x, a.y)]
         cur.extend(pts); last = cur[-1]
-    if len(cur) >= 4: rings.append(cur)
+    if len(cur) >= min_pts: rings.append(cur)
     return rings
+
+
+def rings_of(drawing):
+    """도형 하나 → 고리 목록(4점 이상)."""
+    return paths_of(drawing, 4)
 
 
 def area(r):
     return abs(sum(r[i][0] * r[i - 1][1] - r[i - 1][0] * r[i][1] for i in range(len(r)))) / 2
+
+
+def _dp(a, tol):
+    if len(a) < 3: return a
+    (x0, y0), (x1, y1) = a[0], a[-1]
+    dx, dy = x1 - x0, y1 - y0; L = math.hypot(dx, dy) or 1e-9
+    best, bi = -1, 0
+    for i in range(1, len(a) - 1):
+        d = abs(dy * (a[i][0] - x0) - dx * (a[i][1] - y0)) / L
+        if d > best: best, bi = d, i
+    if best <= tol: return [a[0], a[-1]]
+    return _dp(a[:bi + 1], tol)[:-1] + _dp(a[bi:], tol)
+
+
+def simplify_line(pts, tol):
+    """Douglas–Peucker(열린 선)."""
+    return _dp(list(pts), tol)
 
 
 def simplify(pts, tol):
@@ -81,7 +105,23 @@ def build(item):
         for ring in rings_of(d):
             if area(ring) >= item['minAreaPt2']: rings.append(simplify(ring, item['tolPt']))
     rings = [r for r in rings if len(r) >= 3]
-    flat = [p for r in rings for p in r]
+    # 도로(교과서 지도의 회색 선 — 어두운 테두리 선 위에 밝은 선을 겹쳐 그림): 밝은 선(roads.stroke)만, 굵기로 종류(roads.kinds {굵기: 종류})
+    roads = []  # (종류, 점 목록)
+    rc = item.get('roads')
+    if rc:
+        kinds = {float(w): k for w, k in rc['kinds'].items()}
+        for d in drawings(m['page']):
+            if d.get('color') is None or pdfkit.hex_color(d['color']) != rc['stroke']: continue
+            r = d['rect']
+            if r.x1 < x0 or r.x0 > x1 or r.y1 < y0 or r.y0 > y1: continue
+            w = round(d.get('width') or 0, 2)
+            kind = kinds.get(w)
+            if kind is None: raise RuntimeError(f"{item['id']}: 도로 굵기 {w} 가 roads.kinds 에 없음")
+            for line in paths_of(d, 2):
+                q = simplify_line(line, item['tolPt'])
+                length = sum(math.hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]) for i in range(1, len(q)))
+                if length >= item.get('minRoadPt', 0.5): roads.append((kind, q))  # 0.5pt 보다 짧은 토막(교차로 조각)은 버림
+    flat = [p for r in rings for p in r] + [p for _, q in roads for p in q]
     ll = node_lonlat({item['map']: [list(p) for p in flat]})[item['map']]
     if any(v is None for v in ll): raise RuntimeError(f"{item['id']}: 경위도 되돌리기 실패 {sum(v is None for v in ll)}점")
     feats, k = [], 0
@@ -93,8 +133,11 @@ def build(item):
         s = sum(ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1] for i in range(len(ring) - 1))
         if s > 0: ring.reverse()
         feats.append({'type': 'Feature', 'properties': {}, 'geometry': {'type': 'Polygon', 'coordinates': [ring]}})
+    for kind, q in roads:
+        pts = ll[k:k + len(q)]; k += len(q)
+        feats.append({'type': 'Feature', 'properties': {'kind': kind}, 'geometry': {'type': 'LineString', 'coordinates': [[round(a, 4), round(b, 4)] for a, b in pts]}})
     props = {'id': item['id'], 'map': item['map'], 'page': m['page'],
-             'source': f"교과서 22개정 중학 사회과 부도 {m['page']}쪽 지도의 육지 윤곽(경위도 맞추기 fit 으로 되돌림)"}
+             'source': f"교과서 22개정 중학 사회과 부도 {m['page']}쪽 지도의 육지 윤곽·도로(경위도 맞추기 fit 으로 되돌림)"}
     layer = item.get('layer')  # 같은 지도의 레이어 생성물 — fit 이 approx 면 그 properties 에 approx 가 실려 있다(C1)
     if layer:
         with open(os.path.join(ROOT, layer), encoding='utf-8') as f:
@@ -105,7 +148,7 @@ def build(item):
     old = open(path, encoding='utf-8').read() if os.path.exists(path) else None
     if old != text:
         with open(path, 'w', encoding='utf-8', newline='\n') as f: f.write(text)
-    print(f"{item['id']}: 고리 {len(rings)}개, 점 {len(flat)}개 → {item['out']} {len(text.encode('utf-8')):,} B{' (같음)' if old == text else ''}")
+    print(f"{item['id']}: 고리 {len(rings)}개, 도로 {len(roads)}줄, 점 {len(flat)}개 → {item['out']} {len(text.encode('utf-8')):,} B{' (같음)' if old == text else ''}")
 
 
 def main(argv):

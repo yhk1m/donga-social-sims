@@ -119,15 +119,25 @@ test('한반도(KOR·PRK)는 10a 에서 덜 단순화(simplifyByIso, E1) — 해
   const topo = readJson(FILE);
   const fs10 = feature(topo, topo.objects.countries10a).features;
   const count = (iso) => { let n = 0; const w = (a) => (typeof a[0] === 'number' ? n++ : a.forEach(w)); w(fs10.find((f) => f.properties.iso === iso).geometry.coordinates); return n; };
-  assert.ok(count('KOR') > 1500, `KOR ${count('KOR')}`);
-  assert.ok(count('PRK') > 1000, `PRK ${count('PRK')}`);
+  assert.ok(count('KOR') > 2500, `KOR ${count('KOR')} (10% 때 129)`);
+  assert.ok(count('PRK') > 1500, `PRK ${count('PRK')} (10% 때 137)`);
   assert.ok(count('JPN') < 1500, `JPN ${count('JPN')} (그 밖은 그대로 10%)`);
 });
 
-test('simplifyArgs: 나라별 비율 → mapshaper variable 식, 잘못된 값은 오류', async () => {
+test('simplifyArgs: 나라별 비율 → mapshaper variable 식(설정 그대로의 식도 글자 그대로), 잘못된 값은 오류', async () => {
   const { simplifyArgs } = await import('../../scripts/atlas/build_basemap.mjs');
+  const lv = CFG.levels.find((l) => l.id === '10a');
+  assert.deepEqual(simplifyArgs(lv.simplify, lv.simplifyByIso), ['variable', "percentage=iso=='KOR'?1:iso=='PRK'?1:0.1"]);
   assert.deepEqual(simplifyArgs('10%'), ['10%']);
   assert.deepEqual(simplifyArgs('10%', { KOR: '100%', PRK: '50%' }), ['variable', "percentage=iso=='KOR'?1:iso=='PRK'?0.5:0.1"]);
   assert.throws(() => simplifyArgs('10%', { kor: '50%' }));
   assert.throws(() => simplifyArgs('10%', { KOR: '150%' }));
+});
+
+test('checkByIso: simplifyByIso 열쇠가 그 상세도 나라 iso 에 없으면 오류(오타·자르기 밖), 지금 basemap.json 은 통과', async () => {
+  const { checkByIso } = await import('../../scripts/atlas/build_basemap.mjs');
+  const topo = readJson(FILE);
+  checkByIso(topo, CFG.levels);
+  assert.throws(() => checkByIso(topo, [{ id: '10a', simplifyByIso: { KOR: '100%', BRA: '50%' } }]), /BRA/);
+  assert.throws(() => checkByIso(topo, [{ id: '10a', simplifyByIso: { XXX: '50%' } }]), /XXX/);
 });

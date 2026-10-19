@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, statSync, existsSync } from 'node:fs';
-import { neCheck, neIndex } from '../../scripts/atlas/build_places.mjs';
+import { neCheck, neIndex, relocate } from '../../scripts/atlas/build_places.mjs';
 import { key, km } from '../../scripts/atlas/geo_util.mjs';
 
 const FILE = 'sims/atlas-u2-asia/data/places.json';
@@ -143,4 +143,16 @@ test('옮긴 나라 이름(relocate, E1): 「미국」은 본토, 「대한민�
   assert.ok(kr.lon > 126.5 && kr.lon < 129.3 && kr.lat > 34.8 && kr.lat < 38.3, `대한민국 ${kr.lon},${kr.lat}`);
   for (const p of [us, kr]) { assert.equal(p.angle, undefined); assert.ok(Array.isArray(p.moved?.from)); }
   for (const name of Object.keys(cfg.relocate || {}).filter((n) => !n.startsWith('_'))) assert.ok(places.find((p) => p.name === name)?.moved, name);
+});
+
+test('relocate: 없는 이름·같은 이름 면 지명 둘 이상은 오류, 밑줄 열쇠는 건너뜀, 점 지명(기호)은 옮기지 않음', () => {
+  const mk = () => [{ name: 'A', lon: 1, lat: 2, angle: 5 }, { name: 'B', lon: 0, lat: 0 }, { name: 'B', lon: 9, lat: 9 }, { name: 'C', lon: 3, lat: 3, symbol: [3, 3] }];
+  const ps = mk();
+  const out = relocate(ps, { _doc: 'x', A: { path: [[10, 20], [12, 20]], why: 'w' } });
+  assert.equal(out.length, 1);
+  assert.deepEqual([ps[0].lon, ps[0].lat, ps[0].angle, ps[0].moved.from], [11, 20, undefined, [1, 2]]);
+  assert.throws(() => relocate(mk(), { Z: { path: [[0, 0], [1, 0]], why: 'w' } }), /없음/);
+  assert.throws(() => relocate(mk(), { B: { path: [[0, 0], [1, 0]], why: 'w' } }), /2개/);
+  assert.throws(() => relocate(mk(), { C: { path: [[0, 0], [1, 0]], why: 'w' } }), /없음/, '점 지명은 대상 아님');
+  assert.throws(() => relocate(mk(), { A: { path: [[0, 0]], why: 'w' } }), /path/);
 });

@@ -203,6 +203,13 @@
 .ds-sim .at-inset-svg { display: block; width: 100%; height: auto; }
 .ds-sim .at-inset-sea { fill: #d8ecf2; }
 .ds-sim .at-inset-land-path { fill: #f2efe9; stroke: #8fb5c2; stroke-width: 1; }
+.ds-sim .at-inset-road-casing, .ds-sim .at-inset-road { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.ds-sim .at-inset-road-casing { stroke: #58595b; }
+.ds-sim .at-inset-road-casing-road { stroke-width: 1.7; }
+.ds-sim .at-inset-road-casing-expressway { stroke-width: 2.8; }
+.ds-sim .at-inset-road { stroke: #d1d3d4; }
+.ds-sim .at-inset-road-road { stroke-width: .7; }
+.ds-sim .at-inset-road-expressway { stroke-width: 1.6; }
 .ds-sim .at-inset-sym { stroke: #fff; stroke-width: 1.4; cursor: pointer; }
 .ds-sim .at-inset-sym:hover { stroke: #1d2a4a; stroke-width: 2; }
 .ds-sim .at-inset-leader { fill: none; stroke: #231f20; stroke-width: .8; }

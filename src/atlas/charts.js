@@ -14,7 +14,7 @@ import {
 } from 'csat-chart.js';
 import { h, s, icon } from '../shared/dom.js';
 import {
-  chartPlan, toClimateData, toLineData, toStackedAreaData, toPyramidData, toPieData, toStackedBarData, toAbsBarData, stackLegend, stackCells, linearScale, arcPath, ringRows, laneLabels,
+  chartPlan, toClimateData, toLineData, toStackedAreaData, toPyramidData, toPieData, toStackedBarData, toAbsBarData, stackLegend, stackCells, linearScale, arcPath, ringRows, laneLabels, shareFormatter, totalText,
 } from './chartCore.js';
 import './ui.css';
 
@@ -55,15 +55,13 @@ const INK = '#231f20';
 const txt = (x, y, str, attrs = {}) => s('text', { class: 'at-ct', x, y, ...attrs }, str);
 /** 글자 폭 어림(viewBox 단위): 한글 1em, 그 밖 0.55em */
 const textW = (str, fs) => [...String(str)].reduce((a, ch) => a + (/[ㄱ-힣]/.test(ch) ? 1 : 0.56), 0) * fs;
-const fmtNum = (v) => String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
 /** 여러 막대 100% 띠(자원·수출 비율): 막대마다 칠한 순서대로 칸, 칸에 들어가면 칸 안에 「이름 / 비율」, 아니면 막대 위·아래 줄에
  *  「이름 비율」 + 지시선(교과서처럼). 칸마다 <title>(말풍선). */
 function stackedBarsSvg(spec, label) {
   const rows = stackCells(spec);
   const total = spec.total ?? 100;
-  const dec = Math.max(0, ...spec.series.flatMap((q) => q.values).filter((v) => v != null).map((v) => (String(v).split('.')[1] || '').length));
-  const fmtV = (v) => v.toFixed(Math.min(dec, 2));
+  const fmtV = shareFormatter(spec);
   const W = 760, left = 132, right = 30, top = 22, barH = 30, gap = 46, fs = 11.5, lfs = 10.5;
   const plotW = W - left - right;
   const Hh = top + rows.length * (barH + gap) + 14;
@@ -97,7 +95,7 @@ function stackedBarsSvg(spec, label) {
         s('circle', { cx: cx.toFixed(1), cy: (y + barH / 2).toFixed(1), r: 1.6, class: 'at-ct-dot' }),
         txt(lx, ty, g.text, { 'text-anchor': 'middle', class: 'at-ct at-ct-out-text' }));
     });
-    const tot = r.total ? `${fmtNum(r.total.value)} (${r.total.unit}, ${r.total.year}년)` : '';
+    const tot = totalText(r.total);
     return s('g', {},
       cells, leaders,
       txt(left - 8, y + barH / 2 - 1, r.category, { 'text-anchor': 'end', class: 'at-ct at-ct-cat' }),
@@ -191,8 +189,7 @@ export function renderChart(container, spec, { title = undefined, source = true 
 export function barPicker(container, spec, { onExpand = null, current = 0, title = undefined } = {}) {
   const rows = stackCells(spec);
   const total = spec.total ?? 100;
-  const dec = Math.max(0, ...spec.series.flatMap((q) => q.values).filter((v) => v != null).map((v) => (String(v).split('.')[1] || '').length));
-  const fmtV = (v) => v.toFixed(Math.min(dec, 2));
+  const fmtV = shareFormatter(spec);
   const name = title === false ? null : (title ?? spec.title);
   const btns = rows.map((r, k) => h('button', {
     class: 'ds-seg-btn at-barpick-btn', type: 'button', 'aria-pressed': 'false', 'data-k': String(k), on: { click: () => select(k) },
@@ -224,7 +221,7 @@ export function barPicker(container, spec, { onExpand = null, current = 0, title
       s('line', { class: 'at-ct-grid', x1: x(v), x2: x(v), y1: top + barH, y2: top + barH + 4 }),
       txt(x(v), top + barH + 15, String(v), { 'text-anchor': v === 0 ? 'start' : v === total ? 'end' : 'middle', class: 'at-ct at-ct-tick' })));
     const svg = s('svg', { class: 'at-chart-svg at-barpick-svg', viewBox: `0 0 ${W} ${top + barH + 20}`, role: 'img', 'aria-label': `${spec.title} — ${r.category}` }, cells, ticks);
-    const tot = r.total ? `${fmtNum(r.total.value)} (${r.total.unit}, ${r.total.year}년)` : '';
+    const tot = totalText(r.total);
     box.replaceChildren(
       h('div', { class: 'at-barpick-head' }, h('span', { class: 'at-barpick-cat' }, r.category), tot ? h('span', { class: 'at-barpick-total' }, tot) : null),
       svg,
