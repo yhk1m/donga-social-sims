@@ -1,0 +1,429 @@
+// © 2026 김용현
+// src/atlas/layers.js — 주제 레이어 종류. 모두 렌더러(renderer.js) 레이어 계약 {id, z, draw?, drawSvg?, hit?, destroy?} 을 돌려준다.
+//
+//   areaLayer(id, geojson, { legend, map, colorOf, dimAlpha = 0.15, fillOpacity = 0.85 })   캔버스 면(+ 같은 자료의 선: 등온선·국경 주장선·정전 라인, 빗금 면)
+//   symbolLayer(id, points, { legend, map, iconOf, sizeOf, onPick })                         SVG 기호(선 모양·원·네모·마름모·세모, 인구 막대)
+//   flowLayer(id, lines, { legend, map, widthOf, colorOf })                                   SVG 흐름선(이차 베지어 곡선 + 경로 화살촉)
+//   markerLayer(id, markers, { map, onPick, numberOf })                                       SVG 번호 핀. layer.select(id | null)
+//   imageLayer·loadImageData 는 imageLayer.js(여기서 다시 내보냄), combineLayers·layerFromRef 는 layerRef.js.
+//
+// 지도와의 연결(옵션 map): 레이어가 스스로 구독한다 — legend.onChange → map.refreshLayer(layerId), map.on('hover') → 자기 도형이면 강조.
+//   map 을 안 주면 구독하지 않는다(부르는 쪽이 refreshLayer 를 부름). destroy() 가 구독을 모두 푼다(렌더러가 removeLayer·clearLayers 때 부름).
+//   layerId = 렌더러에 올린 id(기본 = id). combineLayers 의 부분 레이어는 부모 id 로 다시 그리고 hover 를 받는다.
+// 강조(hover): 렌더러 hover 이벤트의 feature 가 자기 것이면 SVG 로 테두리를 굵게(면 = 그 분류 전체 윤곽, 선·기호 = 굵은 테두리). 움직이는 동안은 숨김.
+// 범례(legendState): 고르지 않은 분류는 흐리게(면 dimAlpha, 기호·선 dimAlpha 조금 더 짙게). hit 은 흐린 분류를 맞히지 않는다.
+// layer.meta = 자료 맨 위 properties(+ layerFromRef 가 주제 항목 값), layer.meta.approx = 「위치 근사」 표시 여부. layer.legendItems = 화면 범례 항목.
+//
+// 규칙(EMBED_RULES.md): DOM 은 h()/s() 로만, 빗금은 오프스크린 캔버스 createPattern(data: 주소 없음).
+// 문서 전역 id(id=·url(#…))를 쓰지 않는다 — 화살촉도 marker 가 아니라 같은 <g> 안 경로(같은 조각을 한 쪽에 여러 번 붙여도 겹치지 않게).
+import { geoPath, geoContains, geoBounds } from 'd3-geo';
+import { h, s } from '../shared/dom.js';
+import { indexGeometry, clipIndexed } from './geoClip.js';
+import {
+  alphaOf, symbolPx, flowWidthPx, lineWidthPx, barMetrics, quadPath, arrowSize, endTangent, arrowHead, trimRunEnd, joinParts, unwrapLine,
+  splitJumps, distToPolyline, lineLabelAt, shapePath, legendItems,
+} from './layerStyle.js';
+import { LAYER_Z, round1, round2, featuresOf, isPoly, isLine, metaOf, setAttr, connect, hoverClass } from './layerCommon.js';
+
+export { LAYER_Z } from './layerCommon.js';
+export { imageLayer, loadImageData } from './imageLayer.js';
+
+const HALO = 'rgba(255,255,255,.9)';
+const LINE_PT = { isotherm: 0.8, line: 1.2 }; // 주제도 선 기본 굵기(pt) — lineWidthPx 로 화면 px
+const LABEL_FONT = '700 10px "Pretendard", "Malgun Gothic", sans-serif';
+
+// ---------- 빗금(고산 기후) ----------
+const hatchTiles = new Map();
+/** 빗금 무늬(오프스크린 캔버스 8px 타일 → createPattern). data: 주소를 쓰지 않는다. */
+function hatchPattern(ctx, color) {
+  let tile = hatchTiles.get(color);
+  if (!tile) {
+    tile = h('canvas'); tile.width = tile.height = 8;
+    const c = tile.getContext('2d');
+    c.strokeStyle = color; c.lineWidth = 1.1; c.lineCap = 'square';
+    c.beginPath();
+    for (const o of [-8, 0, 8]) { c.moveTo(o, 8); c.lineTo(o + 8, 0); }
+    c.stroke();
+    hatchTiles.set(color, tile);
+  }
+  return ctx.createPattern(tile, 'repeat');
+}
+
+// ---------- 면 ----------
+/**
+ * 면 레이어(캔버스). 같은 자료의 선(등온선 type 'isotherm' — 값 글자 포함, 카슈미르 주장 국경·정전 라인 type 'line', dashed)은 흰 테두리 선으로,
+ * pattern 'hatch' 면은 빗금으로 그린다. geometry:false 범례 항목은 그릴 것이 없다(범례에만).
+ */
+export function areaLayer(id, geojson, { legend = null, map = null, layerId = id, legendRefresh = true, colorOf = (f) => f.properties.color, dimAlpha = 0.15, fillOpacity = 0.85, z = LAYER_Z.area } = {}) {
+  const feats = featuresOf(geojson);
+  const legendList = legendItems(geojson);
+  const dashed = new Set(legendList.filter((e) => e.dashed).map((e) => e.cls));
+  const areas = feats.filter((f) => isPoly(f) && !f.properties.pattern);
+  const hatches = feats.filter((f) => isPoly(f) && f.properties.pattern === 'hatch');
+  const lines = feats.filter(isLine);
+  const polys = [...areas, ...hatches]; // 맞히기 순서(위에 그린 것부터 거꾸로)
+  const own = new Set(feats);
+  const cache = new Map(); // f → {idx, bounds}
+  const info = (f) => { let c = cache.get(f); if (!c) { c = { idx: indexGeometry(f.geometry), bounds: null }; cache.set(f, c); } return c; };
+  const clip = (f, rect) => clipIndexed(info(f).idx, rect);
+  let lastView = null; // 마지막 캔버스 그림의 view(맞히기·강조용)
+  const lineRuns = new Map(); // 선 f → 화면 조각들(마지막 그림)
+  let hovered = null, hoverEl = null;
+
+  function drawLine(ctx, path, f, view, alpha) {
+    const p = f.properties, w = lineWidthPx(LINE_PT[p.type] ?? 1, view.k);
+    const g = clip(f, view.geoRect);
+    ctx.globalAlpha = alpha;
+    ctx.setLineDash(p.dashed || dashed.has(p.cls) ? [w * 4, w * 2.5] : []);
+    ctx.beginPath(); path(g);
+    ctx.strokeStyle = HALO; ctx.lineWidth = w + 2; ctx.stroke();
+    ctx.strokeStyle = colorOf(f); ctx.lineWidth = w; ctx.stroke();
+    // 맞히기·글자용 화면 조각
+    const proj = view.projection;
+    const runs = [];
+    for (const L of g.coordinates) runs.push(...splitJumps(unwrapLine(L), (ll) => { const q = proj(ll); return q && Number.isFinite(q[0]) ? q : null; }));
+    lineRuns.set(f, { runs, w });
+  }
+  function drawIsoLabels(ctx, view) {
+    ctx.setLineDash([]);
+    ctx.font = LABEL_FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+    for (const f of lines) {
+      const p = f.properties;
+      if (p.type !== 'isotherm' || p.value == null) continue;
+      const lr = lineRuns.get(f);
+      const at = lr && lineLabelAt(lr.runs, view.width, view.height, { margin: 12 });
+      if (!at) continue;
+      ctx.globalAlpha = alphaOf(legend, p.cls, dimAlpha);
+      ctx.save();
+      ctx.translate(at.at[0], at.at[1]); ctx.rotate((at.angle * Math.PI) / 180);
+      const t = String(p.value);
+      ctx.strokeStyle = HALO; ctx.lineWidth = 3; ctx.strokeText(t, 0, 0);
+      ctx.fillStyle = colorOf(f); ctx.fillText(t, 0, 0);
+      ctx.restore();
+    }
+  }
+
+  const layer = {
+    id, z, meta: metaOf(geojson), legendItems: legendList, features: feats,
+    draw(ctx, path, view) {
+      lastView = view;
+      const rect = view.geoRect;
+      for (const f of areas) {
+        ctx.globalAlpha = fillOpacity * alphaOf(legend, f.properties.cls, dimAlpha);
+        ctx.fillStyle = colorOf(f);
+        ctx.beginPath(); path(clip(f, rect)); ctx.fill();
+      }
+      for (const f of hatches) {
+        const g = clip(f, rect);
+        ctx.globalAlpha = alphaOf(legend, f.properties.cls, dimAlpha);
+        ctx.fillStyle = hatchPattern(ctx, colorOf(f)) || colorOf(f);
+        ctx.beginPath(); path(g); ctx.fill();
+        ctx.strokeStyle = colorOf(f); ctx.lineWidth = 0.6; ctx.globalAlpha *= 0.7; ctx.stroke();
+      }
+      lineRuns.clear();
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      for (const f of lines) drawLine(ctx, path, f, view, alphaOf(legend, f.properties.cls, dimAlpha));
+      drawIsoLabels(ctx, view);
+    },
+    drawSvg(g, project, view) { // 강조 윤곽 하나(제자리에서 고침)
+      if (!hoverEl || hoverEl.parentNode !== g) { hoverEl = s('path', { class: 'at-hover' }); g.append(hoverEl); }
+      paintHover(view);
+    },
+    hit(xy, lonlat) {
+      if (!lastView) return null;
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const f = lines[i];
+        if (alphaOf(legend, f.properties.cls, 0) === 0) continue;
+        const lr = lineRuns.get(f);
+        if (!lr) continue;
+        const tol = Math.max(4, lr.w / 2 + 3);
+        if (lr.runs.some((r) => distToPolyline(xy, r) <= tol)) return f;
+      }
+      for (let i = polys.length - 1; i >= 0; i--) {
+        const f = polys[i];
+        if (alphaOf(legend, f.properties.cls, 0) === 0) continue;
+        const c = info(f);
+        if (!c.bounds) c.bounds = geoBounds(f);
+        const [[w, s0], [e, n]] = c.bounds;
+        if (lonlat[1] < s0 || lonlat[1] > n) continue;
+        if (w <= e ? lonlat[0] < w || lonlat[0] > e : lonlat[0] < w && lonlat[0] > e) continue;
+        if (geoContains(f, lonlat)) return f;
+      }
+      return null;
+    },
+    destroy() { offs.forEach((off) => off()); offs.length = 0; },
+  };
+  function paintHover(view) {
+    if (!hoverEl) return;
+    // 흐린 분류(범례에서 다른 분류를 고름)는 강조하지 않는다
+    if (!hovered || !view || view.moving || !view.projection || alphaOf(legend, hovered.properties.cls, 0) === 0) { setAttr(hoverEl, 'd', null); return; }
+    const geom = clip(hovered, view.geoRect);
+    hoverEl.setAttribute('class', `at-hover ${isLine(hovered) ? 'at-hover-line' : 'at-hover-area'}`);
+    setAttr(hoverEl, 'd', geoPath(view.projection)(geom) || null);
+  }
+  const offs = connect({
+    map, legend, layerId, legendRefresh,
+    onHover: (f) => { const nf = f && own.has(f) ? f : null; if (nf !== hovered) { hovered = nf; paintHover(map.view); } },
+  });
+  return layer;
+}
+
+// ---------- 기호 ----------
+/** 기호 모양: 범례 항목의 shape(생성물, 설정 legendShapes) → 없으면 원. 'bar' = 인구 막대. */
+function defaultIconOf(legendList) {
+  const by = new Map(legendList.map((e) => [e.cls, e.shape]));
+  return (f) => by.get(f.properties.cls) || 'circle';
+}
+
+/**
+ * 기호 레이어(SVG). 기호 하나 = <g class="at-sym-item">. 모양 기호는 반지름 1 경로를 translate·scale 로 옮기고(테두리는 non-scaling-stroke),
+ * 인구 막대(shape 'bar')는 1억 명 칸을 쌓고 사람 아이콘·나라 이름을 얹는다(지시선 막대는 barAt 에 세우고 나라 자리까지 점선).
+ * 누르면 onPick(feature). 크기 = symbolPx(properties.size pt, k).
+ * 같은 레이어 객체를 다른 <g> 에 다시 그리면(렌더러에 다시 올림) 요소와 캐시(칸 크기 등)를 모두 새로 만든다.
+ */
+export function symbolLayer(id, points, { legend = null, map = null, layerId = id, legendRefresh = true, iconOf = null, sizeOf = (f) => f.properties.size, onPick = null, dimAlpha = 0.2, z = LAYER_Z.symbol } = {}) {
+  const feats = featuresOf(points).filter((f) => f.geometry?.type === 'Point');
+  const legendList = legendItems(points);
+  const shapeOf = iconOf || defaultIconOf(legendList);
+  const items = feats.map((f) => ({ f, shape: shapeOf(f) }));
+  const byF = new Map(items.map((it) => [it.f, it]));
+  let root = null;
+
+  function build(g) {
+    root = s('g', { class: 'at-symbols' });
+    for (const it of items) {
+      // 캐시 초기화(새 요소에 맞춰 다시 계산)
+      Object.assign(it, { el: null, xy: null, box: null, r: 0, key: '', h: 0, w: 0, leader: null, dot: null, cells: null, label: null });
+      const p = it.f.properties;
+      const el = s('g', { class: `at-sym-item at-sym-${it.shape}`, on: { click: (e) => { e.stopPropagation(); onPick?.(it.f, e); } } });
+      if (it.shape === 'bar') {
+        it.leader = s('path', { class: 'at-bar-leader' });
+        it.dot = s('circle', { class: 'at-bar-dot', r: 2.2, fill: p.color });
+        it.cells = s('g', { class: 'at-bar-cells', fill: p.color });
+        it.label = p.name ? s('text', { class: 'at-bar-label' }, p.name) : null;
+        el.append(it.leader, it.dot, it.cells, ...(it.label ? [it.label] : []));
+      } else {
+        el.append(s('path', { class: 'at-sym-shape', d: shapePath(it.shape), fill: p.color, 'vector-effect': 'non-scaling-stroke' }));
+      }
+      it.el = el;
+      root.append(el);
+    }
+    g.append(root);
+  }
+  function drawBar(it, view, base, anchor) {
+    const m = barMetrics(it.f.properties.value, view.k);
+    const key = `${round1(m.cell)}`;
+    if (key !== it.key) { // 확대가 바뀌어 칸 크기가 바뀌었을 때만 다시 만든다
+      it.key = key;
+      const kids = [];
+      const w = m.width;
+      for (let i = 0; i < m.cells; i++) {
+        const y = -(i + 1) * m.cell - i * m.gap;
+        kids.push(s('rect', { class: 'at-bar-cell', x: round1(-w / 2), y: round1(y), width: round1(w), height: round1(m.cell) }));
+      }
+      // 사람 아이콘(머리 + 몸) — 막대 위
+      const top = -m.height - m.gap, hr = m.cell * 0.42, sh = m.cell * 0.55, hw = w * 0.55;
+      kids.push(s('path', { class: 'at-bar-person', d: `M${round1(-hw)},${round1(top)}v${round1(-sh)}q0,${round1(-sh)} ${round1(hw)},${round1(-sh)}q${round1(hw)},0 ${round1(hw)},${round1(sh)}v${round1(sh)}Z` }));
+      kids.push(s('circle', { class: 'at-bar-person', cx: 0, cy: round1(top - m.cell * 1.1 - hr), r: round1(hr) }));
+      it.cells.replaceChildren(...kids);
+      it.h = m.height + m.gap + m.cell * 1.1 + 2 * hr;
+      it.w = w;
+      if (it.label) setAttr(it.label, 'y', round1(m.cell * 1.1 + 4));
+    }
+    setAttr(it.cells, 'transform', `translate(${round1(base[0])},${round1(base[1])})`);
+    if (it.label) { setAttr(it.label, 'x', round1(base[0])); setAttr(it.label, 'transform', `translate(0,${round1(base[1])})`); }
+    // 막대 상자(맞히기·지시선)
+    it.box = [base[0] - it.w / 2, base[1] - it.h, base[0] + it.w / 2, base[1] + (it.label ? 16 : 0)];
+    if (anchor) {
+      const bx = Math.max(it.box[0], Math.min(anchor[0], it.box[2])), by = Math.max(base[1] - it.h, Math.min(anchor[1], base[1]));
+      setAttr(it.leader, 'd', `M${round1(anchor[0])},${round1(anchor[1])}L${round1(bx)},${round1(by)}`);
+      setAttr(it.dot, 'cx', round1(anchor[0])); setAttr(it.dot, 'cy', round1(anchor[1]));
+      setAttr(it.dot, 'display', null); setAttr(it.leader, 'display', null);
+    } else {
+      setAttr(it.dot, 'display', 'none'); setAttr(it.leader, 'display', 'none');
+    }
+  }
+  const onHover = hoverClass((f) => byF.get(f));
+
+  const layer = {
+    id, z, meta: metaOf(points), legendItems: legendList, features: feats,
+    drawSvg(g, project, view) {
+      if (!root || root.parentNode !== g) build(g);
+      const W = view.width, H = view.height;
+      for (const it of items) {
+        const p = it.f.properties;
+        const q = project(it.f.geometry.coordinates);
+        let shown = !!q;
+        if (it.shape === 'bar') {
+          const base = p.barAt ? project(p.barAt) : q;
+          shown = shown && !!base && base[0] > -80 && base[0] < W + 80 && base[1] > -40 && base[1] < H + 400;
+          if (shown) drawBar(it, view, base, p.barAt ? q : null);
+        } else {
+          shown = shown && q[0] > -20 && q[0] < W + 20 && q[1] > -20 && q[1] < H + 20;
+          if (shown) {
+            it.r = symbolPx(sizeOf(it.f) || 3, view.k) / 2;
+            setAttr(it.el, 'transform', `translate(${round1(q[0])},${round1(q[1])}) scale(${round2(it.r)})`);
+          }
+        }
+        it.xy = shown ? q : null;
+        setAttr(it.el, 'display', shown ? null : 'none');
+        const a = alphaOf(legend, p.cls, dimAlpha);
+        setAttr(it.el, 'opacity', a === 1 ? null : a);
+        it.el.classList.toggle('is-hover', it.f === onHover.current());
+      }
+    },
+    hit(xy) {
+      for (let i = items.length - 1; i >= 0; i--) {
+        const it = items[i];
+        if (!it.xy || alphaOf(legend, it.f.properties.cls, 0) === 0) continue;
+        if (it.shape === 'bar') {
+          const b = it.box;
+          if (b && xy[0] >= b[0] - 2 && xy[0] <= b[2] + 2 && xy[1] >= b[1] - 2 && xy[1] <= b[3] + 2) return it.f;
+          if (Math.hypot(xy[0] - it.xy[0], xy[1] - it.xy[1]) <= 5) return it.f;
+        } else if (Math.hypot(xy[0] - it.xy[0], xy[1] - it.xy[1]) <= (it.r || 3) + 3) return it.f;
+      }
+      return null;
+    },
+    destroy() { offs.forEach((off) => off()); offs.length = 0; },
+  };
+  const offs = connect({ map, legend, layerId, legendRefresh, onHover });
+  return layer;
+}
+
+// ---------- 흐름선 ----------
+/**
+ * 흐름선 레이어(SVG). 선 하나 = <g class="at-flow"> 안에 흰 테두리 경로 + 색 경로 + 화살촉 경로(세모, 곡선 끝 접선 방향).
+ * 자료 좌표 순서 = 꼬리 → 화살 끝(수입 = 상대국 → 우리나라, 수출 = 우리나라 → 상대국). 날짜변경선에서 나뉜 조각(MultiLineString)은 경도를 이어
+ * 하나로 만든 뒤 화면 이음매에서만 끊는다. 경로는 마디를 지나는 이차 베지어 곡선(quadPath, 두 점뿐이면 휘어진 베지어 하나), 선 끝은 화살촉 밑변 쪽으로
+ * 조금 당겨(trimRunEnd) 화살 끝으로 삐져나오지 않게. 굵기 = flowWidthPx(widthOf(f) pt, k). marker·id 를 쓰지 않는다(문서 전역 id 없음).
+ */
+export function flowLayer(id, lines, { legend = null, map = null, layerId = id, legendRefresh = true, widthOf = (f) => f.properties.width ?? 1, colorOf = (f) => f.properties.color, onPick = null, dimAlpha = 0.2, z = LAYER_Z.flow, bend = 0.18 } = {}) {
+  const feats = featuresOf(lines).filter(isLine);
+  // 굵은 선을 먼저(아래), 가는 선이 위에 오게
+  const items = feats.map((f) => ({
+    f, geo: f.geometry.type === 'MultiLineString' ? joinParts(f.geometry.coordinates) : unwrapLine(f.geometry.coordinates),
+  })).sort((a, b) => widthOf(b.f) - widthOf(a.f));
+  const byF = new Map(items.map((it) => [it.f, it]));
+  let root = null;
+
+  function build(g) {
+    root = s('g', { class: 'at-flows' });
+    for (const it of items) {
+      const color = colorOf(it.f);
+      Object.assign(it, { runs: [], w: 0 }); // 캐시 초기화(새 요소에 굵기를 다시 씀)
+      it.halo = s('path', { class: 'at-flow-halo' });
+      it.line = s('path', { class: 'at-flow-line', stroke: color });
+      it.head = s('path', { class: 'at-flow-head', fill: color });
+      it.el = s('g', { class: 'at-flow', on: { click: (e) => { e.stopPropagation(); onPick?.(it.f, e); } } }, it.halo, it.line, it.head);
+    }
+    root.append(...items.map((it) => it.el));
+    g.append(root);
+  }
+  const onHover = hoverClass((f) => byF.get(f));
+  const layer = {
+    id, z, meta: metaOf(lines), legendItems: legendItems(lines), features: feats,
+    drawSvg(g, project, view) {
+      if (!root || root.parentNode !== g) build(g);
+      for (const it of items) {
+        const w = flowWidthPx(widthOf(it.f), view.k);
+        if (w !== it.w) {
+          it.w = w;
+          setAttr(it.line, 'stroke-width', round1(w)); setAttr(it.halo, 'stroke-width', round1(w + 2.4));
+        }
+        it.runs = splitJumps(it.geo, project);
+        const last = it.runs.length ? it.runs[it.runs.length - 1] : null;
+        // 화살촉은 마지막 조각이 자료의 끝점까지 닿을 때만 — 이음매(날짜변경선·구드 틈)에서 끝이 잘렸으면 잘린 자리에 달지 않는다
+        const endS = last && project(it.geo[it.geo.length - 1]);
+        const lastPt = last && last[last.length - 1];
+        const reaches = !!(endS && Math.hypot(lastPt[0] - endS[0], lastPt[1] - endS[1]) < 0.5);
+        const tan = reaches && endTangent(last, { bend });
+        const drawn = tan ? [...it.runs.slice(0, -1), trimRunEnd(last, arrowSize(w).len * 0.6)] : it.runs;
+        const d = drawn.map((r) => quadPath(r, { bend })).join('') || null;
+        setAttr(it.line, 'd', d); setAttr(it.halo, 'd', d);
+        setAttr(it.head, 'd', tan ? arrowHead(tan.tip, tan.dir, w).path : null);
+        const a = alphaOf(legend, it.f.properties.cls, dimAlpha);
+        setAttr(it.el, 'opacity', a === 1 ? null : a);
+        it.el.classList.toggle('is-hover', it.f === onHover.current());
+      }
+    },
+    hit(xy) {
+      for (let i = items.length - 1; i >= 0; i--) {
+        const it = items[i];
+        if (!it.runs || alphaOf(legend, it.f.properties.cls, 0) === 0) continue;
+        const tol = Math.max(4, it.w / 2 + 3);
+        if (it.runs.some((r) => distToPolyline(xy, r) <= tol)) return it.f;
+      }
+      return null;
+    },
+    destroy() { offs.forEach((off) => off()); offs.length = 0; },
+  };
+  const offs = connect({ map, legend, layerId, legendRefresh, onHover });
+  return layer;
+}
+
+// ---------- 핀 ----------
+const PIN_D = 'M0,0C-2.2,-5.2 -8,-8.8 -8,-15A8,8 0 1,1 8,-15C8,-8.8 2.2,-5.2 0,0Z'; // 물방울 핀, 끝 = (0,0), 머리 가운데 = (0,-15)
+/**
+ * 번호 핀 레이어(SVG). markers = [{id, lonlat, title, photo?, approx?, number?}] (topics.json markers). 번호 = numberOf(m, i)(기본 m.number ?? m.photo.pin ?? i + 1, null 이면 숨김).
+ * 누르면 그 핀을 고르고(강조, 맨 위로) onPick(marker). layer.select(id | null), layer.selected().
+ * hit 은 Feature 모양 {type:'Feature', properties:{label: title, id, approx}, geometry, marker} 를 돌려준다(말풍선은 properties.label).
+ * 핀 id 는 data-id 속성에만 둔다(문서 전역 id 아님).
+ */
+export function markerLayer(id, markers, { map = null, layerId = id, onPick = null, numberOf = (m, i) => m.number ?? m.photo?.pin ?? i + 1, z = LAYER_Z.marker } = {}) {
+  const items = (markers || []).filter((m) => Array.isArray(m.lonlat)).map((m, i) => ({
+    m, n: numberOf(m, i), xy: null, el: null,
+    feature: { type: 'Feature', properties: { label: m.title ?? '', id: m.id, approx: !!m.approx }, geometry: { type: 'Point', coordinates: m.lonlat }, marker: m },
+  }));
+  const byFeature = new Map(items.map((it) => [it.feature, it]));
+  let root = null, sel = null;
+  function build(g) {
+    root = s('g', { class: 'at-pins' });
+    for (const it of items) {
+      it.xy = null;
+      it.el = s('g', { class: 'at-pin', 'data-id': it.m.id, on: { click: (e) => { e.stopPropagation(); layer.select(it.m.id); onPick?.(it.m, e); } } },
+        s('path', { class: 'at-pin-body', d: PIN_D }),
+        s('circle', { class: 'at-pin-hole', cx: 0, cy: -15, r: 5.6 }),
+        it.n != null ? s('text', { class: 'at-pin-num', x: 0, y: -15 }, String(it.n)) : null,
+      );
+      root.append(it.el);
+    }
+    g.append(root);
+  }
+  function select(mid) {
+    sel = mid ?? null;
+    for (const it of items) {
+      const on = it.m.id === sel;
+      it.el?.classList.toggle('is-selected', on);
+      if (on && it.el && root) root.append(it.el); // 맨 위로
+    }
+  }
+  const onHover = hoverClass((f) => byFeature.get(f));
+  const layer = {
+    id, z, markers: items.map((it) => it.m),
+    drawSvg(g, project, view) {
+      if (!root || root.parentNode !== g) { build(g); select(sel); }
+      for (const it of items) {
+        const q = project(it.m.lonlat);
+        const shown = !!q && q[0] > -20 && q[0] < view.width + 20 && q[1] > -10 && q[1] < view.height + 40;
+        it.xy = shown ? q : null;
+        setAttr(it.el, 'display', shown ? null : 'none');
+        if (shown) setAttr(it.el, 'transform', `translate(${round1(q[0])},${round1(q[1])})${it.m.id === sel ? ' scale(1.25)' : ''}`);
+        it.el.classList.toggle('is-hover', it.feature === onHover.current());
+      }
+    },
+    hit(xy) {
+      for (let i = items.length - 1; i >= 0; i--) {
+        const it = items[i];
+        if (!it.xy) continue;
+        const sc = it.m.id === sel ? 1.25 : 1;
+        if (Math.hypot(xy[0] - it.xy[0], xy[1] - (it.xy[1] - 15 * sc)) <= 9 * sc || (Math.abs(xy[0] - it.xy[0]) <= 4 && xy[1] <= it.xy[1] && xy[1] >= it.xy[1] - 15 * sc)) return it.feature;
+      }
+      return null;
+    },
+    select(mid) { select(mid); if (map && !map.destroyed) map.refreshLayer(layerId); },
+    selected: () => sel,
+    destroy() { offs.forEach((off) => off()); offs.length = 0; },
+  };
+  const offs = connect({ map, layerId, onHover });
+  return layer;
+}

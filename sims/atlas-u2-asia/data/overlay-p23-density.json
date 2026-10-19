@@ -1,0 +1,54 @@
+{
+ "url": "https://yhk1m.github.io/donga-social-sims/assets/atlas/u2/overlay/p23-density.png",
+ "page": 23,
+ "bbox": [
+  36,
+  90,
+  326,
+  354
+ ],
+ "fitId": "p23-density",
+ "width": 605,
+ "height": 551,
+ "bounds": [
+  -29.164,
+  -12.466,
+  205.666,
+  84.228
+ ],
+ "legend": [
+  {
+   "color": "#9b2e33",
+   "label": "200 이상"
+  },
+  {
+   "color": "#ca4834",
+   "label": "100~200"
+  },
+  {
+   "color": "#f9bb85",
+   "label": "50~100"
+  },
+  {
+   "color": "#fcdcb1",
+   "label": "5~50"
+  },
+  {
+   "color": "#fff4e3",
+   "label": "5 미만"
+  }
+ ],
+ "fit": {
+  "family": "azimuthalEqualArea",
+  "params": [
+   99.88159,
+   -0.327377
+  ],
+  "sim": {
+   "a": 169.51391265,
+   "b": 0.190872494816,
+   "tx": 212.596587098,
+   "ty": 318.155481895
+  }
+ }
+}

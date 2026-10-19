@@ -60,6 +60,10 @@ const ICONS = {
   prev: [['polyline', { points: '15 18 9 12 15 6' }]],
   expand: [['polyline', { points: '15 3 21 3 21 9' }], ['polyline', { points: '9 21 3 21 3 15' }], ['line', { x1: 21, y1: 3, x2: 14, y2: 10 }], ['line', { x1: 3, y1: 21, x2: 10, y2: 14 }]],
   eye: [['path', { d: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z' }], ['circle', { cx: 12, cy: 12, r: 3 }]],
+  close: [['line', { x1: 6, y1: 6, x2: 18, y2: 18 }], ['line', { x1: 18, y1: 6, x2: 6, y2: 18 }]],
+  globe: [['circle', { cx: 12, cy: 12, r: 9 }], ['ellipse', { cx: 12, cy: 12, rx: 4, ry: 9 }], ['line', { x1: 3, y1: 12, x2: 21, y2: 12 }]],
+  page: [['path', { d: 'M6 3h8l4 4v14H6z' }], ['polyline', { points: '14 3 14 7 18 7' }], ['line', { x1: 9, y1: 12, x2: 15, y2: 12 }], ['line', { x1: 9, y1: 16, x2: 15, y2: 16 }]],
+  brush: [['path', { d: 'M4 20c3 0 5-1.5 5-4a3 3 0 0 0-3-3c-2 0-3 2-2 7z' }], ['path', { d: 'M9 13l9-9 2 2-9 9' }]],
 };
 export function icon(name) {
   const parts = ICONS[name];

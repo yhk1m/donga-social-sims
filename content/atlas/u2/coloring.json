@@ -1,0 +1,751 @@
+{
+ "_doc": "coloring_quiz.mjs 생성물(직접 고치지 말고 고칠 값은 overrides.json). name = 나라 이름(교과서 지명), label = 색칠하기 지도 글자(초성 또는 이름), iso = Natural Earth ADM0_A3, labelIso = 글자가 놓인 다른 나라, capitalFrom = printed(색칠하기 지도에 적힌 수도)·places(일반도 수도 지명)·places+ne(여럿 중 Natural Earth 수도에 가까운 것).",
+ "page": 17,
+ "map": "p17-coloring",
+ "inputsHash": "91c931231cc3219e1855a05028d90ddc5f5a931f2d79ca76bd342b395edcb643",
+ "countries": [
+  {
+   "name": "아프가니스탄",
+   "label": "ㅇㅍㄱㄴㅅㅌ",
+   "iso": "AFG",
+   "neName": "Afghanistan",
+   "labelLonlat": [
+    65.3155,
+    32.9762
+   ],
+   "capital": "카불",
+   "capitalLonlat": [
+    69.18,
+    34.52
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "아랍 에미리트",
+   "label": "아랍 에미리트",
+   "iso": "ARE",
+   "neName": "United Arab Emirates",
+   "labelLonlat": [
+    56.4688,
+    25.2885
+   ],
+   "capital": "아부다비",
+   "capitalLonlat": [
+    54.37,
+    24.47
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "아르메니아",
+   "label": "아르메니아",
+   "iso": "ARM",
+   "neName": "Armenia",
+   "labelLonlat": [
+    41.8842,
+    40.4536
+   ],
+   "labelIso": "TUR",
+   "capital": "예레반",
+   "capitalLonlat": [
+    44.51,
+    40.16
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "아제르바이잔",
+   "label": "아제르바이잔",
+   "iso": "AZE",
+   "neName": "Azerbaijan",
+   "labelLonlat": [
+    45.9049,
+    39.1358
+   ],
+   "capital": "바쿠",
+   "capitalLonlat": [
+    49.86,
+    40.37
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "방글라데시",
+   "label": "ㅂㄱㄹㄷㅅ",
+   "iso": "BGD",
+   "neName": "Bangladesh",
+   "labelLonlat": [
+    90.1501,
+    24.4889
+   ],
+   "capital": "다카",
+   "capitalLonlat": [
+    90.45,
+    23.75
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "바레인",
+   "label": "바레인",
+   "iso": "BHR",
+   "neName": "Bahrain",
+   "labelLonlat": [
+    51.9601,
+    27.1941
+   ],
+   "capital": "마나마",
+   "capitalLonlat": [
+    50.56,
+    26.23
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "브루나이",
+   "label": "브루나이",
+   "iso": "BRN",
+   "neName": "Brunei",
+   "labelLonlat": [
+    115.0573,
+    5.83
+   ],
+   "capital": "반다르스리브가완",
+   "capitalLonlat": [
+    114.93,
+    4.88
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "부탄",
+   "label": "ㅂㅌ",
+   "iso": "BTN",
+   "neName": "Bhutan",
+   "labelLonlat": [
+    90.413,
+    28.3812
+   ],
+   "labelIso": "CHN",
+   "capital": "팀푸",
+   "capitalLonlat": [
+    89.76,
+    27.47
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "중국",
+   "label": "ㅈ ㄱ",
+   "iso": "CHN",
+   "neName": "China",
+   "labelLonlat": [
+    104.5299,
+    33.8299
+   ],
+   "capital": "베이징",
+   "capitalLonlat": [
+    116.41,
+    39.94
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "조지아",
+   "label": "조지아",
+   "iso": "GEO",
+   "neName": "Georgia",
+   "labelLonlat": [
+    43.6247,
+    43.2808
+   ],
+   "labelIso": "RUS",
+   "capital": "트빌리시",
+   "capitalLonlat": [
+    44.79,
+    41.69
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "인도네시아",
+   "label": "ㅇㄷㄴㅅㅇ",
+   "iso": "IDN",
+   "neName": "Indonesia",
+   "labelLonlat": [
+    113.7617,
+    -5.0644
+   ],
+   "capital": "자카르타",
+   "capitalLonlat": [
+    106.83,
+    -6.17
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "인도",
+   "label": "ㅇ ㄷ",
+   "iso": "IND",
+   "neName": "India",
+   "labelLonlat": [
+    78.3325,
+    21.7462
+   ],
+   "capital": "뉴델리",
+   "capitalLonlat": [
+    77.23,
+    28.61
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "이란",
+   "label": "ㅇㄹ",
+   "iso": "IRN",
+   "neName": "Iran",
+   "labelLonlat": [
+    54.3214,
+    32.3014
+   ],
+   "capital": "테헤란",
+   "capitalLonlat": [
+    51.42,
+    35.67
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "이라크",
+   "label": "ㅇㄹㅋ",
+   "iso": "IRQ",
+   "neName": "Iraq",
+   "labelLonlat": [
+    43.9933,
+    31.9204
+   ],
+   "capital": "바그다드",
+   "capitalLonlat": [
+    44.39,
+    33.34
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "이스라엘",
+   "label": "ㅇㅅㄹㅇ",
+   "iso": "ISR",
+   "neName": "Israel",
+   "labelLonlat": [
+    33.7535,
+    32.3218
+   ],
+   "capital": "예루살렘",
+   "capitalLonlat": [
+    35.21,
+    31.79
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "요르단",
+   "label": "요르단",
+   "iso": "JOR",
+   "neName": "Jordan",
+   "labelLonlat": [
+    36.5905,
+    30.4128
+   ],
+   "capital": "암만",
+   "capitalLonlat": [
+    35.95,
+    31.95
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "일본",
+   "label": "ㅇㅂ",
+   "iso": "JPN",
+   "neName": "Japan",
+   "labelLonlat": [
+    142.857,
+    35.5056
+   ],
+   "capital": "도쿄",
+   "capitalLonlat": [
+    139.75,
+    35.69
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "카자흐스탄",
+   "label": "ㅋㅈㅎㅅㅌ",
+   "iso": "KAZ",
+   "neName": "Kazakhstan",
+   "labelLonlat": [
+    67.4779,
+    47.9571
+   ],
+   "capital": "아스타나",
+   "capitalLonlat": [
+    71.45,
+    51.14
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "키르기스스탄",
+   "label": "ㅋㄹㄱㅅㅅㅌ",
+   "iso": "KGZ",
+   "neName": "Kyrgyzstan",
+   "labelLonlat": [
+    75.8616,
+    40.9992
+   ],
+   "capital": "비슈케크",
+   "capitalLonlat": [
+    74.58,
+    42.87
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "캄보디아",
+   "label": "캄보디아",
+   "iso": "KHM",
+   "neName": "Cambodia",
+   "labelLonlat": [
+    104.9903,
+    12.8003
+   ],
+   "capital": "프놈펜",
+   "capitalLonlat": [
+    104.91,
+    11.55
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "대한민국",
+   "label": "ㄷㅎㅁㄱ",
+   "iso": "KOR",
+   "neName": "South Korea",
+   "labelLonlat": [
+    126.8782,
+    38.5493
+   ],
+   "labelIso": "PRK",
+   "capital": "서울",
+   "capitalLonlat": [
+    127.01,
+    37.57
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "쿠웨이트",
+   "label": "ㅋㅇㅇㅌ",
+   "iso": "KWT",
+   "neName": "Kuwait",
+   "labelLonlat": [
+    49.3594,
+    30.5004
+   ],
+   "labelIso": "IRN",
+   "capital": "쿠웨이트",
+   "capitalLonlat": [
+    47.79,
+    29.37
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "라오스",
+   "label": "라오스",
+   "iso": "LAO",
+   "neName": "Laos",
+   "labelLonlat": [
+    102.5718,
+    19.9454
+   ],
+   "capital": "비엔티안",
+   "capitalLonlat": [
+    102.55,
+    18.15
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "레바논",
+   "label": "레바논",
+   "iso": "LBN",
+   "neName": "Lebanon",
+   "labelLonlat": [
+    32.6812,
+    33.9981
+   ],
+   "capital": "베이루트",
+   "capitalLonlat": [
+    35.53,
+    33.89
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "스리랑카",
+   "label": "ㅅㄹㄹㅋ",
+   "iso": "LKA",
+   "neName": "Sri Lanka",
+   "labelLonlat": [
+    81.0313,
+    8.1198
+   ],
+   "capital": "콜롬보",
+   "capitalLonlat": [
+    79.86,
+    6.89
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "몰디브",
+   "label": "몰디브",
+   "iso": "MDV",
+   "neName": "Maldives",
+   "labelLonlat": [
+    73.5378,
+    2.1796
+   ],
+   "capital": "말레",
+   "capitalLonlat": [
+    73.51,
+    4.17
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "미얀마",
+   "label": "ㅁㅇㅁ",
+   "iso": "MMR",
+   "neName": "Myanmar",
+   "labelLonlat": [
+    96.0831,
+    21.115
+   ],
+   "capital": "네피도",
+   "capitalLonlat": [
+    96.12,
+    19.77
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "몽골",
+   "label": "ㅁ ㄱ",
+   "iso": "MNG",
+   "neName": "Mongolia",
+   "labelLonlat": [
+    102.3232,
+    46.2201
+   ],
+   "capital": "울란바토르",
+   "capitalLonlat": [
+    106.91,
+    47.92
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "말레이시아",
+   "label": "ㅁㄹㅇㅅㅇ",
+   "iso": "MYS",
+   "neName": "Malaysia",
+   "labelLonlat": [
+    108.2578,
+    4.5161
+   ],
+   "capital": "쿠알라룸푸르",
+   "capitalLonlat": [
+    101.7,
+    3.17
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "네팔",
+   "label": "ㄴㅍ",
+   "iso": "NPL",
+   "neName": "Nepal",
+   "labelLonlat": [
+    82.5915,
+    28.514
+   ],
+   "capital": "카트만두",
+   "capitalLonlat": [
+    85.31,
+    27.72
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "오만",
+   "label": "ㅇㅁ",
+   "iso": "OMN",
+   "neName": "Oman",
+   "labelLonlat": [
+    56.4569,
+    20.204
+   ],
+   "capital": "무스카트",
+   "capitalLonlat": [
+    58.52,
+    23.61
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "파키스탄",
+   "label": "ㅍㅋㅅㅌ",
+   "iso": "PAK",
+   "neName": "Pakistan",
+   "labelLonlat": [
+    69.8823,
+    29.9463
+   ],
+   "capital": "이슬라마바드",
+   "capitalLonlat": [
+    73.08,
+    33.69
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "필리핀",
+   "label": "ㅍㄹㅍ",
+   "iso": "PHL",
+   "neName": "Philippines",
+   "labelLonlat": [
+    127.1236,
+    13.4198
+   ],
+   "capital": "마닐라",
+   "capitalLonlat": [
+    120.98,
+    14.61
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "카타르",
+   "label": "카타르",
+   "iso": "QAT",
+   "neName": "Qatar",
+   "labelLonlat": [
+    50.3041,
+    24.2404
+   ],
+   "labelIso": "SAU",
+   "capital": "도하",
+   "capitalLonlat": [
+    51.53,
+    25.29
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "러시아",
+   "label": "ㄹ ㅅ ㅇ",
+   "iso": "RUS",
+   "neName": "Russia",
+   "labelLonlat": [
+    102.9856,
+    62.6497
+   ],
+   "capital": "모스크바",
+   "capitalLonlat": [
+    37.61,
+    55.75
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "사우디아라비아",
+   "label": "ㅅㅇㄷㅇㄹㅂㅇ",
+   "iso": "SAU",
+   "neName": "Saudi Arabia",
+   "labelLonlat": [
+    46.0841,
+    22.2593
+   ],
+   "capital": "리야드",
+   "capitalLonlat": [
+    46.72,
+    24.63
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "싱가포르",
+   "label": "싱가포르",
+   "iso": "SGP",
+   "neName": "Singapore",
+   "labelLonlat": [
+    105.7361,
+    2.3165
+   ],
+   "capital": "싱가포르",
+   "capitalLonlat": [
+    103.85,
+    1.3
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "시리아",
+   "label": "ㅅㄹㅇ",
+   "iso": "SYR",
+   "neName": "Syria",
+   "labelLonlat": [
+    38.4848,
+    35.2353
+   ],
+   "capital": "다마스쿠스",
+   "capitalLonlat": [
+    36.29,
+    33.51
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "타이",
+   "label": "ㅌㅇ",
+   "iso": "THA",
+   "neName": "Thailand",
+   "labelLonlat": [
+    101.2529,
+    15.6719
+   ],
+   "capital": "방콕",
+   "capitalLonlat": [
+    100.5,
+    13.8
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "타지키스탄",
+   "label": "ㅌㅈㅋㅅㅌ",
+   "iso": "TJK",
+   "neName": "Tajikistan",
+   "labelLonlat": [
+    71.0548,
+    37.475
+   ],
+   "labelIso": "AFG",
+   "capital": "두샨베",
+   "capitalLonlat": [
+    68.74,
+    38.53
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "투르크메니스탄",
+   "label": "ㅌㄹㅋㅁㄴㅅㅌ",
+   "iso": "TKM",
+   "neName": "Turkmenistan",
+   "labelLonlat": [
+    58.3367,
+    39.2087
+   ],
+   "capital": "아시가바트",
+   "capitalLonlat": [
+    58.42,
+    37.96
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "동티모르",
+   "label": "동티모르",
+   "iso": "TLS",
+   "neName": "Timor-Leste",
+   "labelLonlat": [
+    126.8107,
+    -9.69
+   ],
+   "capital": "딜리",
+   "capitalLonlat": [
+    125.58,
+    -8.56
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "튀르키예",
+   "label": "ㅌㄹㅋㅇ",
+   "iso": "TUR",
+   "neName": "Turkey",
+   "labelLonlat": [
+    33.7224,
+    38.7072
+   ],
+   "capital": "앙카라",
+   "capitalLonlat": [
+    32.86,
+    39.93
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "우즈베키스탄",
+   "label": "ㅇㅈㅂㅋㅅㅌ",
+   "iso": "UZB",
+   "neName": "Uzbekistan",
+   "labelLonlat": [
+    62.5538,
+    42.4676
+   ],
+   "capital": "타슈켄트",
+   "capitalLonlat": [
+    69.27,
+    41.22
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "베트남",
+   "label": "ㅂㅌㄴ",
+   "iso": "VNM",
+   "neName": "Vietnam",
+   "labelLonlat": [
+    110.4913,
+    14.0442
+   ],
+   "capital": "하노이",
+   "capitalLonlat": [
+    105.85,
+    21.05
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "예멘",
+   "label": "ㅇㅁ",
+   "iso": "YEM",
+   "neName": "Yemen",
+   "labelLonlat": [
+    47.6713,
+    15.7861
+   ],
+   "capital": "사나",
+   "capitalLonlat": [
+    44.2,
+    15.36
+   ],
+   "capitalFrom": "places"
+  }
+ ]
+}
