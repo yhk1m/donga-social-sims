@@ -193,4 +193,41 @@ class MultiFill(unittest.TestCase):
         self.assertEqual(cc.merge_classes({'MAR': ['c1', 'c2']}, {'MAR': ['c3']}), {'MAR': ['c1', 'c2', 'c3']})
 
 
+
+
+class AreaShares(unittest.TestCase):
+    """줄무늬 넓이 몫(multi.areaInsetPt — U4-4): 표본 격자가 줄 주기와 맞물려 한 색만 줍는 경우도 넓이로는 두 색."""
+    def test_aliasing_grid_vs_area(self):
+        from shapely.ops import unary_union
+        # 나라 SSS(지면 x 100~180) 안 세로 띠 폭 1pt·주기 2pt: 7×7 격자(나라 상자 80pt → 칸 11.43pt, 첫 칸 가운데 105.7) — 띠와 상관없이 표가 갈리지만
+        # 띠 주기를 격자 간격과 같게 맞추면 칸 가운데(c2)만 걸린다 → 넓이 몫은 40 : 60
+        step = 80 / 7
+        a = unary_union([box(100 + step * i, 120, 100 + step * i + step * 0.4, 200) for i in range(7)])   # 각 칸 왼쪽 40% = c1
+        b = box(100, 120, 180, 200).difference(a)
+        zones = {'c1': a, 'c2': b}
+        page = {'SSS': box(100, 120, 180, 200), 'BBB': box(200, 120, 280, 200)}
+        zones['c3'] = box(200, 120, 280, 200)
+        classes, shares = cc.area_classes(page, zones, ['c1', 'c2', 'c3'], FRAME, {'minShare': 0.25}, inset=1.0)
+        self.assertEqual(sorted(classes['SSS']), ['c1', 'c2'])
+        self.assertAlmostEqual(shares['SSS']['c1'], 0.4, delta=0.05)
+        self.assertEqual(classes['BBB'], 'c3')
+        g, _ = cc.classify_countries([('SSS', box(0, 0, 8, 8))], project, zones, ['c1', 'c2', 'c3'], FRAME, grid=7, multi={'minShare': 0.25})
+        self.assertEqual(g['SSS'], 'c2', '표본 격자는 칸 가운데(오른쪽 반)만 걸려 한 색 — 맞물림')
+
+    def test_inset_drops_thin_border_contamination_and_keeps_tiny(self):
+        page = {'BIG': box(100, 120, 180, 200), 'TINY': box(150, 60, 151, 61)}
+        zones = {'c1': box(100, 120, 179.5, 200).union(box(150, 60, 151, 61)), 'c2': box(179.5, 120, 200, 200)}   # 오른쪽 0.5pt 만 이웃 색
+        classes, shares = cc.area_classes(page, zones, ['c1', 'c2'], FRAME, {'minShare': 0.25}, inset=1.0)
+        self.assertEqual(classes['BIG'], 'c1'); self.assertNotIn('c2', shares['BIG'])
+        self.assertEqual(classes['TINY'], 'c1', '줄이면 없어지는 작은 나라는 면 그대로')
+
+
+class ManualLegend(unittest.TestCase):
+    def test_manual_legend_order_and_errors(self):
+        import legend as LG
+        leg = LG.manual_legend([{'color': '#2FA3DC', 'label': '기니'}, {'color': '#6dcff6', 'label': '가나'}])
+        self.assertEqual([(e['cls'], e['color'], e['label'], e['kind']) for e in leg], [('c1', '#2fa3dc', '기니', 'fill'), ('c2', '#6dcff6', '가나', 'fill')])
+        with self.assertRaises(ValueError): LG.manual_legend([{'color': '#000000'}])
+
+
 if __name__ == '__main__': unittest.main()

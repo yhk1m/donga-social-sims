@@ -82,6 +82,16 @@ def text_labels(m, lc):
     return out
 
 
+def label_points(items):
+    """설정 labelPoints [{text, xy, size, color}](U4-4 — 38쪽 태양광 세계 지도는 글자까지 그림 조각이라 PDF 글자로 못 읽음: 동해·독도·
+    이어도 종합 해양 과학 기지) → labels 꼴 [{xy, text, size, color}]. 자리는 쪽 렌더를 보고 적은 글자 가운데(지면 pt)."""
+    out = []
+    for i, t in enumerate(items):
+        if not t.get('text') or len(t.get('xy') or []) != 2: raise ValueError(f'labelPoints {i}: text·xy 가 있어야 함')
+        out.append({'xy': [float(t['xy'][0]), float(t['xy'][1])], 'text': t['text'], 'size': t.get('size', 5.0), 'color': t.get('color', '#231f20')})
+    return out
+
+
 def area_polys(m, leg, cfg, warnings, report):
     """지도 하나(m)의 분류 면 → polys [{cls, color, label, pattern?, polygons}] (범례 leg 는 이미 읽은 것 — 빗금은 leg 끝 항목).
     geometry:false 범례(legendOnly)는 분류 후보에서 뺀다."""
@@ -121,7 +131,7 @@ def features(layer_id):
     if multi and (mode not in ('vector', 'raster') or multi[0] != cfg['map'] or cfg.get('isotherm') or cfg.get('flows')):
         raise ValueError(f'{layer_id}: maps(여러 지도 한 레이어)는 면 모드(vector·raster)만, 첫째 = map(본 지도), 등온선·흐름선 없이')
     if mode in ('vector', 'raster'):
-        leg = LG.legend(m, cfg)
+        leg = LG.manual_legend(cfg['legendItems']) if cfg.get('legendItems') else LG.legend(m, cfg)
         if cfg.get('dots'):   # 점무늬(설정 dots {color, swatch, spacingPt} — U4-3b): 빗금보다 앞(빗금은 leg 끝이어야 함), 그리는 차례 채움 → 점무늬 → 빗금
             d = LG.hatch_legend(m, cfg['dots'], 'dots'); d['cls'] = f'c{len(leg) + 1}'; leg.append(d)
         if cfg.get('hatch'):
@@ -144,6 +154,7 @@ def features(layer_id):
             leg.append(e)
             out['polys'].append({'cls': e['cls'], 'color': e['color'], 'label': e['label'], 'style': 'outline', 'polygons': poly_coords(g)})
         if cfg.get('labels'): out['labels'] = text_labels(m, cfg['labels'])
+        if cfg.get('labelPoints'): out['labels'] = out.get('labels', []) + label_points(cfg['labelPoints'])
         if cfg.get('isotherm'):
             ic = cfg['isotherm']
             ls, r2 = LN.isotherms(m, ic, warnings)

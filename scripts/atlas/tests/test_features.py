@@ -117,6 +117,15 @@ class RasterProtos(unittest.TestCase):
         self.assertIs(leg[2]['geometry'], False)
         with self.assertRaises(ValueError): F.mark_legend_only(leg, {'없는 이름': 'x'})
 
+class LabelPoints(unittest.TestCase):
+    """설정 labelPoints(U4-4 — 38쪽 태양광: 글자까지 그림 조각) → labels 꼴, 빠진 값은 오류."""
+    def test_label_points(self):
+        import features as F
+        out = F.label_points([{'text': '독도', 'xy': [544, 402.9], 'size': 3.6}, {'text': '동해', 'xy': [545.8, 399.6], 'color': '#0072bc'}])
+        self.assertEqual(out[0], {'xy': [544.0, 402.9], 'text': '독도', 'size': 3.6, 'color': '#231f20'})
+        self.assertEqual((out[1]['size'], out[1]['color']), (5.0, '#0072bc'))
+        with self.assertRaises(ValueError): F.label_points([{'text': '동해'}])
+
 
 if __name__ == '__main__':
     unittest.main()

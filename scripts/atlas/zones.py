@@ -181,7 +181,8 @@ def raster_zones(m, fills, cfg, warnings):
     from affine import Affine
     os.makedirs(f'{WORK}/c1', exist_ok=True)
     png = f"{WORK}/c1/{m['id']}-img.png"
-    _, _, dpi = pdfkit.render_clip(m['page'], m['bbox'], cfg.get('dpi', 150), png, images_only=True)
+    # rasterRender 'all'(U4-4 — 38쪽 언어: 공용어 둘 이상인 나라를 나라 모양에 자른 굵은 선 줄무늬로 칠해 채움 도형으로는 안 잡힘): 벡터까지 렌더
+    _, _, dpi = pdfkit.render_clip(m['page'], m['bbox'], cfg.get('dpi', 150), png, images_only=cfg.get('rasterRender') != 'all')
     im = cv2.medianBlur(np.array(Image.open(png).convert('RGB')), TILE_SEAM_KERNEL)
     s = dpi / 72; x0, y0 = m['bbox'][0], m['bbox'][1]
     L = lab(im)
@@ -249,7 +250,23 @@ def hatch_zone(m, hcfg):
         r = d['rect']
         if not overlaps(r, m['bbox']) or any(inside(r, b) for b in ex): continue
         gs += [g for g in (polygonal(Polygon(R)) for R in rings(d)) if g is not None]
+    gs += clip_areas(m['page'], hcfg.get('clips') or [])
     return polygonal(unary_union(gs).intersection(box(*m['bbox']))) if gs else None
+
+
+def clip_areas(pno, boxes, tol=0.6):
+    """설정 hatch.clips [[x0, y0, x1, y1] …](U4-4 — 37쪽 동아프리카 고산 기후: 빗금이 윤곽 선 없이 잘라 그리기(clip) 안의 그림이라
+    hatch_zone 의 윤곽 선 규칙으로 안 잡힘) → 상자가 그 상자와 tol 안으로 같은 잘라 그리기 경로의 면 목록. 상자마다 꼭 하나 있어야 함."""
+    if not boxes: return []
+    clips = [d for d in pdfkit.doc()[pno - 1].get_drawings(extended=True) if d.get('type') == 'clip' and d.get('items')]
+    out = []
+    for b in boxes:
+        hit = [d for d in clips if all(abs(a - c) <= tol for a, c in zip(d['scissor'], b))]
+        if not hit: raise ValueError(f'hatch.clips: 상자 {b} 와 같은 잘라 그리기 경로가 없음')
+        g = polygonal(unary_union([g for g in (polygonal(Polygon(R)) for R in rings(hit[0])) if g is not None]))
+        if g is None: raise ValueError(f'hatch.clips: 상자 {b} 경로가 면이 아님')
+        out.append(g)
+    return out
 
 
 def dots_area(centers, spacing, fr=None, min_area=None):
@@ -268,7 +285,11 @@ def dots_area(centers, spacing, fr=None, min_area=None):
 
 
 def dots_zone(m, dcfg):
-    """점무늬 분류: 작은 원 채움(색 dcfg.color, 넓이 ≤ dcfg.maxPt2 기본 4pt²) 중심들 → dots_area(spacingPt). 견본 상자·덮개 상자 안 점은 뺀다."""
+    """점무늬 분류: 작은 원 채움(색 dcfg.color, 넓이 ≤ dcfg.maxPt2 기본 4pt²) 중심들 → dots_area(spacingPt). 견본 상자·덮개 상자 안 점은 뺀다.
+    dcfg.clips 가 있으면(U4-4 — 39쪽 사하라 사막: 점이 무늬 채움(pattern)이라 낱낱의 원 도형이 없음) 그 잘라 그리기 경로 면(clip_areas)을 틀로 자른 것."""
+    if dcfg.get('clips'):
+        g = unary_union(clip_areas(m['page'], dcfg['clips'])).intersection(frame(m))
+        return polygonal(g)
     ex = excluded_boxes(m) + [dcfg['swatch']]
     cs, mx = [], dcfg.get('maxPt2', 4.0)
     for d in drawings(m['page']):

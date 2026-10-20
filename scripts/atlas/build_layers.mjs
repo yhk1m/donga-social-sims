@@ -553,7 +553,12 @@ function main(argv) {
   const byId = new Map();
   for (const l of todo.filter(special)) {
     if (l.type === 'chartSymbols') {
-      const charts = JSON.parse(fs.readFileSync(path.join(WORK, config.content.charts), 'utf8'));
+      const cf = path.join(WORK, config.content.charts);
+      if (!fs.existsSync(cf)) {   // 그래프 자료(extract_tables --charts)가 아직 없으면 이 레이어만 건너뜀 — 있는데 그래프가 빠졌으면 chartSymbolsLayerJson 이 멈춤
+        byId.set(l.id, { id: l.id, type: l.type, legend: 0, classes: 0, features: 0, kb: 0, approx: false, dropped: '-', warnings: [`그래프 자료 ${config.content.charts} 가 없어 건너뜀(extract_tables --charts 먼저)`] });
+        continue;
+      }
+      const charts = JSON.parse(fs.readFileSync(cf, 'utf8'));
       const out = chartSymbolsLayerJson(l, charts, converter(l, loadFit(l.map)), maps[l.map], loadFit(l.map));
       byId.set(l.id, writeLayer(l, out, { features: out.items.length }));
     } else {

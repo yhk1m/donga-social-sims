@@ -44,6 +44,16 @@ def legend(m, cfg, max_area=None):
     return uniq
 
 
+def manual_legend(items):
+    """설정 legendItems [{color, label}](U4-4) → 범례 목록(차례대로 c1…). 범례 견본을 PDF 에서 읽을 수 없을 때:
+    38쪽 자원 지도(범례 상자 없이 생산국마다 다른 색 + 지도 위 나라 이름), 38쪽 태양광 지도(범례까지 모두 그림 조각 — 견본색은 렌더 화소)."""
+    out = []
+    for i, e in enumerate(items):
+        if not e.get('color') or not e.get('label'): raise ValueError(f'legendItems {i}: color·label 이 다 있어야 함')
+        out.append({'cls': f'c{i + 1}', 'color': e['color'].lower(), 'label': e['label'], 'kind': 'fill'})
+    return out
+
+
 def _chain(cand, x_start):
     chain = []
     for t in cand:

@@ -105,6 +105,29 @@ def classify(samples, zones, order, fr, multi=None):
     return classes, rep
 
 
+def area_classes(page_polys, zones, order, fr, multi, inset=1.0):
+    """다중 채움 넓이 몫(설정 multi.areaInsetPt — U4-4, 38쪽 언어): 표본 격자는 45° 줄무늬와 주기가 맞으면 한 색만 줍는다(수단·모로코 —
+    격자 간격이 줄 주기의 배수). 그래서 나라 지면 면을 inset 만큼 안으로 줄여(경계 어긋남으로 이웃 색이 섞이는 것 줄임 — 줄이면 없어지는
+    작은 나라는 면 그대로) 틀 안 분류 면과 겹친 넓이로 몫을 잰다. → ({iso: cls | [cls…]}, {iso: {cls: 몫}}). 겹친 넓이가 없는 나라는 뺌."""
+    zs = {c: g for c, g in zones.items() if g is not None}
+    out, shares = {}, {}
+    for iso, P in page_polys.items():
+        if P is None or P.is_empty: continue
+        Q = P.buffer(-inset) if inset else P
+        if Q.is_empty: Q = P
+        Q = Q.intersection(fr)
+        if Q.is_empty: continue
+        a = {c: Q.intersection(g).area for c, g in zs.items()}
+        tot = sum(a.values())
+        if tot <= 0: continue
+        sh = {c: round(v / tot, 3) for c, v in a.items() if v > 0}
+        ranked = sorted(sh, key=lambda c: (-sh[c], order.index(c)))
+        keep = [c for c in ranked if sh[c] > multi.get('minShare', 0.25)][:multi.get('max', 3)]
+        out[iso] = keep if len(keep) >= 2 else ranked[0]
+        shares[iso] = sh
+    return out, shares
+
+
 def outline_members(page_polys, outline_zones, fr, inset=0.8, step=0.5, frac=0.5, tol=0.3):
     """윤곽만 분류(범례 style 'outline' — 32쪽 유로 사용국: 나라 경계 안쪽에 그린 노란 띠) 찾기.
     page_polys {iso: 지면 나라 면}, outline_zones {cls: 지면 띠 면} → {iso: [cls]}.
@@ -319,7 +342,7 @@ def build(layer_id):
     cfg = layer_config(layer_id)
     m = maps()[cfg['map']]
     warnings = []
-    leg = LG.legend(m, cfg)
+    leg = LG.manual_legend(cfg['legendItems']) if cfg.get('legendItems') else LG.legend(m, cfg)
     if not leg: raise ValueError(f'{layer_id}: 범례 견본이 없음(legendBbox 확인)')
     exp = cfg.get('expectLegend')
     if exp is not None and len(leg) != exp:
@@ -343,6 +366,13 @@ def build(layer_id):
     fill = {iso: (v[0] if isinstance(v, list) else v) for iso, v in classes.items()}   # 작은 나라 검사는 첫(가장 많은) 분류로
     near = [(iso, polygonal(g.intersection(window)) if window is not None else g) for iso, g in countries if window is None or g.intersects(window)]
     page = project_countries(fit, [(i, g) for i, g in near if g is not None])
+    if multi and multi.get('areaInsetPt') is not None:   # 줄무늬 몫을 표본 수 대신 넓이로(표본 격자 ↔ 줄 주기 맞물림 — area_classes)
+        ac, shares = area_classes({i: page.get(i) for i in classes}, fill_zones, order, frame(m), multi, multi['areaInsetPt'])
+        classes.update(ac)
+        rep['multi'] = sorted(i for i, v in classes.items() if isinstance(v, list))
+        rep['shares'] = shares
+        for i in ac: rep['votes'][i] = shares[i]
+        fill = {iso: (v[0] if isinstance(v, list) else v) for iso, v in classes.items()}
     if outline:   # 윤곽만 분류는 표본 다수결이 아니라 나라 안쪽 테두리가 그 색 띠에 덮였는지로
         om = outline_members(page, {c: zones.get(c) for c in outline}, frame(m))
         classes = merge_classes(classes, om)
@@ -375,7 +405,8 @@ def build(layer_id):
     lv = level_check(set(classes) | over, have50, have10a)
     rep['levels'] = lv
     if lv['neither']: warnings.append(f"두 상세도 어디에도 없는 iso {lv['neither']}")
-    if boxes and lv['only50']: warnings.append(f"50m 에만 있어 10a 에서 안 칠해지는 iso {lv['only50']}")
+    o50 = [i for i in lv['only50'] if i in classes]   # 「분류 없음」 고침(cls null)은 어느 상세도에서도 안 칠하므로 경고하지 않음
+    if boxes and o50: warnings.append(f"50m 에만 있어 10a 에서 안 칠해지는 iso {o50}")
     present = {c for v in classes.values() for c in (v if isinstance(v, list) else [v])}
     absent = [e['label'] for e in leg if e['cls'] not in present]
     if absent: warnings.append(f'나라가 없는 범례 분류: {absent}')

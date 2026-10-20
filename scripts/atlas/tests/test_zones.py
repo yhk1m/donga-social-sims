@@ -40,4 +40,31 @@ class DotsArea(unittest.TestCase):
         self.assertIsNone(Z.dots_area([], 4))
 
 
+
+
+class ClipAreas(unittest.TestCase):
+    """빗금·점무늬를 잘라 그리기 경로로 그린 지도(U4-4 — 37쪽 동아프리카 고산, 39쪽 사하라·사헬): 설정 상자와 같은 경로 → 면."""
+    def test_clip_path_to_polygon_and_missing_box_fails(self):
+        import fitz
+        doc = fitz.open(); pg = doc.new_page(width=200, height=200)
+        sh = pg.new_shape()
+        sh.draw_polyline([(20, 20), (80, 30), (60, 90), (20, 20)]); sh.finish(color=(0, 0, 1), width=0.2, closePath=True); sh.commit()
+        # 잘라 그리기 경로 하나를 담은 내용(삼각형 W n) + 그 안 선 하나
+        xref = pg.get_contents()[0]
+        doc.update_stream(xref, doc.xref_stream(xref) + b"\nq 20 180 m 80 170 l 60 110 l h W n 0 0 1 RG 0.2 w 10 150 m 90 150 l S Q\n")
+        old = Z.pdfkit.doc
+        Z.pdfkit.doc = lambda: doc
+        try:
+            clips = [d for d in pg.get_drawings(extended=True) if d.get('type') == 'clip' and d.get('items')]
+            self.assertTrue(clips)
+            b = list(clips[0]['scissor'])
+            g = Z.clip_areas(1, [b])
+            self.assertEqual(len(g), 1)
+            self.assertAlmostEqual(g[0].area, 0.5 * abs((80 - 20) * (90 - 20) - (60 - 20) * (30 - 20)), delta=5)   # 삼각형 넓이(쪽 좌표 — 위아래 뒤집힘)
+            with self.assertRaises(ValueError): Z.clip_areas(1, [[0, 0, 5, 5]])
+            self.assertEqual(Z.clip_areas(1, []), [])
+        finally:
+            Z.pdfkit.doc = old
+
+
 if __name__ == '__main__': unittest.main()
