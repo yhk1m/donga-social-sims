@@ -400,6 +400,7 @@ class ChartsU3(unittest.TestCase):
         self.assertAlmostEqual(sum(s['values'][0] for s in r['series']), 100, delta=0.5)
         self.assertAlmostEqual(r['check']['measuredSum'], 100, delta=0.5)
         self.assertEqual({s['name']: s['values'][0] for s in r['series']}, {'도보': 11, '자전거': 35, '승용차': 32, '대중교통': 22})
+        self.assertIs(r.get('ring'), True)   # 유럽 v2(교사 Q6): 설정 ring: true 를 그대로 실음 — 앱은 donut 비로 SVG 고리
 
     def test_bars_measured(self):
         f = self.charts['p30-finance']

@@ -144,3 +144,14 @@ test('사람이 고친 글(overrides)은 둘: 26쪽 제목 글자 사이 공백,
   assert.equal(by.general.blocks.find((b) => b.id === 'map-text').title, '유럽');
   assert.ok(!by.sustainable.blocks.find((b) => b.id === 'lisbon-text').text.includes('자 동차'));
 });
+
+test('유럽 v2(교사 Q6): 31쪽 코펜하겐 2021년 = pie + ring: true(안쪽 반지름 = 잰 donut) — main.js 가 mountAtlas 전에 installExtraCharts() 를 부름', () => {
+  const c = C['p31-copenhagen-2021'];
+  assert.equal(c.type, 'pie'); assert.equal(c.ring, true); assert.ok(c.donut > 0.5 && c.donut < 0.7, String(c.donut));
+  const others = Object.values(C).filter((x) => x.ring && x.id !== 'p31-copenhagen-2021').map((x) => x.id);
+  assert.deepEqual(others, [], '고리는 코펜하겐 2021 하나만');
+  const main = readFileSync('sims/atlas-u3-europe/main.js', 'utf8');
+  assert.match(main, /import \{ installExtraCharts \} from '\.\.\/\.\.\/src\/atlas\/chartsExtra\.js';/);
+  const call = main.search(/^installExtraCharts\(\);/m), mount = main.indexOf('return mountAtlas(');
+  assert.ok(call > 0 && call < mount, 'installExtraCharts() 가 mountAtlas 보다 먼저');
+});

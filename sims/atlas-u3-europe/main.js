@@ -4,11 +4,16 @@
 // destroy(지도 destroy 뒤 releaseNatural)는 mountAtlas 에.
 // 규칙(EMBED_RULES.md): 자료는 정적 import(fetch 없음 — 그래서 import 는 단원 파일에), 사진·쪽·음영은 공개 Pages 절대 주소.
 import { mountAtlas } from '../../src/atlas/mountAtlas.js';
+import { installExtraCharts } from '../../src/atlas/chartsExtra.js';
 import basemap from './data/basemap.json';
 import places from './data/places.json';
 import topics from './data/topics.json';
 import charts from './data/charts.json';
 import layerData from './data/layers.js';
+
+// 유럽 v2(교사 Q6): 31쪽 코펜하겐 2021년 분담률을 아프리카 38쪽과 같은 시험지 양식 SVG 고리로(자료 ring: true — 안쪽 반지름 = 잰 donut 0.595).
+// 고리 그리기는 chartsExtra 등록 길이라 mountAtlas 보다 먼저 부른다(유럽 v1 은 부르지 않아 csat 원그래프였음).
+installExtraCharts();
 
 // 주제별 바탕 색 기본값(지도 도구 「바탕」으로 바꿀 수 있음): 일반도 = 고도 색(교과서 26쪽 높이·깊이 색), 지형 = 자연색(교과서 28쪽
 // Natural Earth 자연색 화상), 나머지 주제도 = 없음(주제 색이 잘 보이게) — 아시아와 같은 규칙

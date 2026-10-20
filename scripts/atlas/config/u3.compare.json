@@ -44,7 +44,7 @@
     {"showGroup": 0}, {"idle": true},
     {"scrollTo": {"sel": ".at-reveal-btn"}}, {"sleep": 300},
     {"eval": "{R}.querySelector('.at-reveal-btn').click()"}, {"sleep": 300},
-    {"take": "climate-pins-all", "info": {"group": "@groupLabel", "kind": "extra", "note": "기후 그래프 핀 번호 모두 보기"}},
+    {"take": "climate-pins-all", "info": {"group": "@groupLabel", "groupIndex": "@groupIndex", "refs": "@groupRefs", "kind": "extra", "note": "기후 그래프 핀 번호 모두 보기"}},
     {"eval": "{R}.querySelector('.at-reveal-btn').click()"}, {"sleep": 200}]}
   ],
   "cities": [

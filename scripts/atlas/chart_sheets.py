@@ -21,6 +21,12 @@ PALETTE = ['#4e79a7', '#f28e2b', '#e15759', '#76b7b2', '#59a14f', '#edc948', '#b
            '#86bcb6', '#d37295', '#fabfd2', '#b6992d', '#499894', '#79706e', '#d4a6c8', '#a0cbe8']
 
 
+def _ring_ratio(ch):
+    """고리 안쪽 반지름 비 — 앱 chartCore ringRatio 와 같은 규칙: ring 이 수면 그 값, true(유럽 v2 코펜하겐)면 donut(없으면 0.6)."""
+    r = ch.get('ring')
+    return r if isinstance(r, (int, float)) and not isinstance(r, bool) else ch.get('donut', 0.6)
+
+
 def _colors(cid, ch):
     cfg = unit_config()['charts']['items'][cid]
     m = {}
@@ -137,7 +143,7 @@ def _plot(cid, ch, ax):
     elif t == 'pie' and ch.get('ring'):   # 아프리카(U4-7) 고리: 구멍 + 가운데 글자
         vals = [s['values'][0] for s in ch['series']]
         ax.pie(vals, labels=[f'{s["name"]}\n{s["values"][0]:g}' for s in ch['series']], colors=cols, startangle=90, counterclock=False,
-               textprops={'fontsize': 8}, wedgeprops={'width': 1 - ch['ring'], 'edgecolor': 'white'})
+               textprops={'fontsize': 8}, wedgeprops={'width': 1 - _ring_ratio(ch), 'edgecolor': 'white'})
         ax.text(0, 0, '\n'.join(ch.get('center', [])), ha='center', va='center', fontsize=9)
     elif t == 'bubbleRow':   # 아프리카(U4-7) 원 크기 줄: 원 넓이 ∝ 값
         vals = ch['series'][0]['values']; vmax = max(vals)

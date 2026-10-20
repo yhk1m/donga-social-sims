@@ -367,7 +367,8 @@ def read_donut(cid, c, ctx):
     """고리 조각: 계열 색마다 가장 큰 채움(같은 색 아이콘과 가름)을 조각으로. 고리 가운데 = 조각들 안쪽 호 중심의 중앙값
     (짧은 바깥 호 하나로 맞춘 원은 중심이 흔들린다 — 31쪽 도보 11% 조각은 따로 맞추면 반지름 25.9 ↔ 27.5),
     잰 % = 그 가운데에서 바깥 호가 쓸어 간 각. 조각 안 인쇄된 수(valueColor) = 값(printed).
-    이름은 조각 밖 같은 색 글자(labelColor, legendBox 안)로 확인. 출력 type 'pie' + donut(안쪽/바깥 반지름) — 화면은 원그래프 길."""
+    이름은 조각 밖 같은 색 글자(labelColor, legendBox 안)로 확인. 출력 type 'pie' + donut(안쪽/바깥 반지름) — 화면은 원그래프 길.
+    설정 ring: true(유럽 v2 코펜하겐)면 출력에도 ring: true — 앱은 donut 비를 안쪽 반지름으로 SVG 고리(chartCore ringRatio). 키가 없으면 옛 출력 그대로."""
     if c.get('valuesOutside'): return read_donut_outside(cid, c, ctx)   # 2단계 아프리카(U4-7): 조각 밖 인쇄 % — 키가 있을 때만
     W = ctx['warnings']; p = c['page']
     out = meta(cid, c)
@@ -411,6 +412,7 @@ def read_donut(cid, c, ctx):
     if r_out and (max(r_out) - min(r_out) > RING_GAP_PT or (r_in and max(r_in) - min(r_in) > RING_GAP_PT)):
         W.append(f'{cid}: 조각 반지름이 서로 다름(바깥 {min(r_out):.2f}~{max(r_out):.2f}, 안 {min(r_in, default=0):.2f}~{max(r_in, default=0):.2f})')
     if r_out and r_in: out['donut'] = round(float(np.mean(r_in)) / float(np.mean(r_out)), 3)
+    if c.get('ring') is True: out['ring'] = True   # 유럽 v2(교사 Q6): 설정 키가 있을 때만
     out['check'] = {'maxAbsDiff': round(maxd, 3), 'measuredSum': round(msum, 2)}
     if maxd > c['warnDiff']: W.append(f'{cid}: 조각 각과 인쇄 비율 차 최대 {maxd:.2f}%p')
     if abs(msum - 100) > c['warnDiff']: W.append(f'{cid}: 조각 각 합 {msum:.2f}% ≠ 100 (겹치거나 빈 조각)')
