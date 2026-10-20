@@ -207,6 +207,47 @@
    "rasterIgnoreImages": true,
    "rasterCoastPx": 1,
    "_raster": "rasterIgnoreImages: 사진 핀 5개(본 지도 4 + 아이슬란드 1)와 그 그림자는 래스터 위 작은 그림이라 이미지만 렌더에 남음 → 그 자리는 가장 가까운 분류로. rasterCoastPx 1: 해안 1화소(0.5pt)는 바다 흰색과 섞인 색(초록 + 흰 → 지중해성 연두)이라 안쪽 분류로 채움 — 아이슬란드 삽입의 지중해성 조각 원인"
+  },
+  "p29-jan": {
+   "map": "p29-jan",
+   "type": "area",
+   "mode": "raster",
+   "dpi": 200,
+   "tol": 0.1,
+   "minArea": 0.1,
+   "expectLegend": 6,
+   "isotherm": {
+    "color": "#ed1064",
+    "label": "기온(℃)",
+    "unit": "℃",
+    "labelRe": "[-−]?\\d{1,2}",
+    "labelDistPt": 6,
+    "joinPt": 8
+   },
+   "rasterForeignImages": true,
+   "_rasterForeignImages": "왼쪽 가장자리 0.6pt 에 기후 구분 래스터(대부분 틀 밖인 그림)가 걸쳐 있어 그 자리는 바다로"
+  },
+  "p29-jul": {
+   "map": "p29-jul",
+   "type": "area",
+   "mode": "raster",
+   "dpi": 200,
+   "tol": 0.1,
+   "minArea": 0.1,
+   "expectLegend": 6,
+   "isotherm": {
+    "color": "#ed1064",
+    "label": "기온(℃)",
+    "unit": "℃",
+    "labelRe": "[-−]?\\d{1,2}",
+    "labelDistPt": 6,
+    "joinPt": 8
+   },
+   "legendOnly": {
+    "200 이상": "7월 지도에 이 색(#0891d0) 화소가 없음(ΔE<5 화소 0 — 1월은 노르웨이 해안·알프스 등 362화소). 1월과 같은 범례를 씀"
+   },
+   "rasterForeignImages": true,
+   "_rasterForeignImages": "왼쪽 가장자리 0.6pt 에 기후 구분 래스터(대부분 틀 밖인 그림)가 걸쳐 있어 그 자리는 바다로"
   }
  },
  "_layers": "U3-4 에서 채움(u2 꼴: map·type·mode·tol·minArea·expectLegend·색 대응).",

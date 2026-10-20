@@ -67,6 +67,20 @@ def mask_fill_geom(m, mcfg):
     return polygonal(unary_union(gs).intersection(box(*m['bbox']))) if gs else None
 
 
+FOREIGN_IMAGE_FRAC = 0.5   # 그림 넓이 중 지도 틀 안이 이 비율 미만이면 이웃 지도 그림
+
+
+def map_images(m):
+    """지도 틀과 겹치는 그림 → [(지면 상자, 이 지도 그림인가)] — 넓이의 반 이상이 틀 안이면 이 지도 것."""
+    from shapely.geometry import box as _b
+    fr = _b(*m['bbox']); out = []
+    for i in pdfkit.doc()[m['page'] - 1].get_image_info():
+        g = _b(*i['bbox'])
+        if g.area <= 0 or not g.intersects(fr): continue
+        out.append((list(i['bbox']), g.intersection(fr).area >= FOREIGN_IMAGE_FRAC * g.area))
+    return out
+
+
 def small_images(m):
     """지도 틀과 겹치는 그림 중 가장 큰 것(지도 래스터)을 뺀 작은 그림의 지면 상자 목록(사진 핀·그림자·로고)."""
     info = [i for i in pdfkit.doc()[m['page'] - 1].get_image_info() if overlaps(rect(i['bbox']), m['bbox'])]
@@ -118,6 +132,15 @@ def raster_zones(m, fills, cfg, warnings):
         n = int(cfg['rasterCoastPx'])
         coast = (cv2.dilate(sea.astype(np.uint8), np.ones((2 * n + 1,) * 2, np.uint8)) > 0) & ~sea
         lbl[coast] = 0
+    if cfg.get('rasterForeignImages'):
+        # 이웃 지도의 래스터가 틀 가장자리에 걸친 경우(29쪽 1월·7월 지도 왼쪽 0.6pt 에 기후 구분 래스터) — 대부분 틀 밖인 그림이 덮은 자리는
+        # 바다로(이 지도의 래스터는 조각 그림 여러 장이라 「가장 큰 그림」으로 고를 수 없음). 그 자리에 이 지도 조각 그림이 겹치면 살림
+        own = np.zeros(lbl.shape, bool); foreign = np.zeros(lbl.shape, bool)
+        for b, mine in map_images(m):
+            c0, r0, c1, r1 = px([max(b[0], x0), max(b[1], y0), min(b[2], m['bbox'][2]), min(b[3], m['bbox'][3])])
+            (own if mine else foreign)[r0:r1, c0:c1] = True
+        drop = foreign & ~own
+        lbl[drop] = 0; sea[drop] = True
     if cfg.get('rasterIgnoreImages'):
         # 지도 위 작은 그림(사진 핀·그림자 — 29쪽 핀 4 + 아이슬란드 핀)은 이미지만 렌더에 남아 회색 그림자가 빙설 등으로 잡힌다 →
         # 그 상자는 분류하지 않고 거리 제한 없이 가장 가까운 분류로 채움(바다로 넘친 곳은 뒤에 육지 자르기가 뺌)

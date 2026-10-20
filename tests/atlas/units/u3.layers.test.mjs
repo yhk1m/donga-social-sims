@@ -57,3 +57,15 @@ test('p29 기후 구분: 범례 10(면 8 + 지도에 없는 2), 경위도가 유
   assert.deepEqual(at([46.5, 46.6]).map((x) => x[0]), ['사막 기후']);                 // 카스피해 북서 저지(지도색 #fed08f → 사막)
   assert.deepEqual(at([5, 33]), []);                                                // 북아프리카는 교과서에서 흰 덮개로 가림
 });
+
+test('p29 1월·7월: 강수 5단계 면 + 등온선(값 붙은 선), 7월 200 이상은 범례에만', () => {
+  const jan = read('p29-jan'), jul = read('p29-jul');
+  const vals = (L) => [...new Set(L.features.filter((f) => f.properties.type === 'isotherm').map((f) => f.properties.value))].sort((a, b) => a - b);
+  assert.deepEqual(vals(jan), [-20, -10, 0, 10]);
+  assert.deepEqual(vals(jul), [10, 20]);
+  const areaCls = (L) => new Set(L.features.filter((f) => f.properties.type === 'area').map((f) => f.properties.label));
+  assert.equal(areaCls(jan).size, 5);
+  assert.deepEqual([...areaCls(jul)].sort(), ['100~200', '25 미만', '25~50', '50~100']);
+  assert.equal(jul.properties.legend.find((e) => e.label === '200 이상').geometry, false);
+  for (const L of [jan, jul]) for (const f of L.features) if (f.properties.centroid) { const [lon, lat] = f.properties.centroid; assert.ok(lon > -30 && lon < 70 && lat > 30 && lat < 82); }
+});

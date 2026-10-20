@@ -77,6 +77,16 @@ class RasterProtos(unittest.TestCase):
         self.assertEqual(Z.raster_protos(self.FILLS, None), (['#fff56d', '#ffdd00', '#bed747'], [0, 1, 2]))
         with self.assertRaises(ValueError): Z.raster_protos(self.FILLS, {'#fed08f': '없는 이름'})
 
+    @NEED_PDF
+    def test_foreign_and_small_images_on_page29(self):
+        import zones as Z
+        jan = {'id': 'p29-jan', 'page': 29, 'bbox': [522.4, 68.3, 763.4, 267.6]}
+        imgs = Z.map_images(jan)
+        self.assertEqual(sum(1 for _, mine in imgs if not mine), 1)          # 왼쪽 가장자리에 걸친 기후 구분 래스터
+        self.assertGreaterEqual(sum(1 for _, mine in imgs if mine), 10)      # 1월 강수 래스터는 조각 그림 여러 장
+        clim = {'id': 'p29-climate', 'page': 29, 'bbox': [41.8, 73.7, 523.4, 459.1]}
+        self.assertGreaterEqual(len(Z.small_images(clim)), 4)                # 사진 핀 4(+ 아이슬란드 핀 조각)
+
     def test_legend_only_marks_and_drops_from_fills(self):
         import features as F
         leg = [dict(e) for e in self.FILLS]
