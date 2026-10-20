@@ -426,6 +426,79 @@
     82
    ],
    "_snapKm": "옮겨 그린 기호 바로잡기(1단계 C2 지명 규칙과 같음): 이름이 Natural Earth 인구 지점과 하나로 맞고 30km 넘게 어긋나면 그 위치로(snapped 기록)"
+  },
+  "p32-italy": {
+   "map": "p32-italy",
+   "type": "area",
+   "mode": "vector",
+   "tol": 0.02,
+   "minArea": 0.002,
+   "expectLegend": 6,
+   "legendJoin": "",
+   "outlineFills": [
+    {
+     "fill": "#a066aa",
+     "label": "파다니아 지역"
+    }
+   ],
+   "legendStyles": {
+    "파다니아 지역": "outline"
+   },
+   "labels": {
+    "colors": [
+     "#231f20"
+    ],
+    "sizePt": [
+     5.5,
+     5.9
+    ],
+    "re": "[가-힣 ]+"
+   },
+   "_doc": "이탈리아 주별 1인당 지역 내 총생산 5분류 + 파다니아 지역(보라 띠 → 테두리만 분류, 교과서 범례에는 없고 지도 글자 「파다니아 지역」) — 범례 6 = 5 + 파다니아. legendJoin '': 「5」+「만 이상」(글자 크기가 달라 조각이 나뉨)을 지면처럼 붙여 「5만 이상」"
+  },
+  "p32-belgium": {
+   "map": "p32-belgium",
+   "type": "area",
+   "mode": "vector",
+   "tol": 0.005,
+   "minArea": 0.0005,
+   "expectLegend": 3,
+   "aliases": {
+    "#cde3aa": "#b9d989",
+    "#8ebee6": "#5da9dd",
+    "#fab49b": "#f69679",
+    "#9cc5d9": "#5da9dd"
+   },
+   "_aliases": "벨기에 지도의 면은 범례 견본색을 옅게 한 색(투명도) — 같은 계열 범례로. 브뤼셀 수도권은 초록(네덜란드어) 바탕에 옅은 파랑(#9cc5d9) 빗금 — 두 언어를 함께 쓰는 곳을 두 범례색 줄무늬로 그린 것이라 빗금 줄을 프랑스어로(범례 3 그대로, 화면에서도 초록·파랑 줄무늬)",
+   "labels": {
+    "colors": [
+     "#231f20"
+    ],
+    "sizePt": [
+     5.5,
+     5.9
+    ],
+    "re": "[가-힣 ]+"
+   }
+  },
+  "p32-separatism": {
+   "map": "p32-separatism",
+   "type": "area",
+   "mode": "vector",
+   "tol": 0.02,
+   "minArea": 0.002,
+   "expectLegend": 1,
+   "labels": {
+    "colors": [
+     "#231f20"
+    ],
+    "sizePt": [
+     5.5,
+     5.9
+    ],
+    "re": "[가-힣 ]+"
+   },
+   "_doc": "회색 바탕(#d1d3d4, 범례 아님) 위 분리 독립 움직임 지역 한 분류 + 지역 이름 18(설계 어림 15)"
   }
  },
  "_layers": "U3-4 에서 채움(u2 꼴: map·type·mode·tol·minArea·expectLegend·색 대응).",

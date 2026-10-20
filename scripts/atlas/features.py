@@ -4,10 +4,12 @@
 #   {id, map, page, bbox, legend:[{cls,color,label,kind,pattern?}],
 #    polys:[{cls,color,label,pattern?,polygons:[[바깥 고리, 구멍...], ...]}],
 #    symbols:[{xy,cls,kind,color,size,label?,value?,anchor?,bar?}], lines:[{points,cls,kind,color,width?,value?,dir?,label?}],
+#    labels?:[{xy,text,size,color}](설정 labels — 지역 이름 글자),
 #    report:{..., warnings:[...]}}
 # mode: vector(zones.vector_zones) | raster(zones.raster_zones) | symbols(symbols.symbols) | density-markers(symbols.density_markers)
 #   | raster-circles(symbols.raster_circles — 렌더 화소에서 찾는 크기 단계 원) | labelled-points(symbols.labelled_points — 이름 붙은 점).
-# 부가: hatch(빗금 분류), isotherm(lines.isotherms), flows(lines.flows).
+# 부가: hatch(빗금 분류), isotherm(lines.isotherms), flows(lines.flows), extraLegend(범례에 없는 칠한 분류), outlineFills(띠로 그린 지역 경계 →
+#   테두리만 분류 style 'outline'), labels(지역 이름 글자 → Point {type:'label'}).
 # domain: build_layers.mjs 가 쓰는 $ATLAS_WORK/geo/<map>.domain.json(경위도로 되돌릴 수 있는 지면 범위, 원통 도법 세계 지도)이
 #   있으면 면을 그 안으로 자른다(지도 가장자리 너머 꼭짓점이 역변환에 실패하지 않도록).
 # 여러 지도 한 레이어(설정 maps: [본 지도, 삽입 …] — 29쪽 기후 구분 + 아이슬란드 삽입, 면 모드만): 범례는 본 지도(map)에서 한 번 읽고,
@@ -40,6 +42,43 @@ def mark_legend_only(leg, legend_only):
     for e in leg:
         if e['label'] in lo: e['geometry'] = False
     return [e for e in leg if not e.get('pattern') and e.get('geometry') is not False]
+
+
+def extra_legend(leg, extra):
+    """설정 extraLegend [{color, label, why}]: 교과서 범례에 없지만 지도에 칠한 분류(32쪽 브뤼셀 — 네덜란드어·프랑스어 함께)를 범례 끝에 더한다(제자리)."""
+    for e in extra or []:
+        if not e.get('why'): raise ValueError(f"extraLegend {e.get('label')}: why(까닭)가 없음")
+        leg.append({'cls': f'c{len(leg) + 1}', 'color': e['color'], 'label': e['label'], 'kind': 'fill', 'extra': True})
+    return leg
+
+
+def outline_polys(m, oc, densify):
+    """설정 outlineFills [{fill, label}]: 지역 경계를 띠(채움 도형)로 그린 것(32쪽 파다니아 지역 보라 띠) → 띠가 둘러싼 면(구멍 메움, 지면 pt).
+    범례 style 'outline'(채우지 않고 테두리만)으로 그린다."""
+    from atlas_common import drawings, hexc, drawing_geom, in_map, flat_polygons
+    from shapely.geometry import Polygon, MultiPolygon
+    from shapely.ops import unary_union
+    gs = [drawing_geom(d) for d in drawings(m['page']) if hexc(d.get('fill')) == oc['fill'] and in_map(d, m, tol=1.0)]
+    gs = [g for g in gs if g is not None]
+    if not gs: return None
+    u = unary_union(gs)
+    filled = unary_union([Polygon(p.exterior) for p in flat_polygons(u)])
+    return polygonal(filled.segmentize(densify)) if filled is not None else None
+
+
+def text_labels(m, lc):
+    """설정 labels {colors, sizePt:[최소, 최대], re}: 지도 안(덮개 상자 밖) 지역 이름 글자 → [{xy(가운데), text, size, color}] (외곽선 글자 겹침은 하나로)."""
+    import re as _re
+    from atlas_common import spans, overlaps, rect, excluded_boxes
+    from symbols import unique_spans
+    rx = _re.compile(lc['re']); lo, hi = lc['sizePt']
+    out = []
+    for t in unique_spans([t for t in spans(m['page']) if overlaps(rect(t['bbox']), m['bbox'])]):
+        b = t['bbox']
+        if t.get('color') not in lc['colors'] or not lo <= t['size'] <= hi or not rx.fullmatch(t['text']): continue
+        if any(overlaps(rect(b), x) for x in excluded_boxes(m)): continue
+        out.append({'xy': [round((b[0] + b[2]) / 2, 2), round((b[1] + b[3]) / 2, 2)], 'text': t['text'], 'size': round(t['size'], 1), 'color': t['color']})
+    return out
 
 
 def area_polys(m, leg, cfg, warnings, report):
@@ -79,6 +118,7 @@ def features(layer_id):
         leg = LG.legend(m, cfg)
         if cfg.get('hatch'):
             h = LG.hatch_legend(m, cfg['hatch']); h['cls'] = f'c{len(leg) + 1}'; leg.append(h)
+        if cfg.get('extraLegend'): extra_legend(leg, cfg['extraLegend'])
         if cfg.get('legendOnly'): mark_legend_only(leg, cfg['legendOnly'])
         if multi:
             out['parts'] = []
@@ -89,6 +129,13 @@ def features(layer_id):
         else:
             out['polys'] = area_polys(m, leg, cfg, warnings, out['report'])
         out['legend'] = leg
+        for oc in cfg.get('outlineFills') or []:   # 띠로 그린 지역 경계(파다니아) → 테두리만 그리는 분류
+            g = outline_polys(m, oc, cfg['densifyPt'])
+            if g is None: warnings.append(f"outlineFills {oc['label']}: 띠 도형이 없음"); continue
+            e = {'cls': f'c{len(leg) + 1}', 'color': oc['fill'], 'label': oc['label'], 'kind': 'fill', 'style': 'outline'}
+            leg.append(e)
+            out['polys'].append({'cls': e['cls'], 'color': e['color'], 'label': e['label'], 'style': 'outline', 'polygons': poly_coords(g)})
+        if cfg.get('labels'): out['labels'] = text_labels(m, cfg['labels'])
         if cfg.get('isotherm'):
             ic = cfg['isotherm']
             ls, r2 = LN.isotherms(m, ic, warnings)

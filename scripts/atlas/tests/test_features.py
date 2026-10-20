@@ -87,6 +87,25 @@ class RasterProtos(unittest.TestCase):
         clim = {'id': 'p29-climate', 'page': 29, 'bbox': [41.8, 73.7, 523.4, 459.1]}
         self.assertGreaterEqual(len(Z.small_images(clim)), 4)                # 사진 핀 4(+ 아이슬란드 핀 조각)
 
+    def test_extra_legend_needs_reason(self):
+        import features as F
+        leg = [dict(e) for e in self.FILLS]
+        F.extra_legend(leg, [{'color': '#9cc5d9', 'label': '브뤼셀', 'why': '범례에 없음'}])
+        self.assertEqual((leg[-1]['cls'], leg[-1]['extra']), ('c4', True))
+        with self.assertRaises(ValueError): F.extra_legend(leg, [{'color': '#000000', 'label': 'x'}])
+
+    @NEED_PDF
+    def test_italy_legend_join_and_labels_page32(self):
+        import features as F
+        cfg = {**C.unit_config()['defaults'], 'legendJoin': ''} if 'defaults' in C.unit_config() else {}
+        italy = {'id': 'p32-italy', 'page': 32, 'bbox': [584.9, 404.1, 734.2, 538.6], 'legendBbox': [689, 416, 752, 478]}
+        self.assertEqual([e['label'] for e in LG.legend(italy, cfg)], ['5만 이상', '4~5만', '3~4만', '2~3만', '0~2만'])
+        sep = {'id': 'p32-separatism', 'page': 32, 'bbox': [219.7, 396.6, 563.9, 696.7], 'legendBbox': [462, 644, 563.9, 660], 'cartoucheBbox': [428, 490, 548, 523]}
+        labs = F.text_labels(sep, {'colors': ['#231f20'], 'sizePt': [5.5, 5.9], 're': '[가-힣 ]+'})
+        self.assertEqual(len(labs), 18)
+        self.assertIn('카탈루냐', [l['text'] for l in labs])
+        self.assertNotIn('분리 독립 움직임이 있는 지역', [l['text'] for l in labs])   # 범례 글자(덮개 상자)는 뺌
+
     def test_legend_only_marks_and_drops_from_fills(self):
         import features as F
         leg = [dict(e) for e in self.FILLS]

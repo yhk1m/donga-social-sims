@@ -37,7 +37,7 @@ def legend(m, cfg, max_area=None):
         stop = min(right) if right else 1e9
         cand = sorted((t for t in texts if abs(yc(t['bbox']) - y) < ROW_TOL_PT and b[2] - 0.5 <= t['bbox'][0] < stop
                        and not grat.fullmatch(t['text'])), key=lambda t: t['bbox'][0])
-        s['label'] = ' '.join(t['text'] for t in _chain(cand, b[2])).strip()
+        s['label'] = cfg.get('legendJoin', ' ').join(t['text'] for t in _chain(cand, b[2])).strip()   # legendJoin '' = 크기가 다른 조각 붙여 쓰기(「5」+「만 이상」)
     if cfg.get('legendOrder') == 'rows': uniq.sort(key=lambda s: (round(s['box'][1] / ROW_ROUND_PT), s['box'][0]))
     else: uniq.sort(key=lambda s: (round(s['box'][0] / COLUMN_ROUND_PT), s['box'][1]))
     for i, s in enumerate(uniq): s['cls'] = f'c{i + 1}'

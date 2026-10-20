@@ -180,7 +180,8 @@ def process(lid):
         gj = json.load(f)
     feats = gj['features']
     area_idx = [i for i, ft in enumerate(feats) if ft['geometry']['type'] in ('Polygon', 'MultiPolygon')]
-    cov_idx = [i for i in area_idx if not feats[i]['properties'].get('pattern') and feats[i]['properties'].get('type') != 'locator']  # 위치도 강조 면은 덮개 밖(종교 면과 겹침)
+    cov_idx = [i for i in area_idx if not feats[i]['properties'].get('pattern') and feats[i]['properties'].get('type') != 'locator'
+               and feats[i]['properties'].get('style') != 'outline']  # 위치도 강조 면·테두리만 분류(파다니아)는 덮개 밖(다른 분류와 겹침)
     geoms = {}
     cov_tol = tol * cfg['coverageTolFactor']
     covered = apply_covers(feats, gj['properties'].get('covers'))   # 여러 지도 한 레이어: 본 지도 면에서 삽입 틀 자리 빼기(없으면 그대로)

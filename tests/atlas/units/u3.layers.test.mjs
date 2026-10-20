@@ -114,3 +114,25 @@ test('p31 리스본 사례: 도시 10 × 값 2(충전소·사람 아이콘, 지�
   assert.deepEqual(v['헬싱키'], ['charger:1.16', 'person:13.8']);
   assert.deepEqual(L.properties.valueLegend.map((x) => x.icon), ['charger', 'person']);
 });
+
+test('p32 분리 독립: 한 분류 면 + 지역 이름 18(지면 글자 자리)', () => {
+  const L = read('p32-separatism');
+  assert.deepEqual(L.properties.legend.map((e) => e.label), ['분리 독립 움직임이 있는 지역']);
+  const labels = L.features.filter((f) => f.properties.type === 'label').map((f) => f.properties.text);
+  assert.equal(labels.length, 18);
+  for (const n of ['스코틀랜드', '카탈루냐', '플랑드르', '파다니아', '코르시카', '세켈리']) assert.ok(labels.includes(n), n);
+  const cat = L.features.find((f) => f.properties.text === '카탈루냐').geometry.coordinates;
+  assert.ok(cat[0] > -1 && cat[0] < 4 && cat[1] > 39 && cat[1] < 43, `${cat}`);
+});
+
+test('p32 벨기에 3분류(브뤼셀 빗금은 프랑스어 줄) · 이탈리아 5분류 + 파다니아 테두리', () => {
+  const B = read('p32-belgium');
+  assert.deepEqual(B.properties.legend.map((e) => e.label), ['네덜란드어', '프랑스어', '독일어']);
+  assert.deepEqual(B.features.filter((f) => f.properties.type === 'label').map((f) => f.properties.text).sort(), ['브뤼셀', '왈로니아 지역', '플랑드르 지역']);
+  const I = read('p32-italy');
+  assert.deepEqual(I.properties.legend.map((e) => e.label), ['5만 이상', '4~5만', '3~4만', '2~3만', '0~2만', '파다니아 지역']);
+  assert.equal(I.properties.legend.at(-1).style, 'outline');
+  const pad = I.features.find((f) => f.properties.label === '파다니아 지역');
+  assert.equal(pad.properties.style, 'outline');
+  const [lon, lat] = pad.properties.centroid; assert.ok(lon > 7 && lon < 13.5 && lat > 44 && lat < 46.5, `${lon},${lat}`);
+});

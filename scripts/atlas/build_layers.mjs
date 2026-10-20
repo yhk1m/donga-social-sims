@@ -107,6 +107,7 @@ function convert(layer, feat, fit) {
     if (!polys.length) continue;
     const props = { type: 'area', cls: p.cls, label: p.label, color: p.color };
     if (p.pattern) props.pattern = p.pattern;
+    if (p.style) props.style = p.style; // 테두리만 분류(파다니아 지역 띠) — clip_land 덮개 밖
     features.push({ type: 'Feature', properties: props, geometry: { type: 'MultiPolygon', coordinates: polys } });
   }
   for (const s of feat.symbols) {
@@ -130,6 +131,13 @@ function convert(layer, feat, fit) {
       props.barAt = b.map(r3);
     }
     features.push({ type: 'Feature', properties: props, geometry: { type: 'Point', coordinates: ll } });
+  }
+  // 지역 이름 글자(설정 labels): Point {type:'label', text, size(pt), color, role:'region'} — areaLayer 가 흰 테두리 글자로(카슈미르와 같은 꼴)
+  for (const t of feat.labels || []) {
+    total++;
+    const ll = cv.invert(t.xy);
+    if (!ll) { dropped++; continue; }
+    features.push({ type: 'Feature', properties: { type: 'label', text: t.text, size: t.size, color: t.color, role: 'region' }, geometry: { type: 'Point', coordinates: ll } });
   }
   for (const l of feat.lines) {
     total += l.points.length;
@@ -317,7 +325,7 @@ function finish(layer, meta) {
     const n = snapSymbols(features, ne, layer.snapKm);
     if (n) meta.warnings = [...(meta.warnings || []), `Natural Earth 위치로 옮긴 기호 ${n}개(${layer.snapKm}km 넘게 어긋남): ${features.filter((f) => f.properties.snapped).map((f) => `${f.properties.name} ${f.properties.snapped.km}km`).join(', ')}`];
   }
-  const present = new Set(features.map((f) => f.properties.cls));
+  const present = new Set(features.map((f) => f.properties.cls).filter((c) => c != null)); // 지명 글자(type label)는 분류 없음
   const ne = layer.source === 'ne';
   const props = {
     id: layer.id, map: layer.map, page: m.page, title: m.title, kind: m.kind, layerType: layer.type,
