@@ -14,8 +14,7 @@
 //   육지 그림은 육지를 칠한 직후 육지 경로 안에(10a 일 때 단원 상자 밖은 clipOutside 안의 50m 육지) 그리고, 그 위에 지형 음영(곱하기)이 얹힌다.
 //   10a ↔ 50m 상자 테두리(D5 sealUnitSeam)는 고도 색 그림을 무늬로 한 번 더 그어 메운다(seal).
 // 규칙(EMBED_RULES.md): fetch 없이 new Image() + crossOrigin='anonymous'(음영과 같은 공개 Pages 주소, 교사 승인 예외).
-import { h } from '../shared/dom.js';
-import { invertGrid } from './relief.js';
+import { loadImagePixels, createGridDrawer, attachImageDrawer } from './baseDrawer.js';
 
 export const TINT_URL = 'https://yhk1m.github.io/donga-social-sims/assets/atlas/common/tint-4096.png';
 /** 개발 서버(vite, 저장소 루트가 root)에서 쓰는 같은 파일 */
@@ -124,109 +123,29 @@ export function tintGrid(grid, img, luts, outSea, outLand) {
   }
 }
 
-// ---------- 브라우저 ----------
-const loads = new Map();
+// ---------- 브라우저(공통 틀 baseDrawer.js 위에 얇게) ----------
+const decodeClasses = (rgba, w, hh) => {
+  const data = new Uint8Array(w * hh);
+  for (let i = 0, o = 0; i < data.length; i++, o += 4) data[i] = decodeClass(rgba[o]);
+  return data;
+};
 /** 분류 화상을 불러와 번호(R 채널 ÷ codeStep)를 캐시한다. 실패하면 null + 콘솔 경고 한 줄(지도는 고도 색 없이 그대로). 같은 주소는 한 번만. */
-export function loadTint(url = TINT_URL) {
-  if (loads.has(url)) return loads.get(url);
-  const p = new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.decoding = 'async';
-    const fail = (why) => { loads.delete(url); console.warn(`고도 색 생략(${why}): ${url}`); resolve(null); };
-    img.addEventListener('error', () => fail('불러오기 실패 — 주소 또는 교차 출처 허용(CORS) 헤더 확인'), { once: true });
-    img.addEventListener('load', () => {
-      try {
-        const w = img.naturalWidth, hh = img.naturalHeight;
-        if (!w || !hh) throw new Error('빈 이미지');
-        const c = h('canvas');
-        c.width = w; c.height = hh;
-        const cx = c.getContext('2d', { willReadFrequently: true });
-        cx.drawImage(img, 0, 0);
-        const rgba = cx.getImageData(0, 0, w, hh).data;
-        const data = new Uint8Array(w * hh);
-        for (let i = 0, o = 0; i < data.length; i++, o += 4) data[i] = decodeClass(rgba[o]);
-        c.width = c.height = 0;
-        resolve({ width: w, height: hh, data });
-      } catch (err) {
-        fail(err?.name === 'SecurityError' ? '교차 출처로 픽셀을 읽을 수 없음' : err?.message || String(err));
-      }
-    }, { once: true });
-    img.src = url;
-  });
-  loads.set(url, p);
-  return p;
-}
+export const loadTint = (url = TINT_URL) => loadImagePixels(url, { label: '고도 색', decode: decodeClasses });
 
 /**
  * 렌더러 훅용(setTintDrawer). 'sea' 단계에서 두 장을 한 번에 계산해 두고 'land' 단계가 그대로 쓴다(같은 view·같은 격자면 — 그림 하나에 한 번).
  * 격자와 그 크기는 렌더러의 공유 격자(extra.grid, createGridShare)가 정한다 — 그림 도중 크기가 바뀌지 않는다. 혼자 쓰면 step 2 로 계산.
- * fn.stats = 최근 계산 기록 [{ ms, step, cols, rows }].
+ * fn.stats = 최근 계산 기록 [{ ms, step, cols, rows }]. 그리는 차례는 baseDrawer.createGridDrawer.
  */
-export function createTintDrawer(img, { clock = () => performance.now(), luts = tintLuts(), step: ownStep = 2 } = {}) {
-  let cache = null; // cache: { view, grid, cols, rows, step }
-  let offS = null, offL = null;
-  const stats = [];
-  function compute(projection, view, gridOf) {
-    if (cache && cache.view === view && cache.projection === projection) return cache;
-    const t0 = clock();
-    const grid = gridOf ? gridOf() : invertGrid((p) => projection.invert(p), view.width, view.height, { step: ownStep, forward: (ll) => projection(ll) });
-    if (!offS) { offS = h('canvas'); offL = h('canvas'); }
-    for (const c of [offS, offL]) if (c.width !== grid.cols || c.height !== grid.rows) { c.width = grid.cols; c.height = grid.rows; }
-    const cs = offS.getContext('2d'), cl = offL.getContext('2d');
-    const ds = cs.createImageData(grid.cols, grid.rows), dl = cl.createImageData(grid.cols, grid.rows);
-    tintGrid(grid, img, luts, ds.data, dl.data);
-    cs.putImageData(ds, 0, 0); cl.putImageData(dl, 0, 0);
-    const ms = clock() - t0;
-    cache = { view, projection, step: grid.step, cols: grid.cols, rows: grid.rows, ms };
-    stats.push({ ms, step: grid.step, cols: grid.cols, rows: grid.rows });
-    if (stats.length > 60) stats.shift();
-    return cache;
-  }
-  const fn = (ctx, projection, view, { phase, land, under = null, path, clipOutside = null, clipSphere = null, seal = null, grid = null } = {}) => {
-    if (!img || !view?.width || !view?.height || !path) return;
-    const c = compute(projection, view, grid);
-    const W = c.cols * c.step, H = c.rows * c.step;
-    ctx.imageSmoothingEnabled = true;
-    if (phase === 'sea') {
-      ctx.save();
-      if (clipSphere) clipSphere();
-      ctx.drawImage(offS, 0, 0, W, H);
-      ctx.restore();
-      return;
-    }
-    if (phase !== 'land' || !land) return;
-    ctx.save();
-    ctx.beginPath(); path(land); ctx.clip();
-    ctx.drawImage(offL, 0, 0, W, H);
-    ctx.restore();
-    if (under && clipOutside) {
-      ctx.save();
-      clipOutside();
-      ctx.beginPath(); path(under); ctx.clip();
-      ctx.drawImage(offL, 0, 0, W, H);
-      ctx.restore();
-      // 10a ↔ 50m 상자 테두리: 고도 색 그림을 무늬로 그어 메운다(무늬 좌표 = 화면, 그림을 step 배로)
-      if (seal && ctx.createPattern) {
-        const pat = ctx.createPattern(offL, 'no-repeat');
-        if (pat?.setTransform && typeof DOMMatrix === 'function') pat.setTransform(new DOMMatrix([c.step, 0, 0, c.step, 0, 0]));
-        if (pat) seal(pat);
-      }
-    }
-  };
-  fn.stats = stats;
-  return fn;
+export function createTintDrawer(img, { clock, luts = tintLuts(), step } = {}) {
+  if (!img) return Object.assign(() => {}, { stats: [] });
+  return createGridDrawer({ fill: (grid, sea, land) => tintGrid(grid, img, luts, sea, land), clock, step });
 }
 
 /**
  * 지도에 고도 색 붙이기: 주소 고르기(개발 서버면 저장소 파일, 아니면 공개 주소) → loadTint → createTintDrawer → map.setTintDrawer.
  * 불러오는 사이 지도가 destroy 되면 붙이지 않는다. 실패하면 null(지도는 고도 색 없이 그대로 — 켜도 바뀌지 않음).
  */
-export async function attachTint(map, { url = import.meta.env?.DEV ? TINT_DEV_URL : TINT_URL, ...opts } = {}) {
-  if (!map || map.destroyed) return null;
-  const img = await loadTint(url);
-  if (!img || map.destroyed) return null;
-  const drawer = createTintDrawer(img, opts);
-  map.setTintDrawer(drawer);
-  return drawer;
+export function attachTint(map, { url = import.meta.env?.DEV ? TINT_DEV_URL : TINT_URL, ...opts } = {}) {
+  return attachImageDrawer(map, { url, load: loadTint, create: (img) => createTintDrawer(img, opts), set: 'setTintDrawer' });
 }

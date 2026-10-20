@@ -440,13 +440,25 @@ export function markerLayer(id, markers, {
     m, n: numberOf(m, i), xy: null, el: null, num: null, shown: !hideNumbers,
     feature: { type: 'Feature', properties: { label: hideNumbers ? '' : m.title ?? '', id: m.id, approx: !!m.approx }, geometry: { type: 'Point', coordinates: m.lonlat }, marker: m },
   }));
+  // 숨긴 핀: 번호 글자 숨김 + is-blank(옅은 보라 — 아직 답하지 않은 빈칸), 말풍선 이름·읽기 이름도 「핀」만(답 = 사진 번호 ↔ 자리)
   const paint = (it) => {
     it.feature.properties.label = it.shown ? it.m.title ?? '' : '';
     if (it.num) setAttr(it.num, 'display', it.shown ? null : 'none');
-    it.el?.classList.toggle('is-blank', !it.shown);
+    if (it.el) {
+      it.el.classList.toggle('is-blank', !it.shown);
+      setAttr(it.el, 'aria-label', it.shown ? it.m.title || (it.n != null ? `핀 ${it.n}` : '핀') : '핀');
+    }
   };
   const revealedCount = () => items.filter((it) => it.shown).length;
-  const changed = () => { if (map && !map.destroyed) map.refreshLayer(layerId); onReveal?.(revealedCount(), items.length); };
+  const notify = () => onReveal?.(revealedCount(), items.length);
+  const changed = () => { if (map && !map.destroyed) map.refreshLayer(layerId); notify(); };
+  // 누르기·Enter·Space 가 같은 길: 숨긴 핀이면 드러내고(다시 그리기는 select 가 한 번만), 고르고, onPick
+  const press = (it, e) => {
+    e.stopPropagation?.();
+    if (!it.shown) { it.shown = true; paint(it); notify(); }
+    layer.select(it.m.id);
+    onPick?.(it.m, e);
+  };
   const byFeature = new Map(items.map((it) => [it.feature, it]));
   let root = null, sel = null;
   function build(g) {
@@ -454,7 +466,14 @@ export function markerLayer(id, markers, {
     for (const it of items) {
       it.xy = null;
       it.num = it.n != null ? s('text', { class: 'at-pin-num', x: 0, y: -15 }, String(it.n)) : null;
-      it.el = s('g', { class: 'at-pin', 'data-id': it.m.id, on: { click: (e) => { e.stopPropagation(); if (!it.shown) layer.reveal(it.m.id); layer.select(it.m.id); onPick?.(it.m, e); } } },
+      // 키보드: 핀마다 Tab 으로 닿는 단추(role button) — Enter·Space 는 누르기와 같은 길. 무대 키(방향키·+−)는 무대 자체에 초점일 때만이라 겹치지 않음
+      it.el = s('g', {
+        class: 'at-pin', 'data-id': it.m.id, role: 'button', tabindex: '0',
+        on: {
+          click: (e) => press(it, e),
+          keydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault?.(); press(it, e); } },
+        },
+      },
         s('path', { class: 'at-pin-body', d: PIN_D }),
         s('circle', { class: 'at-pin-hole', cx: 0, cy: -15, r: 5.6 }),
         it.num,
@@ -504,6 +523,7 @@ export function markerLayer(id, markers, {
     /** 핀 하나의 번호·이름 보이기(hideNumbers) */
     reveal(mid) { const it = items.find((x) => x.m.id === mid); if (!it || it.shown) return; it.shown = true; paint(it); changed(); },
     /** 모두 보이기(true) · 다시 숨기기(false) */
+    // 다시 숨기기(false)는 하나씩 누른 핀까지 모두 숨긴다 — 활동을 처음부터 다시 하는 것이라 몇 개만 남기면 답이 드러남
     revealAll(on = true) { for (const it of items) { it.shown = !!on; paint(it); } changed(); },
     isRevealed: (mid) => !!items.find((x) => x.m.id === mid)?.shown,
     get revealed() { return revealedCount(); },

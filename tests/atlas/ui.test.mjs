@@ -131,6 +131,42 @@ test('mapTools: 도법·중심 경도·옵션·확대 버튼, 축척 막대 갱�
   }
 });
 
+test('바탕 「자연색」 늦게 불러오기: 불러오는 동안 단추 aria-busy, 실패하면 단추가 앞 바탕으로 돌아가고 알림 한 줄, 다른 바탕을 고르면 알림 숨김, 성공하면 바쁨만 풂', async () => {
+  const { lazyNatural } = await import('../../src/atlas/natural.js');
+  const stage = div();
+  const map = fakeMap();
+  const t = mapTools(stage, map);
+  let resolve;
+  const lazy = lazyNatural(map, { attach: () => new Promise((r) => { resolve = r; }), onState: (st) => t.setBaseState('natural', st) });
+  const btn = (v) => findAll(t.el, byClass('at-tools-seg-btn')).find((b) => b.getAttribute('data-v') === v);
+  const note = find(t.el, byClass('at-tools-note'));
+  assert.equal(note.hidden, true);
+  btn('tint').dispatch('click');
+  btn('natural').dispatch('click');
+  assert.equal(btn('natural').getAttribute('aria-busy'), 'true', '불러오는 중');
+  assert.ok(btn('natural').classList.contains('is-busy'));
+  assert.equal(btn('natural').getAttribute('aria-pressed'), 'true');
+  resolve(null);
+  await lazy.loading;
+  assert.equal(btn('natural').getAttribute('aria-busy'), null, '바쁨 풂');
+  assert.equal(btn('tint').getAttribute('aria-pressed'), 'true', '앞 바탕(고도 색)으로 돌아감');
+  assert.equal(btn('natural').getAttribute('aria-pressed'), 'false');
+  assert.equal(note.hidden, false, '알림 한 줄');
+  assert.equal(note.getAttribute('role'), 'status');
+  btn('none').dispatch('click');
+  assert.equal(note.hidden, true, '다른 바탕을 고르면 알림 숨김');
+  btn('natural').dispatch('click');
+  assert.equal(btn('natural').getAttribute('aria-busy'), 'true', '다시 시도');
+  map.naturalReady = true;
+  resolve(() => {});
+  await lazy.loading;
+  assert.equal(btn('natural').getAttribute('aria-busy'), null);
+  assert.equal(btn('natural').getAttribute('aria-pressed'), 'true', '붙으면 자연색 그대로');
+  assert.equal(note.hidden, true);
+  lazy.destroy(); t.destroy();
+  assert.equal(map.handlerCount, 0);
+});
+
 test('legendBlock: 견본 + 이름, 누르면 legend.toggle(aria-pressed·전체 보기), 위치 근사 배지, 이미지 실패 알림, destroy 로 구독 해제', async () => {
   const data = readJson(path.join(DATA, 'layer-p24-trade.json'));
   const items = data.properties.legend.map(({ present, ...e }) => e);

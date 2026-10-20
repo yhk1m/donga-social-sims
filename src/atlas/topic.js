@@ -183,7 +183,6 @@ export function buildTopic({
     if (!revealBtn) return;
     const all = n >= total;
     revealBtn.textContent = all ? '다시 숨기기' : '번호 모두 보기';
-    revealBtn.setAttribute('aria-pressed', String(all));
   };
   if (topic.markers?.length) {
     pins = markerLayer(`markers-${topic.id}`, topic.markers, {
@@ -219,7 +218,7 @@ export function buildTopic({
       // 핀 번호 숨김 주제: 첫 활동 블록에 「번호 모두 보기」·「다시 숨기기」(다시 숨기면 고른 핀·카드도 지움 — 답이 남지 않게)
       const reveal = hideNumbers && pins && b.type === 'activity' && !revealBtn
         ? (revealBtn = h('button', {
-          class: 'ds-btn at-reveal-btn', type: 'button', 'aria-pressed': 'false', title: '지도 핀의 사진 번호',
+          class: 'ds-btn at-reveal-btn', type: 'button', title: '지도 핀의 사진 번호', // 글자가 바뀌는 단추라 aria-pressed 는 두지 않음(읽기 프로그램에 같은 뜻 두 번)
           on: { click: () => { const all = pins.revealed >= pins.markers.length; if (all) { pins.select(null); card.hide(); } pins.revealAll(!all); } },
         }, '번호 모두 보기'))
         : null;

@@ -4,6 +4,8 @@
 //   const img = await loadNatural(url)                // { width, height, data: Uint8ClampedArray(RGBA) } | null(실패 → 콘솔 한 줄, 지도는 자연색 없이)
 //   map.setNaturalDrawer(createNaturalDrawer(img))    // 렌더러가 멈출 때 fn(ctx, projection, view, { phase:'sea'|'land', land, under, path, clipOutside, clipSphere, seal, grid })
 //   attachNatural(map, { url }) → Promise<drawer | null>  // 위 둘을 한 번에(주소 고르기·destroy 지킴)
+//   lazyNatural(map, { onState }) → { destroy }        // 처음 자연색을 켤 때 불러오기, 실패하면 앞 바탕으로 되돌림
+// 공통 틀(불러오기·격자 그림 두 장·그리는 차례·붙이기)은 baseDrawer.js — 고도 색(tint.js)과 같음.
 //
 // 자료: docs/assets/atlas/common/natural-4096.jpg — Natural Earth II with Shaded Relief and Water 1:50m(public domain)을 relief-4096.jpg 와 같은
 //   등장방형 4096×2048 로 줄인 것(build_natural.py). 화상에 음영·바다·빙하가 다 들어 있다.
@@ -12,8 +14,7 @@
 //   다시 그린다(벡터 바다·육지 칠이 화상을 가리지 않음). 바다용 그림은 흰색을 seaFade 만큼 섞어 교과서처럼 옅게(같은 표본에서 두 장),
 //   육지용은 그대로이므로 옅은 바다와 짙은 땅의 경계 = 벡터 해안선. 채도는 saturate 배(교과서 육지 색이 원본보다 짙음).
 // 규칙(EMBED_RULES.md): fetch 없이 new Image() + crossOrigin='anonymous'(음영과 같은 공개 Pages 주소).
-import { h } from '../shared/dom.js';
-import { invertGrid } from './relief.js';
+import { loadImagePixels, releaseImagePixels, createGridDrawer, attachImageDrawer } from './baseDrawer.js';
 
 export const NATURAL_URL = 'https://yhk1m.github.io/donga-social-sims/assets/atlas/common/natural-4096.jpg';
 /** 개발 서버(vite, 저장소 루트가 root)에서 쓰는 같은 파일 */
@@ -68,105 +69,53 @@ export function naturalGrid(grid, img, out, { saturate = 1, seaFade = 0 } = {}, 
   return out;
 }
 
-// ---------- 브라우저 ----------
-const loads = new Map();
-/** 자연색 화상을 불러와 RGBA 를 캐시한다. 실패하면 null + 콘솔 경고 한 줄(지도는 자연색 없이 그대로). 같은 주소는 한 번만. */
-export function loadNatural(url = NATURAL_URL) {
-  if (loads.has(url)) return loads.get(url);
-  const p = new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.decoding = 'async';
-    const fail = (why) => { loads.delete(url); console.warn(`자연색 지형 생략(${why}): ${url}`); resolve(null); };
-    img.addEventListener('error', () => fail('불러오기 실패 — 주소 또는 교차 출처 허용(CORS) 헤더 확인'), { once: true });
-    img.addEventListener('load', () => {
-      try {
-        const w = img.naturalWidth, hh = img.naturalHeight;
-        if (!w || !hh) throw new Error('빈 이미지');
-        const c = h('canvas');
-        c.width = w; c.height = hh;
-        const cx = c.getContext('2d', { willReadFrequently: true });
-        cx.drawImage(img, 0, 0);
-        const data = cx.getImageData(0, 0, w, hh).data; // 교차 출처로 막히면 SecurityError
-        c.width = c.height = 0;
-        resolve({ width: w, height: hh, data });
-      } catch (err) {
-        fail(err?.name === 'SecurityError' ? '교차 출처로 픽셀을 읽을 수 없음' : err?.message || String(err));
-      }
-    }, { once: true });
-    img.src = url;
-  });
-  loads.set(url, p);
-  return p;
-}
+// ---------- 브라우저(공통 틀 baseDrawer.js 위에 얇게) ----------
+/**
+ * 자연색 화상을 불러와 RGBA 를 캐시한다(4096×2048 → 32 MB — 한 번만 불러 계속 씀, 지도를 버릴 때 releaseNatural 로 캐시에서 뺌).
+ * 실패하면 null + 콘솔 경고 한 줄(지도는 자연색 없이 그대로). 같은 주소는 한 번만, 실패한 주소는 다음 호출에 다시.
+ */
+export const loadNatural = (url = NATURAL_URL) => loadImagePixels(url, { label: '자연색 지형' });
+/** 풀어 둔 자연색 RGBA 캐시 놓기(붙은 drawer 도 setNaturalDrawer(null) 로 떼야 메모리가 풀림) */
+export const releaseNatural = (url = import.meta.env?.DEV ? NATURAL_DEV_URL : NATURAL_URL) => releaseImagePixels(url);
 
 /**
- * 렌더러 훅용(setNaturalDrawer). 'sea' 단계에서 그림 두 장(바다용·육지용)을 계산해 두고 'land' 단계가 그대로 쓴다(같은 view·같은 격자면 — 그림 하나에 한 번).
+ * 렌더러 훅용(setNaturalDrawer). 'sea' 단계에서 그림 두 장(바다용 = 흰색 seaFade 섞음, 육지용)을 계산해 두고 'land' 단계가 그대로 쓴다.
  * 격자와 그 크기는 렌더러의 공유 격자(extra.grid)가 정한다. 혼자 쓰면 step 2. fn.stats = 최근 계산 기록 [{ ms, step, cols, rows }].
  */
-export function createNaturalDrawer(img, { clock = () => performance.now(), step: ownStep = 2, style = NATURAL_STYLE } = {}) {
-  let cache = null;
-  let off = null, offS = null;
-  const stats = [];
-  function compute(projection, view, gridOf) {
-    if (cache && cache.view === view && cache.projection === projection) return cache;
-    const t0 = clock();
-    const grid = gridOf ? gridOf() : invertGrid((p) => projection.invert(p), view.width, view.height, { step: ownStep, forward: (ll) => projection(ll) });
-    if (!off) { off = h('canvas'); offS = h('canvas'); }
-    for (const c of [off, offS]) if (c.width !== grid.cols || c.height !== grid.rows) { c.width = grid.cols; c.height = grid.rows; }
-    const cx = off.getContext('2d'), cs = offS.getContext('2d');
-    const id = cx.createImageData(grid.cols, grid.rows), ids = cs.createImageData(grid.cols, grid.rows);
-    naturalGrid(grid, img, id.data, style, ids.data);
-    cx.putImageData(id, 0, 0); cs.putImageData(ids, 0, 0);
-    const ms = clock() - t0;
-    cache = { view, projection, step: grid.step, cols: grid.cols, rows: grid.rows, ms };
-    stats.push({ ms, step: grid.step, cols: grid.cols, rows: grid.rows });
-    if (stats.length > 60) stats.shift();
-    return cache;
-  }
-  const fn = (ctx, projection, view, { phase, land, under = null, path, clipOutside = null, clipSphere = null, seal = null, grid = null } = {}) => {
-    if (!img || !view?.width || !view?.height || !path) return;
-    const c = compute(projection, view, grid);
-    const W = c.cols * c.step, H = c.rows * c.step;
-    ctx.imageSmoothingEnabled = true;
-    if (phase === 'sea') {
-      ctx.save();
-      if (clipSphere) clipSphere();
-      ctx.drawImage(offS, 0, 0, W, H);
-      ctx.restore();
-      return;
-    }
-    if (phase !== 'land' || !land) return;
-    ctx.save();
-    ctx.beginPath(); path(land); ctx.clip();
-    ctx.drawImage(off, 0, 0, W, H);
-    ctx.restore();
-    if (under && clipOutside) {
-      ctx.save();
-      clipOutside();
-      ctx.beginPath(); path(under); ctx.clip();
-      ctx.drawImage(off, 0, 0, W, H);
-      ctx.restore();
-      if (seal && ctx.createPattern) {
-        const pat = ctx.createPattern(off, 'no-repeat');
-        if (pat?.setTransform && typeof DOMMatrix === 'function') pat.setTransform(new DOMMatrix([c.step, 0, 0, c.step, 0, 0]));
-        if (pat) seal(pat);
-      }
-    }
-  };
-  fn.stats = stats;
-  return fn;
+export function createNaturalDrawer(img, { clock, step, style = NATURAL_STYLE } = {}) {
+  if (!img) return Object.assign(() => {}, { stats: [] });
+  return createGridDrawer({ fill: (grid, sea, land) => naturalGrid(grid, img, land, style, sea), clock, step });
 }
 
 /**
  * 지도에 자연색 붙이기: 주소 고르기(개발 서버면 저장소 파일, 아니면 공개 주소) → loadNatural → createNaturalDrawer → map.setNaturalDrawer.
- * 불러오는 사이 지도가 destroy 되면 붙이지 않는다. 실패하면 null(지도는 자연색 없이 그대로). 화상이 커서(1 MB, 풀면 32 MB) 처음 자연색을 켤 때 부른다.
+ * 불러오는 사이 지도가 destroy 되면 붙이지 않는다. 실패하면 null(지도는 자연색 없이 그대로). 화상이 커서 처음 자연색을 켤 때 부른다(lazyNatural).
  */
-export async function attachNatural(map, { url = import.meta.env?.DEV ? NATURAL_DEV_URL : NATURAL_URL, ...opts } = {}) {
-  if (!map || map.destroyed) return null;
-  const img = await loadNatural(url);
-  if (!img || map.destroyed) return null;
-  const drawer = createNaturalDrawer(img, opts);
-  map.setNaturalDrawer(drawer);
-  return drawer;
+export function attachNatural(map, { url = import.meta.env?.DEV ? NATURAL_DEV_URL : NATURAL_URL, ...opts } = {}) {
+  return attachImageDrawer(map, { url, load: loadNatural, create: (img) => createNaturalDrawer(img, opts), set: 'setNaturalDrawer' });
+}
+
+/**
+ * 자연색 늦게 불러오기: 지도 옵션 natural 이 처음 켜질 때 한 번 attach(불러오는 중에 또 켜도 한 번). 상태는 onState('loading' | 'ready' | 'failed').
+ * 실패하면(null) 자연색을 고르기 전 바탕(고도 색 | 없음)으로 되돌려 지도 도구가 「자연색」인데 바탕이 없는 일이 없게 한다 — 그사이 주제를 바꿔
+ * 자연색이 이미 꺼졌으면 옵션은 건드리지 않음. 다음에 다시 켜면 다시 시도(실패한 주소는 캐시에 남지 않음).
+ * → { destroy() }(구독 해제), loading(불러오는 중인지)
+ */
+export function lazyNatural(map, { attach = attachNatural, onState = null } = {}) {
+  let loading = null;
+  let before = map.options?.natural ? 'none' : baseModeOf(map.options); // 자연색을 고르기 전 바탕
+  const off = map.on('options', (o) => {
+    if (!o.natural) { before = baseModeOf(o); return; }
+    if (map.naturalReady || loading) return;
+    onState?.('loading');
+    loading = Promise.resolve(attach(map))
+      .then((d) => {
+        if (map.destroyed) return d;
+        if (!d && map.options?.natural) map.setOptions(baseOptions(before));
+        onState?.(d ? 'ready' : 'failed');
+        return d;
+      })
+      .finally(() => { loading = null; });
+  });
+  return { destroy: off, get loading() { return loading; } };
 }

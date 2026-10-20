@@ -82,7 +82,20 @@ export function mapTools(stage, map, { relief = true, tint = true } = {}) {
   const opts = { graticule: true, labels: true, relief };
   // 바탕 색(없음·고도 색·자연색) 한 묶음 — 렌더러 옵션 tint·natural 두 개를 함께 바꾼다
   const base = tint ? segButtons(BASE_MODES, { label: '바탕 색', className: 'at-tools-seg at-tools-base', btnClass: 'at-tools-seg-btn', current: baseModeOf(map.options),
-    onPick: (m) => { map.setOptions(baseOptions(m)); base.set(baseModeOf(map.options)); } }) : null;
+    onPick: (m) => { baseNote.hidden = true; map.setOptions(baseOptions(m)); base.set(baseModeOf(map.options)); } }) : null;
+  // 바탕 화상 알림 한 줄(범례 이미지 실패 알림과 같은 꼴 — role status): 자연색 화상을 못 불러와 앞 바탕으로 돌아갔을 때
+  const baseNote = h('p', { class: 'at-legend-fail at-tools-note', role: 'status' }, '자연색 화상을 불러오지 못해 앞의 바탕으로 돌아갔습니다.');
+  baseNote.hidden = true;
+  /** 바탕 단추 상태: 'loading'(단추 바쁨 — aria-busy) | 'failed'(바쁨 풀고 알림) | 'ready'·그 밖(바쁨·알림 풂) */
+  function setBaseState(mode, state) {
+    const b = base?.btns.find((x) => x.getAttribute('data-v') === mode);
+    if (!b) return;
+    const busy = state === 'loading';
+    if (busy) b.setAttribute('aria-busy', 'true'); else b.removeAttribute('aria-busy');
+    b.classList.toggle('is-busy', busy);
+    b.title = busy ? '자연색 화상을 불러오는 중…' : BASE_MODES.find((m) => m[0] === mode)?.[2] || b.title;
+    baseNote.hidden = state !== 'failed';
+  }
   const inputs = {};
   const check = (key, text, title = null) => {
     const input = h('input', { type: 'checkbox', class: 'at-tools-check-input', checked: opts[key], on: { change: (e) => { opts[key] = !!e.target.checked; map.setOptions({ [key]: opts[key] }); } } });
@@ -97,7 +110,8 @@ export function mapTools(stage, map, { relief = true, tint = true } = {}) {
       proj.el,
       h('div', { class: 'at-tools-row' }, center.el,
         check('graticule', '경위선'), check('labels', '지명'), relief ? check('relief', '음영') : null),
-      base ? h('div', { class: 'at-tools-row' }, h('span', { class: 'at-tools-label' }, '바탕'), base.el) : null),
+      base ? h('div', { class: 'at-tools-row' }, h('span', { class: 'at-tools-label' }, '바탕'), base.el) : null,
+      base ? baseNote : null),
     h('div', { class: 'at-tools-zoom', role: 'group', 'aria-label': '확대·축소' },
       btn('plus', '확대', () => zoomBy(2)), btn('minus', '축소', () => zoomBy(0.5)), btn('globe', '세계 전체 보기', whole)));
   const barLine = h('div', { class: 'at-scale-bar' });
@@ -145,7 +159,7 @@ export function mapTools(stage, map, { relief = true, tint = true } = {}) {
   });
   update();
   return {
-    el, scale, update, base,
+    el, scale, update, base, setBaseState,
     destroy() {
       off(); offOpt();
       stage.removeEventListener('keydown', onKey);

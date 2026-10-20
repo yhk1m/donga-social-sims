@@ -8,7 +8,7 @@ import { h } from '../../src/shared/dom.js';
 import { createMap } from '../../src/atlas/renderer.js';
 import { attachRelief } from '../../src/atlas/relief.js';
 import { attachTint } from '../../src/atlas/tint.js';
-import { attachNatural } from '../../src/atlas/natural.js';
+import { attachNatural, lazyNatural } from '../../src/atlas/natural.js';
 import { topicNav, mapTools, pageViewer, tooltip, creditBlock } from '../../src/atlas/ui.js';
 import { buildTopic } from '../../src/atlas/topic.js';
 import basemap from './data/basemap.json';
@@ -34,14 +34,14 @@ export default function mount(root) {
   const map = createMap(stage, { basemap, places, unitBoxes: basemap.meta.unitBoxes });
   attachRelief(map).then((d) => { root.atlasRelief = d; }); // 공개 Pages 의 음영 이미지(실패하면 음영 없이 그대로)
   attachTint(map).then((d) => { root.atlasTint = d; });     // 공개 Pages 의 고도 색 분류 화상(실패하면 고도 색 없이 그대로)
-  // 자연색 화상(1 MB)은 처음 자연색을 켤 때 불러온다(실패하면 자연색 없이 그대로 — 다음에 켜면 다시 시도)
-  let naturalLoading = null;
-  map.on('options', (o) => {
-    if (!o.natural || map.naturalReady || naturalLoading) return;
-    naturalLoading = attachNatural(map).then((d) => { root.atlasNatural = d; naturalLoading = null; });
-  });
 
   const tools = mapTools(stage, map);
+  // 자연색 화상(1 MB)은 처음 자연색을 켤 때 불러온다 — 그동안 「자연색」 단추는 바쁨(aria-busy), 실패하면 앞 바탕으로 되돌리고 도구에 알림 한 줄
+  // (다음에 다시 켜면 다시 시도)
+  const natural = lazyNatural(map, {
+    attach: (m) => attachNatural(m).then((d) => { root.atlasNatural = d; return d; }),
+    onState: (st) => tools.setBaseState('natural', st),
+  });
   const tip = tooltip(stage, { map });
   const viewer = pageViewer(stage);
   const nav = topicNav(panel, topics, (id) => show(id));
@@ -78,4 +78,14 @@ export default function mount(root) {
   root.atlasUi = { map, tools, tip, viewer, nav, credits };
   root.atlasShowTopic = show;
   root.atlasCharts = charts;
+
+  /** 조각을 떼어 낼 때(개발 미리보기·시험용): 주제·구독·도구·지도를 모두 푼다 */
+  function destroy() {
+    current?.destroy(); current = null;
+    natural.destroy();
+    tools.destroy(); tip.destroy(); viewer.destroy(); nav.destroy(); credits.destroy();
+    map.destroy();
+  }
+  root.atlasDestroy = destroy;
+  return { destroy };
 }

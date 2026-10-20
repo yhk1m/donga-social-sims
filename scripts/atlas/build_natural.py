@@ -1,9 +1,9 @@
 # © 2026 김용현
-# scripts/atlas/build_natural.py — 자연색 지형 화상(교사 요청 「20쪽 지형은 교과서처럼」): Natural Earth I(음영·물 포함) → 등장방형 4096×2048 JPEG
+# scripts/atlas/build_natural.py — 자연색 지형 화상(교사 요청 「20쪽 지형은 교과서처럼」): Natural Earth II(NE2_50M_SR_W, 음영·물 포함) → 등장방형 4096×2048 JPEG
 #   python -I scripts/atlas/build_natural.py          → 설정 natural.out (docs/assets/atlas/common/natural-4096.jpg) + 크기·sha256
 #   python -I scripts/atlas/build_natural.py --check  → 만들지 않고 지금 파일이 입력·설정과 같은지만(다르면 종료 코드 1)
 # 설정: scripts/atlas/config/u2.json 의 natural = {src: {file, url, source, licence}, width, height, quality, out, maxBytes}
-# 입력: NE1_50M_SR_W.tif — 10800×5400 RGB 8비트, WGS84 경위도, −180..180 · 90..−90(1/30°). 교과서 20쪽 지형 지도(「naturalearthdata.com, 2023」)와 같은 계열.
+# 입력: NE2_50M_SR_W.tif(설정 natural.src.file) — 10800×5400 RGB 8비트, WGS84 경위도, −180..180 · 90..−90(1/30°). 교과서 20쪽 지형 지도(「naturalearthdata.com, 2023」)와 같은 계열. NE1 은 인도·중국 동부가 노랗게 나와 교과서 초록에 가까운 NE2 를 씀(결정 기록).
 # 격자: relief-4096.jpg·tint-4096.png 와 같은 전 지구 등장방형(앱이 같은 역투영 표본으로 뽑음). 줄이기 = PIL LANCZOS(음영 화상과 같음).
 # JPEG: 4:2:0, optimize, progressive 아님(브라우저가 한 번에 풀고 getImageData 로 읽음). ICC 없음(색 관리로 값이 바뀌지 않게).
 import os, sys, hashlib, io

@@ -399,16 +399,35 @@ test('지형 핀 번호 숨김(pinNumbers hidden): 빈 핀·말풍선 이름 없
   const btn = find(S.body, byClass('at-reveal-btn'));
   assert.ok(btn, '활동하기 1 에 단추');
   assert.equal(btn.textContent, '번호 모두 보기');
+  // 키보드: 핀마다 role button·tabindex 0·읽기 이름 「핀」(숨김)
+  assert.ok(pinEls().every((el) => el.getAttribute('role') === 'button' && el.getAttribute('tabindex') === '0' && el.getAttribute('aria-label') === '핀'));
   const first = pinEls().find((el) => el.getAttribute('data-id') === relief.markers[0].id);
+  let refreshes = 0;
+  const refresh0 = S.map.refreshLayer;
+  S.map.refreshLayer = () => { refreshes++; return true; };
   first.dispatch('click');
+  S.map.refreshLayer = refresh0;
+  assert.equal(refreshes, 1, '처음 누를 때 다시 그리기 한 번');
+  assert.equal(first.getAttribute('aria-label'), relief.markers[0].title, '드러나면 읽기 이름 = 제목');
   assert.equal(numShown(first), true, '누른 핀은 번호');
   assert.equal(pinEls().filter(numShown).length, 1);
+  assert.equal(btn.textContent, '번호 모두 보기');
   assert.equal(feats()[0].properties.label, relief.markers[0].title, '누른 핀은 이름도');
   assert.equal(T.card.el.hidden, false, '카드는 그대로 열림');
+  // Enter·Space 는 누르기와 같은 길(다른 키는 무시)
+  const second = pinEls().find((el) => el.getAttribute('data-id') === relief.markers[1].id);
+  second.dispatch('keydown', { key: 'a' });
+  assert.equal(numShown(second), false);
+  const ev = second.dispatch('keydown', { key: 'Enter' });
+  assert.equal(numShown(second), true); assert.ok(ev.defaultPrevented, 'Space 가 쪽을 내리지 않게');
+  assert.equal(T.pins.selected(), relief.markers[1].id);
+  const third = pinEls().find((el) => el.getAttribute('data-id') === relief.markers[2].id);
+  third.dispatch('keydown', { key: ' ' });
+  assert.equal(numShown(third), true, 'Space');
   btn.dispatch('click');
   assert.equal(pinEls().filter(numShown).length, 7);
   assert.equal(btn.textContent, '다시 숨기기');
-  assert.equal(btn.getAttribute('aria-pressed'), 'true');
+  assert.equal(btn.getAttribute('aria-pressed'), null, '글자가 바뀌는 단추라 aria-pressed 없음');
   btn.dispatch('click');
   assert.equal(pinEls().filter(numShown).length, 0);
   assert.equal(T.pins.selected(), null, '고른 핀 지움');
