@@ -356,3 +356,25 @@ test('개수: 지형 핀 7(번호 숨김), 기후 그래프 마커 4, 특집 핀
 - **U1 Ⅰ 세계화(8~15, `atlas-u1-world`, 11 작업 + 엔진 하위 약 5)**: 지도 약 14 + 지구본 10. 새 기능: 두 쪽 걸친 지도(8~9·10~11쪽 쪽마다 fit + 지명 합치기 `spreadOf`), 8쪽 유럽 삽입, 대륙·대양 맞히기 퀴즈(`continentOcean`), 지구본 바로가기 단추(Q2), 세계 단계구분도 다수(`countryClass` 재사용 — 인터넷·이동 전화·햄버거·코로나), 인천 항공망 흐름선 약 80+(대권, 성능 측정), 한국 문화 기관 점 약 200(3종). 바탕 지도는 10a 없이 110m·50m(세계 단원). 15쪽 주제도 활동 = Q4.
 
 ## 실행 중 결정
+
+- (G0~G5, 2026-10-20) 파이프라인 단원 일반화 — 커밋 1bffdc3(G0) · 480e4f5(G1) · d38fdf6(G2) · 18652ec(G3) · 2b55a07(G4) · 5a98bc6(G5) · b504479(리뷰 반영)
+  - 기준선(G0, `scripts/atlas/regress_u2.mjs --baseline` → `$ATLAS_WORK/units/u2/baseline/`): 해시 163개(저장소 114 = sims/atlas-u2-asia/data·content/atlas/u2·docs/assets/atlas·조각, 작업 폴더 49 = vec·fit·지명·표), 대조표 캡처 41장·manifest, 대조표 HTML(다름 0 · 알려진 차이 9 · 같음 134 · 참고 24), 조각 2,090,947 B(2,041.9 KB). JSON·JS 원본도 `baseline/files/`에 두어 다를 때 내용을 견줌.
+  - 리팩터링 전에 HEAD 코드로 u2 파이프라인 15단계(G5 Step 3 순서, `$ATLAS_WORK/units/u2/pipeline.sh`)를 한 번 돌려 **파이프라인 자체가 바이트까지 재현됨**을 먼저 확인(해시 163개 다름 0, 대조표 같음, 조각 해시 같음) — 뒤의 차이를 리팩터링 탓으로만 읽을 수 있게.
+  - **도장 값 차이(정당)**: `build_basemap.mjs`·`coloring_quiz.mjs`(G1)·`georef.mjs`·`geo_util.mjs`(G2)는 설정 `content.stamps`의 입력 파일이라, 계획대로 고치면 `sims/atlas-u2-asia/data/basemap.json` meta.inputsHash·`content/atlas/u2/coloring.json` inputsHash 가 바뀐다(설계는 u2 설정만 얼리면 된다고 봤으나 스크립트도 도장 입력). 다시 만들어 `regress_u2 --check`로 「inputsHash 값만 지우면 나머지 바이트 같음」을 확인하고 커밋에 함께 넣음. basemap 은 도장이 달라 mapshaper 로 다시 만들었는데 도형 바이트가 같았다. `atlas_common.py`(charts 도장)·`extract_text.py`(손대지 않음)의 도장은 작업 폴더 stamp 파일뿐이라 extract_tables 를 다시 돌려 맞춤. 조각은 basemap 도장 글자 + 코드 위치(mountAtlas 모듈)로 +274 B.
+  - `extract_text.py`·`extract_tables.py`는 계획 목록에 있었으나 박힌 경로가 없어(topics-check 는 설정 stamps `@work/…`, 표 경로는 설정 charts.out) **고치지 않음** — 도장 입력이라 고치면 p17-labels.json·topics 도장이 바뀜. 새 단원은 설정에 `@unit/…`을 쓰면 된다(atlas_common.stamp_path·geo_util.stampPath 가 풂).
+  - 단원 고르기: Python 은 atlas_common import 때 `sys.argv`에서 `--unit <id>`/`--unit=<id>`를 빼낸다(각 스크립트 옵션 해석 그대로). Node 는 `stripUnitArgs`. 자식 Python 에는 `UNIT.childEnv()`(ATLAS_UNIT)로 넘김(리뷰 지적 — 안 넘기면 `--unit u3`가 자식에서 u2). 설정에 maps·out 이 없으면 maps_<id>.json·sims/<sim>/data — 모든 스크립트가 UNIT.mapsPath·dataDir 로 같은 규칙.
+  - 도법 후보 `familiesFor`(지도 → 단원 georef.families → 1단계 8개, 차례 그대로)는 georef-cli 와 city_controls(고르기 fitControls·겹 나누기)에 모두. fit 17개·city-holdout.json 바이트 같음.
+  - `build_tint.py`·`build_natural.py`: tint·natural 절 없는 단원 설정이면 「공용 화상은 u2 설정으로」 알리고 멈춤(설계 §4.2 표).
+  - 대조표(G3): 1단계 장면 함수를 `config/u2.compare.json extraScenes`(단계 목록)로 옮김 — 차례·기다림·`--only` 동작·manifest 정보 키 차례 그대로(장면 차례·정보도 회귀 비교). 아시아 분기·알려진 차이 설명은 `checks`·`notes`. u2 출력 자리는 1단계 그대로(`shots/e2`, `compare-u2.html`), 새 단원 기본은 단원 작업 폴더 `shots/compare`·`compare.html`.
+  - **화소 비교 결함과 세계유산 캡처(리뷰 반영)**: 처음 `regress_png.py`는 RGBA 차이에 `getbbox()` 기본값(alpha_only=True, Pillow 12)을 써서 불투명 그림의 RGB 차이를 못 봤다(G0 커밋의 「다시 캡처해도 화소 차 0」도 이 결함 아래 값). 고친 뒤 보니 세계유산 3장면(heritage·-quiz·-quiz-answer)만 달랐고, 까닭은 1단계부터 퀴즈 seed 기본값이 `Date.now()`(캡처마다 문제가 다름). 그래서 compare_shots 가 설정 `fixedNow`(u2 = 1760918400000)면 쪽마다 `Date.now`를 고정(앱에서 Date.now 는 퀴즈 seed 에만 쓰임). 옛 main.js(4a97d5b)와 새 코드를 고정 시각으로 각각 41장 찍어 **41장 모두 화소 같음** → 기준선의 세계유산 3장을 옛 코드·고정 시각 캡처로 바꿈(옛 무작위 캡처 `baseline/shots-g0-random/`). 화면 지명 수(labels)는 캡처 뒤에 재는 값이라 heritage 에서 100↔101 로 흔들려 참고로만 봄(화소는 같음).
+  - 회귀 표(마지막 — b504479 코드로 파이프라인 15단계 처음부터, `--unit` 없이):
+
+    | 항목 | 기준선 | 지금 | 판정 |
+    |---|---|---|---|
+    | 해시 163개 | — | 다름 2 = coloring.json·basemap.json 도장 값만(나머지 바이트 같음) | 정당 |
+    | 대조표 캡처 41장 | — | 화소 차 0(RGB 포함), 장면 차례·정보 같음, 화면 값 같음(지명 수 흔들림 3 참고) | 같음 |
+    | 대조표 | 다름 0 · 알려진 차이 9 · 같음 134 · 참고 24 | 같음, HTML(만든 때 줄 뺌) 글자까지 같음 | 같음 |
+    | 조각 | 2,090,947 B | 2,091,221 B(+0.013%), check:embed 통과 | ±1% 안 |
+    | city-holdout.json | — | 바이트 같음 | 같음 |
+    | npm test | Node 354 · Python 184 | Node 379 · Python 193 | 통과 |
+  - 남은 것: ① `--unit u3`는 config/u3.json·maps_u3.json 이 생기는 U3-1 부터 돈다(지금은 설정 없음 오류). ② `unit.mjs`는 어느 도장 files 에도 없다 — 단원 풀이 규칙을 바꿔도 산출물이 낡았다고 나오지 않음(`@unit/`을 쓰는 설정이 생기면 생각). ③ compare_shots `--only`로 일부만 찍으면 manifest 차례가 바뀌어(1단계 동작) 회귀 비교는 전체 캡처로.
