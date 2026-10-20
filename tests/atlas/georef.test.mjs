@@ -197,6 +197,9 @@ const U3_MAPS = JSON.parse(readFileSync(new URL('../../scripts/atlas/maps_u3.jso
 const WORK_DIR = (process.env.ATLAS_WORK || 'C:/Users/Public/atlas-work').replace(/\\/g, '/');
 const u3Fits = U3_MAPS.map((m) => [m.id, `${WORK_DIR}/geo/${m.id}.fit.json`]).filter(([, f]) => existsSync(f));
 test('u3 fit: 지도마다 rmsMm·meanMm ≤ 0.5(approx 제외), 26·27쪽은 람베르트 정각 원뿔', { skip: u3Fits.length ? false : '작업 폴더에 u3 fit 없음' }, () => {
+  // fit 파일이 하나라도 있으면 지도 목록 15장 모두 있어야 한다(일부만 맞춘 채 남은 작업 폴더를 놓치지 않게)
+  assert.deepEqual(u3Fits.map(([id]) => id), U3_MAPS.map((m) => m.id), 'u3 fit 파일이 지도 목록과 다름');
+  assert.equal(U3_MAPS.length, 15);
   for (const [id, f] of u3Fits) {
     const fit = JSON.parse(readFileSync(f, 'utf8'));
     if (fit.approx) continue;

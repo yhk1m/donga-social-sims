@@ -11,11 +11,16 @@
   도형도 같은 너비만큼 줄인 뒤 넓이·중심을 잰다.
   tips: 해안·국경이 tipWindowPt 거리에서 tipTurnDeg 넘게 꺾이는 점(곶 끝·만 안쪽·국경 꺾인 점)을 양쪽에서 찾아 tipTolPt 안 서로 가장 가까운 짝 →
   (교과서 꼭짓점, 그 Natural Earth 꼭짓점 경위도). 섬 하나뿐인 삽입·나라 하나만 그린 지도(벨기에·이탈리아·아이슬란드)용.
-  짝 → 맞추기 → 다시 짝 을 iterations 번 되풀이하고, 투영식 잔차가 중앙값 + madK·1.4826·MAD(아래 minResidPt)를 넘는 짝을 빼고
+  짝 → 맞추기 → 다시 짝 을 iterations 번 되풀이하고(짝 목록이 같아지면 멈춤 — 끝까지 안 같아지면 경고), 투영식 잔차가 중앙값 + madK·1.4826·MAD(아래 minResidPt)를 넘는 짝을 빼고
   (교과서가 섬을 옮겨 그렸거나 잘못 짝지은 것), 넓은 도형부터 minSpacingPt 간격으로 성기게 고른다.
 
 설정
-  단원 설정 shapeControls(수치 기본값) + 지도 목록 항목 shapes:
+  단원 설정 shapeControls(수치 기본값 DEFAULTS 를 덮어씀) + 지도 목록 항목 shapes:
+    windowPadDeg      지도 틀을 되돌린 경위도 범위에 더하는 여유(°) — 이 안에 걸친 Natural Earth 도형만 투영
+    minProjectedFrac  Natural Earth 고리 꼭짓점 중 투영되는 비율이 이보다 낮으면 그 도형은 버림(투영 영역 밖으로 잘린 것)
+    seedMaxDistPt     처음 식 씨앗의 교과서 자리 c 가 어느 도형 안에도 없을 때 가장 가까운 도형 중심까지 허용 거리(pt)
+    tipMinAreaPt2     꺾인 점을 찾을 교과서 육지 도형의 최소 넓이(pt²)
+    tipOverlapFrac    교과서 도형과 가장 많이 겹친 투영 Natural Earth 도형의 겹친 넓이가 교과서 도형 넓이의 이 비율 미만이면 꺾인 점 짝을 찾지 않음
     target: "land"(기본 — 육지 조각·육지 구멍·호수) | "countries"(나라 조각 ADM0_A3 + 호수)
     insetPt, tips(true/false)
     init (처음 식 — 지도 기준점(경위선 교차점 등)이 3개 이상이면 그것으로 시작해 init 은 없어도 됨):
@@ -46,6 +51,7 @@ PHASE1_FAMILIES = ['azimuthalEqualArea', 'azimuthalEquidistant', 'conicEqualArea
 DEFAULTS = {'maxDistPt': 4.0, 'distFrac': 0.15, 'areaRatio': 1.6, 'minAreaPt2': 1.0, 'minCompactWater': 0.15, 'bigDeg': 40.0,
             'madK': 3.0, 'madFloorPt': 0.3, 'minResidPt': 1.0, 'maxDropFrac': 0.3, 'minSpacingPt': 4.0, 'iterations': 5,
             'tipTurnDeg': 50.0, 'tipTolPt': 2.0, 'tipStepPt': 0.5, 'tipWindowPt': 3.0, 'tipFrameMarginPt': 3.0,
+            'tipMinAreaPt2': 20.0, 'tipOverlapFrac': 0.3, 'seedMaxDistPt': 10.0, 'minProjectedFrac': 0.9, 'windowPadDeg': 3.0,
             'folds': 5, 'seed': 7}
 NE_FILES = {'land': 'raw/ne/ne_10m_land.geojson', 'lakes': 'raw/ne/ne_10m_lakes.geojson', 'countries': 'raw/ne/ne_10m_admin_0_countries.geojson'}
 
@@ -107,7 +113,7 @@ def ne_polys(target):
     return out
 
 
-def _window(fit, bbox, pad=3.0):
+def _window(fit, bbox, pad):
     xs = np.linspace(bbox[0], bbox[2], 9); ys = np.linspace(bbox[1], bbox[3], 9)
     ll = [p for p in node([{'op': 'invert', 'fit': fit, 'pts': [[x, y] for x in xs for y in ys]}])[0] if p]
     if not ll: raise RuntimeError('지도 틀을 경위도로 되돌릴 수 없음(처음 식이 틀림?)')
@@ -115,13 +121,13 @@ def _window(fit, bbox, pad=3.0):
     return a[:, 0].min() - pad, a[:, 1].min() - pad, a[:, 0].max() + pad, a[:, 1].max() + pad
 
 
-def project(fit, polys, inset=0.0):
+def project(fit, polys, inset=0.0, min_frac=DEFAULTS['minProjectedFrac']):
     """Natural Earth 도형들을 지면에 투영 → 도형마다 {poly(shapely, inset 적용), pts(투영 꼭짓점), ll(경위도 꼭짓점)} 또는 None."""
     res = node([{'op': 'apply', 'fit': fit, 'rings': [p['ring'].tolist() for p in polys]}])[0]
     out = []
     for p, xy in zip(polys, res):
         ok = [i for i, q in enumerate(xy) if q is not None]
-        if len(ok) < 4 or len(ok) < 0.9 * len(xy): out.append(None); continue
+        if len(ok) < 4 or len(ok) < min_frac * len(xy): out.append(None); continue
         P = np.asarray([xy[i] for i in ok]); L = p['ring'][ok]
         g = polygonal(Polygon(P).buffer(0))
         if g is not None and inset > 0: g = polygonal(g.buffer(-inset))
@@ -214,7 +220,7 @@ def _shape_controls(m):
 
 def _ne_for(m, fit, o, with_big=False):
     tgt = m['shapes'].get('target', 'land')
-    w = _window(fit, m['bbox'])
+    w = _window(fit, m['bbox'], o['windowPadDeg'])
     return [p for p in ne_polys(tgt) if (with_big or not p['big']) and
             not (p['bbox'][2] < w[0] or p['bbox'][0] > w[2] or p['bbox'][3] < w[1] or p['bbox'][1] > w[3])]
 
@@ -241,7 +247,7 @@ def initial_fit(m, base, shapes, o):
         cps = list(base)
         for sd in init['seeds']:
             s = min(cand, key=lambda s: 0 if s['poly'].contains(Point(sd['c'])) else math.dist(s['c'], sd['c']))
-            if not s['poly'].contains(Point(sd['c'])) and math.dist(s['c'], sd['c']) > 10:
+            if not s['poly'].contains(Point(sd['c'])) and math.dist(s['c'], sd['c']) > o['seedMaxDistPt']:
                 raise ValueError(f"{m['id']}: 씨앗 {sd['name']} 자리 {sd['c']} 근처에 교과서 도형 없음")
             lon, lat = _sphere_centroid(_containing(tgt, sd['at'])['ring'])
             cps.append({'name': sd['name'], 'xy': s['c'], 'lon': lon, 'lat': lat})
@@ -253,13 +259,13 @@ def initial_fit(m, base, shapes, o):
             ref = fit_of(_base_controls(maps()[init['fromMap']]) + _shape_controls(maps()[init['fromMap']]), families_for(maps()[init['fromMap']]))
             fit = {'family': ref['family'], 'params': ref['params'], 'sim': dict(ref['sim'])}   # 그 지도 기준점으로 바로 맞춤(fit 파일 차례에 기대지 않게)
             s = min(cand, key=lambda s: 0 if s['poly'].contains(Point(init['c'])) else math.dist(s['c'], init['c'])) if init.get('c') else max(cand, key=lambda s: s['area'])
-            pr = project(fit, polys)[0]
+            pr = project(fit, polys, min_frac=o['minProjectedFrac'])[0]
             c = pr['poly'].centroid
             fit['sim']['tx'] += s['c'][0] - c.x; fit['sim']['ty'] += s['c'][1] - c.y
             return fit
         lon0 = float(np.mean(np.concatenate([p['ring'][:, 0] for p in polys])))
         unit_fit = {'family': 'mercator', 'params': [lon0], 'sim': {'a': 1.0, 'b': 0.0, 'tx': 0.0, 'ty': 0.0}}
-        prs = [q['poly'] for q in project(unit_fit, polys) if q]
+        prs = [q['poly'] for q in project(unit_fit, polys, min_frac=o['minProjectedFrac']) if q]
         A1 = sum(g.area for g in prs); C1 = shapely.union_all(prs).centroid
         U = shapely.union_all([s['poly'] for s in cand]); A2 = U.area; C2 = U.centroid
         a = math.sqrt(A2 / A1)
@@ -272,7 +278,7 @@ def find_pairs(m, fit, shapes, o, fr):
     """지금 식으로 짝 → 기준점 후보 목록."""
     inset = m['shapes'].get('insetPt', 0.0)
     ne = _ne_for(m, fit, o)
-    pr = project(fit, ne, inset)
+    pr = project(fit, ne, inset, o['minProjectedFrac'])
     ne_s = [None if q is None else {'kind': p['kind'], 'area': q['poly'].area, 'c': [q['poly'].centroid.x, q['poly'].centroid.y]} for p, q in zip(ne, pr)]
     pdf = [s for s in shapes if not s['edge'] and s['area'] >= o['minAreaPt2'] and (s['kind'] == 'land' or s['compact'] >= o['minCompactWater'])]
     pairs = match_centroids(pdf, ne_s, o)
@@ -287,21 +293,21 @@ def find_pairs(m, fit, shapes, o, fr):
     if m['shapes'].get('tips'):
         neb = _ne_for(m, fit, o, with_big=True)
         nebl = [p for p in neb if p['kind'] == 'land']
-        prb = project(fit, nebl)
+        prb = project(fit, nebl, min_frac=o['minProjectedFrac'])
         for s in shapes:
-            if s['kind'] != 'land' or s['area'] < 20: continue
+            if s['kind'] != 'land' or s['area'] < o['tipMinAreaPt2']: continue
             best, bi = 0, None
             for k, q in enumerate(prb):
                 if q is None: continue
                 a = q['poly'].intersection(s['poly']).area if q['poly'].intersects(s['poly']) else 0
                 if a > best: best, bi = a, k
-            if bi is None or best < 0.3 * s['area']: continue
+            if bi is None or best < o['tipOverlapFrac'] * s['area']: continue
             q = prb[bi]
             inside = np.array([fr.contains(Point(x, y)) for x, y in q['pts']])
             if inside.sum() < 4: continue
             a_t = sharp_vertices(np.asarray(s['ring']), o, fr)
             b_pts = q['pts'][inside]; b_ll = q['ll'][inside]
-            b_t = sharp_vertices(b_pts, o, fr)
+            b_t = sharp_vertices(b_pts, o, fr, closed=bool(inside.all()))   # 틀 밖 꼭짓점을 뺐으면 닫힌 고리가 아니다(잘린 양 끝을 잇지 않음)
             for i, j in match_tips(a_t, b_t, o['tipTolPt']):
                 lon, lat = b_ll[b_t[j][2]]
                 out.append({'name': f"tip:{nebl[bi]['name']}@{lon:.2f},{lat:.2f}", 'type': 'tip', 'kind': 'land', 'xy': [a_t[i][0], a_t[i][1]],
@@ -314,6 +320,7 @@ def select(m, base, cand, o):
     fams = families_for(m); rep = {'mad': [], 'spacing': 0}
     cur = list(cand); n0 = len(cur)
     while cur:
+        if len(base) + len(cur) <= 4: break   # 더 빼면 맞추기에 쓸 점이 모자람
         fit = fit_of(base + cur, fams)
         r = fit['resid'][len(base):]
         med = float(np.median(r)); mad = float(np.median(np.abs(np.asarray(r) - med)))
@@ -347,6 +354,8 @@ def run_map(mid, o=None, log=print):
             f'{fit["family"]} rms {fit["rmsPt"]:.2f}pt')
         if key == prev: break
         prev = key
+    else:
+        log(f'  경고 {mid}: 되풀이 {o["iterations"]}번 안에 짝 목록이 같아지지 않음(수렴 안 함) — 마지막 짝으로 계속')
     chosen, rep = select(m, base, cand, o)
     fit = fit_of(base + chosen, fams)
     return {'id': mid, 'base': base, 'chosen': chosen, 'report': rep, 'fit': fit}

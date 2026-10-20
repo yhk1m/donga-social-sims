@@ -57,7 +57,7 @@
   "seed": 7
  },
  "shapeControls": {
-  "_doc": "섬·호수·나라 중심(곶 끝) 기준점 shape_controls.py 수치(지도별 대상·처음 식은 지도 목록 shapes). maxDistPt·distFrac = 짝 중심 거리 상한 max(maxDistPt, distFrac·√넓이), areaRatio = 넓이 비 상한, minCompactWater = 물 도형 원형도 하한(강 빼기), bigDeg = 경위도 폭이 이보다 큰 Natural Earth 도형(대륙)은 중심 짝에서 뺌, madK·madFloorPt·minResidPt·maxDropFrac = 잔차 거르기, minSpacingPt = 간격, tip* = 꺾인 점(tipWindowPt 거리에서 tipTurnDeg 넘게 꺾임, 짝 거리 tipTolPt), folds·seed = 겹 나누기.",
+  "_doc": "섬·호수·나라 중심(곶 끝) 기준점 shape_controls.py 수치(지도별 대상·처음 식은 지도 목록 shapes). maxDistPt·distFrac = 짝 중심 거리 상한 max(maxDistPt, distFrac·√넓이), areaRatio = 넓이 비 상한, minCompactWater = 물 도형 원형도 하한(강 빼기), bigDeg = 경위도 폭이 이보다 큰 Natural Earth 도형(대륙)은 중심 짝에서 뺌, madK·madFloorPt·minResidPt·maxDropFrac = 잔차 거르기, minSpacingPt = 간격, tip* = 꺾인 점(tipWindowPt 거리에서 tipTurnDeg 넘게 꺾임, 짝 거리 tipTolPt, tipMinAreaPt2 = 찾을 교과서 육지 최소 넓이, tipOverlapFrac = 투영 Natural Earth 도형과 겹친 넓이 비 하한), folds·seed = 겹 나누기. 적지 않은 수치는 shape_controls.py DEFAULTS(windowPadDeg = 틀 경위도 범위 여유, minProjectedFrac = 투영되는 꼭짓점 비 하한, seedMaxDistPt = 씨앗 자리 허용 거리 등).",
   "note": "controls 의 src:'shape' 는 교과서 섬·호수·나라 면의 넓이 중심(type centroid)과 해안·국경 꺾인 점(type tip) ↔ Natural Earth 10m 같은 도형(scripts/atlas/shape_controls.py --unit u3 가 고름, 교과서 도형은 land_shapes.py). 경위선 눈금이 없거나 적은 지도의 기준점.",
   "maxDistPt": 4.0,
   "distFrac": 0.15,
