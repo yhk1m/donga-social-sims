@@ -3,9 +3,12 @@
 #   find_pins(map_id, pc)          지도 핀 → [{xy, label?}]. pc = 설정 photos.pins[map_id]
 #                                  by=shape: 채움색·크기가 맞는 도형(anchor=bottom 이면 아래 가운데 = 물방울 핀 끝)
 #                                  by=text : 글꼴·색·크기·정규식이 맞는 번호 글자, 그 글자를 담는 가장 작은 원의 가운데
+#                                  excludeBoxes(선택): 이 상자 안의 핀은 뺀다(지도 틀 안에 든 삽입 지도의 핀 — 29쪽 아이슬란드)
 #   node_lonlat(pts)               {지도 id: [[x,y]...]} → {지도 id: [[lon,lat]|None ...]} (node 하위 프로세스)
 #   match_pins(items, pins, places, default_km)
 #                                  순수 함수: 번호 핀은 번호로, 번호 없는 핀은 pinNear 지명과 거리 합 최소 짝(assign.pair).
+#                                  같은 번호 핀이 여럿이면(33쪽 07 — 독일·이탈리아 동전) pinNear 가 있는 항목을 그 번호 핀들 안에서
+#                                  지명과 짝짓는다(번호 글자가 없는 지도에서는 예전처럼 번호 없는 핀 전체에서).
 #                                  항목별 상한 pinNearMaxKm(없으면 default_km). 한 지명의 상한 안에 핀이 둘 이상이면 모호 경고.
 #   assign_pins(items, cfg)        위를 엮은 것 → ({사진 id: {xy, lonlat, km?}}, 경고 목록, 짝 보고)
 import json, math, os, re, shutil, subprocess, sys
@@ -30,7 +33,8 @@ def km(a, b):
 def find_pins(map_id, pc):
     """지도 핀 → [{xy, label?}] (지면 pt, 지도 틀 안만, 같은 자리 두 번 그린 것은 하나로)."""
     m = maps()[map_id]; mb = m['bbox']; pno = m['page']
-    inside = lambda x, y: mb[0] <= x <= mb[2] and mb[1] <= y <= mb[3]
+    ex = pc.get('excludeBoxes', [])
+    inside = lambda x, y: mb[0] <= x <= mb[2] and mb[1] <= y <= mb[3] and not any(e[0] <= x <= e[2] and e[1] <= y <= e[3] for e in ex)
     pins = []
     if pc['by'] == 'shape':
         for d in drawings(pno):
@@ -123,9 +127,21 @@ def match_pins(items, pins, places, default_km):
             warnings.append(f'{it["id"]}: {tag} 에서 번호 {it["pin"]} 핀을 {len(hit)}개 찾음(1개여야 함, 찾은 번호 {sorted(p["label"] for p in pins if "label" in p)})')
             continue
         out[it['id']] = {'xy': hit[0]['xy'], 'lonlat': hit[0]['lonlat']}
-    named = [it for it in items if it.get('pinNear')]
-    if not named: return out, warnings, report
-    targets = [p for p in pins if 'label' not in p and p.get('lonlat')]
+    labels = {p['label'] for p in pins if 'label' in p}
+    # 같은 번호 핀 여럿: 번호 안에서 지명으로 짝(33쪽 07 동전 둘)
+    for n in sorted({it['pin'] for it in items if it.get('pinNear') and it['pin'] in labels}):
+        rows = [it for it in items if it.get('pinNear') and it['pin'] == n]
+        targets = [p for p in pins if p.get('label') == n and p.get('lonlat')]
+        _pair_near(rows, targets, places, default_km, f'{tag} 번호 {n} 핀', out, warnings, report)
+    named = [it for it in items if it.get('pinNear') and it['pin'] not in labels]
+    if named:
+        targets = [p for p in pins if 'label' not in p and p.get('lonlat')]
+        _pair_near(named, targets, places, default_km, f'{tag} 번호 없는 핀', out, warnings, report)
+    return out, warnings, report
+
+
+def _pair_near(named, targets, places, default_km, what, out, warnings, report):
+    """pinNear 항목들 ↔ 후보 핀들: 지명과의 거리 합 최소 짝(assign.pair). 결과·경고·보고를 넘겨받은 목록에 더한다."""
     refs, rows = {}, []
     for it in named:
         ref, why = place_lonlat(it['pinNear'], places)
@@ -138,12 +154,11 @@ def match_pins(items, pins, places, default_km):
             warnings.append(f'{it["id"]}: 「{it["pinNear"]}」 {lim(it)}km 안에 핀이 {len(near)}개 — 모호함(pinNearMaxKm 을 줄이거나 지명을 바꿀 것)')
     pr = pair(rows, targets, lambda it, p: km(refs[it['id']], p['lonlat']), lambda it, p: True, miss=lambda it: 1e6)
     for i, it in enumerate(rows):
-        if i not in pr: warnings.append(f'{it["id"]}: 짝지을 핀이 남지 않음({tag} 번호 없는 핀 {len(targets)}개)'); continue
+        if i not in pr: warnings.append(f'{it["id"]}: 짝지을 핀이 남지 않음({what} {len(targets)}개)'); continue
         p = targets[pr[i]]; d = km(refs[it['id']], p['lonlat'])
         if d > lim(it): warnings.append(f'{it["id"]}: 고른 핀이 「{it["pinNear"]}」에서 {d:.0f}km(상한 {lim(it)}km)')
         out[it['id']] = {'xy': p['xy'], 'lonlat': p['lonlat'], 'km': round(d)}
         report.append(f'{it["id"]}↔{it["pinNear"]} {d:.0f}km(≤{lim(it)})')
-    return out, warnings, report
 
 
 def assign_pins(items, c, root=ROOT):

@@ -160,7 +160,8 @@ def build_photos(warnings):
         rec = {'id': it['id'], 'page': pno, 'bbox': it['bbox'], 'topic': it['topic']}
         if it.get('mask'): rec['mask'] = it['mask']
         if it.get('titleBox'):
-            rec['title'] = pdfkit.box_text(pno, it['titleBox'])
+            # titleOverride = 상자 하나로 못 가르는 제목(둘째 줄이 번호 원 아래에서 시작 — 29쪽), 까닭은 항목의 _why
+            rec['title'] = it.get('titleOverride') or pdfkit.box_text(pno, it['titleBox'])
             if not rec['title']: warnings.append(f'{it["id"]}: titleBox 에 글자 없음')
         rec['caption'] = it.get('captionOverride') or pdfkit.box_text(pno, it['captionBox'])
         if not rec['caption']: warnings.append(f'{it["id"]}: 설명 글 없음')
@@ -280,4 +281,5 @@ def main(argv):
 
 
 if __name__ == '__main__':
+    sys.stdout.reconfigure(encoding='utf-8')   # 출력을 파일로 돌리면 cp949 라 경고의 「—」에서 죽는다
     sys.exit(main(sys.argv[1:]))

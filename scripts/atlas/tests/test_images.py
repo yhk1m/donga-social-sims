@@ -118,6 +118,24 @@ class MatchPins(unittest.TestCase):
         self.assertIn('2개', P.place_lonlat('같은', self.PLACES)[1])
         self.assertEqual(P.place_lonlat('고비사막', self.PLACES), ([103.7, 42.0], None))
 
+    def test_duplicate_number_paired_by_place(self):
+        # 33쪽 위치도: 07 이 둘(독일·이탈리아 동전) — pinNear 항목은 그 번호 핀들 안에서 지명과 짝, 다른 번호는 번호로
+        places = [{'name': '베를린', 'lon': 13.4, 'lat': 52.5, 'kind': 'capital'}, {'name': '로마', 'lon': 12.5, 'lat': 41.9, 'kind': 'capital'}]
+        pins = [{'xy': [1, 1], 'label': 7, 'lonlat': [13.2, 42.4]}, {'xy': [2, 2], 'label': 7, 'lonlat': [11.0, 52.7]},
+                {'xy': [3, 3], 'label': 1, 'lonlat': [-1.3, 53.2]}]
+        items = [self.it('a', pin=7, pinNear='베를린', pinNearMaxKm=220), self.it('b', pin=7, pinNear='로마', pinNearMaxKm=100), self.it(1)]
+        for it in items[:2]: it['pin'] = 7
+        out, w, rep = P.match_pins(items, pins, places, 600)
+        self.assertEqual(w, [])
+        self.assertEqual(out['x-a']['lonlat'], [11.0, 52.7]); self.assertEqual(out['x-b']['lonlat'], [13.2, 42.4])
+        self.assertEqual(out['x-1']['lonlat'], [-1.3, 53.2]); self.assertEqual(len(rep), 2)
+
+    def test_unlabelled_map_keeps_old_pairing(self):
+        # 번호 글자가 없는 지도(물방울 핀)는 pin 번호가 있어도 번호 없는 핀 전체에서 짝(u2 20·21쪽 그대로)
+        pins = [{'xy': [0, 0], 'lonlat': [103.0, 43.0]}]
+        out, w, _ = P.match_pins([self.it(1, pinNear='고비 사막', pinNearMaxKm=200)], pins, self.PLACES, 600)
+        self.assertEqual(w, []); self.assertEqual(out['x-1']['lonlat'], [103.0, 43.0])
+
     def test_unconvertible_pin_warns(self):
         out, w, _ = P.match_pins([self.it(1)], [{'xy': [0, 0], 'label': 1, 'lonlat': None}], [], 600)
         self.assertTrue(any('못 되돌린' in x for x in w))
@@ -206,6 +224,16 @@ class FindPins(unittest.TestCase):
     def test_numbered_pins(self):
         self.assertEqual(sorted(p['label'] for p in P.find_pins('p25-heritage', CFG['pins']['p25-heritage'])), list(range(1, 12)))
         self.assertEqual(sorted(p['label'] for p in P.find_pins('p22-religion', CFG['pins']['p22-religion'])), [1, 2, 3, 4])
+
+    def test_exclude_boxes(self):
+        # excludeBoxes 안의 핀은 뺀다(29쪽 기후 지도 틀 안의 아이슬란드 삽입 지도 핀)
+        class R:
+            def __init__(s, x0, y0, x1, y1): s.x0, s.y0, s.x1, s.y1, s.width, s.height = x0, y0, x1, y1, x1 - x0, y1 - y0
+        ds = [{'fill': (0x72 / 255, 0x51 / 255, 0xa1 / 255), 'rect': R(10, 10, 27, 29.5)}, {'fill': (0x72 / 255, 0x51 / 255, 0xa1 / 255), 'rect': R(100, 100, 117, 119.5)}]
+        pc = {'by': 'shape', 'fill': '#7251a1', 'w': [15, 19], 'h': [18, 22], 'anchor': 'bottom'}
+        with mock.patch.object(P, 'maps', return_value={'m': {'page': 1, 'bbox': [0, 0, 200, 200]}}), mock.patch.object(P, 'drawings', return_value=ds):
+            self.assertEqual(len(P.find_pins('m', pc)), 2)
+            self.assertEqual(P.find_pins('m', {**pc, 'excludeBoxes': [[0, 0, 50, 50]]}), [{'xy': [108.5, 119.5]}])
 
     def test_unknown_method(self):
         with self.assertRaises(ValueError): P.find_pins('p20-relief', {'by': 'magic'})
