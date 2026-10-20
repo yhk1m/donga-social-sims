@@ -6,7 +6,7 @@
 #    symbols:[{xy,cls,kind,color,size,label?,value?,anchor?,bar?}], lines:[{points,cls,kind,color,width?,value?,dir?,label?}],
 #    report:{..., warnings:[...]}}
 # mode: vector(zones.vector_zones) | raster(zones.raster_zones) | symbols(symbols.symbols) | density-markers(symbols.density_markers)
-#   | raster-circles(symbols.raster_circles — 렌더 화소에서 찾는 크기 단계 원).
+#   | raster-circles(symbols.raster_circles — 렌더 화소에서 찾는 크기 단계 원) | labelled-points(symbols.labelled_points — 이름 붙은 점).
 # 부가: hatch(빗금 분류), isotherm(lines.isotherms), flows(lines.flows).
 # domain: build_layers.mjs 가 쓰는 $ATLAS_WORK/geo/<map>.domain.json(경위도로 되돌릴 수 있는 지면 범위, 원통 도법 세계 지도)이
 #   있으면 면을 그 안으로 자른다(지도 가장자리 너머 꼭짓점이 역변환에 실패하지 않도록).
@@ -112,6 +112,9 @@ def features(layer_id):
         out['report'].update(rep)
     elif mode == 'raster-circles':   # 30쪽 도시 인구 원(렌더 화소에서 찾음 — symbols.raster_circles) + 사례 도시
         out['legend'], out['symbols'], rep = S.raster_circles(m, cfg, warnings)
+        out['report'].update(rep)
+    elif mode == 'labelled-points':  # 31쪽 녹색 수도(그림자 + 「도시(연도)」)·리스본(점 + 지시선 + 이름표 아래 값) — symbols.labelled_points
+        out['legend'], out['symbols'], rep = S.labelled_points(m, cfg, warnings)
         out['report'].update(rep)
     elif mode == 'density-markers':
         mc = cfg['marker']

@@ -117,6 +117,12 @@ function convert(layer, feat, fit) {
     const props = { type: 'symbol', cls: s.cls, kind: s.kind, label: s.label ?? s.kind, color: s.color, size: s.size };
     if (s.label != null) props.name = s.label;
     for (const k of ['value', 'anchor']) if (s[k] != null) props[k] = s[k];
+    // 값 붙은 기호(지면 이름표 아래 값 글자 — labelled-points): 설정 valueIcons 차례로 아이콘을 붙임(31쪽 리스본: 충전소·사람)
+    if (Array.isArray(s.values)) {
+      const icons = layer.valueIcons || [];
+      if (s.values.length !== icons.length) throw new Error(`${layer.id}: ${s.label} 값 ${s.values.length}개 ≠ valueIcons ${icons.length}`);
+      props.values = s.values.map((t, i) => ({ icon: icons[i], text: String(t) }));
+    }
     // 인구 막대: 지시선 끝(나라 위치)과 따로 놓인 막대 밑 가운데(barAt, 경위도)
     if (s.bar) {
       const b = cv.invert(s.bar);

@@ -248,3 +248,98 @@ def raster_circles(m, cfg, warnings):
         rep['cases'] = got
         if names and sorted(got) != sorted(names): warnings.append(f'사례 도시 이름 {got} ≠ 설정 {sorted(names)}')
     return legend, syms, rep
+
+
+# ── 이름 붙은 점 기호(31쪽 녹색 수도·리스본 사례) ───────────────────────────
+YEAR_RE = re.compile(r'(?<!\d)(\d{4})(?!\d)')
+NUMBER_RE = re.compile(r'\d+(?:\.\d+)?')
+
+
+def unique_spans(sp):
+    """같은 자리·같은 글자 조각(외곽선 효과로 여러 번 찍은 글자)을 하나로."""
+    seen, out = set(), []
+    for t in sp:
+        k = (t['text'], *[round(v, 1) for v in t['bbox']])
+        if k in seen: continue
+        seen.add(k); out.append(t)
+    return out
+
+
+def cluster_rects(rects, tol):
+    """지면 상자들 → 가까운(tol pt 안) 것끼리 묶은 상자들의 가운데 [(x, y)]. 한 기호가 여러 조각(그림자 일부가 다른 도형에 잘림)인 것 합치기."""
+    groups = []
+    for r in rects:
+        hit = [g for g in groups if r[0] - tol <= g[2] and g[0] - tol <= r[2] and r[1] - tol <= g[3] and g[1] - tol <= r[3]]
+        merged = [min([r[0]] + [g[0] for g in hit]), min([r[1]] + [g[1] for g in hit]), max([r[2]] + [g[2] for g in hit]), max([r[3]] + [g[3] for g in hit])]
+        groups = [g for g in groups if g not in hit] + [merged]
+    return [((g[0] + g[2]) / 2, (g[1] + g[3]) / 2) for g in groups]
+
+
+def _xover(a, b, pad=0.0):
+    return min(a[2], b[2]) + pad - max(a[0], b[0])
+
+
+def year_below(name, sp, gap=3.0):
+    """이름 바로 아래 줄(gap pt 안, 가로로 겹침)의 네 자리 연도 글자(괄호 조각이 섞여도) → '2013' 또는 None."""
+    nb = name['bbox']
+    for t in sp:
+        b = t['bbox']
+        if -1.0 <= b[1] - nb[3] <= gap and _xover(nb, b) > 0:
+            mt = YEAR_RE.search(t['text'])
+            if mt: return mt.group(1)
+    return None
+
+
+def values_below(name, sp, n, gap=4.0, pad=25.0):
+    """이름표 아래 줄(gap pt 안, 이름 좌우 pad pt 안)의 숫자 글자 n 개(왼→오른쪽, 같은 자리 겹침은 하나) → 글자 목록 또는 None."""
+    nb = name['bbox']; got = {}
+    for t in sp:
+        b = t['bbox']
+        if 0 <= b[1] - nb[3] <= gap and b[0] >= nb[0] - pad and b[2] <= nb[2] + pad and NUMBER_RE.fullmatch(t['text']):
+            got.setdefault(round(b[0], 1), t['text'])
+    vals = [got[k] for k in sorted(got)]
+    return vals if len(vals) == n else None
+
+
+def labelled_points(m, cfg, warnings):
+    """점(채움 도형 — 같은 기호 조각은 묶음) + 지면 이름(+ 아래 줄 연도 「스톡홀름(2010)」, 또는 이름표 아래 값 글자) → (legend, symbols, report).
+    설정 cfg['points'] {fills, sizePt:[최소, 최대], clusterPt}, cfg['names'] {colors, sizePt, re, maxPt(짝 거리)},
+    cfg['leaders'](있으면 지시선 끝으로 짝 — attach_leader_labels 와 같은 꼴 {stroke, width, maxGapPt, minLenPt}), cfg['year'](true 면 연도 붙임),
+    cfg['valueCount'](이름표 아래 값 수), cfg['legendLabel'], cfg['color'], cfg['expectPoints']."""
+    from assign import pair
+    pc, nc = cfg['points'], cfg['names']
+    lo, hi = pc['sizePt']
+    rects = [[d['rect'].x0, d['rect'].y0, d['rect'].x1, d['rect'].y1] for d in drawings(m['page'])
+             if hexc(d.get('fill')) in pc['fills'] and in_map(d, m) and lo <= max(d['rect'].width, d['rect'].height) <= hi]
+    pts = cluster_rects(rects, pc.get('clusterPt', 0.0))
+    exp = cfg.get('expectPoints')
+    if exp is not None and len(pts) != exp: raise ValueError(f"{cfg['id']}: 점 {len(pts)}개 ≠ expectPoints {exp}")
+    sp = unique_spans([t for t in spans(m['page']) if overlaps(rect(t['bbox']), m['bbox'])])
+    nre = re.compile(nc['re']); slo, shi = nc['sizePt']
+    names = [t for t in sp if (t.get('color') in nc['colors']) and slo <= t['size'] <= shi and nre.fullmatch(t['text'])
+             and not any(overlaps(rect(t['bbox']), b) for b in excluded_boxes(m))]
+    cen = lambda t: ((t['bbox'][0] + t['bbox'][2]) / 2, (t['bbox'][1] + t['bbox'][3]) / 2)
+    syms = [{'xy': [round(x, 2), round(y, 2)], 'cls': 'c1', 'kind': cfg['legendLabel'], 'color': cfg['color'], 'size': cfg.get('sizePt', 3.0)} for x, y in pts]
+    if cfg.get('leaders'):
+        attach_leader_labels(m, syms, cfg['leaders'], warnings)   # 지시선 한쪽 끝 = 이름, 다른 쪽 끝 = 점(label 을 붙임)
+        byname = {t['text']: t for t in names}
+        for s_ in syms:
+            if s_.get('label') not in byname: warnings.append(f"점 {s_['xy']} 이름 {s_.get('label')} 이 이름 목록에 없음"); s_.pop('label', None)
+            else: s_['_name'] = byname[s_['label']]
+    else:
+        got = pair(syms, names, lambda s_, t: float(np.hypot(s_['xy'][0] - cen(t)[0], s_['xy'][1] - cen(t)[1])),
+                   lambda s_, t: np.hypot(s_['xy'][0] - cen(t)[0], s_['xy'][1] - cen(t)[1]) <= nc['maxPt'])
+        for i, j in got.items(): syms[i]['label'] = names[j]['text']; syms[i]['_name'] = names[j]
+    for s_ in syms:
+        t = s_.pop('_name', None)
+        if t is None: warnings.append(f"점 {s_['xy']} 에 이름 없음"); continue
+        if cfg.get('year'):
+            y = year_below(t, sp)
+            if y: s_['label'] = f"{t['text']}({y})"
+            else: warnings.append(f"{t['text']}: 연도 글자 없음")
+        if cfg.get('valueCount'):
+            v = values_below(t, sp, cfg['valueCount'])
+            if v: s_['values'] = v
+            else: warnings.append(f"{t['text']}: 값 {cfg['valueCount']}개를 못 읽음")
+    legend = [{'cls': 'c1', 'color': cfg['color'], 'label': cfg['legendLabel'], 'kind': 'symbol'}]
+    return legend, syms, {'points': len(pts), 'names': len(names), 'labelled': sum(1 for s_ in syms if s_.get('label'))}

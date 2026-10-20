@@ -89,3 +89,25 @@ test('p30 도시 인구 원: 5단계(겹친 원 범례) + 사례 도시 6, 1,000
   assert.ok(near(ven, [12.33, 45.44], 0.5), `${ven}`);
   assert.ok(syms.length > 150 && syms.length < 300, `${syms.length}`);
 });
+
+test('p31 녹색 수도: 도시 15, 이름 = 지면 「도시(연도)」, 위치가 실제 도시와 0.6° 안', () => {
+  const L = read('p31-green-capital');
+  const syms = L.features.filter((f) => f.properties.type === 'symbol');
+  assert.equal(syms.length, 15);
+  for (const f of syms) assert.match(f.properties.name, /^[가-힣]+\((20(1\d|2[0-4]))\)$/);
+  assert.equal(new Set(syms.map((f) => f.properties.name.slice(-5, -1))).size, 15);   // 2010~2024 한 해 하나
+  const at = Object.fromEntries(syms.map((f) => [f.properties.name.replace(/\(.*/, ''), f.geometry.coordinates]));
+  const want = { 스톡홀름: [18.07, 59.33], 오슬로: [10.75, 59.91], 탈린: [24.75, 59.44], 코펜하겐: [12.57, 55.68], 리스본: [-9.14, 38.72], 류블랴나: [14.51, 46.06] };
+  for (const [n, [lon, lat]] of Object.entries(want)) assert.ok(Math.abs(at[n][0] - lon) < 0.6 && Math.abs(at[n][1] - lat) < 0.6, `${n} ${at[n]}`);
+});
+
+test('p31 리스본 사례: 도시 10 × 값 2(충전소·사람 아이콘, 지면 글자 그대로)', () => {
+  const L = read('p31-lisbon');
+  const syms = L.features.filter((f) => f.properties.type === 'symbol');
+  assert.equal(syms.length, 10);
+  const v = Object.fromEntries(syms.map((f) => [f.properties.name, f.properties.values.map((x) => `${x.icon}:${x.text}`)]));
+  assert.deepEqual(v['리스본'], ['charger:2.09', 'person:7.1']);
+  assert.deepEqual(v['오슬로'], ['charger:5.47', 'person:39.8']);
+  assert.deepEqual(v['헬싱키'], ['charger:1.16', 'person:13.8']);
+  assert.deepEqual(L.properties.valueLegend.map((x) => x.icon), ['charger', 'person']);
+});

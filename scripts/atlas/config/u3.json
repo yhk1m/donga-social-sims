@@ -306,6 +306,102 @@
    "legendStrokes": {
     "사례 도시": "#231f20"
    }
+  },
+  "p31-green-capital": {
+   "map": "p31-green-capital",
+   "type": "symbol",
+   "mode": "labelled-points",
+   "expectLegend": 1,
+   "expectPoints": 15,
+   "points": {
+    "fills": [
+     "#a3a197"
+    ],
+    "sizePt": [
+     1.0,
+     6.0
+    ],
+    "clusterPt": 4.0,
+    "_doc": "녹색 공(9pt 인라인 그림) 밑 그림자 타원(가장 바깥 #a3a197) — 공이 땅에 닿은 자리가 도시(오슬로·탈린 등 Natural Earth 와 1~4pt). 다른 도형에 잘린 조각은 묶음"
+   },
+   "names": {
+    "colors": [
+     "#231f20"
+    ],
+    "sizePt": [
+     5.5,
+     5.9
+    ],
+    "re": "[가-힣]+",
+    "maxPt": 30
+   },
+   "year": true,
+   "legendLabel": "유럽 녹색 수도",
+   "color": "#5bb947",
+   "sizePt": 3.2,
+   "legendShapes": {
+    "유럽 녹색 수도": "circle"
+   },
+   "legendStrokes": {
+    "유럽 녹색 수도": "#2e7d32"
+   },
+   "_legend": "31쪽 지도에 범례 상자는 없음 — 화면 범례 「유럽 녹색 수도」(지면 공 그림 색)"
+  },
+  "p31-lisbon": {
+   "map": "p31-lisbon",
+   "type": "symbol",
+   "mode": "labelled-points",
+   "expectLegend": 1,
+   "expectPoints": 10,
+   "points": {
+    "fills": [
+     "#231f20"
+    ],
+    "sizePt": [
+     2.0,
+     2.6
+    ],
+    "clusterPt": 0
+   },
+   "names": {
+    "colors": [
+     "#ffffff"
+    ],
+    "sizePt": [
+     5.5,
+     5.9
+    ],
+    "re": "[가-힣]+",
+    "maxPt": 60
+   },
+   "leaders": {
+    "stroke": "#231f20",
+    "width": 0.3,
+    "maxGapPt": 16,
+    "minLenPt": 4
+   },
+   "valueCount": 2,
+   "valueIcons": [
+    "charger",
+    "person"
+   ],
+   "valueLegend": [
+    {
+     "icon": "charger",
+     "label": "1km² 당 전기 자동차 충전소"
+    },
+    {
+     "icon": "person",
+     "label": "인구 100명당 전기 자동차 충전소"
+    }
+   ],
+   "legendLabel": "도시",
+   "color": "#231f20",
+   "sizePt": 2.3,
+   "legendShapes": {
+    "도시": "circle"
+   },
+   "_doc": "31쪽 리스본 사례 작은 지도: 도시 점 10(설계는 9 — 실제 오슬로·스톡홀름·헬싱키·더블린·런던·암스테르담·브뤼셀·베를린·부다페스트·리스본) + 지시선 + 초록 이름표(흰 글자) 아래 값 두 개(교과서 글자를 그대로 — 손으로 적지 않음)"
   }
  },
  "_layers": "U3-4 에서 채움(u2 꼴: map·type·mode·tol·minArea·expectLegend·색 대응).",
