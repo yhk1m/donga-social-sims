@@ -236,3 +236,15 @@ test('boxRingLonLat: 삽입 지도 틀 둘레를 fit 으로 되돌린 닫힌 경
   assert.deepEqual(ring[8], [-13, 63]);
   assert.throws(() => boxRingLonLat({ invert: () => null }, [0, 0, 1, 1], 2), /되돌릴 수 없음/);
 });
+
+test('snapSymbols: 이름(끝 「(연도)」 뺌)이 Natural Earth 에 하나뿐이고 30km 넘게 어긋나면 옮김, 둘 이상·가까우면 그대로', async () => {
+  const { snapSymbols } = await import('../../scripts/atlas/build_layers.mjs');
+  const pt = (name, c) => ({ type: 'Feature', properties: { type: 'symbol', name }, geometry: { type: 'Point', coordinates: c } });
+  const ne = new Map([['스톡홀름', [{ lon: 18.066, lat: 59.324 }]], ['발렌시아', [{ lon: -0.4, lat: 39.49 }, { lon: -68, lat: 10.2 }]], ['오슬로', [{ lon: 10.75, lat: 59.91 }]]]);
+  const fs = [pt('스톡홀름(2010)', [16.96, 58.79]), pt('발렌시아(2024)', [-1.5, 39]), pt('오슬로(2019)', [10.6, 59.85])];
+  assert.equal(snapSymbols(fs, ne, 30), 1);
+  assert.deepEqual(fs[0].geometry.coordinates, [18.066, 59.324]);
+  assert.ok(fs[0].properties.snapped.km > 80);
+  assert.deepEqual(fs[1].geometry.coordinates, [-1.5, 39]);
+  assert.equal(fs[2].properties.snapped, undefined);
+});

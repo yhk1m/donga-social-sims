@@ -18,7 +18,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { makeConverter } from './georef.mjs';
-import { WORK, loadFit } from './geo_util.mjs';
+import { WORK, loadFit, neIndex, key, km } from './geo_util.mjs';
 import { resolveUnit, stripUnitArgs } from './unit.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -283,6 +283,26 @@ export function applySymbolValues(layer, features) {
   }
 }
 
+/**
+ * 옮겨 그린 기호 바로잡기(설정 snapKm·snapBox — 지명 C2 와 같은 규칙): 이름 붙은 기호(properties.name, 끝의 「(연도)」는 뺌) 중 Natural Earth 10m
+ * 인구 지점에 같은 한국어 이름(snapBox 안)이 하나뿐인데 snapKm 넘게 어긋나면 그 경위도로 옮기고 snapped {from, km} 를 남긴다(제자리). → 옮긴 수
+ */
+export function snapSymbols(features, ne, snapKm) {
+  let n = 0;
+  for (const f of features) {
+    const p = f.properties;
+    if (p.type !== 'symbol' || !p.name || f.geometry.type !== 'Point') continue;
+    const m = ne.get(key(String(p.name).replace(/\(\d{4}\)$/, '')));
+    if (!m || m.length !== 1) continue;
+    const d = km(f.geometry.coordinates, [m[0].lon, m[0].lat]);
+    if (d <= snapKm) continue;
+    f.properties = { ...p, snapped: { from: f.geometry.coordinates.map(r3), km: Math.round(d) } };
+    f.geometry = { type: 'Point', coordinates: [r3(m[0].lon), r3(m[0].lat)] };
+    n++;
+  }
+  return n;
+}
+
 function finish(layer, meta) {
   const m = maps[layer.map];
   const clipped = JSON.parse(fs.readFileSync(`${WORK}/geo/${layer.id}.clipped.geojson`, 'utf8'));
@@ -291,6 +311,12 @@ function finish(layer, meta) {
   for (const f of features) if (colorOfCls.has(f.properties.cls)) f.properties = { ...f.properties, color: colorOfCls.get(f.properties.cls) };
   const sizes = applySymbolSizes(layer, legend, features);
   applySymbolValues(layer, features);
+  if (layer.snapKm) {
+    const ne = neIndex(`${WORK}/raw/ne/ne_10m_populated_places.geojson`, layer.snapBox || [-180, -90, 180, 90]);
+    if (!ne) throw new Error(`${layer.id}: snapKm 에 쓸 Natural Earth 인구 지점 파일이 없음`);
+    const n = snapSymbols(features, ne, layer.snapKm);
+    if (n) meta.warnings = [...(meta.warnings || []), `Natural Earth 위치로 옮긴 기호 ${n}개(${layer.snapKm}km 넘게 어긋남): ${features.filter((f) => f.properties.snapped).map((f) => `${f.properties.name} ${f.properties.snapped.km}km`).join(', ')}`];
+  }
   const present = new Set(features.map((f) => f.properties.cls));
   const ne = layer.source === 'ne';
   const props = {

@@ -99,6 +99,9 @@ test('p31 녹색 수도: 도시 15, 이름 = 지면 「도시(연도)」, 위치
   const at = Object.fromEntries(syms.map((f) => [f.properties.name.replace(/\(.*/, ''), f.geometry.coordinates]));
   const want = { 스톡홀름: [18.07, 59.33], 오슬로: [10.75, 59.91], 탈린: [24.75, 59.44], 코펜하겐: [12.57, 55.68], 리스본: [-9.14, 38.72], 류블랴나: [14.51, 46.06] };
   for (const [n, [lon, lat]] of Object.entries(want)) assert.ok(Math.abs(at[n][0] - lon) < 0.6 && Math.abs(at[n][1] - lat) < 0.6, `${n} ${at[n]}`);
+  // 교과서 공은 글자 자리 때문에 옮겨 그린 것이 많다(스톡홀름 87km·에센 104km) → 30km 넘으면 Natural Earth 위치(snapped 기록)
+  const sn = syms.filter((f) => f.properties.snapped);
+  assert.ok(sn.length >= 5 && sn.every((f) => f.properties.snapped.km > 30), sn.map((f) => f.properties.name).join());
 });
 
 test('p31 리스본 사례: 도시 10 × 값 2(충전소·사람 아이콘, 지면 글자 그대로)', () => {
