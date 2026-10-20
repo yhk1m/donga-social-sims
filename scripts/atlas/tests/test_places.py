@@ -71,6 +71,12 @@ class Group(unittest.TestCase):
         names = [L['name'] for L in PL.group(spans, frozenset({'엘베강'}))]
         self.assertEqual(names, ['엘베강'])
 
+    def test_multi_char_lines_keep_space(self):
+        # 한 글자 줄 잇기의 회귀 시험: 두 줄이 모두 여러 글자면 줄 사이 공백을 지킨다(26쪽 보스니아 / 헤르체고비나)
+        spans = [_sp('보스니아', 100, 100), _sp('헤르체고비나', 96, 107)]
+        names = [L['name'] for L in PL.group(spans, frozenset({'보스니아헤르체고비나'}))]
+        self.assertEqual(names, ['보스니아 헤르체고비나'])
+
 
 def _gs(text, x, y, font='HelveticaNeue-Roman', size=5.0, w=None, d=(1.0, 0.0), color='#231f20'):
     w = w if w is not None else 0.5 * size * len(text)

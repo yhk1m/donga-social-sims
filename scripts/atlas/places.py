@@ -232,7 +232,9 @@ def _label(lines):
     parts = [_line(L) for L in lines]
     if len(parts) == 1: name, path = parts[0]
     else:
-        # 줄 사이 공백(보스니아 헤르체고비나). 한 글자 줄이 끼면 낱말 가운데서 줄이 꺾인 것이라 공백 없이(세로로 쌓인 엘 / 베강)
+        # 규칙(모든 단원 공통): 여러 줄 지명은 줄 사이를 공백 하나로 잇는다(보스니아 / 헤르체고비나 → 보스니아 헤르체고비나).
+        # 다만 어느 한 줄이라도 한 글자(공백 뺀 열쇠 길이 1)면 낱말 가운데서 줄이 꺾인 것이라 공백 없이 잇는다(세로로 쌓인 엘 / 베강 → 엘베강).
+        # 여러 글자 줄끼리는 언제나 공백을 지킨다 — test_places.Group.test_multi_char_lines_keep_space.
         name = ('' if any(len(key(p[0])) == 1 for p in parts) else ' ').join(p[0] for p in parts)
         main = max(parts, key=lambda p: _plen(p[1]))[1]
         (ux, uy), mx, my = _centre(bb), sum(q[0] for q in main) / len(main), sum(q[1] for q in main) / len(main)
@@ -442,6 +444,9 @@ def extract(map_id, keys=None):
     excl = excluded_boxes(m)
     warnings, dropped, kept, elevs, notes = [], [], [], [], []
     unknown = Counter()
+    # 순서 주의: glue 는 양식 표(style_of, ignore 단계)보다 먼저 돈다. u3 의 낱자 숫자 규칙(textRe ^[0-9]$, 기울여 한 글자씩 놓은
+    # 산 높이 1|8|9|5)은 이 순서에 기댄다 — 잇기 전의 한 자리 숫자 조각은 산 높이 규칙에 안 맞아 무시·양식 표에 없음으로 빠지므로,
+    # glue 를 ignore 뒤로 옮기면 1895 가 사라진다.
     for s in glue_spans(pdfkit.page_spans(pno), cfg.get('glue', [])):
         b = s['bbox']
         if not _in_box(b, m['bbox']): dropped.append({'text': s['text'], 'why': '지도 틀 밖'}); continue
