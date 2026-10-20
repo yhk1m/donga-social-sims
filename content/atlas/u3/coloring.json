@@ -1,0 +1,745 @@
+{
+ "_doc": "coloring_quiz.mjs 생성물(직접 고치지 말고 고칠 값은 overrides.json). name = 나라 이름(교과서 지명), label = 색칠하기 지도 글자(초성 또는 이름), iso = Natural Earth ADM0_A3, labelIso = 글자가 놓인 다른 나라, capitalFrom = printed(색칠하기 지도에 적힌 수도)·places(일반도 수도 지명)·places+ne(여럿 중 Natural Earth 수도에 가까운 것).",
+ "page": 27,
+ "map": "p27-coloring",
+ "inputsHash": "f50139c49dc55c7a05fecf3b0298afd964f48857a06c170de61baabd9438a91a",
+ "countries": [
+  {
+   "name": "알바니아",
+   "label": "알바니아",
+   "iso": "ALB",
+   "neName": "Albania",
+   "labelLonlat": [
+    19.4434,
+    40.835
+   ],
+   "capital": "티라나",
+   "capitalLonlat": [
+    19.83,
+    41.33
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "안도라",
+   "label": "안도라",
+   "iso": "AND",
+   "neName": "Andorra",
+   "labelLonlat": [
+    3.0846,
+    43.1285
+   ],
+   "labelIso": "FRA",
+   "capital": "안도라라베야",
+   "capitalLonlat": [
+    1.57,
+    42.52
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "오스트리아",
+   "label": "ㅇㅅㅌㄹㅇ",
+   "iso": "AUT",
+   "neName": "Austria",
+   "labelLonlat": [
+    14.2517,
+    47.3567
+   ],
+   "capital": "빈",
+   "capitalLonlat": [
+    16.36,
+    48.2
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "벨기에",
+   "label": "ㅂㄱㅇ",
+   "iso": "BEL",
+   "neName": "Belgium",
+   "labelLonlat": [
+    4.9846,
+    50.276
+   ],
+   "capital": "브뤼셀",
+   "capitalLonlat": [
+    4.37,
+    50.83
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "불가리아",
+   "label": "ㅂㄱㄹㅇ",
+   "iso": "BGR",
+   "neName": "Bulgaria",
+   "labelLonlat": [
+    25.3636,
+    42.9254
+   ],
+   "capital": "소피아",
+   "capitalLonlat": [
+    23.31,
+    42.66
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "보스니아 헤르체고비나",
+   "label": "보스니아 헤르체고비나",
+   "iso": "BIH",
+   "neName": "Bosnia and Herz.",
+   "labelLonlat": [
+    17.4634,
+    44.3974
+   ],
+   "capital": "사라예보",
+   "capitalLonlat": [
+    18.38,
+    43.83
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "벨라루스",
+   "label": "ㅂㄹㄹㅅ",
+   "iso": "BLR",
+   "neName": "Belarus",
+   "labelLonlat": [
+    27.6969,
+    53.0419
+   ],
+   "capital": "민스크",
+   "capitalLonlat": [
+    27.56,
+    53.9
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "스위스",
+   "label": "ㅅㅇㅅ",
+   "iso": "CHE",
+   "neName": "Switzerland",
+   "labelLonlat": [
+    8.7036,
+    46.6618
+   ],
+   "capital": "베른",
+   "capitalLonlat": [
+    7.47,
+    46.92
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "키프로스",
+   "label": "키프로스",
+   "iso": "CYP",
+   "neName": "Cyprus",
+   "labelLonlat": [
+    33.3585,
+    34.7886
+   ],
+   "capital": "니코시아",
+   "capitalLonlat": [
+    33.37,
+    35.17
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "체코",
+   "label": "ㅊㅋ",
+   "iso": "CZE",
+   "neName": "Czechia",
+   "labelLonlat": [
+    15.3807,
+    49.5288
+   ],
+   "capital": "프라하",
+   "capitalLonlat": [
+    14.42,
+    50.09
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "독일",
+   "label": "ㄷㅇ",
+   "iso": "DEU",
+   "neName": "Germany",
+   "labelLonlat": [
+    10.1287,
+    51.174
+   ],
+   "capital": "베를린",
+   "capitalLonlat": [
+    13.42,
+    52.5
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "덴마크",
+   "label": "덴마크",
+   "iso": "DNK",
+   "neName": "Denmark",
+   "labelLonlat": [
+    9.1501,
+    56.0129
+   ],
+   "capital": "코펜하겐",
+   "capitalLonlat": [
+    12.52,
+    55.69
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "에스파냐",
+   "label": "ㅇㅅㅍㄴ",
+   "iso": "ESP",
+   "neName": "Spain",
+   "labelLonlat": [
+    -3.4237,
+    39.588
+   ],
+   "capital": "마드리드",
+   "capitalLonlat": [
+    -3.69,
+    40.4
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "에스토니아",
+   "label": "에스토니아",
+   "iso": "EST",
+   "neName": "Estonia",
+   "labelLonlat": [
+    25.5336,
+    58.6822
+   ],
+   "capital": "탈린",
+   "capitalLonlat": [
+    24.73,
+    59.43
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "핀란드",
+   "label": "ㅍㄹㄷ",
+   "iso": "FIN",
+   "neName": "Finland",
+   "labelLonlat": [
+    26.6247,
+    62.5929
+   ],
+   "capital": "헬싱키",
+   "capitalLonlat": [
+    24.93,
+    60.25
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "프랑스",
+   "label": "ㅍㄹㅅ",
+   "iso": "FRA",
+   "neName": "France",
+   "labelLonlat": [
+    2.6158,
+    46.5283
+   ],
+   "capital": "파리",
+   "capitalLonlat": [
+    2.35,
+    48.86
+   ],
+   "capitalFrom": "places+ne"
+  },
+  {
+   "name": "영국",
+   "label": "ㅇㄱ",
+   "iso": "GBR",
+   "neName": "United Kingdom",
+   "labelLonlat": [
+    -1.5256,
+    52.4736
+   ],
+   "capital": "런던",
+   "capitalLonlat": [
+    -0.12,
+    51.46
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "그리스",
+   "label": "ㄱㄹㅅ",
+   "iso": "GRC",
+   "neName": "Greece",
+   "labelLonlat": [
+    21.6048,
+    39.489
+   ],
+   "capital": "아테네",
+   "capitalLonlat": [
+    23.73,
+    37.99
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "크로아티아",
+   "label": "크로아티아",
+   "iso": "HRV",
+   "neName": "Croatia",
+   "labelLonlat": [
+    16.9343,
+    45.2552
+   ],
+   "labelIso": "BIH",
+   "capital": "자그레브",
+   "capitalLonlat": [
+    16,
+    45.8
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "헝가리",
+   "label": "ㅎㄱㄹ",
+   "iso": "HUN",
+   "neName": "Hungary",
+   "labelLonlat": [
+    19.4882,
+    46.8795
+   ],
+   "capital": "부다페스트",
+   "capitalLonlat": [
+    19.08,
+    47.5
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "아일랜드",
+   "label": "ㅇㅇㄹㄷ",
+   "iso": "IRL",
+   "neName": "Ireland",
+   "labelLonlat": [
+    -7.986,
+    53.6169
+   ],
+   "capital": "더블린",
+   "capitalLonlat": [
+    -6.26,
+    53.35
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "아이슬란드",
+   "label": "ㅇㅇㅅㄹㄷ",
+   "iso": "ISL",
+   "neName": "Iceland",
+   "labelLonlat": [
+    -17.9469,
+    64.6273
+   ],
+   "capital": "레이캬비크",
+   "capitalLonlat": [
+    -21.94,
+    64.14
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "이탈리아",
+   "label": "ㅇㅌㄹㅇ",
+   "iso": "ITA",
+   "neName": "Italy",
+   "labelLonlat": [
+    13.014,
+    42.5213
+   ],
+   "capital": "로마",
+   "capitalLonlat": [
+    12.67,
+    41.87
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "코소보",
+   "label": "코소보",
+   "iso": "KOS",
+   "neName": "Kosovo",
+   "labelLonlat": [
+    22.1386,
+    42.5083
+   ],
+   "labelIso": "SRB",
+   "capital": "프리슈티나",
+   "capitalLonlat": [
+    21.21,
+    42.53
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "리히텐슈타인",
+   "label": "리히텐슈타인",
+   "iso": "LIE",
+   "neName": "Liechtenstein",
+   "labelLonlat": [
+    10.5079,
+    47.58
+   ],
+   "labelIso": "DEU",
+   "capital": "파두츠",
+   "capitalLonlat": [
+    9.63,
+    47.15
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "리투아니아",
+   "label": "리투아니아",
+   "iso": "LTU",
+   "neName": "Lithuania",
+   "labelLonlat": [
+    23.8002,
+    55.4205
+   ],
+   "capital": "빌뉴스",
+   "capitalLonlat": [
+    25.28,
+    54.64
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "룩셈부르크",
+   "label": "ㄹㅅㅂㄹㅋ",
+   "iso": "LUX",
+   "neName": "Luxembourg",
+   "labelLonlat": [
+    6.2134,
+    48.6847
+   ],
+   "labelIso": "FRA",
+   "capital": "룩셈부르크",
+   "capitalLonlat": [
+    6.13,
+    49.61
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "라트비아",
+   "label": "라트비아",
+   "iso": "LVA",
+   "neName": "Latvia",
+   "labelLonlat": [
+    26.0114,
+    56.7477
+   ],
+   "capital": "리가",
+   "capitalLonlat": [
+    24.12,
+    56.92
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "모나코",
+   "label": "모나코",
+   "iso": "MCO",
+   "neName": "Monaco",
+   "labelLonlat": [
+    6.5401,
+    43.2272
+   ],
+   "labelIso": "FRA",
+   "capital": "모나코",
+   "capitalLonlat": [
+    7.37,
+    43.76
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "몰도바",
+   "label": "몰도바",
+   "iso": "MDA",
+   "neName": "Moldova",
+   "labelLonlat": [
+    28.2417,
+    47.4881
+   ],
+   "capital": "키시너우",
+   "capitalLonlat": [
+    28.85,
+    47.01
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "북마케도니아",
+   "label": "북마케도니아",
+   "iso": "MKD",
+   "neName": "North Macedonia",
+   "labelLonlat": [
+    21.8727,
+    41.4216
+   ],
+   "capital": "스코페",
+   "capitalLonlat": [
+    21.43,
+    42
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "몰타",
+   "label": "몰타",
+   "iso": "MLT",
+   "neName": "Malta",
+   "labelLonlat": [
+    14.4673,
+    35.0679
+   ],
+   "capital": "발레타",
+   "capitalLonlat": [
+    14.47,
+    35.96
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "몬테네그로",
+   "label": "몬테네그로",
+   "iso": "MNE",
+   "neName": "Montenegro",
+   "labelLonlat": [
+    17.7125,
+    42.4119
+   ],
+   "capital": "포드고리차",
+   "capitalLonlat": [
+    19.25,
+    42.45
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "네덜란드",
+   "label": "ㄴㄷㄹㄷ",
+   "iso": "NLD",
+   "neName": "Netherlands",
+   "labelLonlat": [
+    5.3506,
+    52.8285
+   ],
+   "capital": "암스테르담",
+   "capitalLonlat": [
+    4.91,
+    52.35
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "노르웨이",
+   "label": "ㄴㄹㅇㅇ",
+   "iso": "NOR",
+   "neName": "Norway",
+   "labelLonlat": [
+    9.1939,
+    60.8578
+   ],
+   "capital": "오슬로",
+   "capitalLonlat": [
+    10.76,
+    59.9
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "폴란드",
+   "label": "ㅍㄹㄷ",
+   "iso": "POL",
+   "neName": "Poland",
+   "labelLonlat": [
+    18.5052,
+    52.1075
+   ],
+   "capital": "바르샤바",
+   "capitalLonlat": [
+    21.02,
+    52.21
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "포르투갈",
+   "label": "ㅍㄹㅌㄱ",
+   "iso": "PRT",
+   "neName": "Portugal",
+   "labelLonlat": [
+    -8.5891,
+    39.6802
+   ],
+   "capital": "리스본",
+   "capitalLonlat": [
+    -9.23,
+    38.71
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "루마니아",
+   "label": "ㄹㅁㄴㅇ",
+   "iso": "ROU",
+   "neName": "Romania",
+   "labelLonlat": [
+    24.9633,
+    45.7988
+   ],
+   "capital": "부쿠레슈티",
+   "capitalLonlat": [
+    26.1,
+    44.43
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "러시아",
+   "label": "ㄹ ㅅ ㅇ",
+   "iso": "RUS",
+   "neName": "Russia",
+   "labelLonlat": [
+    43.8095,
+    57.5243
+   ],
+   "capital": "모스크바",
+   "capitalLonlat": [
+    37.63,
+    55.73
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "산마리노",
+   "label": "산마리노",
+   "iso": "SMR",
+   "neName": "San Marino",
+   "labelLonlat": [
+    11.45,
+    44.2918
+   ],
+   "labelIso": "ITA",
+   "capital": "산마리노",
+   "capitalLonlat": [
+    12.46,
+    43.92
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "세르비아",
+   "label": "세르비아",
+   "iso": "SRB",
+   "neName": "Serbia",
+   "labelLonlat": [
+    20.9575,
+    43.8376
+   ],
+   "capital": "베오그라드",
+   "capitalLonlat": [
+    20.47,
+    44.82
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "슬로바키아",
+   "label": "슬로바키아",
+   "iso": "SVK",
+   "neName": "Slovakia",
+   "labelLonlat": [
+    19.9156,
+    48.8845
+   ],
+   "capital": "브라티슬라바",
+   "capitalLonlat": [
+    17.16,
+    48.17
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "슬로베니아",
+   "label": "슬로베니아",
+   "iso": "SVN",
+   "neName": "Slovenia",
+   "labelLonlat": [
+    14.568,
+    46.3499
+   ],
+   "capital": "류블랴나",
+   "capitalLonlat": [
+    14.48,
+    46.04
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "스웨덴",
+   "label": "ㅅㅇㄷ",
+   "iso": "SWE",
+   "neName": "Sweden",
+   "labelLonlat": [
+    14.9366,
+    62.3639
+   ],
+   "capital": "스톡홀름",
+   "capitalLonlat": [
+    18.11,
+    59.32
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "우크라이나",
+   "label": "ㅇㅋㄹㅇㄴ",
+   "iso": "UKR",
+   "neName": "Ukraine",
+   "labelLonlat": [
+    31.2144,
+    48.9168
+   ],
+   "capital": "키이우",
+   "capitalLonlat": [
+    30.53,
+    50.42
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "바티칸",
+   "label": "바티칸",
+   "iso": "VAT",
+   "neName": "Vatican",
+   "labelLonlat": [
+    12.0986,
+    41.3243
+   ]
+  }
+ ]
+}

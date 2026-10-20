@@ -1,0 +1,1208 @@
+[
+ {
+  "id": "general",
+  "title": "일반도",
+  "pages": [26],
+  "view": {
+   "map": "p26-europe"
+  },
+  "layers": [],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "map-text",
+    "type": "text",
+    "titleSrc": {
+     "page": 26,
+     "bbox": [83, 161, 118, 179]
+    },
+    "src": {
+     "page": 26,
+     "bbox": [45, 183, 139, 192]
+    },
+    "title": "유 럽",
+    "text": "람베르트 정각 원뿔 도법 1:20,000,000"
+   },
+   {
+    "id": "page-26",
+    "type": "page",
+    "page": 26
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "coloring",
+  "title": "색칠하기",
+  "pages": [27],
+  "view": {
+   "map": "p27-coloring"
+  },
+  "layers": [],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 27,
+     "bbox": [54, 673, 262, 693],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 지리 정보와 매체를 활용하여 유럽의 국가와 주요 도시의 위치를 표현할 수 있다."
+   },
+   {
+    "id": "text-1",
+    "type": "text",
+    "titleSrc": {
+     "page": 27,
+     "bbox": [96, 34, 203, 47]
+    },
+    "src": {
+     "page": 27,
+     "bbox": [55, 59, 290, 133],
+     "skip": "레이캬비크 ㅇㅇㅅㄹㄷ",
+     "_skip": "본문 글상자 밑에 가려진 아이슬란드 지도 글자(수도·나라 초성)가 상자 안에 있어 먼저 나온다 — 떼어 냄"
+    },
+    "title": "유럽의 국가와 주요 도시",
+    "text": "유럽 대륙의 동쪽은 우랄산맥과 카스피해, 흑해 등을 경계로 아시아 대륙과 연결되어 있으며, 남쪽은 지중해를 사이에 두고 아프리카 대륙과 접해 있다. 유럽과 아시아는 육지로 연결되어 있기 때문에 유라시아 대륙이라고도 불리지만, 민족과 언어, 종교 등 문화적 특징이 뚜렷이 구별되어 유럽과 아시아 대륙으로 구분한다. 일찍부터 산업이 발달한 유럽 대륙은 국제 정치와 경제에 큰 영향을 미치는 국가와 도시가 많다."
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "src": {
+     "page": 27,
+     "bbox": [61, 138, 280, 149]
+    },
+    "text": "각 나라에 색칠하여 지도를 완성하고 각 국가명과 도시명을 써넣어 보자."
+   },
+   {
+    "id": "page-27",
+    "type": "page",
+    "page": 27
+   }
+  ],
+  "quiz": {
+   "type": "coloring",
+   "ref": "coloring"
+  }
+ },
+ {
+  "id": "relief",
+  "title": "지형",
+  "pages": [28],
+  "view": {
+   "map": "p28-relief"
+  },
+  "layers": [],
+  "pinNumbers": "hidden",
+  "markers": [
+   {
+    "id": "r-fjord",
+    "photo": "p28-1"
+   },
+   {
+    "id": "r-east-plain",
+    "photo": "p28-2"
+   },
+   {
+    "id": "r-vesuvius",
+    "photo": "p28-3",
+    "lonlatFrom": {
+     "place": "베수비오산",
+     "why": "교과서 핀이 베수비오산 기호에서 약 56km 떨어져 있어(28쪽 fit 잔차는 0.18mm — 핀 그림 자리 탓) 26쪽 산 위치를 쓴다. 1단계 규칙(지명이 있는 점 대상이고 교과서 핀·위치도 번호가 그 지명에서 멀면 일반도 지명 위치, 교과서 핀은 textbookLonlat 으로 남김)"
+    }
+   },
+   {
+    "id": "r-mont-blanc",
+    "photo": "p28-4"
+   },
+   {
+    "id": "r-geyser",
+    "photo": "p28-5"
+   },
+   {
+    "id": "r-giants-causeway",
+    "photo": "p28-6"
+   },
+   {
+    "id": "r-postojna",
+    "photo": "p28-7"
+   }
+  ],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 28,
+     "bbox": [58, 34, 336, 50]
+    },
+    "text": "유럽의 자연환경은 어떤 특색을 지니고 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 29,
+     "bbox": [503, 32, 710, 53],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 지리 정보와 매체를 활용하여 유럽의 지형과 기후 특색을 지도로 표현할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "creditSrc": {
+     "page": 28,
+     "bbox": [496, 520, 556, 529]
+    },
+    "src": {
+     "page": 28,
+     "bbox": [53, 79, 107, 91]
+    },
+    "credit": "(naturalearthdata.com)",
+    "text": "유럽의 지형"
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "titleSrc": {
+     "page": 28,
+     "bbox": [36, 501, 70, 509]
+    },
+    "src": {
+     "page": 28,
+     "bbox": [36, 510, 195, 530]
+    },
+    "title": "활동하기 1",
+    "text": "26쪽의 유럽 지도와 인터넷을 참고하여 사진의 위치를 지도의 빈칸에 표시해 보자."
+   },
+   {
+    "id": "page-28",
+    "type": "page",
+    "page": 28
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "climate",
+  "title": "기후",
+  "pages": [29],
+  "view": {
+   "map": "p29-climate"
+  },
+  "layers": [
+   {
+    "ref": "layer-p29-climate",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 29,
+     "bbox": [376, 431, 485, 439]
+    },
+    "legendTitleSrc": {
+     "page": 29,
+     "bbox": [58, 238, 86, 246]
+    },
+    "credit": "*1991~2020년 평균 (www.gloh2o.org, 2023)",
+    "legendTitle": "기후 구분"
+   },
+   {
+    "ref": "layer-p29-jan",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 29,
+     "bbox": [630, 268, 749, 276]
+    },
+    "legendTitleSrc": {
+     "page": 29,
+     "bbox": [524, 131, 559, 140]
+    },
+    "lineLegendTitleSrc": {
+     "page": 29,
+     "bbox": [524, 186, 550, 195]
+    },
+    "credit": "*1970~2010년 평균 (www.worldclim.org, 2023)",
+    "legendTitle": "강수량(mm)",
+    "lineLegendTitle": "기온 (°C)"
+   },
+   {
+    "ref": "layer-p29-jul",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 29,
+     "bbox": [630, 459, 749, 467]
+    },
+    "legendTitleSrc": {
+     "page": 29,
+     "bbox": [524, 337, 559, 346]
+    },
+    "lineLegendTitleSrc": {
+     "page": 29,
+     "bbox": [524, 392, 550, 401]
+    },
+    "credit": "*1970~2010년 평균 (www.worldclim.org, 2023)",
+    "legendTitle": "강수량(mm)",
+    "lineLegendTitle": "기온 (°C)"
+   }
+  ],
+  "pinNumbers": "hidden",
+  "markers": [
+   {
+    "id": "c-paris",
+    "photo": "p29-1",
+    "chart": "p29-clim-paris",
+    "lonlatFrom": {
+     "place": "파리",
+     "why": "기후 그래프 도시 위치(교과서 핀은 파리에서 약 57km)"
+    }
+   },
+   {
+    "id": "c-lisbon",
+    "photo": "p29-2",
+    "chart": "p29-clim-lisbon",
+    "lonlatFrom": {
+     "place": "리스본",
+     "why": "기후 그래프 도시 위치(교과서 핀은 리스본에서 약 16km)"
+    }
+   },
+   {
+    "id": "c-moscow",
+    "photo": "p29-3",
+    "chart": "p29-clim-moscow",
+    "lonlatFrom": {
+     "place": "모스크바",
+     "why": "기후 그래프 도시 위치(교과서 핀은 코미 원시림 사진과 함께 모스크바 남동쪽 약 294km)"
+    }
+   },
+   {
+    "id": "c-grenivik",
+    "photo": "p29-4",
+    "chart": "p29-clim-grenivik"
+   }
+  ],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 28,
+     "bbox": [58, 34, 336, 50]
+    },
+    "text": "유럽의 자연환경은 어떤 특색을 지니고 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 29,
+     "bbox": [503, 32, 710, 53],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 지리 정보와 매체를 활용하여 유럽의 지형과 기후 특색을 지도로 표현할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 29,
+     "bbox": [65, 79, 121, 91]
+    },
+    "text": "유럽의 기후"
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "titleSrc": {
+     "page": 29,
+     "bbox": [47, 438, 82, 447]
+    },
+    "src": {
+     "page": 29,
+     "bbox": [49, 448, 245, 458]
+    },
+    "title": "활동하기 2",
+    "text": "기후 그래프와 사진 설명을 읽고 해당 지역의 위치를 지도에 표시해 보자."
+   },
+   {
+    "id": "page-29",
+    "type": "page",
+    "page": 29
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "cities",
+  "title": "도시의 기능",
+  "pages": [30],
+  "view": {
+   "map": "p30-urban"
+  },
+  "layers": [
+   {
+    "ref": "layer-p30-urban",
+    "type": "countryClass",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 30,
+     "bbox": [469, 518, 543, 527]
+    },
+    "legendTitleSrc": {
+     "page": 30,
+     "bbox": [444, 458, 478, 475]
+    },
+    "credit": "(UN, 「세계 도시화 전망」, 2020)",
+    "legendTitle": "도시화율 (2020년, %)"
+   },
+   {
+    "ref": "layer-p30-cities",
+    "type": "symbol",
+    "legend": true,
+    "group": "map",
+    "legendTitleSrc": {
+     "page": 30,
+     "bbox": [499, 458, 542, 475]
+    },
+    "legendTitle": "도시 인구 (2020년, 만 명)"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 30,
+     "bbox": [61, 34, 313, 50]
+    },
+    "text": "유럽의 도시는 어떤 기능을 지니고 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 30,
+     "bbox": [495, 32, 700, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 기능과 특징을 가진 유럽의 도시를 살펴보고, 생활 공간으로서 도시의 다양성과 역동성을 설명할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 30,
+     "bbox": [53, 79, 166, 91]
+    },
+    "text": "세계 금융의 중심지, 런던"
+   },
+   {
+    "id": "p30-1",
+    "type": "photo",
+    "ref": "p30-1"
+   },
+   {
+    "id": "p30-finance",
+    "type": "chart",
+    "ref": "p30-finance",
+    "titleSrc": {
+     "page": 30,
+     "bbox": [217, 198, 340, 208]
+    },
+    "src": {
+     "page": 30,
+     "bbox": [212, 209, 378, 229]
+    },
+    "title": "국제 금융 센터 지수 상위 10개 도시",
+    "text": "국제 금융 센터 지수는 주요 세계 도시의 금융 경쟁력을 평가해 순위를 매긴 것이다."
+   },
+   {
+    "id": "section-2",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 30,
+     "bbox": [410, 79, 511, 91]
+    },
+    "text": "유럽의 관문, 로테르담"
+   },
+   {
+    "id": "p30-2",
+    "type": "photo",
+    "ref": "p30-2"
+   },
+   {
+    "id": "p30-container",
+    "type": "chart",
+    "ref": "p30-container",
+    "titleSrc": {
+     "page": 30,
+     "bbox": [575, 198, 702, 208]
+    },
+    "src": {
+     "page": 30,
+     "bbox": [569, 209, 737, 229]
+    },
+    "title": "세계 컨테이너 물동량 상위 10개 항구",
+    "text": "로테르담항은 유럽에서 가장 큰 항구이자, 세계 10위의 물동량을 담당하는 대규모 항구이다."
+   },
+   {
+    "id": "section-3",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 30,
+     "bbox": [53, 250, 157, 262]
+    },
+    "text": "문화 관광 도시, 빌바오"
+   },
+   {
+    "id": "p30-3",
+    "type": "photo",
+    "ref": "p30-3"
+   },
+   {
+    "id": "p30-4",
+    "type": "photo",
+    "ref": "p30-4"
+   },
+   {
+    "id": "section-4",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 30,
+     "bbox": [589, 250, 732, 262]
+    },
+    "text": "자동차 산업 도시, 슈투트가르트"
+   },
+   {
+    "id": "p30-5",
+    "type": "photo",
+    "ref": "p30-5"
+   },
+   {
+    "id": "p30-6",
+    "type": "photo",
+    "ref": "p30-6"
+   },
+   {
+    "id": "section-5",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 30,
+     "bbox": [53, 545, 218, 558]
+    },
+    "text": "첨단 산업 중심지, 소피아 앙티폴리스"
+   },
+   {
+    "id": "p30-7",
+    "type": "photo",
+    "ref": "p30-7"
+   },
+   {
+    "id": "p30-sophia",
+    "type": "chart",
+    "ref": "p30-sophia",
+    "src": {
+     "page": 30,
+     "bbox": [212, 670, 380, 690]
+    },
+    "text": "소피아 앙티폴리스에서는 매년 첨단 산업 분야에서 1,000개 이상의 새로운 일자리가 창출되고 있다."
+   },
+   {
+    "id": "section-6",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 30,
+     "bbox": [410, 545, 501, 558]
+    },
+    "text": "운하 도시, 베네치아"
+   },
+   {
+    "id": "p30-8",
+    "type": "photo",
+    "ref": "p30-8"
+   },
+   {
+    "id": "p30-9",
+    "type": "photo",
+    "ref": "p30-9"
+   },
+   {
+    "id": "p30-10",
+    "type": "photo",
+    "ref": "p30-10"
+   },
+   {
+    "id": "page-30",
+    "type": "page",
+    "page": 30
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "sustainable",
+  "title": "지속가능한 도시",
+  "pages": [31],
+  "view": {
+   "map": "p31-green-capital"
+  },
+  "views": [
+   {
+    "id": "green-capital",
+    "labelSrc": {
+     "page": 31,
+     "bbox": [233, 249, 292, 259]
+    },
+    "map": "p31-green-capital",
+    "label": "유럽의 녹색 수도"
+   },
+   {
+    "id": "lisbon",
+    "labelSrc": {
+     "page": 31,
+     "bbox": [65, 545, 177, 556]
+    },
+    "map": "p31-lisbon",
+    "label": "전기 자동차 도시, 리스본"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p31-green-capital",
+    "type": "symbol",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 31,
+     "bbox": [509, 478, 567, 486]
+    },
+    "credit": "(유럽 연합 누리집, 2023)"
+   },
+   {
+    "ref": "layer-p31-lisbon",
+    "type": "symbol",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 31,
+     "bbox": [150, 681, 205, 690]
+    },
+    "credit": "(uswitch.com, 2022)"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 31,
+     "bbox": [71, 34, 407, 50]
+    },
+    "text": "지속가능한 도시를 만들기 위하여 어떤 노력이 필요할까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 31,
+     "bbox": [504, 32, 707, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "기후 위기에 대응하여 지속가능한 도시를 만들기 위한 유럽의 노력을 사례를 들어 설명할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 31,
+     "bbox": [65, 79, 280, 91]
+    },
+    "text": "진공 파이프를 통해 폐기물을 수거하는 스톡홀름"
+   },
+   {
+    "id": "p31-1",
+    "type": "photo",
+    "ref": "p31-1"
+   },
+   {
+    "id": "p31-2",
+    "type": "photo",
+    "ref": "p31-2"
+   },
+   {
+    "id": "section-2",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 31,
+     "bbox": [422, 79, 562, 91]
+    },
+    "text": "무상 대중교통을 제공하는 탈린"
+   },
+   {
+    "id": "p31-3",
+    "type": "photo",
+    "ref": "p31-3"
+   },
+   {
+    "id": "p31-tallinn",
+    "type": "chart",
+    "ref": "p31-tallinn",
+    "titleSrc": {
+     "page": 31,
+     "bbox": [586, 196, 682, 206]
+    },
+    "src": {
+     "page": 31,
+     "bbox": [581, 208, 746, 227]
+    },
+    "title": "탈린의 교통수단 분담률 변화",
+    "text": "탈린에서는 무상 대중교통을 도입한 이후, 대중교통 분담률이 증가하였다."
+   },
+   {
+    "id": "section-3",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 31,
+     "bbox": [65, 250, 187, 262]
+    },
+    "text": "자전거 친화 도시, 코펜하겐"
+   },
+   {
+    "id": "p31-4",
+    "type": "photo",
+    "ref": "p31-4"
+   },
+   {
+    "id": "p31-copenhagen",
+    "type": "chart",
+    "ref": "p31-copenhagen",
+    "titleSrc": {
+     "page": 31,
+     "bbox": [52, 484, 210, 494]
+    },
+    "src": {
+     "page": 31,
+     "bbox": [45, 495, 213, 524]
+    },
+    "title": "자동차 및 자전거 수와 통근·통학 교통수단 분담률",
+    "text": "코펜하겐에서는 2021년 전체 시민의 35%가 통근·통학에 자전거를 활용하고 있으며, 2025년까지 자전거 활용 비중을 50%까지 높이려는 목표를 세우고 있다."
+   },
+   {
+    "id": "p31-copenhagen-2021",
+    "type": "chart",
+    "ref": "p31-copenhagen-2021"
+   },
+   {
+    "id": "section-4",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 31,
+     "bbox": [600, 250, 721, 262]
+    },
+    "text": "태양광 도시, 프라이부르크"
+   },
+   {
+    "id": "p31-5",
+    "type": "photo",
+    "ref": "p31-5"
+   },
+   {
+    "id": "p31-freiburg",
+    "type": "chart",
+    "ref": "p31-freiburg",
+    "titleSrc": {
+     "page": 31,
+     "bbox": [586, 485, 725, 495]
+    },
+    "src": {
+     "page": 31,
+     "bbox": [581, 496, 748, 526]
+    },
+    "title": "프라이부르크의 1인당 이산화 탄소 배출량",
+    "text": "독일의 프라이부르크는 태양광 발전과 소수력 발전 등을 확대하여, 2035년에 기후(탄소) 중립을 달성한다는 목표를 제시하였다."
+   },
+   {
+    "id": "p31-6",
+    "type": "photo",
+    "ref": "p31-6",
+    "view": "green-capital"
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "view": "green-capital",
+    "titleSrc": {
+     "page": 31,
+     "bbox": [397, 492, 430, 500]
+    },
+    "src": {
+     "page": 31,
+     "bbox": [398, 501, 565, 520]
+    },
+    "title": "활동하기 3",
+    "text": "①~⑥ 도시의 친환경 정책으로 기대되는 효과와 우리나라의 지속가능한 도시를 만들기 위한 아이디어를 제시해 보자."
+   },
+   {
+    "id": "section-5",
+    "type": "text",
+    "role": "section",
+    "view": "lisbon",
+    "src": {
+     "page": 31,
+     "bbox": [65, 545, 177, 556]
+    },
+    "text": "전기 자동차 도시, 리스본"
+   },
+   {
+    "id": "lisbon-text",
+    "type": "text",
+    "view": "lisbon",
+    "src": {
+     "page": 31,
+     "bbox": [204, 604, 308, 665]
+    },
+    "text": "포르투갈의 수도 리스본은 도시 전체에 540개의 전기 자 동차 충전소를 보유하고 있으며 도시 차량의 3분의 1이 전기 자동차이다."
+   },
+   {
+    "id": "p31-7",
+    "type": "photo",
+    "ref": "p31-7"
+   },
+   {
+    "id": "section-6",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 31,
+     "bbox": [422, 545, 522, 556]
+    },
+    "text": "나무의 도시, 류블랴나"
+   },
+   {
+    "id": "p31-8",
+    "type": "photo",
+    "ref": "p31-8"
+   },
+   {
+    "id": "p31-9",
+    "type": "photo",
+    "ref": "p31-9"
+   },
+   {
+    "id": "p31-ljubljana",
+    "type": "chart",
+    "ref": "p31-ljubljana",
+    "titleSrc": {
+     "page": 31,
+     "bbox": [586, 659, 707, 669]
+    },
+    "src": {
+     "page": 31,
+     "bbox": [581, 670, 746, 690]
+    },
+    "title": "유럽 수도의 녹지 면적 비율(2018년)",
+    "text": "류블랴나는 유럽의 수도 중 노르웨이의 오슬로와 스위스의 베른에 이어 세 번째로 높은 녹지 비율을 갖고 있다."
+   },
+   {
+    "id": "page-31",
+    "type": "page",
+    "page": 31
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "integration",
+  "title": "통합과 분리",
+  "pages": [32],
+  "view": {
+   "map": "p32-eu"
+  },
+  "views": [
+   {
+    "id": "eu",
+    "labelSrc": {
+     "page": 32,
+     "bbox": [231, 96, 291, 107]
+    },
+    "map": "p32-eu",
+    "label": "유럽 연합 회원국"
+   },
+   {
+    "id": "separatism",
+    "labelSrc": {
+     "page": 32,
+     "bbox": [231, 416, 356, 427]
+    },
+    "map": "p32-separatism",
+    "label": "유럽에서 분리 독립을 주장하는 지역"
+   },
+   {
+    "id": "belgium",
+    "labelSrc": {
+     "page": 32,
+     "bbox": [38, 532, 106, 542]
+    },
+    "map": "p32-belgium",
+    "label": "벨기에의 언어 분포"
+   },
+   {
+    "id": "italy",
+    "labelSrc": {
+     "page": 32,
+     "bbox": [574, 522, 644, 542]
+    },
+    "map": "p32-italy",
+    "label": "이탈리아의 지역 간 경제 격차"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p32-eu",
+    "type": "countryClass",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 32,
+     "bbox": [518, 367, 547, 375]
+    },
+    "credit": "(EU, 2023)"
+   },
+   {
+    "ref": "layer-p32-separatism",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 32,
+     "bbox": [491, 682, 547, 690]
+    },
+    "credit": "(wikimedia.org, 2022)"
+   },
+   {
+    "ref": "layer-p32-belgium",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 32,
+     "bbox": [122, 533, 199, 541]
+    },
+    "credit": "(『세계의 여러 지역 NOW』, 2023)"
+   },
+   {
+    "ref": "layer-p32-italy",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 32,
+     "bbox": [680, 533, 740, 541]
+    },
+    "legendTitleSrc": {
+     "page": 32,
+     "bbox": [672, 417, 730, 434]
+    },
+    "credit": "(EU, 2018)",
+    "legendTitle": "주별 1인당 지역 내 총생산(달러)"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 32,
+     "bbox": [58, 34, 442, 50]
+    },
+    "text": "유럽의 통합과 분리 움직임은 주민 생활에 어떤 영향을 주었을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 32,
+     "bbox": [495, 32, 698, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "유럽의 통합과 분리 움직임이 유럽 연합의 변화와 주민 생활에 미치는 영향을 설명할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "view": "eu",
+    "src": {
+     "page": 32,
+     "bbox": [53, 79, 108, 91]
+    },
+    "text": "유럽의 통합"
+   },
+   {
+    "id": "p32-1",
+    "type": "photo",
+    "ref": "p32-1"
+   },
+   {
+    "id": "p32-2",
+    "type": "photo",
+    "ref": "p32-2"
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "view": "eu",
+    "titleSrc": {
+     "page": 32,
+     "bbox": [434, 174, 468, 182]
+    },
+    "src": {
+     "page": 32,
+     "bbox": [436, 183, 540, 202]
+    },
+    "title": "활동하기 4",
+    "text": "영국이 유럽 연합을 탈퇴하게 된 원인을 조사해서 발표해 보자."
+   },
+   {
+    "id": "p32-3",
+    "type": "photo",
+    "ref": "p32-3"
+   },
+   {
+    "id": "p32-4",
+    "type": "photo",
+    "ref": "p32-4"
+   },
+   {
+    "id": "section-2",
+    "type": "text",
+    "role": "section",
+    "view": "separatism",
+    "src": {
+     "page": 32,
+     "bbox": [53, 398, 163, 410]
+    },
+    "text": "유럽의 분리 독립 움직임"
+   },
+   {
+    "id": "activity-2",
+    "type": "activity",
+    "view": "separatism",
+    "titleSrc": {
+     "page": 32,
+     "bbox": [434, 489, 468, 497]
+    },
+    "src": {
+     "page": 32,
+     "bbox": [436, 499, 542, 518]
+    },
+    "title": "활동하기 5",
+    "text": "에스파냐의 카탈루냐에서 발생한 분리 독립 운동의 원인을 조사해 보자."
+   },
+   {
+    "id": "p32-5",
+    "type": "photo",
+    "ref": "p32-5",
+    "view": "belgium"
+   },
+   {
+    "id": "p32-6",
+    "type": "photo",
+    "ref": "p32-6",
+    "view": "italy"
+   },
+   {
+    "id": "page-32",
+    "type": "page",
+    "page": 32
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "feature",
+  "title": "특집: 주민 생활",
+  "pages": [33],
+  "view": {
+   "map": "p33-locator"
+  },
+  "layers": [],
+  "markers": [
+   {
+    "id": "f01",
+    "photo": "p33-01"
+   },
+   {
+    "id": "f02",
+    "photo": "p33-02"
+   },
+   {
+    "id": "f03",
+    "photo": "p33-03"
+   },
+   {
+    "id": "f04",
+    "photo": "p33-04",
+    "lonlatFrom": {
+     "place": "브뤼셀",
+     "why": "사진(유럽 연합 집행 위원회 본부)이 브뤼셀에 있고 교과서 위치도 번호 04 는 브뤼셀에서 약 80km. 1단계 규칙(지명이 있는 점 대상이고 교과서 핀·위치도 번호가 그 지명에서 멀면 일반도 지명 위치, 교과서 핀은 textbookLonlat 으로 남김)"
+    }
+   },
+   {
+    "id": "f05",
+    "photo": "p33-05"
+   },
+   {
+    "id": "f06",
+    "photo": "p33-06",
+    "lonlatFrom": {
+     "place": "스위스",
+     "why": "스위스 여권 — 교과서 위치도 번호 06 은 이웃 번호를 피해 스위스 남동쪽 이탈리아 롬바르디아(약 10.4°E, 45.8°N)에 찍혀 있어 26쪽 「스위스」 나라 이름 자리를 쓴다"
+    }
+   },
+   {
+    "id": "f07a",
+    "photo": "p33-07a",
+    "titleSrc": {
+     "page": 33,
+     "bbox": [436, 258, 512, 281]
+    },
+    "src": {
+     "page": 33,
+     "bbox": [418, 438, 494.5, 481]
+    },
+    "lonlatFrom": {
+     "place": "베를린",
+     "why": "동전 그림이 베를린 브란덴부르크문이고 교과서 위치도 07(독일 쪽)은 베를린에서 약 165km. 1단계 규칙(지명이 있는 점 대상이고 교과서 핀·위치도 번호가 그 지명에서 멀면 일반도 지명 위치, 교과서 핀은 textbookLonlat 으로 남김)"
+    },
+    "title": "독일과 이탈리아 유로화 동전의 디자인",
+    "text": "독일 50센트 유로화 동전 앞면: 베를린 브란덴부르크문"
+   },
+   {
+    "id": "f07b",
+    "photo": "p33-07b",
+    "titleSrc": {
+     "page": 33,
+     "bbox": [436, 258, 512, 281]
+    },
+    "src": {
+     "page": 33,
+     "bbox": [495.5, 430, 570, 472]
+    },
+    "lonlatFrom": {
+     "place": "로마",
+     "why": "동전 그림이 로마 콜로세움이고 교과서 위치도 07(이탈리아 쪽)은 로마에서 약 75km. 1단계 규칙(지명이 있는 점 대상이고 교과서 핀·위치도 번호가 그 지명에서 멀면 일반도 지명 위치, 교과서 핀은 textbookLonlat 으로 남김)"
+    },
+    "title": "독일과 이탈리아 유로화 동전의 디자인",
+    "text": "이탈리아 5유로화 동전 앞면: 로마 콜로세움"
+   },
+   {
+    "id": "f08",
+    "photo": "p33-08"
+   },
+   {
+    "id": "f09",
+    "photo": "p33-09",
+    "lonlatFrom": {
+     "place": "프라하",
+     "why": "사진이 프라하 공항이고 교과서 위치도 번호 09 는 프라하에서 약 175km. 1단계 규칙(지명이 있는 점 대상이고 교과서 핀·위치도 번호가 그 지명에서 멀면 일반도 지명 위치, 교과서 핀은 textbookLonlat 으로 남김)"
+    }
+   },
+   {
+    "id": "f10",
+    "photo": "p33-10"
+   },
+   {
+    "id": "f11",
+    "photo": "p33-11"
+   }
+  ],
+  "blocks": [
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 33,
+     "bbox": [52, 42, 315, 95]
+    },
+    "text": "유럽의 통합과 분리 움직임이 주민 생활에 미치는 영향"
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "src": {
+     "page": 33,
+     "bbox": [52, 103, 168, 136]
+    },
+    "text": "솅겐 협약이 유럽에 살고 있는 사람들에게 미치는 영향에 대해 말해 보자."
+   },
+   {
+    "id": "link",
+    "type": "text",
+    "role": "link",
+    "src": {
+     "page": 33,
+     "bbox": [180, 121, 242, 141]
+    },
+    "titleSrc": {
+     "page": 33,
+     "bbox": [188, 106, 224, 116]
+    },
+    "text": "유럽 연합 누리집 https://t25.kr/jwwg",
+    "title": "참고 사이트"
+   },
+   {
+    "id": "p33-07",
+    "type": "photo",
+    "ref": "p33-07"
+   },
+   {
+    "id": "page-33",
+    "type": "page",
+    "page": 33
+   }
+  ],
+  "quiz": null
+ }
+]

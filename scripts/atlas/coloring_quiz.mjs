@@ -8,6 +8,11 @@
 //     nameKm 안 가장 가까운 면, 없으면(터키 ↔ 튀르키예) 글자 자리의 면(nearKm 안). 글자가 다른 나라 면 위에 있으면 labelIso 로 남긴다.
 //   - 이름: 다 적힌 글자는 그대로, 초성 글자(ㄹㅅㅇ)는 그 면 안 places 나라 지명 중 초성이 같은 하나. 둘 이상·없음은 경고.
 //   - 수도: 색칠하기 지도에 손글씨로 적힌 수도(capitalFrom printed)는 그 이름, 아니면 그 면 안 places 수도 지명 하나(둘 이상이면 Natural Earth 「Admin-0 capital」에 가장 가까운 것).
+//   단원 설정이 있을 때만 쓰는 것(없으면 1단계 동작 그대로 — u3 27쪽에서 더함):
+//     ignoreLabels [글자] = 나라 이름이 아닌 같은 글꼴 글자(「(러)」 = 칼리닌그라드 소속 표시), joinLabels [[글자…]] = 여러 줄로 나뉜 한 나라 이름
+//     (「보스니아」+「헤르체고비나」 → 공백으로 이음, 상자는 합침), isoByLabel {글자: ADM0_A3} = Natural Earth 한국어 이름 초성이 달라 짝이 안 되는 나라
+//     (「바티칸」 ↔ 「바티칸 시국」), capitalByNe = 손글씨 수도의 나라를 그 지명 가까이(nearKm)의 Natural Earth 「Admin-0 capital」 나라로(작은 나라 수도 기호가
+//     옮겨 그린 자리라 이웃 나라 면에 떨어짐 — 파두츠·모나코·니코시아), noCapital {ADM0_A3: 까닭} = 수도 지명이 따로 없는 나라(경고 대신 수도 칸 없음).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -43,6 +48,28 @@ export function countryAt(countries, p, maxKm) {
 
 const round4 = (ll) => ll.map((v) => round(v, 4));
 
+/** 색칠하기 지도의 나라 글자 목록에 설정 ignoreLabels(뺄 글자)·joinLabels(이을 글자 묶음, 쪽 흐름 순서대로 붙어 나와야 함)를 적용한 새 목록.
+ *  설정이 없으면 그대로. 설정 글자가 지면에 없으면 경고(W 에 더함). */
+export function countryLabels(list, cfg, W = []) {
+  const ignore = new Set((cfg.ignoreLabels ?? []).map(key));
+  const out = [];
+  for (const g of cfg.ignoreLabels ?? []) if (!list.some((l) => key(l.text) === key(g))) W.push(`ignoreLabels ${g}: 지면에 없음`);
+  const joins = (cfg.joinLabels ?? []).map((g) => g.map(key));
+  const used = new Set();
+  for (let i = 0; i < list.length; i++) {
+    if (used.has(i) || ignore.has(key(list[i].text))) continue;
+    const j = joins.find((g) => g.every((t, k) => list[i + k] && key(list[i + k].text) === t));
+    if (!j) { out.push(list[i]); continue; }
+    const parts = list.slice(i, i + j.length);
+    parts.forEach((_, k) => used.add(i + k));
+    const b = parts.map((p) => p.bbox);
+    out.push({ text: parts.map((p) => p.text).join(' '),
+      bbox: [Math.min(...b.map((x) => x[0])), Math.min(...b.map((x) => x[1])), Math.max(...b.map((x) => x[2])), Math.max(...b.map((x) => x[3]))] });
+  }
+  for (const g of joins) if (!out.some((l) => key(l.text) === g.join(''))) W.push(`joinLabels ${g.join('+')}: 지면에서 차례대로 찾지 못함`);
+  return out;
+}
+
 /** 문제 자료 만들기. 입력은 모두 메모리 자료 → {countries, warnings}. */
 export function buildColoring({ labels, fit, places, countries, nePlaces, cfg }) {
   const W = [], conv = makeConverter(fit);
@@ -52,13 +79,15 @@ export function buildColoring({ labels, fit, places, countries, nePlaces, cfg })
   const ll = (p) => [p.lon, p.lat];
   const out = [];
   const dist = (g, p) => (contains(g.geometry, p) ? 0 : nearKm(g.geometry, p));
-  for (const lab of labels.countries) {
+  for (const lab of countryLabels(labels.countries, cfg, W)) {
     const text = key(lab.text), cho = choseong(text);
     const pos = centre(lab.bbox);
     if (!pos) { W.push(`${lab.text}: 경위도 되돌리기 실패`); continue; }
     // ① Natural Earth 한국어 이름(NAME_KO)의 초성이 같은 나라 중 글자에서 가장 가까운 것, ② 없으면 글자 자리의 나라 면
     let f = null, bd = cfg.nameKm;
-    for (const g of countries) {
+    const forced = cfg.isoByLabel?.[text];
+    if (forced) { f = countries.find((g) => g.properties.ADM0_A3 === forced) ?? null; if (!f) W.push(`${lab.text}: isoByLabel ${forced} 이 Natural Earth 에 없음`); }
+    else for (const g of countries) {
       if (choseong(g.properties.NAME_KO ?? '') !== cho) continue;
       const d = dist(g, pos); if (d < bd) { bd = d; f = g; }
     }
@@ -87,13 +116,23 @@ export function buildColoring({ labels, fit, places, countries, nePlaces, cfg })
     const pos = centre(lab.bbox);
     if (!same.length) { W.push(`수도 글자 ${lab.text}: places 수도 지명 없음`); continue; }
     const p = same.sort((a, b) => km(pos, ll(a)) - km(pos, ll(b)))[0];
-    const c = out.find((c) => countryAt(countries, ll(p), cfg.nearKm) === c.f);
+    let c = null;
+    if (cfg.capitalByNe) {   // 그 지명 가까이 Natural Earth 나라 수도의 나라(문제 나라 가운데)
+      let bd = cfg.nearKm;
+      for (const q of nePlaces) {
+        if (q.cls !== 'Admin-0 capital') continue;
+        const d = km(ll(p), q.ll), hit = out.find((o) => o.iso === q.adm0);
+        if (hit && d < bd) { bd = d; c = hit; }
+      }
+    }
+    c ??= out.find((c) => countryAt(countries, ll(p), cfg.nearKm) === c.f);
     if (!c) { W.push(`수도 글자 ${lab.text}: 나라 없음`); continue; }
     if (printed.has(c.iso)) W.push(`${c.name}: 손글씨 수도 둘(${printed.get(c.iso).name}, ${p.name})`);
     printed.set(c.iso, p);
   }
   for (const c of out) {
     let cap = printed.get(c.iso), how = 'printed';
+    if (!cap && cfg.noCapital?.[c.iso]) { delete c.f; continue; }
     if (!cap) {
       const inside = placeCapitals.filter((p) => contains(c.f.geometry, ll(p)));
       how = 'places';

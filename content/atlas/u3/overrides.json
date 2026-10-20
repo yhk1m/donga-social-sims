@@ -1,0 +1,15 @@
+{
+ "_doc": "사람이 고친 값. 키 = topicId.field | topicId.quiz.field | topicId.markers.<marker id>.field | topicId.blocks.<block id>.field | topicId.layers.<ref>.field | topicId.views.<view id>.field (field 는 점으로 더 들어갈 수 있음). value = 쓸 값, from = 고치기 전 값(필수 — null 이면 그 칸이 없어야 함). from 이 topics.json 의 지금 값과 다르면 build_content.mjs 가 「낡은 고침」으로 멈춘다(원문 추출이 바뀌었는지 다시 볼 것), why = 까닭. extract_text.py --fill 은 topics.json 만 다시 채우므로 여기 값은 지워지지 않는다.",
+ "items": {
+  "general.blocks.map-text.title": {
+   "value": "유럽",
+   "from": "유 럽",
+   "why": "26쪽 지도 제목은 글자 사이를 벌려 놓은 것(활자 배치)이라 공백을 뺀다(1단계 16쪽 「아 시 아」와 같음)"
+  },
+  "sustainable.blocks.lisbon-text.text": {
+   "value": "포르투갈의 수도 리스본은 도시 전체에 540개의 전기 자동차 충전소를 보유하고 있으며 도시 차량의 3분의 1이 전기 자동차이다.",
+   "from": "포르투갈의 수도 리스본은 도시 전체에 540개의 전기 자 동차 충전소를 보유하고 있으며 도시 차량의 3분의 1이 전기 자동차이다.",
+   "why": "31쪽 리스본 글은 자동차 그림을 피해 줄 폭이 들쭉날쭉한 왼쪽 맞춤 글상자라 「자 / 동차」 줄바꿈을 box_text 가 양끝 맞춤 줄바꿈으로 못 보고 공백을 넣었다(지면은 한 낱말 「자동차」가 줄에서 갈린 것)"
+  }
+ }
+}

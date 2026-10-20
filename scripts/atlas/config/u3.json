@@ -3313,12 +3313,27 @@
     "sustainable",
     "integration",
     "feature"
-   ]
+   ],
+   "markers": {
+    "relief": 7,
+    "feature": 12
+   },
+   "chartMarkers": {
+    "climate": 4
+   },
+   "coloringCountries": 46,
+   "charts": 12
   },
-  "_expect": "U3-6·U3-7·U3-8 실측으로 markers·chartMarkers·coloringCountries·charts 를 더함.",
+  "_expect": "실측(U3-6·U3-7·U3-8): 지형 핀 7, 기후 그래프 4(파리·리스본·모스크바·그레니비크), 특집 핀 12(계획의 11 = 번호 01~11 — 07 이 위치도에 둘(독일·이탈리아 동전)이라 마커 12, 둘 다 번호 7), 27쪽 나라 46(나라 글자 48 − 「(러)」 소속 표시 − 두 줄 「보스니아 / 헤르체고비나」), 그래프 12.",
   "expectCredits": {
-   "_doc": "26~33쪽에 인쇄된 출처 글(쪽: 목록) — U3-8 에서 채움.",
-   "notCredits": []
+   "28": ["(naturalearthdata.com)"],
+   "29": ["(www.worldclim.org, 2023)", "(www.gloh2o.org, 2023)", "(『이과연표』, 2023)", "(climate-data.org, 2023)"],
+   "30": ["(Z/Yen Group, 「글로벌 금융 센터 지수」, 2023)", "(worldshipping.org, 2021)", "(UN, 「세계 도시화 전망」, 2020)", "(소피아 앙티폴리스 누리집, 2019)"],
+   "31": ["(Transportation, 「교통저널 44호」, 2017)", "(코펜하겐시, 2022)", "(프라이부르크시, 2023)", "(유럽 연합 누리집, 2023)", "(statista.com, 2022)", "(uswitch.com, 2022)"],
+   "32": ["(EU, 2023)", "(『세계의 여러 지역 NOW』, 2023)", "(EU, 2018)", "(wikimedia.org, 2022)"],
+   "_doc": "26~33쪽에 인쇄된 출처 글(쪽: 목록). 생성물 topics.json·charts.json 어딘가에 있어야 한다(공백 무시, tests/atlas/units/u3.content.test.mjs). 28쪽 「(naturalearthdata.com)」은 해가 없어 extract_text.printed_credits 꼴(「(…, 해)」)에 안 걸린다 — 지면 대조 시험은 이 항목을 빼고 본다(notPrinted). 같은 꼴이지만 출처가 아닌 것은 notCredits: 31쪽 녹색 수도 지도의 도시 연도 「(2010)」~「(2024)」(그림자 글자 겹침으로 「(2013…2013)」「(2020…2020)」처럼 이어 붙은 것 포함 — 공백 지운 글 그대로). 26·27·33쪽에는 출처 글이 없다.",
+   "notPrinted": ["(naturalearthdata.com)"],
+   "notCredits": ["(2010)", "(2012)", "(2014)", "(2015)", "(2016)", "(2018)", "(2019)", "(2021)", "(2022)", "(2023)", "(201320132013201320132013201320132013201320132013)", "(2020202020202020)"]
   },
   "viewGrid": 20,
   "viewPercentile": 5,
@@ -3570,7 +3585,16 @@
    "nearKm": 150,
    "nameKm": 600,
    "_nearKm": "나라 찾기: Natural Earth 이름(NAME_KO) 초성이 글자와 같은 나라 중 nameKm 안 가장 가까운 면(바다 위 글자·지시선 글자 — 레바논 225km, 필리핀 170km), 없으면 글자 자리의 면(nearKm 안). 수도 글자도 nearKm.",
-   "_fonts": "countryFont·capitalFont·capitalSize 는 u2 값 복사 — U3-8 에서 27쪽 글꼴을 보고 확인."
+   "_fonts": "27쪽도 나라 글자 KCCChassam(초성 12.8pt·이름 8.8pt)·수도 손글씨 KyoboHandwriting 7.5pt — u2 값 그대로 맞음(U3-8 확인).",
+   "ignoreLabels": ["(러)"],
+   "_ignoreLabels": "「(러)」(7.2pt)는 리투아니아 옆 칼리닌그라드가 러시아 땅이라는 소속 표시 — 나라 이름이 아니다(러시아는 「ㄹ ㅅ ㅇ」).",
+   "joinLabels": [["보스니아", "헤르체고비나"]],
+   "_joinLabels": "「보스니아 / 헤르체고비나」는 두 줄로 적힌 한 나라 이름.",
+   "isoByLabel": {"바티칸": "VAT"},
+   "_isoByLabel": "Natural Earth 한국어 이름이 「바티칸 시국」이라 초성(ㅂㅌㅋㅅㄱ)이 글자 「바티칸」과 달라 이탈리아 면으로 잡혔다.",
+   "capitalByNe": true,
+   "_capitalByNe": "작은 나라 수도 기호(파두츠·모나코·니코시아)는 교과서가 옮겨 그린 자리라 이웃 나라 면(오스트리아·프랑스·북키프로스)에 떨어진다 → 손글씨 수도의 나라 = 그 지명에서 nearKm 안 가장 가까운 Natural Earth 「Admin-0 capital」의 나라.",
+   "noCapital": {"VAT": "27쪽 바티칸은 나라 이름 옆 수도 ★만 있고 수도 이름이 따로 없다(도시 국가) — 수도 칸 없이 둔다."}
   }
  },
  "insets": [],
