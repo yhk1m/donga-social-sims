@@ -769,3 +769,27 @@ test('symbolLayer 값 붙은 기호: 기호 옆 흰 상자(아이콘 + 값 줄),
   assert.deepEqual(picked, ['세비야']);
   assert.deepEqual(L.meta.valueLegend.map((x) => x.icon), ['charger', 'person']);
 });
+
+test('symbolLayer nameInBox(31쪽 리스본·녹색 수도, U3-9): 상자 맨 위에 이름(굵게) + 값 줄, 값이 없으면 이름만 든 상자, 없으면 이름 줄 없음', () => {
+  const v = viewOf();
+  const mk = (nameInBox, values) => {
+    const data = fc([{ type: 'Feature', properties: { type: 'symbol', cls: 'c1', label: '스톡홀름(2010)', name: '스톡홀름(2010)', color: '#5bb947', size: 3, ...(values ? { values } : {}) }, geometry: { type: 'Point', coordinates: [10, 10] } }],
+      [{ cls: 'c1', color: '#5bb947', kind: 'fill', label: '녹색 수도' }]);
+    if (nameInBox) data.properties.nameInBox = true;
+    const g = document.createElementNS('svg', 'g');
+    symbolLayer('n', data).drawSvg(g, v.project, v.view);
+    return g.childNodes[0].childNodes.filter((e) => e.classList.contains('at-sym-values'));
+  };
+  const cls = (box, c) => box.childNodes.filter((e) => e.getAttribute('class') === c);
+  const only = mk(true);
+  assert.equal(only.length, 1, '값 없이도 이름 상자');
+  assert.deepEqual(cls(only[0], 'at-sym-vname').map((e) => e.textContent), ['스톡홀름(2010)']);
+  assert.equal(cls(only[0], 'at-sym-vtext').length, 0);
+  const both = mk(true, [{ icon: 'charger', text: '1.16' }, { icon: 'person', text: '9.7' }]);
+  assert.deepEqual(cls(both[0], 'at-sym-vname').map((e) => e.textContent), ['스톡홀름(2010)']);
+  const ys = [cls(both[0], 'at-sym-vname')[0], ...cls(both[0], 'at-sym-vtext')].map((e) => +e.getAttribute('y'));
+  assert.ok(ys[0] < ys[1] && ys[1] < ys[2], `이름 줄이 맨 위: ${ys}`);
+  assert.equal(+cls(both[0], 'at-sym-vbox')[0].getAttribute('height'), 3 * 2 + 3 * 10 + 2, '세 줄 높이');
+  assert.equal(mk(false).length, 0, 'nameInBox 없으면 값 없는 기호에 상자 없음(1단계 그대로)');
+  assert.equal(cls(mk(false, [{ icon: 'charger', text: '1.16' }])[0], 'at-sym-vname').length, 0);
+});

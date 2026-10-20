@@ -324,6 +324,8 @@
    "map": "p31-green-capital",
    "type": "symbol",
    "mode": "labelled-points",
+   "nameInBox": true,
+   "_nameInBox": "교과서처럼 기호 옆 흰 상자 맨 위에 이름(녹색 수도는 「도시(연도)」만, 리스본은 이름 + 값 두 줄) — 지명 배치가 상자를 피하느라 26쪽 도시 이름이 빠져 어느 도시인지 알 수 없었음(U3-9 캡처). symbolLayer 가 읽음.",
    "expectLegend": 1,
    "expectPoints": 15,
    "points": {
@@ -372,6 +374,8 @@
    "map": "p31-lisbon",
    "type": "symbol",
    "mode": "labelled-points",
+   "nameInBox": true,
+   "_nameInBox": "교과서처럼 기호 옆 흰 상자 맨 위에 이름(녹색 수도는 「도시(연도)」만, 리스본은 이름 + 값 두 줄) — 지명 배치가 상자를 피하느라 26쪽 도시 이름이 빠져 어느 도시인지 알 수 없었음(U3-9 캡처). symbolLayer 가 읽음.",
    "expectLegend": 1,
    "expectPoints": 10,
    "points": {
@@ -3269,11 +3273,7 @@
     "clip": true,
     "countries": "ne_10m_admin_0_countries",
     "simplify": "10%",
-    "simplifyByIso": {
-     "KOR": "100%",
-     "PRK": "100%"
-    },
-    "_simplifyByIso": "E1(교사 결정 2026-10-19): 한반도 확대(k 30 안팎)에서 10% 단순화 해안선이 거칠어 대한민국·북한만 Natural Earth 10m 그대로(mapshaper variable percentage, 나라 Feature 마다).",
+    "_simplifyByIso": "E1(교사 결정 2026-10-19, 한반도 KOR·PRK 는 10a 에서 100%)은 10a 가 단원 상자로 자른 상세도라 유럽 상자(-40~75°E)에는 한반도가 없어 효과가 없다. build_basemap checkByIso 가 자르기 밖 열쇠를 오류로 막으므로(오타 방지) u3 에는 열쇠를 두지 않는다(U3-9). 110m·50m 전 지구 층의 한반도는 u2 와 같은 비율.",
     "rivers": {
      "file": "ne_10m_rivers_lake_centerlines",
      "maxRank": 6,

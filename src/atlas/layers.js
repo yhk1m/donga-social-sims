@@ -297,15 +297,22 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
   const items = feats.map((f) => ({ f, shape: shapeOf(f) }));
   const byF = new Map(items.map((it) => [it.f, it]));
   const VALUE_FS = 10;
-  for (const it of items) if (it.f.properties.values?.length) it.vsize = valueBoxSize(it.f.properties.values, { fs: VALUE_FS });
+  // 이름 줄(자료 properties.nameInBox — 31쪽 리스본·녹색 수도): 상자 맨 위에 기호 이름(값이 없으면 이름만 든 상자). 없으면 1단계 그대로
+  const nameInBox = !!metaOf(points).nameInBox;
+  for (const it of items) {
+    const p = it.f.properties, title = nameInBox ? (p.name ?? null) : null;
+    if (p.values?.length || title != null) it.vsize = valueBoxSize(p.values, { fs: VALUE_FS, ...(title != null ? { title } : {}) });
+  }
   let root = null;
 
   /** 값 상자 요소(흰 바탕 + 줄마다 아이콘·값) — 자리는 drawSvg 가 translate 로 */
   function valueBox(it) {
-    const { w, h: hh, rows } = it.vsize, pad = 3, sc = VALUE_FS / 10;
+    const { w, h: hh, rows, title } = it.vsize, pad = 3, sc = VALUE_FS / 10;
     const kids = [s('rect', { class: 'at-sym-vbox', x: 0, y: 0, width: round1(w), height: round1(hh), rx: 1.5 })];
-    rows.forEach((r, i) => {
-      const y = pad + i * (VALUE_FS + 1);
+    const top = title != null ? 1 : 0;
+    if (top) kids.push(s('text', { class: 'at-sym-vname', x: pad, y: round1(pad + VALUE_FS * 0.85) }, title));
+    rows.forEach((r, i0) => {
+      const i = i0 + top, y = pad + i * (VALUE_FS + 1);
       kids.push(s('path', { class: `at-sym-vicon at-sym-vicon-${r.icon || 'x'}`, d: valueIconPath(r.icon), transform: `translate(${pad},${round1(y)}) scale(${sc})` }));
       kids.push(s('text', { class: 'at-sym-vtext', x: round1(pad + VALUE_FS + 2), y: round1(y + VALUE_FS * 0.85) }, r.text));
     });

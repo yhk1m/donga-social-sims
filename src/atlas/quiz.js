@@ -20,8 +20,11 @@ const TARGET = { fill: '#ff922b', stroke: '#c2410c' };
 /**
  * 나라 칠하기 레이어. features = 바탕 지도 나라 Feature 들({properties:{iso, ko}}) — 상세도별로 줄 수 있다: { '50': [...], '10a': [...] }
  * (view.detail 이 '10a' 면 10a, 아니면 50). layer.paint(iso, color|null), layer.colorOf(iso), layer.setTarget(iso|null), layer.clear().
+ * smallPx > 0 이면(유럽 27쪽 — 바티칸·모나코는 최대 확대에서도 1~8px) smallIsos 중 화면 상자가 smallPx 보다 작은 나라를 지름 smallPx 의
+ * 동그라미로 덧그리고(칠한 색 / 문제 강조 주황 / 안 칠했으면 흰 바탕 + 회색 테), 그 동그라미를 누르면(반지름 + 3px) 그 나라로 맞힌다(layer.hit).
+ * 0(기본)이면 동그라미·hit 없음 — 아시아(u2) 그림·동작 그대로.
  */
-export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85 } = {}) {
+export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85, smallPx = 0, smallIsos = null } = {}) {
   const sets = Array.isArray(features) ? { 50: features } : features;
   const byIso = {};
   for (const [lv, list] of Object.entries(sets)) {
@@ -30,6 +33,7 @@ export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85 
   }
   const colors = new Map();
   let target = null;
+  let marks = []; // 작은 나라 동그라미 화면 자리 [{iso, x, y}] — 마지막 draw 의 것(smallPx > 0 일 때만)
   const geomOf = (iso, view) => {
     const lv = view?.detail === '10a' && byIso['10a']?.has(iso) ? '10a' : (byIso['50'] ? '50' : Object.keys(byIso)[0]);
     const it = byIso[lv]?.get(iso);
@@ -37,7 +41,7 @@ export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85 
     it.idx ||= indexGeometry(it.f.geometry);
     return clipIndexed(it.idx, view?.geoRect ?? null);
   };
-  return {
+  const layer = {
     id, z,
     meta: { title: '색칠하기' },
     paint(iso, color) { if (color) colors.set(iso, color); else colors.delete(iso); },
@@ -63,8 +67,40 @@ export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85 
           ctx.globalAlpha = 1; ctx.lineWidth = 2; ctx.strokeStyle = TARGET.stroke; ctx.stroke();
         }
       }
+      if (smallPx > 0) drawSmall(ctx, path, view);
     },
   };
+  if (smallPx > 0) {
+    layer.hit = (xy) => {
+      let best = null, bd = Infinity;
+      for (const m of marks) {
+        const d = Math.hypot(xy[0] - m.x, xy[1] - m.y);
+        if (d <= smallPx / 2 + 3 && d < bd) { bd = d; best = m; }
+      }
+      return best ? layer.feature(best.iso) : null;
+    };
+  }
+  return layer;
+
+  /** 작은 나라 동그라미(화면 상자 < smallPx) — 칠한 색·문제 강조 위에 덧그림, 자리는 hit 이 씀 */
+  function drawSmall(ctx, path, view) {
+    marks = [];
+    const r = smallPx / 2;
+    for (const iso of smallIsos || [...(byIso['50']?.keys() || [])]) {
+      const g = geomOf(iso, view);
+      if (!g) continue;
+      const [[x0, y0], [x1, y1]] = path.bounds(g);
+      if (!(x1 >= x0 && y1 >= y0) || Math.max(x1 - x0, y1 - y0) >= smallPx) continue;
+      const [x, y] = path.centroid(g);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      marks.push({ iso, x, y });
+      const isTarget = iso === target, c = colors.get(iso);
+      ctx.globalAlpha = 1;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI);
+      ctx.fillStyle = isTarget ? TARGET.fill : c || 'rgba(255,255,255,0.85)'; ctx.fill();
+      ctx.lineWidth = isTarget ? 2 : 1.2; ctx.strokeStyle = isTarget ? TARGET.stroke : '#6b6b6b'; ctx.stroke();
+    }
+  }
 }
 
 /** 경위도 상자를 넓힌다(작은 나라도 둘레가 보이게) */

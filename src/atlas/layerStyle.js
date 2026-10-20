@@ -260,11 +260,21 @@ export const VALUE_ICONS = Object.freeze({
 export const valueIconPath = (name) => VALUE_ICONS[name] || 'M2,2H8V8H2Z';
 
 /** 값 상자 크기(px): 줄마다 아이콘(fs) + 틈 + 글자(숫자·점 0.6em, 그 밖 1em) → {w, h, rows:[{icon, text, tw}]} */
-export function valueBoxSize(values, { fs = 10, pad = 3, gap = 2, lineGap = 1 } = {}) {
+export function valueBoxSize(values, { fs = 10, pad = 3, gap = 2, lineGap = 1, title = null } = {}) {
   const rows = (values || []).map((v) => ({ icon: v.icon, text: String(v.text ?? ''), tw: [...String(v.text ?? '')].reduce((a, ch) => a + (/[\d.,\-]/.test(ch) ? 0.6 : 1) * fs, 0) }));
-  const w = pad * 2 + fs + gap + Math.max(0, ...rows.map((r) => r.tw));
-  const h = pad * 2 + rows.length * fs + Math.max(0, rows.length - 1) * lineGap;
-  return { w, h, rows };
+  const iconW = rows.length ? fs + gap : 0;
+  if (title == null) { // 1단계·U3-3d 꼴 그대로(이름 줄 없음)
+    const w = pad * 2 + fs + gap + Math.max(0, ...rows.map((r) => r.tw));
+    const h = pad * 2 + rows.length * fs + Math.max(0, rows.length - 1) * lineGap;
+    return { w, h, rows };
+  }
+  // 이름 줄(layer properties.nameInBox — 31쪽 리스본·녹색 수도: 교과서처럼 상자 맨 위에 도시 이름, 아이콘 칸 없이): 숫자·괄호는 좁게
+  const t = String(title);
+  const tw = [...t].reduce((a, ch) => a + (/[\d.,\-]/.test(ch) ? 0.6 : /[()\s]/.test(ch) ? 0.4 : 1) * fs, 0);
+  const n = rows.length + 1;
+  const w = pad * 2 + Math.max(tw, iconW + Math.max(0, ...rows.map((r) => r.tw)));
+  const h = pad * 2 + n * fs + (n - 1) * lineGap;
+  return { w, h, rows, title: t };
 }
 
 const boxHit = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];

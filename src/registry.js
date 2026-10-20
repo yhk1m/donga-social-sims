@@ -21,4 +21,5 @@ export const SIMS = [
   { id: 's1-u6-northeast-route', book: 's1', unit: 'Ⅵ. 오세아니아와 극지방', page: 113, title: '북동 항로와 기존 항로 비교', kind: '지도' },
   { id: 's1-u6-arctic-claims', book: 's1', unit: 'Ⅵ. 오세아니아와 극지방', page: 115, title: '북극 영유권 주장', kind: '지도' },
   { id: 'atlas-u2-asia', book: 'atlas', unit: 'Ⅱ. 아시아', page: 16, title: '사회과부도 아시아', kind: '지도' },
+  { id: 'atlas-u3-europe', book: 'atlas', unit: 'Ⅲ. 유럽', page: 26, title: '사회과부도 유럽', kind: '지도' },
 ];

@@ -3,13 +3,14 @@
 // 셸 → 지도(createMap) → 음영·고도 색 → 지도 도구·자연색(늦게)·범례 칸·말풍선·원본 쪽 보기 → 목차 → 주제 칸·출처 → 주제(buildTopic).
 // 주제를 바꾸면 이전 주제(topic.js 가 만든 레이어·범례·카드·그래프·퀴즈·확대 창)를 destroy 하고 새로 펼친다. 목차·도구·출처 줄은 그대로.
 // 단원 main.js 는 자료 정적 import(fetch 금지) + 단원 선택값만 넘긴다:
-//   mountAtlas(root, { simId, basemap, places, topics, charts, layers, insets, boundsOf, centerLonOf, baseColor, locators, unitBoxes }) → { destroy }
+//   mountAtlas(root, { simId, basemap, places, topics, charts, layers, insets, boundsOf, centerLonOf, baseColor, locators, unitBoxes, coloring }) → { destroy }
 //   insets      {레이어 ref: 바탕 윤곽 GeoJSON} — 무대 위 확대 창으로 그릴 레이어
 //   boundsOf    {레이어 ref: [w, s, e, n]} — 묶음 보기 범위(주제 view 밖일 때)
 //   centerLonOf {레이어 ref: 중심 경도} — 묶음을 고르면 그 중심(태평양 중심 등)
 //   baseColor   {주제 id: 'tint'|'natural'|'none'} — 주제별 바탕 색 기본값(없으면 'none')
 //   locators    {레이어 ref: {bounds, names, title}} — 작은 위치도
 //   unitBoxes   10a 상세 상자(기본 basemap.meta.unitBoxes)
+//   coloring    {smallPx} — 색칠하기에서 화면 상자가 smallPx 보다 작은 나라를 동그라미로 그리고 누를 수 있게(quiz.js coloringLayer, 없으면 0)
 // 규칙(EMBED_RULES.md): DOM 은 h() 로만, 검색은 root 안에서만, 사진·쪽·음영은 공개 Pages 절대 주소.
 import { feature } from 'topojson-client';
 import { createShell, addBlock } from '../shared/shell.js';
@@ -23,7 +24,7 @@ import { buildTopic } from './topic.js';
 
 export function mountAtlas(root, {
   simId, basemap, places, topics, charts, layers,
-  insets = {}, boundsOf = {}, centerLonOf = {}, baseColor = {}, locators = {}, unitBoxes = basemap.meta.unitBoxes,
+  insets = {}, boundsOf = {}, centerLonOf = {}, baseColor = {}, locators = {}, unitBoxes = basemap.meta.unitBoxes, coloring = {},
 }) {
   const { stage, panel } = createShell(root, simId);
   const map = createMap(stage, { basemap, places, unitBoxes });
@@ -55,7 +56,7 @@ export function mountAtlas(root, {
     current?.destroy();
     nav.update(topic.id);
     current = buildTopic({
-      map, stage, body, viewer, credits, tip, topic, charts, layers, countryFeatures, insets, boundsOf, centerLonOf, locators, legendPanel: legends, baseColor: baseColor[topic.id] || 'none',
+      map, stage, body, viewer, credits, tip, topic, charts, layers, countryFeatures, insets, boundsOf, centerLonOf, locators, legendPanel: legends, baseColor: baseColor[topic.id] || 'none', coloring,
     });
     root.atlasTopic = current; // 확인용(헤드리스 캡처)
     return current;

@@ -239,6 +239,19 @@ test('valueBoxSize·valueIconPath: 줄마다 아이콘 + 값, 숫자는 좁게',
   assert.match(valueIconPath('모름'), /^M/);
 });
 
+test('valueBoxSize title(nameInBox): 이름 줄을 더한 높이·너비, title 없으면 1단계 크기 그대로', () => {
+  const vals = [{ icon: 'charger', text: '5.47' }, { icon: 'person', text: '39.8' }];
+  assert.deepEqual(valueBoxSize(vals, { fs: 10 }), valueBoxSize(vals, { fs: 10, title: null }));
+  const b = valueBoxSize(vals, { fs: 10, title: '오슬로' });
+  assert.equal(b.title, '오슬로');
+  assert.equal(b.h, 3 * 2 + 3 * 10 + 2);
+  assert.ok(Math.abs(b.w - (6 + Math.max(30, 10 + 2 + 24))) < 1e-9);
+  const n = valueBoxSize(undefined, { fs: 10, title: '스톡홀름(2010)' });
+  assert.equal(n.rows.length, 0);
+  assert.equal(n.h, 3 * 2 + 10);
+  assert.ok(Math.abs(n.w - (6 + 4 * 10 + 2 * 4 + 4 * 6)) < 1e-9, `${n.w}`);
+});
+
 test('placeValueBoxes: 값 상자는 어느 기호 원과도, 서로도 겹치지 않음(빽빽하면 오른쪽 → 왼쪽 → 대각선 → 위·아래), 장애물도 피함', () => {
   // 리스본 작은 지도처럼 도시 9곳이 가까이: 지름 8px 기호, 상자 40×27
   const pts = [[100, 100], [130, 104], [96, 140], [150, 90], [140, 140], [190, 120], [84, 180], [170, 175], [128, 200]];

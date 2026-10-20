@@ -331,6 +331,36 @@ test('coloringQuiz: 누르면 고른 색으로 칠하고(같은 색 다시 = 지
   }
 });
 
+test('coloringLayer smallPx(u3 작은 나라): 화면 상자가 작은 나라만 동그라미(칠한 색·강조·빈 테) + 동그라미 누르면 그 나라, 0 이면 동그라미·hit 없음', () => {
+  const sq = (iso, x, y, d) => ({ type: 'Feature', properties: { iso, ko: iso }, geometry: { type: 'Polygon', coordinates: [[[x, y], [x + d, y], [x + d, y + d], [x, y + d], [x, y]]] } });
+  const feats = [sq('BIG', 0, 0, 10), sq('VAT', 20, 20, 0.1), sq('MCO', 30, 30, 0.5)];
+  // 1° = 1px 인 가짜 경로(bounds·centroid 는 첫 고리 상자)
+  const ring = (g) => (g.type === 'MultiPolygon' ? g.coordinates[0][0] : g.coordinates[0]);
+  const path = Object.assign(() => {}, {
+    bounds: (g) => { const r = ring(g); const xs = r.map((p) => p[0]), ys = r.map((p) => p[1]); return [[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]]; },
+    centroid: (g) => { const [[a, b], [c, d]] = path.bounds(g); return [(a + c) / 2, (b + d) / 2]; },
+  });
+  const arcs = [];
+  const ctx = { beginPath() {}, fill() { arcs.at(-1) && (arcs.at(-1).fill = this.fillStyle); }, stroke() { arcs.at(-1) && (arcs.at(-1).stroke = this.strokeStyle); }, arc(x, y, r) { arcs.push({ x, y, r }); } };
+  const plain = coloringLayer(feats);
+  assert.equal(plain.hit, undefined, '기본(0)은 hit 없음 — u2 동작 그대로');
+  plain.draw(ctx, path, {});
+  assert.equal(arcs.length, 0, '기본(0)은 동그라미 없음');
+  const layer = coloringLayer(feats, { smallPx: 8, smallIsos: ['BIG', 'VAT', 'MCO'] });
+  layer.paint('MCO', '#b8dea0');
+  layer.setTarget('VAT');
+  layer.draw(ctx, path, {});
+  assert.deepEqual(arcs.map((a) => [a.x, a.y, a.r]), [[20.05, 20.05, 4], [30.25, 30.25, 4]], 'BIG(10px)는 동그라미 없음');
+  assert.equal(arcs[0].fill, '#ff922b', '문제 강조는 주황');
+  assert.equal(arcs[1].fill, '#b8dea0', '칠한 색');
+  assert.equal(layer.hit([22, 22])?.properties.iso, 'VAT', '반지름 + 3px 안');
+  assert.equal(layer.hit([30, 36])?.properties.iso, 'MCO');
+  assert.equal(layer.hit([5, 5]), null, '큰 나라는 바탕 지도 맞히기에 맡김');
+  layer.setTarget(null); layer.paint('MCO', null);
+  arcs.length = 0; layer.draw(ctx, path, {});
+  assert.equal(arcs[0].fill, 'rgba(255,255,255,0.85)', '안 칠했으면 흰 바탕');
+});
+
 test('heritageQuiz: 사진 + 나라/종교 보기 4개, 여러 종교는 묶음이 정답, onFocus, 채점', () => {
   const markers = topics.find((t) => t.id === 'heritage').markers;
   const focused = [];

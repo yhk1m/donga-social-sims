@@ -349,6 +349,7 @@ function finish(layer, meta) {
     ...(Object.keys(sizes).length ? { sizeBy: 'class' } : {}),          // 크기 단계 기호(symbolLayer 가 단계 비를 지킴)
     ...(layer.legendStyle ? { legendStyle: layer.legendStyle } : {}),  // 범례 견본 모양('nested-circles' = 겹친 원 — ui.js legendBlock)
     ...(layer.valueLegend ? { valueLegend: layer.valueLegend } : {}),  // 값 붙은 기호의 아이콘 설명 [{icon, label}]
+    ...(layer.nameInBox ? { nameInBox: true } : {}),                  // 값 상자 맨 위에 기호 이름(없으면 이름만 든 상자) — symbolLayer 가 읽음
     legend: legend.map((e) => ({ ...e, present: present.has(e.cls) })),
   };
   fs.mkdirSync(OUT, { recursive: true });
