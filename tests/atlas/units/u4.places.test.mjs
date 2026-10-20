@@ -43,8 +43,15 @@ test('rank 1~6, kind 목록 안', () => { for (const p of places) { assert.ok(p.
 test('종류별 수(34쪽 실측): 나라 76(아프리카 54 + 남유럽·서아시아 22) · 수도 71 · 도시 ≥ 200 · 하천 18 · 사막 9 · 산 13', () => {
   const n = (k) => places.filter((p) => p.kind === k).length;
   assert.equal(n('country'), 76); assert.equal(n('capital'), 71); assert.ok(n('city') >= 200, `${n('city')}`);
-  assert.equal(n('river'), 18); assert.equal(n('desert'), 9); assert.equal(n('mountain'), 13); assert.equal(n('region'), 3);
+  assert.equal(n('river'), 18); assert.equal(n('desert'), 9); assert.equal(n('mountain'), 13); assert.equal(n('region'), 8);   // 반도·지역 3 + 「○○ 해안」 5
   assert.equal(places.filter((p) => p.kind === 'country' && p.en).length, 54);   // 아프리카 나라만 영문(교과서대로)
+});
+
+test('파란 명조라도 물이 아닌 이름(U4-5 리뷰): 폭포·운하 = other, 「○○ 해안」 = region', () => {
+  for (const n of ['제1폭포', '제2폭포', '제3폭포', '제4폭포', '제5폭포', '제6폭포', '빅토리아 폭포', '수에즈 운하']) assert.equal(one(n).kind, 'other', n);
+  for (const n of ['곡물 해안', '노예 해안', '상아 해안', '황금 해안', '후추 해안']) assert.equal(one(n).kind, 'region', n);
+  assert.ok(!places.some((p) => p.kind === 'sea' && /폭포$|운하$|해안$/.test(p.name)));
+  assert.equal(places.filter((p) => p.kind === 'sea').length, 22);
 });
 
 test('34쪽에서 고친 글자: 사하라 사막(자간)·백나일강/청나일강(거꾸로 맞선 글자)·희망봉 = 곶·남회귀선 아님', () => {

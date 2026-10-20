@@ -1151,6 +1151,14 @@
      "river"
     ],
     [
+     "폭포$|운하$",
+     "other"
+    ],
+    [
+     "해안$",
+     "region"
+    ],
+    [
      "",
      "sea"
     ]
@@ -1206,7 +1214,7 @@
    "capital": "capital",
    "mountain": "mountain"
   },
-  "_kinds": "kinds[role] = [[정규식, 종류], ...] 처음 맞는 것. 호수·해구·해협·만은 sea(물), 고원·분지는 plain(평탄 지형 묶음). city 역할은 짝지은 기호가 수도(붉은 사각·원)면 capital, 삼각형이면 mountain.",
+  "_kinds": "kinds[role] = [[정규식, 종류], ...] 처음 맞는 것. 호수·해구·해협·만은 sea(물), 파란 명조라도 폭포(제1~6폭포·빅토리아 폭포)·운하(수에즈)는 other, 「○○ 해안」(곡물·노예·상아·황금·후추)은 region(물이 아닌 이름 — U4-5 리뷰), 고원·분지는 plain(평탄 지형 묶음). city 역할은 짝지은 기호가 수도(붉은 사각·원)면 capital, 삼각형이면 mountain.",
   "symbols": {
    "sizeRange": [
     1.5,
