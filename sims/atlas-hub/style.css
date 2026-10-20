@@ -1,0 +1,72 @@
+/* © 2026 김용현 */
+/* 사회과부도 모음 — 단원 카드. 조각(sims/atlas-hub/main.js)과 Pages 보기 페이지(scripts/atlas/hub_page.mjs 가 .ds-sim 을 .av 로 바꿔 씀)가 같이 쓴다.
+   규칙(EMBED_RULES.md): 모든 선택자는 .ds-sim 으로 시작, 태그 선택자·*·:root·!important·position:fixed 금지, z-index 는 100 이하.
+   색·글꼴 값은 src/shared/theme.css 와 같다(조각이 셸 격자를 쓰지 않아 theme.css 를 싣지 않고 값만 옮김). */
+
+.ds-sim {
+  --bg: #f6f5f1;
+  --panel: #ffffff;
+  --ink: #1d2126;
+  --ink-2: #5b636d;
+  --line: #e2e0d9;
+  --accent: #1f6feb;
+  --accent-soft: #e6efff;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
+  --font: Pretendard, 'Pretendard Variable', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+
+  box-sizing: border-box;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.ds-sim .ds-icon { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+/* 머리말 */
+.ds-sim .ah-wrap { max-width: 1240px; margin: 0 auto; padding: 28px 24px 36px; box-sizing: border-box; }
+.ds-sim .ah-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; padding-bottom: 14px; margin-bottom: 20px; border-bottom: 2px solid var(--ink); }
+.ds-sim .ah-h1 { font-size: 24px; font-weight: 800; margin: 0; line-height: 1.3; letter-spacing: -0.01em; }
+.ds-sim .ah-lead { font-size: 13px; color: var(--ink-2); margin: 4px 0 0; }
+.ds-sim .ah-count { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* 카드 격자: PC 3~4열, 태블릿 2~3열 */
+.ds-sim .ah-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+.ds-sim .ah-cell { margin: 0; min-width: 0; display: flex; }
+.ds-sim .ah-card {
+  flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  overflow: hidden; color: inherit; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+.ds-sim .ah-card.is-link:hover { border-color: var(--accent); box-shadow: var(--shadow); transform: translateY(-2px); }
+.ds-sim .ah-card.is-link:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.ds-sim .ah-card.is-current { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+.ds-sim .ah-thumb { position: relative; aspect-ratio: 16 / 10; background: #e9eef0; border-bottom: 1px solid var(--line); overflow: hidden; }
+.ds-sim .ah-img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ds-sim .ah-ph { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #9aa1a8; font-size: 13px; font-weight: 600;
+  background: repeating-linear-gradient(135deg, #f1f0eb 0 10px, #ecebe5 10px 20px); }
+.ds-sim .ah-ph .ds-icon { width: 30px; height: 30px; stroke-width: 1.5; }
+.ds-sim .ah-ver { position: absolute; top: 10px; right: 10px; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.94); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.12); font-variant-numeric: tabular-nums; }
+
+.ds-sim .ah-body { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px 16px; flex: 1; }
+.ds-sim .ah-name { font-size: 18px; font-weight: 800; margin: 0; line-height: 1.35; display: flex; align-items: baseline; gap: 6px; }
+.ds-sim .ah-numeral { color: var(--accent); }
+.ds-sim .ah-meta { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.ds-sim .ah-topics { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; padding: 0; list-style: none; }
+.ds-sim .ah-topic { margin: 0; font-size: 12px; padding: 1px 7px; border-radius: 6px; background: #f1f0eb; color: var(--ink); white-space: nowrap; }
+.ds-sim .ah-open { margin-top: auto; padding-top: 10px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--accent); }
+
+/* 준비 중 */
+.ds-sim .ah-card.is-planned { background: #faf9f6; border-style: dashed; box-shadow: none; opacity: .8; }
+.ds-sim .ah-card.is-planned .ah-name, .ds-sim .ah-card.is-planned .ah-numeral { color: #8b9198; }
+
+@media (max-width: 720px) {
+  .ds-sim .ah-wrap { padding: 20px 16px 28px; }
+  .ds-sim .ah-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ds-sim .ah-card { transition: none; }
+  .ds-sim .ah-card.is-link:hover { transform: none; }
+}
