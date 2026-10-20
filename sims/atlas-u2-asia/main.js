@@ -8,7 +8,7 @@ import { h } from '../../src/shared/dom.js';
 import { createMap } from '../../src/atlas/renderer.js';
 import { attachRelief } from '../../src/atlas/relief.js';
 import { attachTint } from '../../src/atlas/tint.js';
-import { attachNatural, lazyNatural } from '../../src/atlas/natural.js';
+import { attachNatural, lazyNatural, releaseNatural } from '../../src/atlas/natural.js';
 import { topicNav, mapTools, pageViewer, tooltip, creditBlock } from '../../src/atlas/ui.js';
 import { buildTopic } from '../../src/atlas/topic.js';
 import basemap from './data/basemap.json';
@@ -85,6 +85,7 @@ export default function mount(root) {
     natural.destroy();
     tools.destroy(); tip.destroy(); viewer.destroy(); nav.destroy(); credits.destroy();
     map.destroy();
+    releaseNatural(); // 캐시한 자연색 화소(약 32MB)도 놓아줌
   }
   root.atlasDestroy = destroy;
   return { destroy };
