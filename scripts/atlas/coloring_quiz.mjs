@@ -13,6 +13,10 @@
 //     (「보스니아」+「헤르체고비나」 → 공백으로 이음, 상자는 합침), isoByLabel {글자: ADM0_A3} = Natural Earth 한국어 이름 초성이 달라 짝이 안 되는 나라
 //     (「바티칸」 ↔ 「바티칸 시국」), capitalByNe = 손글씨 수도의 나라를 그 지명 가까이(nearKm)의 Natural Earth 「Admin-0 capital」 나라로(작은 나라 수도 기호가
 //     옮겨 그린 자리라 이웃 나라 면에 떨어짐 — 파두츠·모나코·니코시아), noCapital {ADM0_A3: 까닭} = 수도 지명이 따로 없는 나라(경고 대신 수도 칸 없음).
+//   u4 35쪽에서 더한 것(역시 설정이 있을 때만):
+//     regions {ADM0_A3: 까닭} = 나라가 아닌 「지역」(서사하라 — 교사 Q1: 칠할 수 있으나 나라 수 밖). 그 면의 이름은 places 의 regionKinds(기본 ['region'])
+//     지명에서도 찾고, 출력에 region: true. capitalByNe 이고 손글씨 수도가 없는 나라의 면 안에 places 수도가 없으면(라바트 — Natural Earth 10m
+//     해안선이 도시 점보다 안쪽이라 면 밖 2km) 그 나라 Natural Earth 「Admin-0 capital」에서 nearKm 안 가장 가까운 places 수도(places+ne).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -76,6 +80,7 @@ export function buildColoring({ labels, fit, places, countries, nePlaces, cfg })
   const centre = (b) => conv.invert([(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]);
   const placeCountries = places.filter((p) => cfg.countryKinds.includes(p.kind));
   const placeCapitals = places.filter((p) => cfg.capitalKinds.includes(p.kind));
+  const placeRegions = cfg.regions ? places.filter((p) => (cfg.regionKinds ?? ['region']).includes(p.kind)) : [];
   const ll = (p) => [p.lon, p.lat];
   const out = [];
   const dist = (g, p) => (contains(g.geometry, p) ? 0 : nearKm(g.geometry, p));
@@ -94,7 +99,8 @@ export function buildColoring({ labels, fit, places, countries, nePlaces, cfg })
     if (!f) f = countryAt(countries, pos, cfg.nearKm);
     if (!f) { W.push(`${lab.text}: ${cfg.nearKm}km 안에 나라 면 없음 (${round4(pos)})`); continue; }
     // 이름 = 교과서 지명(places 나라)에서: 다 적힌 글자는 그 이름, 초성은 초성이 같은 지명(Natural Earth 이름과 같으면 그것, 아니면 하나뿐일 때)
-    const cand = placeCountries.filter((p) => choseong(p.name) === cho);
+    const isRegion = Boolean(cfg.regions?.[f.properties.ADM0_A3]);
+    const cand = (isRegion ? [...placeCountries, ...placeRegions] : placeCountries).filter((p) => choseong(p.name) === cho);
     const names = [...new Set(cand.map((p) => p.name))];
     let name = null;
     if (!isChoseong(text)) name = names.find((n) => key(n) === text) ?? null;
@@ -104,6 +110,7 @@ export function buildColoring({ labels, fit, places, countries, nePlaces, cfg })
     const here = countryAt(countries, pos, 0);   // 글자 가운데가 든 면(0km = 안에 있을 때만)
     const c = { name, label: lab.text, iso: f.properties.ADM0_A3, neName: f.properties.NAME, labelLonlat: round4(pos), f };
     if (here && here !== f) c.labelIso = here.properties.ADM0_A3;
+    if (isRegion) c.region = true;
     out.push(c);
   }
   // 같은 나라가 두 번 잡히면 경고
@@ -130,6 +137,7 @@ export function buildColoring({ labels, fit, places, countries, nePlaces, cfg })
     if (printed.has(c.iso)) W.push(`${c.name}: 손글씨 수도 둘(${printed.get(c.iso).name}, ${p.name})`);
     printed.set(c.iso, p);
   }
+  for (const iso of Object.keys(cfg.regions ?? {})) if (!out.some((c) => c.iso === iso)) W.push(`regions ${iso}: 색칠하기 지도 글자에 없음`);
   for (const c of out) {
     let cap = printed.get(c.iso), how = 'printed';
     if (!cap && cfg.noCapital?.[c.iso]) { delete c.f; continue; }
@@ -143,6 +151,12 @@ export function buildColoring({ labels, fit, places, countries, nePlaces, cfg })
           cap = inside.sort((a, b) => Math.min(...ne.map((q) => km(ll(a), q.ll))) - Math.min(...ne.map((q) => km(ll(b), q.ll))))[0];
           how = 'places+ne';
         } else W.push(`${c.name}: places 수도 ${inside.length}개, Natural Earth 수도 없음`);
+      } else if (cfg.capitalByNe) {   // 면 밖으로 조금 나간 해안 수도(라바트): Natural Earth 수도 가까이(nearKm) 가장 가까운 places 수도
+        const ne = nePlaces.filter((q) => q.adm0 === c.iso && q.cls === 'Admin-0 capital');
+        let bd = cfg.nearKm;
+        for (const p of placeCapitals) for (const q of ne) { const d = km(ll(p), q.ll); if (d < bd) { bd = d; cap = p; } }
+        how = 'places+ne';
+        if (!cap) W.push(`${c.name}: 면 안 places 수도 없음(Natural Earth 수도 ${cfg.nearKm}km 안에도 없음)`);
       } else W.push(`${c.name}: 면 안 places 수도 없음`);
     }
     if (cap) { c.capital = cap.name; c.capitalLonlat = round4(ll(cap)); c.capitalFrom = how; }

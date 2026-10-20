@@ -1,0 +1,888 @@
+{
+ "_doc": "coloring_quiz.mjs 생성물(직접 고치지 말고 고칠 값은 overrides.json). name = 나라 이름(교과서 지명), label = 색칠하기 지도 글자(초성 또는 이름), iso = Natural Earth ADM0_A3, labelIso = 글자가 놓인 다른 나라, capitalFrom = printed(색칠하기 지도에 적힌 수도)·places(일반도 수도 지명)·places+ne(여럿 중 Natural Earth 수도에 가까운 것).",
+ "page": 35,
+ "map": "p35-coloring",
+ "inputsHash": "ce328e1a8e8b2d4e407ae59569be3b5806305c25ada1809830b2649e62a42c74",
+ "countries": [
+  {
+   "name": "앙골라",
+   "label": "ㅇㄱㄹ",
+   "iso": "AGO",
+   "neName": "Angola",
+   "labelLonlat": [
+    17.304,
+    -12.5432
+   ],
+   "capital": "루안다",
+   "capitalLonlat": [
+    13.31,
+    -8.84
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "부룬디",
+   "label": "부룬디",
+   "iso": "BDI",
+   "neName": "Burundi",
+   "labelLonlat": [
+    28.2853,
+    -3.4639
+   ],
+   "labelIso": "COD",
+   "capital": "기테가",
+   "capitalLonlat": [
+    29.71,
+    -3.37
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "베냉",
+   "label": "ㅂㄴ",
+   "iso": "BEN",
+   "neName": "Benin",
+   "labelLonlat": [
+    2.2911,
+    10.4046
+   ],
+   "capital": "포르토노보",
+   "capitalLonlat": [
+    2.53,
+    6.56
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "부르키나파소",
+   "label": "부르키나파소",
+   "iso": "BFA",
+   "neName": "Burkina Faso",
+   "labelLonlat": [
+    -1.6752,
+    13.1639
+   ],
+   "capital": "와가두구",
+   "capitalLonlat": [
+    -1.55,
+    12.38
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "보츠와나",
+   "label": "ㅂㅊㅇㄴ",
+   "iso": "BWA",
+   "neName": "Botswana",
+   "labelLonlat": [
+    24.4955,
+    -21.933
+   ],
+   "capital": "가보로네",
+   "capitalLonlat": [
+    25.91,
+    -24.65
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "중앙아프리카 공화국",
+   "label": "ㅈㅇㅇㅍㄹㅋㄱㅎㄱ",
+   "iso": "CAF",
+   "neName": "Central African Rep.",
+   "labelLonlat": [
+    20.3717,
+    6.3971
+   ],
+   "capital": "방기",
+   "capitalLonlat": [
+    18.56,
+    4.37
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "코트디부아르",
+   "label": "ㅋㅌㄷㅂㅇㄹ",
+   "iso": "CIV",
+   "neName": "Côte d'Ivoire",
+   "labelLonlat": [
+    -5.373,
+    8.3978
+   ],
+   "capital": "야무수크로",
+   "capitalLonlat": [
+    -5.28,
+    6.82
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "카메룬",
+   "label": "ㅋㅁㄹ",
+   "iso": "CMR",
+   "neName": "Cameroon",
+   "labelLonlat": [
+    11.9551,
+    5.1101
+   ],
+   "capital": "야운데",
+   "capitalLonlat": [
+    11.51,
+    3.87
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "콩고 민주 공화국",
+   "label": "ㅋㄱ ㅁㅈ ㄱㅎㄱ",
+   "iso": "COD",
+   "neName": "Dem. Rep. Congo",
+   "labelLonlat": [
+    22.9863,
+    -2.2719
+   ],
+   "capital": "킨샤사",
+   "capitalLonlat": [
+    15.31,
+    -4.33
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "콩고",
+   "label": "ㅋㄱ",
+   "iso": "COG",
+   "neName": "Congo",
+   "labelLonlat": [
+    15.747,
+    -0.0761
+   ],
+   "capital": "브라자빌",
+   "capitalLonlat": [
+    15.28,
+    -4.26
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "코모로",
+   "label": "코모로",
+   "iso": "COM",
+   "neName": "Comoros",
+   "labelLonlat": [
+    44.5076,
+    -10.9509
+   ],
+   "capital": "모로니",
+   "capitalLonlat": [
+    43.24,
+    -11.7
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "카보베르데",
+   "label": "카보베르데",
+   "iso": "CPV",
+   "neName": "Cabo Verde",
+   "labelLonlat": [
+    -23.5483,
+    15.6201
+   ],
+   "capital": "프라이아",
+   "capitalLonlat": [
+    -23.52,
+    14.92
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "지부티",
+   "label": "지부티",
+   "iso": "DJI",
+   "neName": "Djibouti",
+   "labelLonlat": [
+    44.331,
+    12.0611
+   ],
+   "capital": "지부티",
+   "capitalLonlat": [
+    43.15,
+    11.6
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "알제리",
+   "label": "ㅇㅈㄹ",
+   "iso": "DZA",
+   "neName": "Algeria",
+   "labelLonlat": [
+    2.4004,
+    27.5465
+   ],
+   "capital": "알제",
+   "capitalLonlat": [
+    3.05,
+    36.76
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "이집트",
+   "label": "ㅇㅈㅌ",
+   "iso": "EGY",
+   "neName": "Egypt",
+   "labelLonlat": [
+    29.8689,
+    26.2513
+   ],
+   "capital": "카이로",
+   "capitalLonlat": [
+    31.03,
+    30.05
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "에리트레아",
+   "label": "에리트레아",
+   "iso": "ERI",
+   "neName": "Eritrea",
+   "labelLonlat": [
+    37.3304,
+    15.9349
+   ],
+   "capital": "아스마라",
+   "capitalLonlat": [
+    38.94,
+    15.33
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "에티오피아",
+   "label": "ㅇㅌㅇㅍㅇ",
+   "iso": "ETH",
+   "neName": "Ethiopia",
+   "labelLonlat": [
+    39.0927,
+    7.7543
+   ],
+   "capital": "아디스아바바",
+   "capitalLonlat": [
+    38.77,
+    9.14
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "가봉",
+   "label": "가 봉",
+   "iso": "GAB",
+   "neName": "Gabon",
+   "labelLonlat": [
+    11.8593,
+    -0.731
+   ],
+   "capital": "리브르빌",
+   "capitalLonlat": [
+    9.49,
+    0.46
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "가나",
+   "label": "ㄱㄴ",
+   "iso": "GHA",
+   "neName": "Ghana",
+   "labelLonlat": [
+    -1.1745,
+    7.6939
+   ],
+   "capital": "아크라",
+   "capitalLonlat": [
+    -0.29,
+    5.61
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "기니",
+   "label": "ㄱㄴ",
+   "iso": "GIN",
+   "neName": "Guinea",
+   "labelLonlat": [
+    -10.9346,
+    10.6957
+   ],
+   "capital": "코나크리",
+   "capitalLonlat": [
+    -13.58,
+    9.56
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "감비아",
+   "label": "감비아",
+   "iso": "GMB",
+   "neName": "Gambia",
+   "labelLonlat": [
+    -19.5723,
+    13.1775
+   ],
+   "capital": "반줄",
+   "capitalLonlat": [
+    -16.65,
+    13.34
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "기니비사우",
+   "label": "기니비사우",
+   "iso": "GNB",
+   "neName": "Guinea-Bissau",
+   "labelLonlat": [
+    -19.8097,
+    11.6333
+   ],
+   "capital": "비사우",
+   "capitalLonlat": [
+    -15.6,
+    11.86
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "적도 기니",
+   "label": "적도 기니",
+   "iso": "GNQ",
+   "neName": "Eq. Guinea",
+   "labelLonlat": [
+    4.8276,
+    3.5849
+   ],
+   "capital": "말라보",
+   "capitalLonlat": [
+    8.72,
+    3.61
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "케냐",
+   "label": "ㅋㄴ",
+   "iso": "KEN",
+   "neName": "Kenya",
+   "labelLonlat": [
+    37.6935,
+    0.8211
+   ],
+   "capital": "나이로비",
+   "capitalLonlat": [
+    36.81,
+    -1.28
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "라이베리아",
+   "label": "라이베리아",
+   "iso": "LBR",
+   "neName": "Liberia",
+   "labelLonlat": [
+    -12.1003,
+    5.5032
+   ],
+   "capital": "몬로비아",
+   "capitalLonlat": [
+    -10.67,
+    6.45
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "리비아",
+   "label": "ㄹㅂㅇ",
+   "iso": "LBY",
+   "neName": "Libya",
+   "labelLonlat": [
+    17.4322,
+    27.0496
+   ],
+   "capital": "트리폴리",
+   "capitalLonlat": [
+    13.23,
+    32.79
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "레소토",
+   "label": "레소토",
+   "iso": "LSO",
+   "neName": "Lesotho",
+   "labelLonlat": [
+    29.3086,
+    -30.2561
+   ],
+   "labelIso": "ZAF",
+   "capital": "마세루",
+   "capitalLonlat": [
+    27.48,
+    -29.32
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "모로코",
+   "label": "ㅁㄹㅋ",
+   "iso": "MAR",
+   "neName": "Morocco",
+   "labelLonlat": [
+    -6.2183,
+    31.9128
+   ],
+   "capital": "라바트",
+   "capitalLonlat": [
+    -6.84,
+    34.03
+   ],
+   "capitalFrom": "places+ne"
+  },
+  {
+   "name": "마다가스카르",
+   "label": "ㅁㄷㄱㅅㅋㄹ",
+   "iso": "MDG",
+   "neName": "Madagascar",
+   "labelLonlat": [
+    46.4676,
+    -17.6007
+   ],
+   "capital": "안타나나리보",
+   "capitalLonlat": [
+    47.51,
+    -19
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "말리",
+   "label": "ㅁㄹ",
+   "iso": "MLI",
+   "neName": "Mali",
+   "labelLonlat": [
+    -1.5077,
+    17.7147
+   ],
+   "capital": "바마코",
+   "capitalLonlat": [
+    -8,
+    12.65
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "모잠비크",
+   "label": "ㅁㅈㅂㅋ",
+   "iso": "MOZ",
+   "neName": "Mozambique",
+   "labelLonlat": [
+    36.8334,
+    -18.3202
+   ],
+   "capital": "마푸투",
+   "capitalLonlat": [
+    32.55,
+    -25.86
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "모리타니",
+   "label": "ㅁㄹㅌㄴ",
+   "iso": "MRT",
+   "neName": "Mauritania",
+   "labelLonlat": [
+    -10.6935,
+    19.4977
+   ],
+   "capital": "누악쇼트",
+   "capitalLonlat": [
+    -15.98,
+    18.09
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "모리셔스",
+   "label": "모리셔스",
+   "iso": "MUS",
+   "neName": "Mauritius",
+   "labelLonlat": [
+    55.6211,
+    -19.573
+   ],
+   "capital": "포트루이스",
+   "capitalLonlat": [
+    57.47,
+    -20.2
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "말라위",
+   "label": "말라위",
+   "iso": "MWI",
+   "neName": "Malawi",
+   "labelLonlat": [
+    33.6383,
+    -12.355
+   ],
+   "capital": "릴롱궤",
+   "capitalLonlat": [
+    33.76,
+    -14
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "나미비아",
+   "label": "ㄴㅁㅂㅇ",
+   "iso": "NAM",
+   "neName": "Namibia",
+   "labelLonlat": [
+    17.2062,
+    -21.3435
+   ],
+   "capital": "빈트후크",
+   "capitalLonlat": [
+    17.12,
+    -22.6
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "니제르",
+   "label": "ㄴㅈㄹ",
+   "iso": "NER",
+   "neName": "Niger",
+   "labelLonlat": [
+    9.7146,
+    17.116
+   ],
+   "capital": "니아메",
+   "capitalLonlat": [
+    2.11,
+    13.52
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "나이지리아",
+   "label": "ㄴㅇㅈㄹㅇ",
+   "iso": "NGA",
+   "neName": "Nigeria",
+   "labelLonlat": [
+    8.3337,
+    10.0984
+   ],
+   "capital": "아부자",
+   "capitalLonlat": [
+    7.6,
+    8.93
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "르완다",
+   "label": "르완다",
+   "iso": "RWA",
+   "neName": "Rwanda",
+   "labelLonlat": [
+    28.4014,
+    -1.8737
+   ],
+   "labelIso": "COD",
+   "capital": "키갈리",
+   "capitalLonlat": [
+    30.06,
+    -1.81
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "서사하라",
+   "label": "서사하라",
+   "iso": "SAH",
+   "neName": "W. Sahara",
+   "labelLonlat": [
+    -14.6217,
+    24.312
+   ],
+   "labelIso": "MAR",
+   "region": true
+  },
+  {
+   "name": "수단",
+   "label": "ㅅㄷ",
+   "iso": "SDN",
+   "neName": "Sudan",
+   "labelLonlat": [
+    30.1431,
+    15.7434
+   ],
+   "capital": "하르툼",
+   "capitalLonlat": [
+    32.53,
+    15.59
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "남수단",
+   "label": "ㄴㅅㄷ",
+   "iso": "SDS",
+   "neName": "S. Sudan",
+   "labelLonlat": [
+    30.0067,
+    7.2165
+   ],
+   "capital": "주바",
+   "capitalLonlat": [
+    31.58,
+    4.83
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "세네갈",
+   "label": "ㅅㄴㄱ",
+   "iso": "SEN",
+   "neName": "Senegal",
+   "labelLonlat": [
+    -14.6993,
+    14.4746
+   ],
+   "capital": "다카르",
+   "capitalLonlat": [
+    -17.48,
+    14.72
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "시에라리온",
+   "label": "시에라리온",
+   "iso": "SLE",
+   "neName": "Sierra Leone",
+   "labelLonlat": [
+    -18.1956,
+    8.2702
+   ],
+   "capital": "프리타운",
+   "capitalLonlat": [
+    -13.24,
+    8.47
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "소말리아",
+   "label": "ㅅㅁㄹㅇ",
+   "iso": "SOM",
+   "neName": "Somalia",
+   "labelLonlat": [
+    45.811,
+    3.7727
+   ],
+   "capital": "모가디슈",
+   "capitalLonlat": [
+    45.36,
+    2.07
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "상투메 프린시페",
+   "label": "상투메 프린시페",
+   "iso": "STP",
+   "neName": "São Tomé and Principe",
+   "labelLonlat": [
+    4.8095,
+    -0.7068
+   ],
+   "capital": "상투메",
+   "capitalLonlat": [
+    6.73,
+    0.34
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "에스와티니",
+   "label": "에스와티니",
+   "iso": "SWZ",
+   "neName": "eSwatini",
+   "labelLonlat": [
+    31.8765,
+    -28.085
+   ],
+   "labelIso": "ZAF",
+   "capital": "음바바네",
+   "capitalLonlat": [
+    31.13,
+    -26.32
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "세이셸",
+   "label": "세이셸",
+   "iso": "SYC",
+   "neName": "Seychelles",
+   "labelLonlat": [
+    53.7751,
+    -3.8382
+   ],
+   "capital": "빅토리아",
+   "capitalLonlat": [
+    55.45,
+    -4.62
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "차드",
+   "label": "ㅊㄷ",
+   "iso": "TCD",
+   "neName": "Chad",
+   "labelLonlat": [
+    18.7169,
+    14.7987
+   ],
+   "capital": "은자메나",
+   "capitalLonlat": [
+    15.05,
+    12.12
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "토고",
+   "label": "ㅌㄱ",
+   "iso": "TGO",
+   "neName": "Togo",
+   "labelLonlat": [
+    1.0014,
+    8.5797
+   ],
+   "capital": "로메",
+   "capitalLonlat": [
+    1.22,
+    6.13
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "튀니지",
+   "label": "튀니지",
+   "iso": "TUN",
+   "neName": "Tunisia",
+   "labelLonlat": [
+    9.6678,
+    34.861
+   ],
+   "capital": "튀니스",
+   "capitalLonlat": [
+    10.21,
+    36.71
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "탄자니아",
+   "label": "ㅌㅈㄴㅇ",
+   "iso": "TZA",
+   "neName": "Tanzania",
+   "labelLonlat": [
+    34.7335,
+    -7.2676
+   ],
+   "capital": "도도마",
+   "capitalLonlat": [
+    35.75,
+    -6.17
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "우간다",
+   "label": "ㅇㄱㄷ",
+   "iso": "UGA",
+   "neName": "Uganda",
+   "labelLonlat": [
+    32.6412,
+    2.3276
+   ],
+   "capital": "캄팔라",
+   "capitalLonlat": [
+    32.56,
+    0.49
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "남아프리카 공화국",
+   "label": "ㄴㅇㅍㄹㅋ ㄱㅎㄱ",
+   "iso": "ZAF",
+   "neName": "South Africa",
+   "labelLonlat": [
+    23.394,
+    -30.3294
+   ],
+   "capital": "프리토리아",
+   "capitalLonlat": [
+    28.24,
+    -25.72
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "잠비아",
+   "label": "ㅈㅂㅇ",
+   "iso": "ZMB",
+   "neName": "Zambia",
+   "labelLonlat": [
+    26.6898,
+    -14.3278
+   ],
+   "capital": "루사카",
+   "capitalLonlat": [
+    28.28,
+    -15.41
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "짐바브웨",
+   "label": "ㅈㅂㅂㅇ",
+   "iso": "ZWE",
+   "neName": "Zimbabwe",
+   "labelLonlat": [
+    29.7248,
+    -19.2966
+   ],
+   "capital": "하라레",
+   "capitalLonlat": [
+    30.9,
+    -17.86
+   ],
+   "capitalFrom": "places"
+  }
+ ]
+}

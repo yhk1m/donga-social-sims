@@ -454,7 +454,7 @@ export function disputedLayerJson(layer, gj, boxes = []) {
   const color = layer.color || '#ed1c24', label = layer.label || '미확정 국경';
   return {
     type: 'FeatureCollection',
-    properties: { id: layer.id, title: label, kind: 'disputed', layerType: 'line', approx: false, winding: 'cw',
+    properties: { id: layer.id, title: label, kind: 'disputed', layerType: 'area', approx: false, winding: 'cw',   // 앱은 면 레이어가 선 Feature(type 'line', dashed)를 그림(1단계 카슈미르와 같음) — 'line' 레이어 종류는 없음
       source: `Natural Earth 10m 육지 국경선(${[...cla].join(', ')})`, legend: [{ cls: 'c1', color, label, kind: 'line', dashed: true, present: true }] },
     features: [{ type: 'Feature', properties: { type: 'line', cls: 'c1', label, color, dashed: true }, geometry: { type: 'MultiLineString', coordinates: lines } }],
   };

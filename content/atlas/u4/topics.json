@@ -1,0 +1,1005 @@
+[
+ {
+  "id": "general",
+  "title": "일반도",
+  "pages": [34],
+  "view": {
+   "map": "p34-africa"
+  },
+  "layers": [
+   {
+    "ref": "layer-ne-disputed",
+    "type": "area",
+    "legend": true,
+    "group": "map"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "map-text",
+    "type": "text",
+    "titleSrc": {
+     "page": 34,
+     "bbox": [108, 531, 166, 549]
+    },
+    "src": {
+     "page": 34,
+     "bbox": [84, 554, 157, 562]
+    },
+    "title": "아프리카",
+    "text": "정거 방위 도법 1:36,000,000"
+   },
+   {
+    "id": "page-34",
+    "type": "page",
+    "page": 34
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "coloring",
+  "title": "색칠하기",
+  "pages": [35],
+  "view": {
+   "map": "p35-coloring"
+  },
+  "layers": [
+   {
+    "ref": "layer-ne-disputed",
+    "type": "area",
+    "legend": true,
+    "group": "map"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 35,
+     "bbox": [502, 47, 709, 67],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 지리 정보와 매체를 활용하여 아프리카의 국가와 주요 도시의 위치를 표현할 수 있다."
+   },
+   {
+    "id": "text-1",
+    "type": "text",
+    "titleSrc": {
+     "page": 35,
+     "bbox": [97, 535, 224, 548]
+    },
+    "src": {
+     "page": 35,
+     "bbox": [56, 560, 315, 647]
+    },
+    "title": "아프리카의 국가와 주요 도시",
+    "text": "아프리카 대륙은 아시아 대륙에 이어 세계에서 두 번째로 큰 대륙이다. 사하라 사막을 기준으로 북부 아프리카와 중·남부 아프리카로 구분한다. 인류의 발상지인 아프리카는 다양한 부족 문화를 바탕으로 다채로운 종교, 언어, 음식, 예술 등이 발달하였다. 인구 성장 속도가 빠르고 유소년층 인구 비율이 높으며, 다양한 광물 및 에너지 자원을 보유하고 있어 성장 잠재력이 큰 지역으로 꼽힌다. 최근에는 아프리카의 성장과 개발을 위한 프로그램 운영, 지역 경제 협력체 결성, 환경 보전을 위한 활동 등 지속가능한 발전을 위해 노력하고 있다."
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "src": {
+     "page": 35,
+     "bbox": [61.5, 652, 280, 663]
+    },
+    "text": "각 나라에 색칠하여 지도를 완성하고 각 국가명과 도시명을 써넣어 보자."
+   },
+   {
+    "id": "page-35",
+    "type": "page",
+    "page": 35
+   }
+  ],
+  "quiz": {
+   "type": "coloring",
+   "ref": "coloring"
+  }
+ },
+ {
+  "id": "relief",
+  "title": "지형",
+  "pages": [36],
+  "view": {
+   "map": "p36-relief"
+  },
+  "layers": [],
+  "pinNumbers": "hidden",
+  "markers": [
+   {
+    "id": "r-nile",
+    "photo": "p36-1"
+   },
+   {
+    "id": "r-kilimanjaro",
+    "photo": "p36-2",
+    "lonlatFrom": {
+     "place": "킬리만자로산",
+     "why": "교과서 핀이 킬리만자로산 기호(34쪽 산 위치 — 실제 봉우리와 거의 같음)에서 약 82km 떨어져 있어 34쪽 산 위치를 쓴다. 1단계 규칙(지명이 있는 점 대상이고 교과서 핀이 그 지명에서 멀면 일반도 지명 위치, 교과서 핀은 textbookLonlat 으로 남김) — 유럽 베수비오산 56km 와 같은 꼴"
+    }
+   },
+   {
+    "id": "r-sahara",
+    "photo": "p36-3"
+   },
+   {
+    "id": "r-namib",
+    "photo": "p36-4"
+   },
+   {
+    "id": "r-table-mountain",
+    "photo": "p36-5",
+    "lonlatFrom": {
+     "place": "케이프타운",
+     "why": "테이블 마운틴은 케이프타운 시가지 바로 뒤의 산인데 교과서 핀은 케이프타운에서 북동쪽 내륙으로 약 51km. places 에 테이블 마운틴이 없어 그 산이 있는 점 지명 케이프타운(도시) 위치를 쓴다 — 유럽 특집 04(유럽 연합 집행 위원회 → 브뤼셀)와 같은 꼴, 교과서 핀은 textbookLonlat"
+    }
+   },
+   {
+    "id": "r-victoria-falls",
+    "photo": "p36-6"
+   },
+   {
+    "id": "r-tsingy",
+    "photo": "p36-7"
+   }
+  ],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 36,
+     "bbox": [58, 34, 362, 50]
+    },
+    "text": "아프리카의 자연환경은 어떤 특색을 지니고 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 37,
+     "bbox": [503, 32, 707, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 지리 정보와 매체를 활용하여 아프리카의 지형과 기후 특색을 지도로 표현할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 36,
+     "bbox": [53, 79, 127, 91]
+    },
+    "creditSrc": {
+     "page": 36,
+     "bbox": [484, 535, 556, 542]
+    },
+    "text": "아프리카의 지형",
+    "credit": "(naturalearthdata.com, 2023)"
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "titleSrc": {
+     "page": 36,
+     "bbox": [36, 506, 69, 514]
+    },
+    "src": {
+     "page": 36,
+     "bbox": [38, 516, 192, 534]
+    },
+    "title": "활동하기 1",
+    "text": "34쪽의 아프리카 지도와 인터넷을 참고하여 사진의 위치를 지도의 빈칸에 표시해 보자."
+   },
+   {
+    "id": "page-36",
+    "type": "page",
+    "page": 36
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "climate",
+  "title": "기후",
+  "pages": [37],
+  "view": {
+   "map": "p37-climate"
+  },
+  "layers": [
+   {
+    "ref": "layer-p37-climate",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 37,
+     "bbox": [301, 447, 410, 456]
+    },
+    "legendTitleSrc": {
+     "page": 37,
+     "bbox": [59, 324, 87, 333]
+    },
+    "credit": "*1991~2020년 평균 (www.gloh2o.org, 2023)",
+    "legendTitle": "기후 구분"
+   },
+   {
+    "ref": "layer-p37-jan",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 37,
+     "bbox": [486, 255, 603, 264]
+    },
+    "legendTitleSrc": {
+     "page": 37,
+     "bbox": [489, 164, 524, 173]
+    },
+    "lineLegendTitleSrc": {
+     "page": 37,
+     "bbox": [489, 234, 514, 243]
+    },
+    "credit": "*1970~2010년 평균 (www.worldclim.org, 2023)",
+    "legendTitle": "강수량(mm)",
+    "lineLegendTitle": "기온 (°C)"
+   },
+   {
+    "ref": "layer-p37-jul",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 37,
+     "bbox": [486, 447, 603, 456]
+    },
+    "legendTitleSrc": {
+     "page": 37,
+     "bbox": [489, 358, 524, 367]
+    },
+    "lineLegendTitleSrc": {
+     "page": 37,
+     "bbox": [489, 428, 514, 437]
+    },
+    "credit": "*1970~2010년 평균 (www.worldclim.org, 2023)",
+    "legendTitle": "강수량(mm)",
+    "lineLegendTitle": "기온 (°C)"
+   }
+  ],
+  "pinNumbers": "hidden",
+  "markers": [
+   {
+    "id": "c-cairo",
+    "photo": "p37-1",
+    "chart": "p37-cairo",
+    "lonlatFrom": {
+     "place": "카이로",
+     "why": "기후 그래프 도시 위치(교과서 핀은 흙벽돌집 사진과 함께 카이로 남서쪽 약 46km)"
+    }
+   },
+   {
+    "id": "c-kisangani",
+    "photo": "p37-2",
+    "chart": "p37-kisangani",
+    "lonlatFrom": {
+     "place": "키상가니",
+     "why": "기후 그래프 도시 위치(교과서 핀은 열대 우림 사진과 함께 키상가니 남쪽 약 55km)"
+    }
+   },
+   {
+    "id": "c-dodoma",
+    "photo": "p37-3",
+    "chart": "p37-dodoma",
+    "lonlatFrom": {
+     "place": "도도마",
+     "why": "기후 그래프 도시 위치(교과서 핀은 야생 동물 대이동 사진과 함께 도도마 서쪽 약 261km)"
+    }
+   },
+   {
+    "id": "c-capetown",
+    "photo": "p37-4",
+    "chart": "p37-capetown",
+    "lonlatFrom": {
+     "place": "케이프타운",
+     "why": "기후 그래프 도시 위치(교과서 핀은 오렌지 농장 사진과 함께 케이프타운 북쪽 약 98km)"
+    }
+   }
+  ],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 36,
+     "bbox": [58, 34, 362, 50]
+    },
+    "text": "아프리카의 자연환경은 어떤 특색을 지니고 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 37,
+     "bbox": [503, 32, 707, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 지리 정보와 매체를 활용하여 아프리카의 지형과 기후 특색을 지도로 표현할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 37,
+     "bbox": [64, 79, 141, 91]
+    },
+    "text": "아프리카의 기후"
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "titleSrc": {
+     "page": 37,
+     "bbox": [48, 432, 82, 440]
+    },
+    "src": {
+     "page": 37,
+     "bbox": [50, 443, 243, 451]
+    },
+    "title": "활동하기 2",
+    "text": "기후 그래프와 사진 설명을 읽고 해당 지역의 위치를 지도에 표시해 보자."
+   },
+   {
+    "id": "page-37",
+    "type": "page",
+    "page": 37
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "culture",
+  "title": "언어·종교와 문화",
+  "pages": [38],
+  "view": {
+   "map": "p38-language"
+  },
+  "views": [
+   {
+    "id": "language",
+    "labelSrc": {
+     "page": 38,
+     "bbox": [39, 281, 91, 290]
+    },
+    "map": "p38-language",
+    "label": "주요 언어 분포"
+   },
+   {
+    "id": "religion",
+    "labelSrc": {
+     "page": 38,
+     "bbox": [217, 281, 268, 290]
+    },
+    "map": "p38-religion",
+    "label": "주요 종교 분포"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p38-language",
+    "type": "countryClass",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 38,
+     "bbox": [139, 291, 193, 299]
+    },
+    "credit": "(wikimedia.org, 2023)"
+   },
+   {
+    "ref": "layer-p38-religion",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 38,
+     "bbox": [313, 291, 375, 299]
+    },
+    "legendTitleSrc": {
+     "page": 38,
+     "bbox": [211, 232, 272, 241]
+    },
+    "credit": "(『필립스 세계 지도』, 2021)",
+    "legendTitle": "지역별 종교 분포 비중"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 38,
+     "bbox": [61, 34, 310, 50]
+    },
+    "text": "아프리카는 어떤 잠재력을 지니고 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 38,
+     "bbox": [495, 32, 698, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "아프리카의 지리적 특성에 기반한 다양한 문화와 지역 잠재력을 탐구하고, 아프리카에 대한 인식을 성찰할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 38,
+     "bbox": [53, 79, 160, 91]
+    },
+    "text": "아프리카의 언어와 종교"
+   },
+   {
+    "id": "text-1",
+    "type": "text",
+    "src": {
+     "page": 38,
+     "bbox": [33, 99, 380, 128]
+    },
+    "text": "아프리카는 약 2,300개의 다양한 언어를 사용하고 있으나, 대부분 식민 지배했던 국가의 언어를 주요 공용어로 사용한다. 지역별 종교 분포를 보면, 북부 아프리카는 이슬람교, 중남부 아프리카는 크리스트교 신자의 비율이 높고 토속 종교도 매우 다양하게 나타난다."
+   },
+   {
+    "id": "section-2",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 38,
+     "bbox": [53, 312, 161, 324]
+    },
+    "text": "아프리카의 다양한 문화"
+   },
+   {
+    "id": "p38-1",
+    "type": "photo",
+    "ref": "p38-1"
+   },
+   {
+    "id": "p38-2",
+    "type": "photo",
+    "ref": "p38-2"
+   },
+   {
+    "id": "p38-3",
+    "type": "photo",
+    "ref": "p38-3"
+   },
+   {
+    "id": "p38-4",
+    "type": "photo",
+    "ref": "p38-4"
+   },
+   {
+    "id": "p38-5",
+    "type": "photo",
+    "ref": "p38-5"
+   },
+   {
+    "id": "p38-6",
+    "type": "photo",
+    "ref": "p38-6"
+   },
+   {
+    "id": "page-38-part",
+    "type": "page",
+    "page": 38,
+    "bbox": [30, 75, 386, 530]
+   },
+   {
+    "id": "page-38",
+    "type": "page",
+    "page": 38
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "potential",
+  "title": "자원과 지역 잠재력",
+  "pages": [38],
+  "view": {
+   "map": "p38-resources"
+  },
+  "views": [
+   {
+    "id": "resources",
+    "labelSrc": {
+     "page": 38,
+     "bbox": [400, 97, 485, 107]
+    },
+    "map": "p38-resources",
+    "label": "주요 자원의 생산량 비중"
+   },
+   {
+    "id": "solar",
+    "labelSrc": {
+     "page": 38,
+     "bbox": [400, 361, 515, 371]
+    },
+    "map": "p38-solar",
+    "label": "아프리카의 태양광 에너지 잠재력"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p38-resources",
+    "type": "countryClass",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 38,
+     "bbox": [556, 308, 617, 316]
+    },
+    "credit": "(『지리 데이터 파일』, 2023)"
+   },
+   {
+    "ref": "layer-p38-resource-charts",
+    "type": "chartSymbols",
+    "legend": false,
+    "group": "map"
+   },
+   {
+    "ref": "layer-p38-solar",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 38,
+     "bbox": [653, 507, 735, 515]
+    },
+    "credit": "(globalsolaratlas.info/map, 2023)"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 38,
+     "bbox": [61, 34, 310, 50]
+    },
+    "text": "아프리카는 어떤 잠재력을 지니고 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 38,
+     "bbox": [495, 32, 698, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "아프리카의 지리적 특성에 기반한 다양한 문화와 지역 잠재력을 탐구하고, 아프리카에 대한 인식을 성찰할 수 있다."
+   },
+   {
+    "id": "section-3",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 38,
+     "bbox": [410, 79, 550, 91]
+    },
+    "text": "아프리카의 자원과 지역 잠재력"
+   },
+   {
+    "id": "resources-text",
+    "type": "text",
+    "view": "resources",
+    "src": {
+     "page": 38,
+     "bbox": [390, 319, 621, 349]
+    },
+    "text": "아프리카는 세계 광물 매장량의 30% 이상을 차지하며, 특히 콩고 민주 공화국과 남아프리카 공화국은 자원의 보고로 불릴 만큼 세계적인 광물 자원 보존국이다."
+   },
+   {
+    "id": "p38-pyramid-world",
+    "type": "chart",
+    "ref": "p38-pyramid-world",
+    "src": {
+     "page": 38,
+     "bbox": [623, 109, 737, 139]
+    },
+    "text": "아프리카는 다른 대륙에 비해 인구 성장 속도가 빠르며, 유소년층 인구 비율이 가장 높은 대륙이다."
+   },
+   {
+    "id": "p38-pyramid-africa",
+    "type": "chart",
+    "ref": "p38-pyramid-africa"
+   },
+   {
+    "id": "solar-text",
+    "type": "text",
+    "view": "solar",
+    "src": {
+     "page": 38,
+     "bbox": [390, 496, 611, 516]
+    },
+    "text": "태양광 잠재력은 태양 전지에서 최대로 생산할 수 있는 전력량으로 나타낸다. 아프리카는 다른 대륙에 비해 태양광 잠재력이 높은 대륙이다."
+   },
+   {
+    "id": "theme-1",
+    "type": "activity",
+    "role": "theme",
+    "titleSrc": {
+     "page": 38,
+     "bbox": [120, 545, 296, 556]
+    },
+    "src": {
+     "page": 38,
+     "bbox": [52, 565, 286, 575]
+    },
+    "title": "아프리카에 대해 우리가 지니고 있는 인식 알아보기",
+    "text": "아래 사진과 지도를 보고, 자신이 생각한 아프리카의 모습과 비교해 보자."
+   },
+   {
+    "id": "theme-2",
+    "type": "activity",
+    "role": "theme",
+    "src": {
+     "page": 38,
+     "bbox": [52, 578, 351, 588]
+    },
+    "text": "아프리카 국가 중 1개 국가를 선정하여 해당 국가를 홍보하기 위한 카드 뉴스를 만들어 보자."
+   },
+   {
+    "id": "p38-7",
+    "type": "photo",
+    "ref": "p38-7"
+   },
+   {
+    "id": "p38-8",
+    "type": "photo",
+    "ref": "p38-8"
+   },
+   {
+    "id": "p38-9",
+    "type": "photo",
+    "ref": "p38-9"
+   },
+   {
+    "id": "p38-10",
+    "type": "photo",
+    "ref": "p38-10"
+   },
+   {
+    "id": "p38-11",
+    "type": "photo",
+    "ref": "p38-11"
+   },
+   {
+    "id": "page-38-part",
+    "type": "page",
+    "page": 38,
+    "bbox": [30, 524, 750, 692]
+   },
+   {
+    "id": "page-38",
+    "type": "page",
+    "page": 38
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "cooperation",
+  "title": "지역 협력",
+  "pages": [39],
+  "view": {
+   "map": "p39-afcfta"
+  },
+  "layers": [
+   {
+    "ref": "layer-p39-afcfta",
+    "type": "countryClass",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 39,
+     "bbox": [173, 428, 210, 436]
+    },
+    "credit": "(AfCFTA, 2023)"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 39,
+     "bbox": [72, 34, 427, 50]
+    },
+    "text": "아프리카는 지속가능한 발전을 위해 어떤 노력을 하고 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 39,
+     "bbox": [503, 27, 709, 57],
+     "skip": "학습 목표 |"
+    },
+    "text": "지속가능한 발전을 위한 아프리카 각 지역의 노력과 세계 다양한 주체들의 협력 사례를 조사하고, 세계 시민으로서 우리가 참여할 수 있는 방안을 모색할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 39,
+     "bbox": [64, 79, 209, 91]
+    },
+    "text": "아프리카 연합(AU)과 의제 2063"
+   },
+   {
+    "id": "p39-1",
+    "type": "photo",
+    "ref": "p39-1"
+   },
+   {
+    "id": "p39-2",
+    "type": "photo",
+    "ref": "p39-2"
+   },
+   {
+    "id": "section-2",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 39,
+     "bbox": [64, 246, 240, 258]
+    },
+    "text": "아프리카 대륙 자유 무역 지대(AfCFTA)"
+   },
+   {
+    "id": "p39-afcfta",
+    "type": "chart",
+    "ref": "p39-afcfta",
+    "src": {
+     "page": 39,
+     "bbox": [223, 397, 391, 436]
+    },
+    "text": "아프리카 대륙 자유 무역 지대(AfCFTA)는 2021년 출범하여 47개 회원국을 둔 지역 경제 협력체로 약 13억 명의 인구와 약 3조 달러의 국내 총생산(GDP) 규모를 가지고 있다."
+   },
+   {
+    "id": "page-39",
+    "type": "page",
+    "page": 39
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "sustainable",
+  "title": "지속가능한 발전",
+  "pages": [39],
+  "view": {
+   "map": "p39-desert"
+  },
+  "layers": [
+   {
+    "ref": "layer-p39-desert",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 39,
+     "bbox": [209, 593, 256, 600]
+    },
+    "legendTitleSrc": {
+     "page": 39,
+     "bbox": [45, 584, 91, 592]
+    },
+    "credit": "(미국 농무부, 2016)",
+    "legendTitle": "사막화의 위험성"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 39,
+     "bbox": [72, 34, 427, 50]
+    },
+    "text": "아프리카는 지속가능한 발전을 위해 어떤 노력을 하고 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 39,
+     "bbox": [503, 27, 709, 57],
+     "skip": "학습 목표 |"
+    },
+    "text": "지속가능한 발전을 위한 아프리카 각 지역의 노력과 세계 다양한 주체들의 협력 사례를 조사하고, 세계 시민으로서 우리가 참여할 수 있는 방안을 모색할 수 있다."
+   },
+   {
+    "id": "section-3",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 39,
+     "bbox": [64, 457, 228, 469]
+    },
+    "text": "사막화 방지를 위한 아프리카의 노력"
+   },
+   {
+    "id": "p39-greenwall",
+    "type": "chart",
+    "ref": "p39-greenwall",
+    "src": {
+     "page": 39,
+     "bbox": [44, 660, 262, 690]
+    },
+    "text": "아프리카 연합, 세계 은행, 국제 연합 식량 농업 기구 등은 사막화를 막기 위해 사헬 지대를 중심으로 녹지를 조성하는 ‘그레이트 그린 월 프로젝트’를 진행하고 있다."
+   },
+   {
+    "id": "p39-3",
+    "type": "photo",
+    "ref": "p39-3"
+   },
+   {
+    "id": "p39-4",
+    "type": "photo",
+    "ref": "p39-4"
+   },
+   {
+    "id": "section-4",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 39,
+     "bbox": [421, 79, 562, 91]
+    },
+    "text": "아프리카의 변화를 이끈 사람들"
+   },
+   {
+    "id": "p39-5",
+    "type": "photo",
+    "ref": "p39-5"
+   },
+   {
+    "id": "p39-6",
+    "type": "photo",
+    "ref": "p39-6"
+   },
+   {
+    "id": "p39-7",
+    "type": "photo",
+    "ref": "p39-7"
+   },
+   {
+    "id": "section-5",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 39,
+     "bbox": [421, 246, 531, 258]
+    },
+    "text": "적정 기술의 개발과 적용"
+   },
+   {
+    "id": "p39-8",
+    "type": "photo",
+    "ref": "p39-8"
+   },
+   {
+    "id": "p39-9",
+    "type": "photo",
+    "ref": "p39-9"
+   },
+   {
+    "id": "p39-10",
+    "type": "photo",
+    "ref": "p39-10"
+   },
+   {
+    "id": "p39-11",
+    "type": "photo",
+    "ref": "p39-11"
+   },
+   {
+    "id": "theme-1",
+    "type": "activity",
+    "role": "theme",
+    "titleSrc": {
+     "page": 39,
+     "bbox": [497, 514, 604, 525]
+    },
+    "src": {
+     "page": 39,
+     "bbox": [424, 534, 592, 554]
+    },
+    "title": "생활 속 공정 무역 조사해 보기",
+    "text": "세계 공정 무역 기구에서 제시한 공정 무역 10대 원칙을 찾아보자."
+   },
+   {
+    "id": "theme-2",
+    "type": "activity",
+    "role": "theme",
+    "src": {
+     "page": 39,
+     "bbox": [424, 557, 592, 576]
+    },
+    "text": "아프리카 국가에서 수입된 상품 중에서 공정 무역 마크가 붙어 있는 상품을 조사해 보자."
+   },
+   {
+    "id": "p39-12",
+    "type": "photo",
+    "ref": "p39-12"
+   },
+   {
+    "id": "p39-13",
+    "type": "photo",
+    "ref": "p39-13"
+   },
+   {
+    "id": "link",
+    "type": "text",
+    "role": "link",
+    "src": {
+     "page": 39,
+     "bbox": [615, 552, 674, 570]
+    },
+    "titleSrc": {
+     "page": 39,
+     "bbox": [623, 536, 656, 544]
+    },
+    "text": "세계 공정 무역 기구 https://t25.kr/83sz",
+    "title": "참고 사이트"
+   },
+   {
+    "id": "page-39-part",
+    "type": "page",
+    "page": 39,
+    "bbox": [402, 499, 750, 692]
+   },
+   {
+    "id": "page-39",
+    "type": "page",
+    "page": 39
+   }
+  ],
+  "quiz": null
+ }
+]

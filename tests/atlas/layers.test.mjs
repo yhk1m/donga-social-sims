@@ -290,6 +290,7 @@ test('disputedLayerJson: FEATURECLA·나라 짝(차례 상관없음)·단원 상
   const layer = { id: 'ne-disputed', source: 'ne-disputed', type: 'line', color: '#ed1c24', label: '미확정 국경',
     disputed: { featurecla: ['Disputed (please verify)', 'Line of control (please verify)'], pairs: [['Western Sahara', 'Morocco'], ['Egypt', 'Sudan'], ['South Sudan', 'Kenya']] } };
   const out = disputedLayerJson(layer, gj, [[-37, -39, 67, 42]]);
+  assert.equal(out.properties.layerType, 'area');   // 주제 레이어 type 'area' — areaLayer 가 점선 선 Feature 를 그림(build_content 가 type ≠ layerType 이면 경고)
   assert.equal(out.features.length, 1);
   const f = out.features[0];
   assert.deepEqual([f.properties.type, f.properties.dashed, f.properties.color, f.geometry.type], ['line', true, '#ed1c24', 'MultiLineString']);

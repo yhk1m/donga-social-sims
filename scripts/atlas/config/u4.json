@@ -3352,11 +3352,45 @@
     "potential",
     "cooperation",
     "sustainable"
-   ]
+   ],
+   "markers": {
+    "relief": 7,
+    "climate": 4
+   },
+   "chartMarkers": {
+    "climate": 4
+   },
+   "coloringCountries": 55,
+   "charts": 15
   },
-  "_expect": "U4-6·U4-7·U4-8 실측으로 markers·chartMarkers·coloringCountries·charts 를 더함.",
+  "_expect": "실측(U4-6·U4-7·U4-8): 지형 핀 7(번호 숨김), 기후 그래프 마커 4(카이로·키상가니·도도마·케이프타운 — 번호 숨김), 35쪽 색칠하기 55 = 나라 54 + 서사하라 「지역」 1(교사 Q1 — coloring.json 의 region: true, 나라 글자 57 − 두 줄 「ㅋㄱ ㅁㅈ / ㄱㅎㄱ」·「ㄴㅇㅍㄹㅋ / ㄱㅎㄱ」), 그래프 15(기후 4 · 고리 7 — 자원 고리 기호 레이어가 참조 · 피라미드 2 · 원 크기 줄 1 · AfCFTA 표 1).",
   "expectCredits": {
-   "_doc": "34~39쪽에 인쇄된 출처 글(쪽: 목록) — U4-8 에서 채움.",
+   "36": [
+    "(naturalearthdata.com, 2023)"
+   ],
+   "37": [
+    "(www.worldclim.org, 2023)",
+    "(www.gloh2o.org, 2023)",
+    "(『이과연표』, 2023)",
+    "(climate-data.org, 2023)"
+   ],
+   "38": [
+    "(wikimedia.org, 2023)",
+    "(『필립스 세계 지도』, 2021)",
+    "(『지리 데이터 파일』, 2023)",
+    "(UN, 「세계 인구 전망」, 2022)",
+    "(globalsolaratlas.info/map, 2023)"
+   ],
+   "39": [
+    "(AU, 2023)",
+    "(AfCFTA, 2023)",
+    "(미국 농무부, 2016)",
+    "(UNCCD, 2019)"
+   ],
+   "_doc": "34~39쪽에 인쇄된 출처 글(쪽: 목록). 생성물 topics.json·charts.json 어딘가에 있어야 한다(공백 무시, tests/atlas/units/u4.content.test.mjs). 38쪽 태양광 「(globalsolaratlas.info/map, 2023)」은 여는 괄호(5.7pt)와 주소 글자(6.0pt)의 세로 가운데가 반올림으로 다른 줄(511·512)에 들어 extract_text.printed_credits 가 한 줄로 못 잇는다 — 지면 대조 시험은 빼고 본다(notPrinted). 39쪽 「(AU, 2023)」은 의제 2063 그림 출처(사진 creditBox). 34·35쪽에는 출처 글이 없다.",
+   "notPrinted": [
+    "(globalsolaratlas.info/map, 2023)"
+   ],
    "notCredits": []
   },
   "viewGrid": 20,
@@ -3609,7 +3643,26 @@
    "nearKm": 150,
    "nameKm": 600,
    "_nearKm": "나라 찾기: Natural Earth 이름(NAME_KO) 초성이 글자와 같은 나라 중 nameKm 안 가장 가까운 면(바다 위 글자·지시선 글자 — 레바논 225km, 필리핀 170km), 없으면 글자 자리의 면(nearKm 안). 수도 글자도 nearKm.",
-   "_fonts": "countryFont·capitalFont·capitalSize 는 u2·u3 값 복사 — U4-8 에서 35쪽 글꼴을 보고 확인."
+   "_fonts": "35쪽도 나라 글자 KCCChassam(초성 12.8pt 30 · 이름 8.8pt 27 — 이름 21 + 작은 나라 초성 6)·수도 손글씨 KyoboHandwriting 7.5pt 27 — u2·u3 값 그대로 맞음(U4-8 확인). 같은 손글씨 글꼴의 활동 글(9pt)·글머리 ●(5pt)은 크기로 빠짐. 계획 어림의 손글씨 수도 32·조각 「로」는 실측에 없음(27개 모두 한 덩어리 이름).",
+   "joinLabels": [
+    [
+     "ㅋㄱ ㅁㅈ",
+     "ㄱㅎㄱ"
+    ],
+    [
+     "ㄴㅇㅍㄹㅋ",
+     "ㄱㅎㄱ"
+    ]
+   ],
+   "_joinLabels": "두 줄로 적힌 한 나라: 「ㅋㄱ ㅁㅈ / ㄱㅎㄱ」 = 콩고 민주 공화국, 「ㄴㅇㅍㄹㅋ / ㄱㅎㄱ」 = 남아프리카 공화국. 둘째 줄 「ㄱㅎㄱ」이 둘이라 쪽 흐름에서 바로 뒤에 오는 것과 잇는다(countryLabels) — 두 줄이 위아래로 붙어 있는지는 시험(u4.content)이 상자로 확인.",
+   "capitalByNe": true,
+   "_capitalByNe": "손글씨 수도의 나라 = 그 지명 nearKm 안 가장 가까운 Natural Earth 「Admin-0 capital」 나라(작은 나라 수도 기호가 옮겨 그린 자리 — 34쪽 snapAlways 6곳과 같은 까닭). 손글씨 수도가 없는 모로코는 places 「라바트」가 Natural Earth 10m 모로코 면 밖(해안선에서 2km 바다)이라 면 안 수도가 없음 → 같은 키의 u4 길(Natural Earth 수도 가까운 places 수도, places+ne).",
+   "regions": {
+    "SAH": "교사 Q1 답: 서사하라는 35쪽에 따로 띠를 두르고 이름을 쓴 「지역」 — 칠할 수 있으나 나라 수(54) 밖. 이름은 34쪽 갈보라 글자 지명(kind region)에서."
+   },
+   "noCapital": {
+    "SAH": "교사 Q1 답: 서사하라는 나라가 아니어서 수도 칸 「—」(35쪽에도 수도 ★·이름 없음)."
+   }
   }
  },
  "insets": [],

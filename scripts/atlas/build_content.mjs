@@ -13,7 +13,8 @@
 // 주제 원본에서 바뀌는 것:
 //   - view/views: {map} → 그 지도 틀(maps_u2 bbox) 안 격자를 fit 으로 되돌린 경위도의 퍼센트 범위 bounds[w,s,e,n]·center(틀 가운데),
 //     {layer} → 레이어 도형 범위. 주제 view 는 마커를 모두 담도록 markerMargin 도만큼 넓힌다. 엔진은 bounds 를 화면에 맞춘다.
-//   - layers: 레이어 파일의 layerType 과 type 이 같은지, label(없으면 레이어 제목), approx → approx·approxNote 「위치 근사」
+//   - layers: 레이어 파일의 layerType 과 type 이 같은지, label(없으면 레이어 제목), approx → approx·approxNote 「위치 근사」,
+//     chartSymbols 레이어(u4)는 항목의 chart 를 그래프 참조로 셈(없는 그래프는 경고)
 //   - markers: photo id → 사진(주소·크기·제목·설명), lonlat 은 lonlat(출처 source) > lonlatFrom.place(교과서 지명 places) > 사진 핀,
 //     핀이 아닌 위치로 옮긴 마커는 textbookLonlat(교과서 핀)을 남긴다. 핀 위치이고 그 지도 fit 이 approx 면 approx.
 //     글은 교과서 원문만(사진 설명 또는 src) — 퀴즈가 있는 마커(세계유산)는 글이 없을 수 있다(정답은 퀴즈 화면이 보여 줌).
@@ -205,6 +206,8 @@ function resolveLayers(ctx, t, at) {
     const r = { ...l, label: l.label ?? props.title };
     if (!r.label) ctx.W.push(`${where}: label 없음(레이어에 제목도 없음)`);
     if (props.approx) { r.approx = true; r.approxNote = '위치 근사'; if (props.approxReason) r.approxReason = props.approxReason; }
+    // 지도 위 고리 기호(chartSymbols, u4 38쪽 자원): 누르면 카드에 그 그래프 — 항목 그래프가 charts 에 있어야 하고, 참조된 그래프로 센다
+    if (type === 'chartSymbols') for (const it of gj.items ?? []) ctx.chart(it.chart, `${where}.items.${it.id}`);
     return r;
   });
 }

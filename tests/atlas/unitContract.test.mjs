@@ -26,6 +26,9 @@ for (const u of units) {
   const chartRefs = (t) => [
     ...(t.blocks || []).flatMap((b) => [b.type === 'chart' ? b.ref : null, b.chart, ...(b.charts || [])]),
     ...(t.markers || []).map((m) => m.chart),
+    // 지도 위 고리 기호 레이어(chartSymbols — u4 38쪽 자원)는 항목마다 그래프를 누르면 카드로 보여 줌(build_content 도 참조로 셈)
+    ...(t.layers || []).filter((l) => l.type === 'chartSymbols')
+      .flatMap((l) => (readJson(path.join(u.dataDir, `${l.ref}.json`)).items || []).map((it) => it.chart)),
   ].filter(Boolean);
 
   test(`${u.id}: 주제 쪽이 단원 쪽 범위(${u.pages.join('~')})를 모두 덮고 범위 밖 쪽이 없다`, () => {
