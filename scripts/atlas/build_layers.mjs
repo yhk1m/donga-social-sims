@@ -17,6 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { mesh as topoMesh } from 'topojson-client';
 import { makeConverter } from './georef.mjs';
 import { WORK, loadFit as loadFitRaw, fitPath, neIndex, key, km } from './geo_util.mjs';
 import { projectionFromStale, projectionFromOlder } from './projection_from.mjs';
@@ -429,8 +430,11 @@ export function chartSymbolsLayerJson(layer, charts, cv, m, fit = {}) {
  * (raw/ne/ne_10m_admin_0_boundary_lines_land) 중 FEATURECLA ∈ disputed.featurecla 이고, disputed.pairs([[나라, 나라]] — ADM0_LEFT·RIGHT
  * 차례 상관없음)가 있으면 그 짝인 선을, 단원 상자(basemap.unitBoxes) 안 것만 → 점선 선 레이어(1단계 선 레이어 그대로 — 주제 항목 type 'area').
  * 짝 하나라도 선이 없으면 멈춘다(원본 값이 바뀌었는지 확인).
+ * disputed.basemapPairs [[iso, iso]](U4-9, 있을 때만 — basemap = 단원 바탕 지도 TopoJSON): Natural Earth 에 맞는 선이 없는 경계(서사하라–모로코:
+ * NE 선은 방벽 「Line of control」이고 교과서 점선은 북위 27°40′ — 바탕 지도 cutIsos 로 자른 뒤의 MAR·SAH 공유 경계)를 바탕 지도
+ * countries<basemapLevel, 기본 10a> 의 두 나라 사이 경계(topojson mesh)로 덧붙임. 선이 없으면 멈춤.
  */
-export function disputedLayerJson(layer, gj, boxes = []) {
+export function disputedLayerJson(layer, gj, boxes = [], basemap = null) {
   const d = layer.disputed || {};
   const cla = new Set(d.featurecla || []);
   if (!cla.size) throw new Error(`${layer.id}: disputed.featurecla 가 없음`);
@@ -450,12 +454,27 @@ export function disputedLayerJson(layer, gj, boxes = []) {
     }
   }
   const none = [...pairs].filter(([, n]) => !n).map(([k]) => k);
+  const bp = d.basemapPairs || [];
+  if (bp.length) {
+    const lvName = `countries${d.basemapLevel || '10a'}`, obj = basemap?.objects?.[lvName];
+    if (!obj) throw new Error(`${layer.id}: basemapPairs 에 바탕 지도 ${lvName} 가 필요`);
+    for (const pr of bp) {
+      const want = key(...pr);
+      const m = topoMesh(basemap, obj, (a, b) => a !== b && key(a.properties.iso, b.properties.iso) === want);
+      let n = 0;
+      for (const L of m.coordinates) for (const part of boxes.length ? boxes.flatMap((b) => clipLineToBox(L, b)) : [L]) {
+        if (part.length < 2) continue;
+        lines.push(part.map(([x, y]) => [r3(x), r3(y)])); n++;
+      }
+      if (!n) none.push(`${want}(바탕 지도)`);
+    }
+  }
   if (none.length || !lines.length) throw new Error(`${layer.id}: 선이 없는 짝 ${none.join(', ') || '(전체)'}`);
   const color = layer.color || '#ed1c24', label = layer.label || '미확정 국경';
   return {
     type: 'FeatureCollection',
     properties: { id: layer.id, title: label, kind: 'disputed', layerType: 'area', approx: false, winding: 'cw',   // 앱은 면 레이어가 선 Feature(type 'line', dashed)를 그림(1단계 카슈미르와 같음) — 'line' 레이어 종류는 없음
-      source: `Natural Earth 10m 육지 국경선(${[...cla].join(', ')})`, legend: [{ cls: 'c1', color, label, kind: 'line', dashed: true, present: true }] },
+      source: `Natural Earth 10m 육지 국경선(${[...cla].join(', ')})${bp.length ? ` + 바탕 지도 나라 경계(${bp.map((p) => p.join('–')).join(', ')})` : ''}`, legend: [{ cls: 'c1', color, label, kind: 'line', dashed: true, present: true }] },
     features: [{ type: 'Feature', properties: { type: 'line', cls: 'c1', label, color, dashed: true }, geometry: { type: 'MultiLineString', coordinates: lines } }],
   };
 }
@@ -564,7 +583,9 @@ function main(argv) {
       const out = chartSymbolsLayerJson(l, charts, converter(l, loadFit(l.map)), maps[l.map], loadFit(l.map));
       byId.set(l.id, writeLayer(l, out, { features: out.items.length }));
     } else {
-      const out = disputedLayerJson(l, JSON.parse(fs.readFileSync(path.join(WORK, 'raw/ne/ne_10m_admin_0_boundary_lines_land.geojson'), 'utf8')), config.basemap?.unitBoxes || []);
+      // basemapPairs(u4 서사하라 27°40′)는 단원 바탕 지도(build_basemap 먼저)의 나라 경계에서 — 없으면 바탕 지도를 읽지 않음(u2·u3 그대로)
+      const bm = l.disputed?.basemapPairs?.length ? JSON.parse(fs.readFileSync(path.join(here, '../..', config.basemap.out), 'utf8')) : null;
+      const out = disputedLayerJson(l, JSON.parse(fs.readFileSync(path.join(WORK, 'raw/ne/ne_10m_admin_0_boundary_lines_land.geojson'), 'utf8')), config.basemap?.unitBoxes || [], bm);
       byId.set(l.id, writeLayer(l, out, { legend: 1, classes: 1, features: out.features[0].geometry.coordinates.length }));
     }
   }

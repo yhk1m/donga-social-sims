@@ -664,8 +664,10 @@
    "type": "line",
    "source": "ne-disputed",
    "disputed": {
-    "featurecla": ["Disputed (please verify)", "Line of control (please verify)"],
-    "pairs": [["Western Sahara", "Morocco"], ["Egypt", "Sudan"], ["South Sudan", "Kenya"]]
+    "featurecla": ["Disputed (please verify)"],
+    "pairs": [["Egypt", "Sudan"], ["South Sudan", "Kenya"]],
+    "basemapPairs": [["MAR", "SAH"]],
+    "_basemapPairs": "U4-9(교사 Q1 「교과서대로 점선·따로」): Natural Earth 의 서사하라–모로코 선(Line of control)은 모로코 방벽(berm)이라 교과서의 북위 27°40′ 점선과 다르고, NE 에 27°40′ 선은 없다 → NE 짝에서 빼고 u4 바탕 지도(basemap.cutIsos 로 서사하라 전체를 MAR 에서 자른 뒤) countries10a 의 MAR·SAH 공유 경계를 점선으로. 그래서 featurecla 에서 Line of control 도 뺌(남은 두 짝은 Disputed)."
    },
    "color": "#ed1c24",
    "label": "미확정 국경"
@@ -3287,6 +3289,18 @@
   "_unitBoxes": "[서, 남, 동, 북]. 아프리카 일반도(34쪽) 지도 틀(쪽 전체) 41×41 격자를 p34-africa fit 으로 되돌린 경위도 범위(-36.3, -38.7, 66.9, 41.9)를 정수로 넓힘(U4-2). 정거 방위(중심 약 20°E·0°)라 틀 네 모서리가 경도 폭을 넓힌다. lod.js inUnit 이 basemap.json meta.unitBoxes 에서 읽는다.",
   "quantization": 100000,
   "maxBytes": 1024000,
+  "mergeIsos": {
+   "SOM": ["SOL"]
+  },
+  "_mergeIsos": "교사 Q3 답(기본값): Natural Earth 는 소말릴란드(SOL)를 따로 된 나라로 두나 교과서 34·35·38·39쪽은 모두 소말리아 한 나라(35쪽 초성 ㅅㅁㄹㅇ 한 면) → u4 바탕 지도에서만 SOL 을 SOM 에 합친다(상세도 110·50·10a 모두, 국경선 없어짐). build_basemap editArgs(U4-9) — u2·u3 설정에는 없어 명령 그대로.",
+  "cutIsos": [
+   {
+    "from": "MAR",
+    "to": "SAH",
+    "box": [-18, 20, -8, 27.6667]
+   }
+  ],
+  "_cutIsos": "교사 Q1 답 「교과서대로 점선·따로」(U4-9 코디네이터 결정): Natural Earth 의 SAH 는 모로코 방벽(berm) 동쪽 띠뿐이고 서쪽은 MAR 안이다(U4-3f 발견). 교과서 34·35쪽은 북위 27°40′(27.6667) 경계선 남쪽 서사하라 전체를 따로 그린다 → MAR 면 중 이 상자(북쪽 끝 = 27°40′, 동쪽 끝은 알제리 국경 −8.67 밖) 안 부분을 SAH 로 옮긴다. MAR 은 27°40′ 남쪽·−8.6 동쪽에 면이 없음을 상세도 셋에서 확인(그 상자 안 MAR = 서사하라 땅만). Natural Earth 10m disputed_areas 의 서사하라 면은 SAH 띠와 같은 모양(넓이 8.05)이라 쓸 수 없어 위도 경계로 자름. 언어·AfCFTA 나라 분류는 SAH = MAR 값이라 어긋나지 않음(U4-4).",
   "levels": [
    {
     "id": "110",
@@ -3656,7 +3670,9 @@
    ],
    "_joinLabels": "두 줄로 적힌 한 나라: 「ㅋㄱ ㅁㅈ / ㄱㅎㄱ」 = 콩고 민주 공화국, 「ㄴㅇㅍㄹㅋ / ㄱㅎㄱ」 = 남아프리카 공화국. 둘째 줄 「ㄱㅎㄱ」이 둘이라 쪽 흐름에서 바로 뒤에 오는 것과 잇는다(countryLabels) — 두 줄이 위아래로 붙어 있는지는 시험(u4.content)이 상자로 확인.",
    "capitalByNe": true,
-   "_capitalByNe": "손글씨 수도의 나라 = 그 지명 nearKm 안 가장 가까운 Natural Earth 「Admin-0 capital」 나라(작은 나라 수도 기호가 옮겨 그린 자리 — 34쪽 snapAlways 6곳과 같은 까닭). 손글씨 수도가 없는 모로코는 places 「라바트」가 Natural Earth 10m 모로코 면 밖(해안선에서 2km 바다)이라 면 안 수도가 없음 → 같은 키의 u4 길(Natural Earth 수도 가까운 places 수도, places+ne).",
+   "_capitalByNe": "손글씨 수도의 나라 = 그 지명 nearKm 안 가장 가까운 Natural Earth 「Admin-0 capital」 나라(작은 나라 수도 기호가 옮겨 그린 자리 — 34쪽 snapAlways 6곳과 같은 까닭). 손글씨 수도가 없는 모로코는 places 「라바트」가 Natural Earth 10m 모로코 면 밖(해안선에서 2km 바다)이라 면 안 수도가 없음 → 아래 capitalByNeNear 길(Natural Earth 수도 가까운 places 수도, places+ne).",
+   "capitalByNeNear": true,
+   "_capitalByNeNear": "U4-9: 면 밖 해안 수도(라바트) 길을 capitalByNe(u3 도 씀) 아래에서 이 키로 옮김 — u4 에만 켜서 u3 coloring.json 은 도장 밖 그대로.",
    "regions": {
     "SAH": "교사 Q1 답: 서사하라는 35쪽에 따로 띠를 두르고 이름을 쓴 「지역」 — 칠할 수 있으나 나라 수(54) 밖. 이름은 34쪽 갈보라 글자 지명(kind region)에서."
    },

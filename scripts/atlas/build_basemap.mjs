@@ -7,6 +7,8 @@
 //   단계(mapshaper, 작업 폴더 $ATLAS_WORK/basemap 에서 — 한글 경로에 대량 출력하지 않음):
 //     1. 상세도(level)마다 나라: [단원 상자로 자르기] → iso(ADM0_A3)·ko(NAME_KO) → 단순화(keep-shapes, simplifyByIso 면 나라별 비율) → 녹여 육지(land, 같은 호 공유)
 //        하천·호수: [자르기] → scalerank ≤ maxRank → s(scalerank) → 단순화. 결과는 양자화 없는 TopoJSON 조각.
+//        단원 설정이 있을 때만(u4 아프리카 — 없으면 명령 목록이 옛 그대로): basemap.mergeIsos {남길 iso: [합칠 iso…]}(소말릴란드 → 소말리아, 교사 Q3)·
+//        basemap.cutIsos [{from, to, box}](모로코 면 중 box 안 = 서사하라로, 교사 Q1 「교과서대로」) → editArgs. 고친 나라만 따로 녹이고(dissolve2) 다시 합침.
 //     2. 조각을 combine-files 로 한 위상(topology)에 모아 quantization 으로 양자화 → 객체 순서 고정, meta{source, mapshaper, unitBoxes, inputsHash}.
 //   출력: out(basemap.json). maxBytes 를 넘으면 쓰지 않고 종료 코드 1. 내용이 같으면 쓰지 않는다.
 //   낡은 산출물 검사: 설정 content.stamps.basemap(입력 파일·이 코드·설정 basemap 해시) = meta.inputsHash 면 다시 만들지 않는다(--force 면 만듦).
@@ -141,16 +143,97 @@ export function checkByIso(topo, levels) {
   }
 }
 
+/** 나라 iso 목록 → mapshaper 식 안의 배열 글자(검사한 세 글자 iso 만). */
+const isoList = (isos) => JSON.stringify(isos.map((iso) => {
+  if (!/^[A-Z0-9]{3}$/.test(iso)) throw new Error(`나라 고치기 iso 는 ADM0_A3 세 글자: ${iso}`);
+  return iso;
+}));
+const isBox = (b) => Array.isArray(b) && b.length === 4 && b.every(Number.isFinite) && b[0] < b[2] && b[1] < b[3];
+const mergeEntries = (m) => Object.entries(m || {}).filter(([k]) => !k.startsWith('_'));
+
+/**
+ * 나라 고치기(설정 basemap.mergeIsos·cutIsos — u4 아프리카, 있을 때만) → mapshaper 인자. 둘 다 없으면 [] (u2·u3 명령 그대로).
+ *   mergeIsos {SOM: ['SOL']}: SOL 면의 iso 를 SOM 으로 바꿔 한 나라로 녹임(국경선이 없어짐).
+ *   cutIsos [{from: 'MAR', to: 'SAH', box: [w, s, e, n]}]: from 면 중 box 안 부분을 to 로 옮김(box 밖 부분은 from 그대로).
+ * 고치는 나라(합치는·남기는·자르는·받는)만 따로 된 층(edits)으로 떼어 내 자르고 녹인 뒤 나라 층 뒤에 다시 합친다(다른 나라 도형은
+ * dissolve2 의 틈 메우기를 거치지 않음). ko = names[iso](원본 NAME_KO — 녹이면 첫 면의 이름이 남으므로 남긴·받은 나라 이름으로 다시 씀).
+ */
+export function editArgs(layer, { mergeIsos = null, cutIsos = null } = {}, names = {}) {
+  const merges = mergeEntries(mergeIsos);
+  const cuts = cutIsos || [];
+  if (!merges.length && !cuts.length) return [];
+  const keep = [], gone = [];
+  for (const [to, from] of merges) {
+    if (!Array.isArray(from) || !from.length) throw new Error(`mergeIsos.${to}: 합칠 iso 배열이 아님`);
+    keep.push(to); gone.push(...from);
+  }
+  for (const c of cuts) {
+    if (!c?.from || !c?.to || !isBox(c.box)) throw new Error(`cutIsos 항목은 {from, to, box: [w, s, e, n]}: ${JSON.stringify(c)}`);
+    keep.push(c.to); gone.push(c.from);
+  }
+  const touched = isoList([...new Set([...keep, ...gone])]);
+  const a = ['-filter', `${touched}.indexOf(iso)>=0`, '+', 'name=edits', `target=${layer}`,
+    '-filter', `${touched}.indexOf(iso)<0`, `target=${layer}`];
+  cuts.forEach((c, i) => {
+    const [from, to] = JSON.parse(isoList([c.from, c.to])), bbox = `bbox=${c.box.join(',')}`;
+    a.push('-filter', `iso=='${from}'`, '+', `name=cutin${i}`, 'target=edits',
+      '-filter', `iso=='${from}'`, '+', `name=cutout${i}`, 'target=edits',
+      '-filter', `iso!='${from}'`, 'target=edits',
+      '-clip', bbox, `target=cutin${i}`, '-each', `iso='${to}'`, `target=cutin${i}`,
+      '-erase', bbox, `target=cutout${i}`,
+      '-merge-layers', `target=edits,cutin${i},cutout${i}`, 'name=edits', 'force');
+  });
+  for (const [to, from] of merges) a.push('-each', `if (${isoList(from)}.indexOf(iso)>=0) iso='${JSON.parse(isoList([to]))[0]}'`, 'target=edits');
+  const ko = {};
+  for (const iso of new Set(keep)) { if (!names[iso]) throw new Error(`나라 고치기: 원본에 ${iso} 이름(NAME_KO)이 없음`); ko[iso] = names[iso]; }
+  a.push('-dissolve2', 'iso', 'copy-fields=ko', 'target=edits',
+    '-each', `ko=(${JSON.stringify(ko)})[iso]||ko`, 'target=edits',
+    '-merge-layers', `target=${layer},edits`, `name=${layer}`, 'force');
+  return a;
+}
+
+/** 상세도 하나의 나라 층 mapshaper 인자(자르기 → iso·ko → [나라 고치기] → 단순화 → 녹여 육지 → 조각 파일). */
+export function countryArgs(lv, raw, edits = {}, names = {}) {
+  const clip = lv.clip ? ['-clip', 'unit-boxes.json'] : [];
+  const simp = (s) => (s ? ['-simplify', ...simplifyArgs(s, lv.simplifyByIso), 'keep-shapes'] : []);
+  return ['-i', `${raw}/${lv.countries}.geojson`, `name=countries${lv.id}`, ...clip,
+    '-each', 'iso=ADM0_A3,ko=NAME_KO', '-filter-fields', 'iso,ko', ...editArgs(`countries${lv.id}`, edits, names), ...simp(lv.simplify),
+    '-dissolve2', '+', `name=land${lv.id}`,
+    '-o', 'format=topojson', 'no-quantization', `target=land${lv.id},countries${lv.id}`, `part-${lv.id}-countries.json`];
+}
+
+/** 나라 고치기 결과 검사: 합친 iso 는 어느 상세도에도 없고, 남긴·받은 iso 는 상세도마다 하나. 아니면 오류. */
+export function checkEdits(topo, cfg) {
+  const merges = mergeEntries(cfg.mergeIsos);
+  const gone = merges.flatMap(([, f]) => f), keep = [...merges.map(([t]) => t), ...(cfg.cutIsos || []).map((c) => c.to)];
+  for (const lv of cfg.levels) {
+    const isos = (topo.objects[`countries${lv.id}`]?.geometries || []).map((g) => g.properties?.iso);
+    const bad = gone.filter((i) => isos.includes(i));
+    if (bad.length) throw new Error(`mergeIsos: 상세도 ${lv.id} 에 합친 나라가 남음 ${bad.join(', ')}`);
+    for (const k of keep) {
+      const n = isos.filter((i) => i === k).length;
+      if (n !== 1) throw new Error(`나라 고치기: 상세도 ${lv.id} 의 ${k} 가 ${n}개(하나여야 함)`);
+    }
+  }
+}
+
+/** 남긴·받은 나라의 원본 이름(NAME_KO) — 첫 상세도 원본에서(상세도끼리 같음). 고치기가 없으면 {}. */
+function editNames(cfg, rawDir) {
+  const want = new Set([...mergeEntries(cfg.mergeIsos).map(([t]) => t), ...(cfg.cutIsos || []).map((c) => c.to)]);
+  if (!want.size) return {};
+  const out = {};
+  for (const f of readJson(`${rawDir}/${cfg.levels[0].countries}.geojson`).features) {
+    const p = f.properties; if (want.has(p.ADM0_A3)) out[p.ADM0_A3] = p.NAME_KO;
+  }
+  return out;
+}
+
 /** 상세도 하나의 mapshaper 단계들 → 만든 조각 파일 이름 목록. */
-function buildLevel(cfg, lv, cwd, raw) {
+function buildLevel(cfg, lv, cwd, raw, names = {}) {
   const clip = lv.clip ? ['-clip', 'unit-boxes.json'] : [];
   const files = [];
-  const simp = (s) => (s ? ['-simplify', ...simplifyArgs(s, lv.simplifyByIso), 'keep-shapes'] : []);
   const ctry = `part-${lv.id}-countries.json`;
-  mapshaper(cfg, cwd, ['-i', `${raw}/${lv.countries}.geojson`, `name=countries${lv.id}`, ...clip,
-    '-each', 'iso=ADM0_A3,ko=NAME_KO', '-filter-fields', 'iso,ko', ...simp(lv.simplify),
-    '-dissolve2', '+', `name=land${lv.id}`,
-    '-o', 'format=topojson', 'no-quantization', `target=land${lv.id},countries${lv.id}`, ctry]);
+  mapshaper(cfg, cwd, countryArgs(lv, raw, { mergeIsos: cfg.mergeIsos, cutIsos: cfg.cutIsos }, names));
   files.push(ctry);
   for (const kind of ['rivers', 'lakes']) {
     const k = lv[kind];
@@ -205,9 +288,11 @@ export async function buildBasemap({ force = false } = {}) {
   fs.writeFileSync(`${cwd}/unit-boxes.json`, JSON.stringify(boxes));
   const raw = `../${cfg.rawDir}`;
   const parts = [];
-  for (const lv of cfg.levels) { console.log(`상세도 ${lv.id}`); parts.push(...buildLevel(cfg, lv, cwd, raw)); }
+  const names = editNames(cfg, `${WORK}/${cfg.rawDir}`);
+  for (const lv of cfg.levels) { console.log(`상세도 ${lv.id}`); parts.push(...buildLevel(cfg, lv, cwd, raw, names)); }
   const topo = combine(cfg, cwd, parts, inputsHash);
   checkByIso(topo, cfg.levels);
+  if (cfg.mergeIsos || cfg.cutIsos) checkEdits(topo, cfg);
   const text = JSON.stringify(topo);
   const bytes = Buffer.byteLength(text);
   const sizes = Object.fromEntries(Object.keys(topo.objects).map((n) => [n, Buffer.byteLength(JSON.stringify(topo.objects[n]))]));

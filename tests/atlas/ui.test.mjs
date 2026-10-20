@@ -738,3 +738,21 @@ test('coloringLayer smallMetric area: 날짜변경선을 넘는 흩어진 섬나
   coloringLayer([f], { smallPx: 16, smallIsos: ['FJI'] }).draw(ctx, geoPath(proj, ctx), view);
   assert.equal(arcs.length, 0, '상자 기준(u3): 날짜변경선 넘는 나라는 건너뜀 그대로');
 });
+
+test('coloringQuiz 칠한 수(U4-9): 지역(region) 항목이 있으면 「칠한 나라 n / 나라 수 · 지역 n / 지역 수」, 없으면 옛 글 「칠한 나라 n / 전체」', () => {
+  const sq = (iso, x) => ({ type: 'Feature', properties: { iso, ko: iso }, geometry: { type: 'Polygon', coordinates: [[[x, 0], [x, 1], [x + 1, 1], [x + 1, 0], [x, 0]]] } });
+  const names = [{ name: '가', iso: 'AAA' }, { name: '나', iso: 'BBB' }, { name: '다', iso: 'SAH', region: true }];
+  const text = (q) => find(q.el, byClass('at-quiz-score')).textContent;
+  const map = fakeMap();
+  const q = coloringQuiz(map, coloringLayer([sq('AAA', 0), sq('BBB', 2), sq('SAH', 4)]), names, { seed: 1 });
+  assert.equal(text(q), '칠한 나라 0 / 2 · 지역 0 / 1');
+  map.emit('click', { feature: { properties: { iso: 'SAH' } }, layerId: 'basemap' });
+  map.emit('click', { feature: { properties: { iso: 'AAA' } }, layerId: 'basemap' });
+  assert.equal(text(q), '칠한 나라 1 / 2 · 지역 1 / 1');
+  q.destroy();
+  const map2 = fakeMap();
+  const q2 = coloringQuiz(map2, coloringLayer([sq('AAA', 0), sq('BBB', 2)]), names.slice(0, 2), { seed: 1 });
+  map2.emit('click', { feature: { properties: { iso: 'BBB' } }, layerId: 'basemap' });
+  assert.equal(text(q2), '칠한 나라 1 / 2');
+  q2.destroy();
+});

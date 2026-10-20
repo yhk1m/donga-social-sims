@@ -182,7 +182,7 @@ test('buildColoring: 같은 초성 글자 둘은 나라 면 자리로 짝 — �
   assert.deepEqual(pick(run(a, b, [...L].reverse())), { west: 'GIN', east: 'GHA' });
 });
 
-test('buildColoring 새 설정(있을 때만 — u2·u3 설정에 없음): regions → region:true·이름은 region 지명에서, capitalByNe 이면 면 밖 해안 수도는 Natural Earth 수도 가까운 places 수도', () => {
+test('buildColoring 새 설정(있을 때만 — u2·u3 설정에 없음): regions → region:true·이름은 region 지명에서, capitalByNeNear 이면 면 밖 해안 수도는 Natural Earth 수도 가까운 places 수도(capitalByNe 만으로는 켜지지 않음 — u3 그대로, U4-9)', () => {
   const fit = { family: 'azimuthalEquidistant', params: [0, 0], sim: { a: 100, b: 0, tx: 400, ty: 400 } };
   const cv = makeConverter(fit);
   const lab = (text, ll) => { const [x, y] = cv.apply(ll); return { text, bbox: [x - 0.5, y - 0.5, x + 0.5, y + 0.5] }; };
@@ -198,7 +198,9 @@ test('buildColoring 새 설정(있을 때만 — u2·u3 설정에 없음): regio
   assert.ok(r0.warnings.some((w) => w.startsWith('라마: 교과서 나라 지명 정하지 못함')), r0.warnings.join('|'));
   assert.ok(r0.warnings.includes('가나다: 면 안 places 수도 없음'), r0.warnings.join('|'));
   assert.ok(r0.countries.every((c) => !('region' in c)));
-  const r1 = inp({ regions: { BBB: '시험' }, noCapital: { BBB: '시험' }, capitalByNe: true });
+  // capitalByNe 만(u3 설정 꼴)이면 면 밖 수도 길은 꺼져 옛 경고 그대로
+  assert.ok(inp({ regions: { BBB: '시험' }, noCapital: { BBB: '시험' }, capitalByNe: true }).warnings.includes('가나다: 면 안 places 수도 없음'));
+  const r1 = inp({ regions: { BBB: '시험' }, noCapital: { BBB: '시험' }, capitalByNe: true, capitalByNeNear: true });
   assert.deepEqual(r1.warnings, []);
   const c = Object.fromEntries(r1.countries.map((x) => [x.iso, x]));
   assert.deepEqual([c.AAA.capital, c.AAA.capitalFrom, c.AAA.region], ['바사', 'places+ne', undefined]);

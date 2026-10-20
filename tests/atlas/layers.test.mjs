@@ -330,3 +330,19 @@ test('chartSymbolsLayerJson: ring true 는 donut 값을 수로, 계열 색이 co
   assert.equal(out.items[0].ring, 0.55);
   assert.equal(out.items[0].series[0].color, '#112233');
 });
+
+test('disputedLayerJson basemapPairs(U4-9): 바탕 지도 두 나라 공유 경계를 덧붙임(서사하라 27°40′), 바탕 지도 없거나 경계가 없으면 멈춤', () => {
+  // 위상 하나: MAR(북) · SAH(남) 가 호 0(27.6667 선)을 나눔
+  const topo = { type: 'Topology', arcs: [[[-13, 27.6667], [-8.7, 27.6667]], [[-8.7, 27.6667], [-8.7, 35], [-13, 35], [-13, 27.6667]], [[-8.7, 27.6667], [-8.7, 21], [-13, 21], [-13, 27.6667]]],
+    objects: { countries10a: { type: 'GeometryCollection', geometries: [
+      { type: 'Polygon', arcs: [[0, ~1]], properties: { iso: 'MAR' } }, { type: 'Polygon', arcs: [[~0, 2]], properties: { iso: 'SAH' } }] } } };
+  const gj = { type: 'FeatureCollection', features: [{ type: 'Feature', properties: { FEATURECLA: 'Disputed (please verify)', ADM0_LEFT: 'Egypt', ADM0_RIGHT: 'Sudan' }, geometry: { type: 'LineString', coordinates: [[34, 22], [36, 22]] } }] };
+  const layer = { id: 'ne-disputed', disputed: { featurecla: ['Disputed (please verify)'], pairs: [['Egypt', 'Sudan']], basemapPairs: [['SAH', 'MAR']] } };
+  const out = disputedLayerJson(layer, gj, [[-37, -39, 67, 42]], topo);
+  assert.deepEqual(out.features[0].geometry.coordinates, [[[34, 22], [36, 22]], [[-13, 27.667], [-8.7, 27.667]]]);
+  assert.match(out.properties.source, /바탕 지도 나라 경계\(SAH–MAR\)/);
+  assert.throws(() => disputedLayerJson(layer, gj, [], null), /바탕 지도 countries10a/);
+  assert.throws(() => disputedLayerJson({ ...layer, disputed: { ...layer.disputed, basemapPairs: [['MAR', 'DZA']] } }, gj, [], topo), /DZA \| MAR\(바탕 지도\)/);
+  // basemapPairs 가 없으면 바탕 지도를 보지 않음(u4 전 동작)
+  assert.equal(disputedLayerJson({ ...layer, disputed: { featurecla: layer.disputed.featurecla, pairs: layer.disputed.pairs } }, gj, []).features[0].geometry.coordinates.length, 1);
+});

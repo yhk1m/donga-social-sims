@@ -57,7 +57,8 @@ export function chartSymbolLayer(id, data, { map = null, onPick = null, layerId 
   function build(g) {
     root = s('g', { class: 'at-rings' });
     for (const x of items) {
-      x.el = s('g', { class: 'at-ring', role: 'button', tabindex: 0, 'aria-label': x.it.title, cursor: 'pointer',
+      // 초점 표시는 파란 테두리 원(at-ring-focus) — 브라우저 기본 사각 윤곽은 끔(U4-9 캡처: 누른 고리에 검은 사각이 겹침, 핀 at-pin:focus 와 같은 처리)
+      x.el = s('g', { class: 'at-ring', role: 'button', tabindex: 0, 'aria-label': x.it.title, cursor: 'pointer', style: { outline: 'none' },
         on: { focus: () => setFocus(x, true), blur: () => setFocus(x, false),
           click: (e) => { e.stopPropagation(); onPick?.(x.f, e); }, keydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick?.(x.f, e); } } } });
       x.key = '';

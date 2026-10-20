@@ -141,3 +141,61 @@ test('checkByIso: simplifyByIso 열쇠가 그 상세도 나라 iso 에 없으면
   assert.throws(() => checkByIso(topo, [{ id: '10a', simplifyByIso: { KOR: '100%', BRA: '50%' } }]), /BRA/);
   assert.throws(() => checkByIso(topo, [{ id: '10a', simplifyByIso: { XXX: '50%' } }]), /XXX/);
 });
+
+// ---------- U4-9 나라 고치기(mergeIsos·cutIsos — u4 설정에만) ----------
+test('countryArgs: 고치기 설정이 없으면(u2·u3) 나라 층 mapshaper 인자가 옛 글자 그대로', async () => {
+  const { countryArgs, editArgs } = await import('../../scripts/atlas/build_basemap.mjs');
+  const old = (lv, raw) => {   // U4-9 전 buildLevel 의 인자 목록을 그대로 옮긴 것
+    const clip = lv.clip ? ['-clip', 'unit-boxes.json'] : [];
+    const { simplifyArgs } = { simplifyArgs: (s, b) => (b && Object.keys(b).length ? ['variable', `percentage=${Object.entries(b).map(([k, v]) => `iso=='${k}'?${parseFloat(v) / 100}:`).join('')}${parseFloat(s) / 100}`] : [s]) };
+    const simp = (s) => (s ? ['-simplify', ...simplifyArgs(s, lv.simplifyByIso), 'keep-shapes'] : []);
+    return ['-i', `${raw}/${lv.countries}.geojson`, `name=countries${lv.id}`, ...clip,
+      '-each', 'iso=ADM0_A3,ko=NAME_KO', '-filter-fields', 'iso,ko', ...simp(lv.simplify),
+      '-dissolve2', '+', `name=land${lv.id}`,
+      '-o', 'format=topojson', 'no-quantization', `target=land${lv.id},countries${lv.id}`, `part-${lv.id}-countries.json`];
+  };
+  for (const u of ['u2', 'u3']) {
+    const cfg = readJson(path.join(REPO, `scripts/atlas/config/${u}.json`)).basemap;
+    assert.ok(!cfg.mergeIsos && !cfg.cutIsos, u);
+    for (const lv of cfg.levels) assert.deepEqual(countryArgs(lv, '../raw/ne', { mergeIsos: cfg.mergeIsos, cutIsos: cfg.cutIsos }), old(lv, '../raw/ne'), `${u} ${lv.id}`);
+  }
+  assert.deepEqual(editArgs('countries50', {}), []);
+  assert.deepEqual(editArgs('countries50', { mergeIsos: { _doc: 'x' }, cutIsos: [] }), []);
+});
+
+test('editArgs: 합치기·자르기 인자(고친 나라만 따로 녹임), 잘못된 설정·이름 없음은 오류', async () => {
+  const { editArgs } = await import('../../scripts/atlas/build_basemap.mjs');
+  const a = editArgs('countries50', { mergeIsos: { SOM: ['SOL'] }, cutIsos: [{ from: 'MAR', to: 'SAH', box: [-18, 20, -8, 27.6667] }] }, { SOM: '소말리아', SAH: '서사하라' });
+  const s = a.join(' ');
+  assert.match(s, /^-filter \["SOM","SAH","SOL","MAR"\]\.indexOf\(iso\)>=0 \+ name=edits target=countries50/);
+  assert.match(s, /-clip bbox=-18,20,-8,27\.6667 target=cutin0 -each iso='SAH' target=cutin0 -erase bbox=-18,20,-8,27\.6667 target=cutout0/);
+  assert.match(s, /-each if \(\["SOL"\]\.indexOf\(iso\)>=0\) iso='SOM' target=edits/);
+  assert.match(s, /-dissolve2 iso copy-fields=ko target=edits -each ko=\(\{"SOM":"소말리아","SAH":"서사하라"\}\)\[iso\]\|\|ko target=edits -merge-layers target=countries50,edits name=countries50 force$/);
+  assert.throws(() => editArgs('c', { mergeIsos: { SOM: 'SOL' } }, { SOM: 'x' }), /배열/);
+  assert.throws(() => editArgs('c', { cutIsos: [{ from: 'MAR', to: 'SAH', box: [1, 2, 0, 3] }] }, { SAH: 'x' }), /box/);
+  assert.throws(() => editArgs('c', { mergeIsos: { som: ['SOL'] } }, { som: 'x' }), /세 글자/);
+  assert.throws(() => editArgs('c', { mergeIsos: { SOM: ['SOL'] } }, {}), /SOM 이름/);
+});
+
+test('u4 바탕 지도: 소말릴란드는 소말리아에 합침(Q3), 서사하라 전체 = 북위 27°40′ 남쪽(Q1 교과서대로), 용량·도장', async () => {
+  const { checkEdits } = await import('../../scripts/atlas/build_basemap.mjs');
+  const U4 = readJson(path.join(REPO, 'scripts/atlas/config/u4.json'));
+  const file = path.join(REPO, U4.basemap.out);
+  assert.ok(fs.statSync(file).size <= U4.basemap.maxBytes);
+  const topo = readJson(file);
+  checkEdits(topo, U4.basemap);
+  if (fs.existsSync(`${WORK}/raw/ne/ne_10m_lakes.geojson`)) assert.equal(topo.meta.inputsHash, stampHash(U4, 'basemap'));
+  for (const lv of ['110', '50', '10a']) {
+    const fc = feature(topo, topo.objects[`countries${lv}`]).features;
+    const one = (iso) => { const l = fc.filter((f) => f.properties.iso === iso); assert.equal(l.length, 1, `${lv} ${iso}`); return l[0]; };
+    assert.ok(!fc.some((f) => f.properties.iso === 'SOL'), lv);
+    assert.equal(one('SOM').properties.ko, '소말리아');
+    assert.equal(one('SAH').properties.ko, '서사하라');
+    // 모로코 면의 가장 남쪽 = 27°40′(서사하라 땅이 모로코에 남지 않음), 서사하라 서쪽 해안 끝(다클라 반도 ~ 엘아이운) 포함
+    let minLat = 90; const walk = (a) => (typeof a[0] === 'number' ? (minLat = Math.min(minLat, a[1])) : a.forEach(walk));
+    walk(one('MAR').geometry.coordinates);
+    assert.ok(Math.abs(minLat - 27.6667) < 0.001, `${lv} 모로코 남쪽 끝 ${minLat}`);
+    const m = mesh(topo, topo.objects[`countries${lv}`], (a, b) => a !== b && [a.properties.iso, b.properties.iso].sort().join() === 'MAR,SAH');
+    assert.ok(m.coordinates.length >= 1 && m.coordinates.flat().every(([, y]) => Math.abs(y - 27.6667) < 0.001), `${lv} 경계 = 27°40′`);
+  }
+});

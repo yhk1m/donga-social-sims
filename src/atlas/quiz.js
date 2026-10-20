@@ -200,7 +200,12 @@ export function coloringQuiz(map, layer, names, { seed = Date.now() % 1e9, onSco
     swatches.push([c, b]);
   }
   const paintedOut = h('span', { class: 'at-quiz-score' });
-  const updatePainted = () => { paintedOut.textContent = `칠한 나라 ${[...layer.painted.keys()].filter((k) => known.has(k)).length} / ${names.length}`; };
+  // 지역(region: true — u4 서사하라)이 있으면 「칠한 나라 n / 54 · 지역 n / 1」, 없으면 옛 글 그대로
+  const nReg = names.filter((n) => n.region).length;
+  const updatePainted = () => {
+    const p = [...layer.painted.keys()].filter((k) => known.has(k)), r = p.filter((k) => known.get(k).region).length;
+    paintedOut.textContent = `칠한 나라 ${p.length - r} / ${names.length - nReg}${nReg ? ` · 지역 ${r} / ${nReg}` : ''}`;
+  };
   const clearBtn = h('button', { class: 'ds-btn', type: 'button', on: { click: () => { for (const iso of known.keys()) layer.paint(iso, null); updatePainted(); refresh(); } } }, '모두 지우기');
   const paintPane = h('div', { class: 'at-quiz-pane' },
     h('p', { class: 'at-quiz-q' }, '색을 고르고 지도에서 나라를 눌러 칠해 보자.'),

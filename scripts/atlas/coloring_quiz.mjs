@@ -15,8 +15,9 @@
 //     옮겨 그린 자리라 이웃 나라 면에 떨어짐 — 파두츠·모나코·니코시아), noCapital {ADM0_A3: 까닭} = 수도 지명이 따로 없는 나라(경고 대신 수도 칸 없음).
 //   u4 35쪽에서 더한 것(역시 설정이 있을 때만):
 //     regions {ADM0_A3: 까닭} = 나라가 아닌 「지역」(서사하라 — 교사 Q1: 칠할 수 있으나 나라 수 밖). 그 면의 이름은 places 의 regionKinds(기본 ['region'])
-//     지명에서도 찾고, 출력에 region: true. capitalByNe 이고 손글씨 수도가 없는 나라의 면 안에 places 수도가 없으면(라바트 — Natural Earth 10m
-//     해안선이 도시 점보다 안쪽이라 면 밖 2km) 그 나라 Natural Earth 「Admin-0 capital」에서 nearKm 안 가장 가까운 places 수도(places+ne).
+//     지명에서도 찾고, 출력에 region: true. capitalByNeNear(U4-9 에서 capitalByNe 와 따로 된 키로 — u3 은 capitalByNe 만 씀) = 손글씨 수도가 없는 나라의
+//     면 안에 places 수도가 없으면(라바트 — Natural Earth 10m 해안선이 도시 점보다 안쪽이라 면 밖 2km) 그 나라 Natural Earth 「Admin-0 capital」에서
+//     nearKm 안 가장 가까운 places 수도(places+ne).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -151,7 +152,7 @@ export function buildColoring({ labels, fit, places, countries, nePlaces, cfg })
           cap = inside.sort((a, b) => Math.min(...ne.map((q) => km(ll(a), q.ll))) - Math.min(...ne.map((q) => km(ll(b), q.ll))))[0];
           how = 'places+ne';
         } else W.push(`${c.name}: places 수도 ${inside.length}개, Natural Earth 수도 없음`);
-      } else if (cfg.capitalByNe) {   // 면 밖으로 조금 나간 해안 수도(라바트): Natural Earth 수도 가까이(nearKm) 가장 가까운 places 수도
+      } else if (cfg.capitalByNeNear) {   // 면 밖으로 조금 나간 해안 수도(라바트): Natural Earth 수도 가까이(nearKm) 가장 가까운 places 수도
         const ne = nePlaces.filter((q) => q.adm0 === c.iso && q.cls === 'Admin-0 capital');
         let bd = cfg.nearKm;
         for (const p of placeCapitals) for (const q of ne) { const d = km(ll(p), q.ll); if (d < bd) { bd = d; cap = p; } }

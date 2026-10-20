@@ -144,6 +144,9 @@ test('p39 AfCFTA: 3분류, 에리트레아만 협정 서명 전, 소말릴란드
 test('미확정 국경: 선 레이어 하나, 범례 「미확정 국경」 점선', () => {
   const gj = read('ne-disputed');
   assert.deepEqual(gj.properties.legend.map((e) => [e.label, e.dashed]), [['미확정 국경', true]]);
+  // U4-9(교사 Q1 「교과서대로」): 서사하라–모로코 점선은 방벽이 아니라 북위 27°40′ — 서경 8~18° 의 선은 그 위도 하나뿐
+  const ws = gj.features[0].geometry.coordinates.filter((L) => L.every(([x]) => x < -8 && x > -18));
+  assert.ok(ws.length >= 1 && ws.flat().every(([, y]) => Math.abs(y - 27.667) < 0.002), JSON.stringify(ws));
 });
 
 test('레이어 합계 용량 ≤ 650KB(계획 예산)', () => {
