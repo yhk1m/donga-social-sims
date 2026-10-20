@@ -124,10 +124,11 @@ function barSvg(spec, label) {
     t.v > 0 && t.y > top + 0.5 ? s('line', { class: 'at-ct-grid', x1: x0, x2: x1, y1: t.y, y2: t.y }) : null,
     txt(x0 - 5, t.y + 4, fmtThousands(t.v), { 'text-anchor': 'end', class: 'at-ct at-ct-tick' })));
   const bars = cats.map((c, i) => {
-    const cx = x0 + band * (i + 0.5), y = sc.y(vals[i] ?? 0);
+    const v = vals[i], has = Number.isFinite(v); // 값이 빈 막대(null·undefined)는 막대 없이 「자료 없음」 말풍선만
+    const cx = x0 + band * (i + 0.5), y = has ? sc.y(v) : yb;
     return s('g', { class: 'at-ct-bar' },
-      s('title', {}, `${c} ${fmtThousands(vals[i])}${spec.unit ? ` ${spec.unit}` : ''}`),
-      s('rect', { x: (cx - bw / 2).toFixed(1), y: y.toFixed(1), width: bw.toFixed(1), height: Math.max(0, yb - y).toFixed(1), fill: fills[i] }),
+      s('title', {}, has ? `${c} ${fmtThousands(v)}${spec.unit ? ` ${spec.unit}` : ''}` : `${c} 자료 없음`),
+      has ? s('rect', { x: (cx - bw / 2).toFixed(1), y: y.toFixed(1), width: bw.toFixed(1), height: Math.max(0, yb - y).toFixed(1), fill: fills[i] }) : null,
       s('text', { class: 'at-ct at-ct-barcat', 'text-anchor': 'end', transform: `translate(${cx.toFixed(1)},${yb + 12}) rotate(-50)` }, String(c)));
   });
   let wave = null;

@@ -136,3 +136,15 @@ test('p32 벨기에 3분류(브뤼셀 빗금은 프랑스어 줄) · 이탈리�
   assert.equal(pad.properties.style, 'outline');
   const [lon, lat] = pad.properties.centroid; assert.ok(lon > 7 && lon < 13.5 && lat > 44 && lat < 46.5, `${lon},${lat}`);
 });
+
+test('유럽 레이어 11개(설정 layers 와 같음), 합계 ≤ 650KB(아시아 상한과 같음), 나라 단위 단계구분도는 수 KB', () => {
+  const cfg = JSON.parse(readFileSync('scripts/atlas/config/u3.json', 'utf8'));
+  const ids = Object.keys(cfg.layers).sort();
+  const files = readdirSync(D).filter((f) => /^layer-.*\.json$/.test(f)).map((f) => f.slice(6, -5)).sort();
+  assert.deepEqual(files, ids);
+  assert.equal(ids.length, 11);
+  const kb = (id) => statSync(`${D}/layer-${id}.json`).size / 1024;
+  const total = ids.reduce((a, id) => a + kb(id), 0);
+  assert.ok(total <= 650, `${total.toFixed(1)} KB`);
+  for (const id of ids.filter((i) => cfg.layers[i].type === 'countryClass')) assert.ok(kb(id) < 10, `${id} ${kb(id).toFixed(1)} KB`);
+});

@@ -382,10 +382,11 @@ function nestedLegend(items, legend, btns, label) {
   const press = (e) => { if (legend && e.geometry !== false) legend.toggle(e.cls); };
   const gs = lay.items.map((it) => {
     const e = by.get(it.cls);
-    const g = s('g', {
-      class: 'at-legend-nest-item', role: 'button', tabindex: legend ? '0' : '-1', 'aria-pressed': 'false', 'aria-label': `${e.label} 만 보기(다시 누르면 전체)`,
+    // 범례 상태가 없으면(누를 수 없는 범례) 단추 역할·초점 없이 그림만
+    const g = s('g', legend ? {
+      class: 'at-legend-nest-item', role: 'button', tabindex: '0', 'aria-pressed': 'false', 'aria-label': `${e.label} 만 보기(다시 누르면 전체)`,
       on: { click: () => press(e), keydown: (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault?.(); press(e); } } },
-    },
+    } : { class: 'at-legend-nest-item', 'aria-label': e.label },
       s('circle', { class: 'at-legend-nest-circle', cx: it.cx, cy: r1(it.cy), r: r1(it.r), fill: e.color, stroke: e.stroke || '#fff' }),
       s('path', { class: 'at-legend-nest-leader', d: `M${it.cx},${r1(it.top)}H${lay.width + 2}L${lay.width + 6},${r1(it.labelY)}` }),
       s('text', { class: 'at-legend-nest-label', x: lay.width + 9, y: r1(it.labelY + 4) }, e.label));
@@ -416,7 +417,7 @@ export function legendBlock(panel, legend, items, opts = {}) {
   const fills = items.filter((e) => !lineKinds.has(e.kind));
   // 묶음(항목 group — 기후 열대·건조·온대·냉대·한대): 이어진 같은 묶음을 제목 아래로. 제목을 누르면 그 묶음만(legend.toggleGroup).
   const groupBtns = [];
-  const fillRows = () => {
+  const fillRows = (fills) => {
     const out = [];
     for (let i = 0; i < fills.length;) {
       const g = fills[i].group;
@@ -435,7 +436,10 @@ export function legendBlock(panel, legend, items, opts = {}) {
     return out;
   };
   const lines = items.filter((e) => lineKinds.has(e.kind));
-  const nested = opts.legendStyle === 'nested-circles' && fills.length > 0 && fills.every((e) => e.size > 0);
+  // 겹친 원: 첫 항목과 같은 색이고 크기(size)가 있는 항목들(크기 단계). 색이 다르거나 크기 없는 항목(30쪽 「사례 도시」 흰 원)은 아래 줄 목록
+  const nestItems = opts.legendStyle === 'nested-circles' && fills.length ? fills.filter((e) => e.size > 0 && e.color === fills[0].color) : [];
+  const nested = nestItems.length > 1;
+  const listFills = nested ? fills.filter((e) => !nestItems.includes(e)) : fills;
   const reset = h('button', { class: 'ds-btn at-legend-reset', type: 'button', on: { click: () => legend?.reset() } }, '전체 보기');
   const notice = h('p', { class: 'at-legend-fail', role: 'status' }, '이미지를 불러오지 못했습니다. 지도의 다른 내용은 그대로 볼 수 있습니다.');
   reset.hidden = true; notice.hidden = true;
@@ -450,8 +454,8 @@ export function legendBlock(panel, legend, items, opts = {}) {
     opts.approx ? h('span', { class: 'at-badge', title: opts.approxReason || '교과서 지도의 위치를 눈으로 맞춘 근사' }, opts.approxNote || '위치 근사') : null);
   const el = h('section', { class: 'at-legend', 'aria-label': opts.title || '범례' },
     head,
-    nested ? nestedLegend(fills, legend, btns, opts.title || '범례') : null,
-    fills.length && !nested ? h('div', { class: `at-legend-list${fills.some((e) => e.group) ? ' has-groups' : ''}` }, fillRows()) : null,
+    nested ? nestedLegend(nestItems, legend, btns, opts.title || '범례') : null,
+    listFills.length ? h('div', { class: `at-legend-list${listFills.some((e) => e.group) ? ' has-groups' : ''}` }, fillRows(listFills)) : null,
     lines.length ? h('div', { class: 'at-legend-sub' }, opts.lineTitle || null) : null,
     lines.length ? h('div', { class: 'at-legend-list' }, lines.map(row)) : null,
     widthRow,

@@ -563,9 +563,12 @@ test('legendBlock 겹친 원(legendStyle nested-circles): 큰 원부터 겹친 �
   assert.equal(gs[2].getAttribute('aria-pressed'), 'true');
   gs[4].dispatch('keydown', { key: 'Enter' });
   assert.equal(lg.selected(), 'c5');
-  // size 없는 항목이 섞이면 보통 목록
-  const b2 = legendBlock(div(), null, [...items, { cls: 'x', color: '#000', kind: 'fill', label: '기타' }], { legendStyle: 'nested-circles' });
-  assert.equal(find(b2.el, byClass('at-legend-nested')), null);
+  // 색이 다르거나 size 없는 항목(30쪽 「사례 도시」 흰 원)은 겹친 원에 넣지 않고 아래 줄 목록으로. 범례 상태가 없으면 원은 단추가 아님
+  const b2 = legendBlock(div(), null, [...items, { cls: 'x', color: '#ffffff', kind: 'fill', label: '사례 도시', size: 2.9 }, { cls: 'y', color: '#000', kind: 'fill', label: '기타' }], { legendStyle: 'nested-circles' });
+  const nest2 = find(b2.el, byClass('at-legend-nested'));
+  assert.deepEqual(findAll(nest2, byClass('at-legend-nest-label')).map((t) => t.textContent), items.map((e) => e.label));
+  assert.deepEqual(findAll(b2.el, byClass('at-legend-label')).map((t) => t.textContent), ['사례 도시', '기타']);
+  for (const g of findAll(nest2, byClass('at-legend-nest-item'))) { assert.equal(g.getAttribute('role'), null); assert.equal(g.getAttribute('tabindex'), null); }
   b.destroy(); b2.destroy();
 });
 
@@ -591,4 +594,12 @@ test('renderChart 유럽 형식: 묶음 막대는 csat 캔버스, 강조·축 �
   assert.equal(findAll(b.el, byClass('at-ct-wave')).length, 2, '물결선 두 줄');
   assert.ok(findAll(b.el, byClass('at-ct-tick')).some((t) => t.textContent === '680'));
   assert.equal(find(b.el, byClass('ds-note')), null);
+  // 값이 빈 막대(null·undefined)는 막대 없이 「자료 없음」 말풍선만(U3-3 리뷰 — 'undefined' 글자·0 높이 막대 막기)
+  const c = renderChart(box, { id: 'p30-gfci2', type: 'bar', title: '지수', unit: '지수', categories: ['뉴욕', '런던', '서울'],
+    series: [{ name: '지수', values: [763, null, 727], color: '#0e90c1' }], colors: { 런던: '#e60012' }, axisBreak: [0, 680], axes: { y: { step: 20, n: 6 } } });
+  const bars = findAll(c.el, byClass('at-ct-bar'));
+  assert.equal(bars.length, 3);
+  assert.equal(findAll(bars[1], (n) => n.tagName === 'rect').length, 0);
+  assert.ok(!findAll(c.el, (n) => n.tagName === 'title').some((t) => /undefined|null|NaN/.test(t.textContent)));
+  assert.equal(find(bars[1], (n) => n.tagName === 'title').textContent, '런던 자료 없음');
 });
