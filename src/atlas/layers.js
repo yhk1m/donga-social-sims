@@ -21,7 +21,7 @@ import { geoPath, geoContains, geoBounds } from 'd3-geo';
 import { h, s } from '../shared/dom.js';
 import { indexGeometry, clipIndexed } from './geoClip.js';
 import {
-  alphaOf, symbolPx, flowWidthPx, lineWidthPx, barMetrics, quadPath, arrowSize, endTangent, arrowHead, trimRunEnd, joinParts, unwrapLine,
+  alphaOf, symbolPx, classSymbolPx, flowWidthPx, lineWidthPx, barMetrics, quadPath, arrowSize, endTangent, arrowHead, trimRunEnd, joinParts, unwrapLine,
   splitJumps, distToPolyline, lineLabelAt, shapePath, legendItems,
 } from './layerStyle.js';
 import { LAYER_Z, round1, round2, featuresOf, isPoly, isLine, metaOf, setAttr, connect, hoverClass } from './layerCommon.js';
@@ -278,7 +278,7 @@ function defaultIconOf(legendList) {
 /**
  * 기호 레이어(SVG). 기호 하나 = <g class="at-sym-item">. 모양 기호는 반지름 1 경로를 translate·scale 로 옮기고(테두리는 non-scaling-stroke),
  * 인구 막대(shape 'bar')는 1억 명 칸을 쌓고 사람 아이콘·나라 이름을 얹는다(지시선 막대는 barAt 에 세우고 나라 자리까지 점선).
- * 누르면 onPick(feature). 크기 = symbolPx(properties.size pt, k).
+ * 누르면 onPick(feature). 크기 = symbolPx(properties.size pt, k) — 크기 단계 기호(properties.sizeBy 'class')는 classSymbolPx(단계 비 유지).
  * 같은 레이어 객체를 다른 <g> 에 다시 그리면(렌더러에 다시 올림) 요소와 캐시(칸 크기 등)를 모두 새로 만든다.
  */
 export function symbolLayer(id, points, { legend = null, map = null, layerId = id, legendRefresh = true, iconOf = null, sizeOf = (f) => f.properties.size, onPick = null, dimAlpha = 0.2, z = LAYER_Z.symbol } = {}) {
@@ -289,6 +289,9 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
   const symStyle = metaOf(points).symbolStyle || {};
   const sizeOpts = { ...(symStyle.pxPerPt ? { pxPerPt: symStyle.pxPerPt } : {}), ...(symStyle.minPx ? { min: symStyle.minPx } : {}), ...(symStyle.maxPx ? { max: symStyle.maxPx } : {}) };
   const strokeOf = new Map(legendList.filter((e) => e.stroke).map((e) => [e.cls, e.stroke]));
+  // 크기 단계 기호(자료 properties.sizeBy 'class' — 범례 항목 size pt): 단계 전체에 배율 하나(classSymbolPx)라 확대해도 지름 비가 그대로
+  const classSizes = metaOf(points).sizeBy === 'class' ? legendList.map((e) => e.size).filter((v) => v > 0) : null;
+  const diameter = (f, k) => (classSizes?.length ? classSymbolPx(sizeOf(f) || classSizes[0], k, classSizes, sizeOpts) : symbolPx(sizeOf(f) || 3, k, sizeOpts));
   const items = feats.map((f) => ({ f, shape: shapeOf(f) }));
   const byF = new Map(items.map((it) => [it.f, it]));
   let root = null;
@@ -369,7 +372,7 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
         } else {
           shown = shown && q[0] > -20 && q[0] < W + 20 && q[1] > -20 && q[1] < H + 20;
           if (shown) {
-            it.r = symbolPx(sizeOf(it.f) || 3, view.k, sizeOpts) / 2;
+            it.r = diameter(it.f, view.k) / 2;
             setAttr(it.el, 'transform', `translate(${round1(q[0])},${round1(q[1])}) scale(${round2(it.r)})`);
           }
         }

@@ -19,6 +19,7 @@ import { PROJECTIONS } from './projections.js';
 import { renderChart } from './charts.js';
 import { segButtons } from './seg.js';
 import { tintLegend } from './tint.js';
+import { nestedCircles } from './layerStyle.js';
 import { BASE_MODES, baseModeOf, baseOptions, NATURAL_CREDIT } from './natural.js';
 import { scaleBarSpec, hoverLabel, pageCrop, pagesLabel, assetUrl, panTarget, ASSET_BASE } from './uiCore.js';
 import './ui.css';
@@ -370,8 +371,33 @@ function swatch(e) {
 }
 
 /**
+ * 겹친 원 범례(legendStyle 'nested-circles' — 30쪽 도시 인구 5단계): 큰 원부터 아래 끝을 맞춰 겹치고 값 글자는 오른쪽(지시선).
+ * 원 + 글자 하나 = 누를 수 있는 <g role=button>(Enter·Space 도) — legend.toggle(cls). btns 에 [항목, 요소] 를 넣어 aria-pressed 를 맞춘다.
+ */
+function nestedLegend(items, legend, btns, label) {
+  const lay = nestedCircles(items.map((e) => ({ cls: e.cls, size: e.size })));
+  const by = new Map(items.map((e) => [e.cls, e]));
+  const r1 = (v) => Math.round(v * 10) / 10;
+  const W = lay.width + 96;
+  const press = (e) => { if (legend && e.geometry !== false) legend.toggle(e.cls); };
+  const gs = lay.items.map((it) => {
+    const e = by.get(it.cls);
+    const g = s('g', {
+      class: 'at-legend-nest-item', role: 'button', tabindex: legend ? '0' : '-1', 'aria-pressed': 'false', 'aria-label': `${e.label} 만 보기(다시 누르면 전체)`,
+      on: { click: () => press(e), keydown: (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault?.(); press(e); } } },
+    },
+      s('circle', { class: 'at-legend-nest-circle', cx: it.cx, cy: r1(it.cy), r: r1(it.r), fill: e.color, stroke: e.stroke || '#fff' }),
+      s('path', { class: 'at-legend-nest-leader', d: `M${it.cx},${r1(it.top)}H${lay.width + 2}L${lay.width + 6},${r1(it.labelY)}` }),
+      s('text', { class: 'at-legend-nest-label', x: lay.width + 9, y: r1(it.labelY + 4) }, e.label));
+    btns.push([e, g]);
+    return g;
+  });
+  return s('svg', { class: 'at-legend-nested', viewBox: `0 0 ${W} ${r1(lay.height)}`, width: W, height: r1(lay.height), role: 'group', 'aria-label': label }, gs);
+}
+
+/**
  * 범례 블록. legend = legendState(없으면 누를 수 없는 목록), items = 화면 범례 항목(layer.legendItems).
- * opts: { title, lineTitle, credit, note, approx, approxNote, approxReason, ready(Promise<boolean>) }
+ * opts: { title, lineTitle, credit, note, approx, approxNote, approxReason, ready(Promise<boolean>), legendStyle('nested-circles' = 겹친 원) }
  */
 export function legendBlock(panel, legend, items, opts = {}) {
   const lineKinds = new Set(['line', 'flow', 'isotherm']);
@@ -408,6 +434,7 @@ export function legendBlock(panel, legend, items, opts = {}) {
     return out;
   };
   const lines = items.filter((e) => lineKinds.has(e.kind));
+  const nested = opts.legendStyle === 'nested-circles' && fills.length > 0 && fills.every((e) => e.size > 0);
   const reset = h('button', { class: 'ds-btn at-legend-reset', type: 'button', on: { click: () => legend?.reset() } }, '전체 보기');
   const notice = h('p', { class: 'at-legend-fail', role: 'status' }, '이미지를 불러오지 못했습니다. 지도의 다른 내용은 그대로 볼 수 있습니다.');
   reset.hidden = true; notice.hidden = true;
@@ -422,7 +449,8 @@ export function legendBlock(panel, legend, items, opts = {}) {
     opts.approx ? h('span', { class: 'at-badge', title: opts.approxReason || '교과서 지도의 위치를 눈으로 맞춘 근사' }, opts.approxNote || '위치 근사') : null);
   const el = h('section', { class: 'at-legend', 'aria-label': opts.title || '범례' },
     head,
-    fills.length ? h('div', { class: `at-legend-list${fills.some((e) => e.group) ? ' has-groups' : ''}` }, fillRows()) : null,
+    nested ? nestedLegend(fills, legend, btns, opts.title || '범례') : null,
+    fills.length && !nested ? h('div', { class: `at-legend-list${fills.some((e) => e.group) ? ' has-groups' : ''}` }, fillRows()) : null,
     lines.length ? h('div', { class: 'at-legend-sub' }, opts.lineTitle || null) : null,
     lines.length ? h('div', { class: 'at-legend-list' }, lines.map(row)) : null,
     widthRow,

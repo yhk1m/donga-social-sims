@@ -64,6 +64,15 @@
 }
 .ds-sim .at-legend-item:hover:not(:disabled) { background: #f1f0eb; }
 .ds-sim .at-legend-item[aria-pressed=true] { border-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+/* 겹친 원 범례(legendStyle nested-circles — 도시 인구 단계) */
+.ds-sim .at-legend-nested { display: block; margin: 2px 0 4px; overflow: visible; }
+.ds-sim .at-legend-nest-item { cursor: pointer; outline: none; }
+.ds-sim .at-legend-nest-circle { stroke-width: 0.8; }
+.ds-sim .at-legend-nest-leader { fill: none; stroke: #231f20; stroke-width: 0.6; }
+.ds-sim .at-legend-nest-label { font-size: 11px; fill: #231f20; }
+.ds-sim .at-legend-nest-item[aria-pressed=true] .at-legend-nest-circle { stroke: #111111; stroke-width: 1.6; }
+.ds-sim .at-legend-nest-item[aria-pressed=true] .at-legend-nest-label { font-weight: 700; fill: var(--accent); }
+.ds-sim .at-legend-nest-item:focus-visible .at-legend-nest-label { text-decoration: underline; }
 .ds-sim .at-legend-item:disabled { cursor: default; color: var(--ink-2); }
 /* 범례 묶음(교과서 21쪽 기후 구분 상자처럼 묶음 이름 + 괄호) */
 .ds-sim .at-legend-list.has-groups { gap: 3px; }

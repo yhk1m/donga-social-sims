@@ -208,12 +208,31 @@ export function decorateLegend(layer, rawLegend) {
   return { legend, colorOfCls };
 }
 
+/**
+ * 크기 단계 기호(설정 symbolSizes: 범례 이름 → 지름 pt, 30쪽 도시 인구 5단계): 범례 항목 size 와 그 분류 기호 properties.size 를 단계 값으로(제자리).
+ * 설정 legendStyle 은 'nested-circles'(겹친 원 범례)만. → symbolSizes(없으면 {})
+ */
+export function applySymbolSizes(layer, legend, features) {
+  if (layer.legendStyle != null && layer.legendStyle !== 'nested-circles') throw new Error(`${layer.id}: legendStyle 모르는 모양 ${layer.legendStyle}`);
+  const sizes = layer.symbolSizes || {};
+  if (!Object.keys(sizes).length) return sizes;
+  for (const [name, pt] of Object.entries(sizes)) {
+    if (!legend.some((e) => e.label === name)) throw new Error(`${layer.id}: symbolSizes 에 범례에 없는 이름 ${name}`);
+    if (!(pt > 0)) throw new Error(`${layer.id}: symbolSizes ${name} 크기 ${pt}`);
+  }
+  for (const e of legend) if (sizes[e.label]) e.size = sizes[e.label];
+  const ptOf = new Map(legend.filter((e) => e.size).map((e) => [e.cls, e.size]));
+  for (const f of features) if (f.properties.type === 'symbol' && ptOf.has(f.properties.cls)) f.properties = { ...f.properties, size: ptOf.get(f.properties.cls) };
+  return sizes;
+}
+
 function finish(layer, meta) {
   const m = maps[layer.map];
   const clipped = JSON.parse(fs.readFileSync(`${WORK}/geo/${layer.id}.clipped.geojson`, 'utf8'));
   const features = clipped.features.map((f) => ({ type: 'Feature', properties: f.properties, geometry: roundGeom(f.geometry) }));
   const { legend, colorOfCls } = decorateLegend(layer, meta.legend);
   for (const f of features) if (colorOfCls.has(f.properties.cls)) f.properties = { ...f.properties, color: colorOfCls.get(f.properties.cls) };
+  const sizes = applySymbolSizes(layer, legend, features);
   const present = new Set(features.map((f) => f.properties.cls));
   const ne = layer.source === 'ne';
   const props = {
@@ -222,6 +241,8 @@ function finish(layer, meta) {
     source: ne ? 'Natural Earth' : meta.source, ...(ne ? { sourceDetail: meta.source, note: meta.note } : {}),
     winding: 'cw', // 면 바깥 고리 시계 방향(d3-geo 규약), 구멍 반시계
     ...(layer.symbolStyle ? { symbolStyle: layer.symbolStyle } : {}), // 기호 크기 배율·최소/최대 지름(px) — symbolLayer 가 읽음
+    ...(Object.keys(sizes).length ? { sizeBy: 'class' } : {}),          // 크기 단계 기호(symbolLayer 가 단계 비를 지킴)
+    ...(layer.legendStyle ? { legendStyle: layer.legendStyle } : {}),  // 범례 견본 모양('nested-circles' = 겹친 원 — ui.js legendBlock)
     legend: legend.map((e) => ({ ...e, present: present.has(e.cls) })),
   };
   fs.mkdirSync(OUT, { recursive: true });

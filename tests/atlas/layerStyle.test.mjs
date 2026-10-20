@@ -195,3 +195,33 @@ test('mapGridBlocks: 마디(block 간격)만 정확히 계산하고 칸 안은 �
   }
   assert.ok(maxErr < 0.05, `최대 오차 ${maxErr}`);
 });
+
+// ── 크기 단계 기호·겹친 원 범례(U3-3c) ─────────────────────────────────
+import { classSymbolPx, nestedCircles } from '../../src/atlas/layerStyle.js';
+
+test('classSymbolPx: 크기 단계 기호는 확대가 바뀌어도 단계 사이 지름 비 유지(가장 큰 단계 ≤ max, 그 안에서 가장 작은 단계 ≥ min)', () => {
+  const sizes = [8, 6, 4.5, 3, 2];
+  for (const k of [0.6, 1, 2.2, 6, 30]) {
+    const px = sizes.map((p) => classSymbolPx(p, k, sizes));
+    for (let i = 1; i < px.length; i++) assert.ok(Math.abs(px[i] / px[0] - sizes[i] / sizes[0]) < 1e-9, `k ${k}`);
+    assert.ok(px[0] <= 26 + 1e-9, `k ${k} 가장 큰 단계 ${px[0]}`);
+    assert.ok(px[4] >= 4 - 1e-9 || px[0] >= 26 - 1e-9, `k ${k} 가장 작은 단계 ${px[4]}`);
+  }
+  // 단계마다 따로 자르는 symbolPx 와 달리 큰 단계 둘이 같은 크기가 되지 않는다
+  assert.ok(classSymbolPx(8, 30, sizes) > classSymbolPx(6, 30, sizes));
+  assert.ok(classSymbolPx(8, 30, sizes, { max: 20 }) <= 20 + 1e-9);
+});
+
+test('nestedCircles: 큰 원부터, 반지름 = 단계 비, 아래 끝을 맞춤, 값 글자 줄은 겹치지 않게 아래로', () => {
+  const L = nestedCircles([{ cls: 'c5', size: 2 }, { cls: 'c1', size: 8 }, { cls: 'c3', size: 4.5 }, { cls: 'c2', size: 6 }, { cls: 'c4', size: 3 }], { maxR: 20, gap: 12 });
+  assert.deepEqual(L.items.map((it) => it.cls), ['c1', 'c2', 'c3', 'c4', 'c5']);
+  assert.deepEqual(L.items.map((it) => it.r), [20, 15, 11.25, 7.5, 5]);
+  for (const it of L.items) assert.equal(it.cy + it.r, 40, '아래 끝 = 2·maxR');
+  for (let i = 1; i < L.items.length; i++) {
+    assert.ok(L.items[i].r < L.items[i - 1].r);
+    assert.ok(L.items[i].labelY - L.items[i - 1].labelY >= 12 - 1e-9, '글자 줄 간격');
+    assert.ok(L.items[i].labelY >= L.items[i].top, '글자는 원 꼭대기보다 위로 가지 않음');
+  }
+  assert.ok(L.height >= L.items[4].labelY + 6);
+  assert.equal(L.width, 40);
+});

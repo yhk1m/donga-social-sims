@@ -547,3 +547,24 @@ test('legendBlock: 윤곽만 분류(style outline — 유로 사용국)의 견�
   assert.ok(!sw[1].style.background, '채움 없음');
   b.destroy();
 });
+
+test('legendBlock 겹친 원(legendStyle nested-circles): 큰 원부터 겹친 원 + 오른쪽 값 글자, 원을 누르면(Enter 도) 그 단계만', () => {
+  const items = [8, 6, 4.5, 3, 2].map((size, i) => ({ cls: `c${i + 1}`, color: '#00843d', kind: 'fill', label: ['1,000 이상', '300~1,000', '100~300', '50~100', '30~50'][i], size }));
+  const lg = createLegendState(items.map((e) => e.cls));
+  const b = legendBlock(div(), lg, items, { title: '도시 인구', legendStyle: 'nested-circles' });
+  assert.equal(findAll(b.el, byClass('at-legend-item')).length, 0, '줄 목록 대신 겹친 원');
+  const nest = find(b.el, byClass('at-legend-nested'));
+  const circles = findAll(nest, byClass('at-legend-nest-circle')).map((c) => Number(c.getAttribute('r')));
+  assert.deepEqual(circles, [...circles].sort((x, y) => y - x), '큰 원부터(뒤에 깔림)');
+  assert.deepEqual(findAll(nest, byClass('at-legend-nest-label')).map((t) => t.textContent), items.map((e) => e.label));
+  const gs = findAll(nest, byClass('at-legend-nest-item'));
+  gs[2].dispatch('click');
+  assert.equal(lg.selected(), 'c3');
+  assert.equal(gs[2].getAttribute('aria-pressed'), 'true');
+  gs[4].dispatch('keydown', { key: 'Enter' });
+  assert.equal(lg.selected(), 'c5');
+  // size 없는 항목이 섞이면 보통 목록
+  const b2 = legendBlock(div(), null, [...items, { cls: 'x', color: '#000', kind: 'fill', label: '기타' }], { legendStyle: 'nested-circles' });
+  assert.equal(find(b2.el, byClass('at-legend-nested')), null);
+  b.destroy(); b2.destroy();
+});

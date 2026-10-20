@@ -1,6 +1,6 @@
 // © 2026 김용현
 // src/atlas/layerStyle.js — 주제 레이어(layers.js)의 순수 함수(DOM 없음). 테스트: tests/atlas/layerStyle.test.mjs
-//   범례 투명도(alphaOf), 확대에 따른 크기(zoomScale·symbolPx·flowWidthPx·lineWidthPx·barMetrics), 곡선(bendControl·quadPath)·화살촉(arrowSize·endTangent·arrowHead·trimRunEnd),
+//   범례 투명도(alphaOf), 확대에 따른 크기(zoomScale·symbolPx·classSymbolPx·flowWidthPx·lineWidthPx·barMetrics), 겹친 원 범례(nestedCircles), 곡선(bendControl·quadPath)·화살촉(arrowSize·endTangent·arrowHead·trimRunEnd),
 //   선 잇기·나누기(unwrapLine·joinParts·splitJumps), 맞히기 거리(distToPolyline), 선 위 글자 자리(lineLabelAt),
 //   이미지 색인(imageIndex), 색(parseHex·nearestColor), 기호 모양(shapePath·SHAPES), 화면 범례 항목(legendItems).
 
@@ -22,6 +22,37 @@ export function zoomScale(k, { ref = 2.2, exp = 0.5, min = 0.75, max = 2 } = {})
 /** 기호 지름: 지면 pt → 화면 px(pxPerPt × 확대 배율), [min, max] px. */
 export function symbolPx(sizePt, k, { pxPerPt = 2.4, min = 4, max = 18 } = {}) {
   return clamp(sizePt * pxPerPt * zoomScale(k), min, max);
+}
+
+/**
+ * 크기 단계 기호(sizeBy 'class' — 30쪽 도시 인구 5단계) 지름: 단계마다 따로 [min, max] 로 자르면 큰 단계끼리 같은 크기가 되어 단계가 사라진다.
+ * 그래서 배율 하나(pxPerPt × 확대 배율)를 단계 전체(sizes = 모든 단계 pt)에 맞춰 줄이거나 늘린다 — 가장 큰 단계가 max 를 넘지 않게,
+ * (그 안에서) 가장 작은 단계가 min 보다 작지 않게. 지름 비 = pt 비가 어느 확대에서나 그대로.
+ */
+export function classSymbolPx(sizePt, k, sizes, { pxPerPt = 2.4, min = 4, max = 26 } = {}) {
+  const hi = Math.max(...sizes), lo = Math.min(...sizes);
+  let f = pxPerPt * zoomScale(k);
+  if (lo * f < min) f = min / lo;
+  if (hi * f > max) f = max / hi;
+  return sizePt * f;
+}
+
+/**
+ * 겹친 원 범례(legendStyle 'nested-circles'): 항목 [{cls, size(pt)}] → 큰 원부터 아래 끝을 맞춰 겹친 원과 오른쪽 값 글자 자리.
+ * 반지름 = maxR × size / 가장 큰 size, 원 가운데 (maxR, 2maxR − r). 글자 줄(labelY)은 원 꼭대기 높이에서 시작하되 앞 글자와 gap 이상 떨어지게 아래로.
+ * → {width(원 칸), height, items:[{cls, r, cx, cy, top, labelY}]}(큰 원부터)
+ */
+export function nestedCircles(entries, { maxR = 18, gap = 12 } = {}) {
+  const list = [...entries].filter((e) => e.size > 0).sort((a, b) => b.size - a.size);
+  const big = list[0]?.size || 1;
+  let prev = -Infinity;
+  const items = list.map((e) => {
+    const r = (maxR * e.size) / big, cy = 2 * maxR - r, top = cy - r;
+    const labelY = Math.max(top, prev + gap);
+    prev = labelY;
+    return { cls: e.cls, r, cx: maxR, cy, top, labelY };
+  });
+  return { width: 2 * maxR, height: Math.max(2 * maxR, prev + gap / 2) + 2, items };
 }
 
 /** 흐름선 굵기: 범례 굵기(pt, 0.6/1/1.5/2) → px. 세계 지도 축척이라 기준 확대가 낮다. */

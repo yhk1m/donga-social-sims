@@ -202,3 +202,16 @@ test('decorateLegend: legendStyles {범례 이름: outline} → 범례 항목 st
   assert.throws(() => decorateLegend({ id: 'eu', legendStyles: { '유로 사용 국가': 'dots' } }, raw), /모르는 모양/);
   assert.throws(() => decorateLegend({ id: 'eu', legendStyles: { 없음: 'outline' } }, raw), /legendStyles 에 범례에 없는 이름/);
 });
+
+test('applySymbolSizes: symbolSizes 단계 pt → 범례 size·기호 size, legendStyle 은 nested-circles 만', async () => {
+  const { applySymbolSizes } = await import('../../scripts/atlas/build_layers.mjs');
+  const legend = [{ cls: 'c1', label: '1,000 이상' }, { cls: 'c2', label: '300~1,000' }];
+  const feats = [{ properties: { type: 'symbol', cls: 'c1', size: 7.3 } }, { properties: { type: 'symbol', cls: 'c2', size: 6.1 } }, { properties: { type: 'area', cls: 'c2' } }];
+  const sz = applySymbolSizes({ id: 'u', symbolSizes: { '1,000 이상': 8, '300~1,000': 6 }, legendStyle: 'nested-circles' }, legend, feats);
+  assert.deepEqual(Object.values(sz), [8, 6]);
+  assert.deepEqual(legend.map((e) => e.size), [8, 6]);
+  assert.deepEqual(feats.map((f) => f.properties.size), [8, 6, undefined]);
+  assert.throws(() => applySymbolSizes({ id: 'u', symbolSizes: { 없음: 3 } }, legend, []), /범례에 없는 이름/);
+  assert.throws(() => applySymbolSizes({ id: 'u', legendStyle: 'squares' }, legend, []), /legendStyle/);
+  assert.deepEqual(applySymbolSizes({ id: 'u' }, legend, []), {});
+});

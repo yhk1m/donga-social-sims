@@ -718,3 +718,19 @@ test('countryClass: 나라 하나가 채움 + 윤곽만 분류 둘이면(classes
   assert.deepEqual(ops.filter((o) => o.op === 'fill').map((o) => o.fillStyle), ['#e8562a']);
   assert.equal(ops.filter((o) => o.op === 'stroke' && o.strokeStyle === '#ffdd00').length, 2);
 });
+
+// ── 크기 단계 기호(U3-3c) ─────────────────────────────────────────────
+test('symbolLayer sizeBy class: 범례 size 단계 비를 확대 단계마다 유지(symbolPx 처럼 단계마다 자르지 않음)', () => {
+  const legendSz = [8, 6, 4.5, 3, 2].map((size, i) => ({ cls: `c${i + 1}`, color: '#00843d', kind: 'fill', label: `단계${i + 1}`, size }));
+  const feats = legendSz.map((e, i) => ({ type: 'Feature', properties: { type: 'symbol', cls: e.cls, kind: e.label, label: e.label, color: e.color, size: e.size }, geometry: { type: 'Point', coordinates: [10 + i * 5, 10] } }));
+  const data = { type: 'FeatureCollection', properties: { id: 'cities', sizeBy: 'class', legendStyle: 'nested-circles', legend: legendSz }, features: feats };
+  const L = symbolLayer('cities', data);
+  for (const k of [1, 2.2, 8, 30]) {
+    const v = viewOf({ k });
+    const g = document.createElementNS('svg', 'g');
+    L.drawSvg(g, v.project, v.view);
+    const r = [...g.childNodes[0].childNodes].map((e) => Number(/scale\(([\d.]+)\)/.exec(e.getAttribute('transform'))[1]));
+    for (let i = 1; i < r.length; i++) assert.ok(Math.abs(r[i] / r[0] - legendSz[i].size / 8) < 0.02, `k ${k}: ${r}`);
+  }
+  assert.equal(L.meta.legendStyle, 'nested-circles');
+});
