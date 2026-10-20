@@ -79,14 +79,16 @@ function checkRingSpots(spots) {
   const african = (f) => f.properties.CONTINENT === 'Africa' || ['MUS', 'SYC', 'CPV', 'STP', 'COM'].includes(f.properties.ADM0_A3);
   for (const [id, ll] of spots) {
     const [lon, lat] = ll;
-    assert.ok(lon > -30 && lon < 70 && lat > -42 && lat < 38, `${id} 아프리카 둘레 상자 밖 ${ll}`);
+    assert.ok(lon > -30 && lon < 70 && lat > -50 && lat < 38, `${id} 아프리카 둘레 상자 밖 ${ll}`);   // 남쪽 −50: U4-9 망간(남아공 남쪽)
     const land = gj.features.find((f) => geoContains(f, ll));
     assert.equal(land?.properties.ADM0_A3 ?? null, null, `${id} 가운데가 땅 위 ${ll}`);
     let near = Infinity, who = '';
     for (const f of gj.features) {
-      if (african(f)) continue;
-      for (const poly of f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates)
+      for (const poly of f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates) {
+        // 아프리카 나라라도 남극해 섬(남아공 프린스에드워드 제도 — 남위 44° 남쪽 조각)은 아프리카 밖 땅으로 셈(U4-9 코디네이터)
+        if (african(f) && !poly[0].every((q) => q[1] < -44)) continue;
         for (const q of poly[0]) { const d = geoDistance(ll, q) * 6371; if (d < near) { near = d; who = f.properties.ADM0_A3; } }
+      }
     }
     assert.ok(near > RING_KM, `${id} 아프리카 밖 땅(${who})에서 ${Math.round(near)}km — ${RING_KM}km 넘어야 함`);
   }
@@ -97,10 +99,12 @@ test('p38 자원 고리 7 자리(설정 — 그래프 자료 없이 지금 돎):
   assert.deepEqual(items.map((x) => x.chart), ['p38-bauxite', 'p38-uranium', 'p38-diamond', 'p38-chromium', 'p38-cobalt', 'p38-platinum', 'p38-manganese']);
   for (const it of items) assert.ok(Array.isArray(it.lonlat) && it._why, `${it.chart} lonlat·_why`);
   checkRingSpots(items.map((it) => [it.chart, it.lonlat]));
-  // 교과서 배치: 왼쪽 열(보크사이트·크롬·우라늄·백금)은 서쪽, 오른쪽 열(다이아몬드·코발트·망간)은 동쪽, 열마다 위→아래 차례
+  // 교과서 배치: 왼쪽 열(보크사이트·크롬·우라늄·백금)은 서쪽, 오른쪽 열(다이아몬드·코발트)은 동쪽, 열마다 위→아래 차례.
+  // 망간(오른쪽 열 맨 아래)은 범례 칸을 피해 남아공 남쪽(U4-9 코디네이터 — 「동쪽 열의 맨 아래」): 백금보다 동쪽·가장 남쪽
   const at = Object.fromEntries(items.map((it) => [it.chart.slice(4), it.lonlat]));
   for (const k of ['bauxite', 'chromium', 'uranium', 'platinum']) assert.ok(at[k][0] < 15, k);
-  for (const k of ['diamond', 'cobalt', 'manganese']) assert.ok(at[k][0] > 45, k);
+  for (const k of ['diamond', 'cobalt']) assert.ok(at[k][0] > 45, k);
+  assert.ok(at.manganese[0] > at.platinum[0] && Object.values(at).every((p) => p[1] >= at.manganese[1]), '망간 = 백금 동쪽·가장 남쪽');
   const desc = (ks) => ks.every((k, i) => !i || at[ks[i - 1]][1] > at[k][1]);
   assert.ok(desc(['bauxite', 'chromium', 'uranium', 'platinum']) && desc(['diamond', 'cobalt', 'manganese']));
 });
