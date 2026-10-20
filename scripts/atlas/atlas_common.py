@@ -11,7 +11,76 @@ sys.path.insert(0, HERE)
 import pdfkit
 
 WORK = os.environ.get('ATLAS_WORK', 'C:/Users/Public/atlas-work')
-UNIT_CONFIG = os.environ.get('ATLAS_UNIT_CONFIG', os.path.join(HERE, 'config', 'u2.json'))
+UNITS_FILE = os.path.join(HERE, 'units.json')
+DEFAULT_UNIT = 'u2'
+
+
+# ── 단원 고르기(2단계 G1) — Node scripts/atlas/unit.mjs 와 같은 규칙 ─────────────────────
+# 우선순위: 명령줄 --unit uN → env ATLAS_UNIT → env ATLAS_UNIT_CONFIG(옛 방식, 설정 파일 경로 그대로) → 기본 u2.
+# 명령줄 --unit <id>(--unit=<id>)는 이 모듈을 import 할 때 sys.argv 에서 빼낸다 — 각 스크립트의 옵션 해석은 그대로.
+def _strip_unit_argv(argv):
+    unit, i = None, 1
+    while i < len(argv):
+        a = argv[i]
+        if a == '--unit':
+            if i + 1 >= len(argv) or argv[i + 1].startswith('--'): raise SystemExit('--unit 뒤에 단원 id(u2·u3 …)가 없음')
+            unit = argv[i + 1]; del argv[i:i + 2]; continue
+        if a.startswith('--unit='):
+            unit = a[len('--unit='):]; del argv[i]; continue
+        i += 1
+    return unit
+
+
+_ARG_UNIT = _strip_unit_argv(sys.argv)
+
+
+def _same(a, b):
+    return os.path.normcase(os.path.abspath(a)) == os.path.normcase(os.path.abspath(b))
+
+
+@functools.lru_cache(maxsize=None)
+def unit():
+    """고른 단원 → {id, sim, title, pages, config_path, maps_path, data_dir, content_dir, asset_dir, work_dir}.
+    u2 의 config_path 는 옛 UNIT_CONFIG 와 글자까지 같은 os.path.join(HERE, 'config', 'u2.json').
+    work_dir(단원 작업 폴더): 설정 unitWork(작업 폴더 기준) → u2 는 작업 폴더 그대로 → 그 밖은 units/<id>."""
+    with open(UNITS_FILE, encoding='utf-8') as f:
+        units = {k: v for k, v in json.load(f).items() if not k.startswith('_')}
+    uid = _ARG_UNIT or os.environ.get('ATLAS_UNIT') or None
+    config_path = None
+    if not uid and os.environ.get('ATLAS_UNIT_CONFIG'):
+        config_path = os.environ['ATLAS_UNIT_CONFIG']
+        uid = next((k for k, v in units.items() if _same(os.path.join(HERE, *v['config'].split('/')), config_path)),
+                   os.path.splitext(os.path.basename(config_path))[0])
+    uid = uid or DEFAULT_UNIT
+    entry = units.get(uid)
+    if entry is None:
+        if not config_path: raise SystemExit(f'모르는 단원: {uid} (scripts/atlas/units.json 에 있는 것: {", ".join(units)})')
+        entry = {'sim': None, 'title': uid, 'pages': None}
+    config_path = config_path or os.path.join(HERE, *entry['config'].split('/'))   # 글자까지 옛 UNIT_CONFIG 와 같게(구분자 os.sep)
+    cfg = {}
+    if os.path.exists(config_path):
+        with open(config_path, encoding='utf-8') as f: cfg = json.load(f)
+    repo = os.path.normpath(os.path.join(HERE, '..', '..'))
+    work = WORK.replace('\\', '/')
+    if cfg.get('unitWork'): work_dir = work + '/' + cfg['unitWork'].replace('\\', '/').strip('/')
+    else: work_dir = work if uid == DEFAULT_UNIT else f'{work}/units/{uid}'
+    return {
+        'id': uid, 'sim': entry.get('sim'), 'title': entry.get('title'), 'pages': entry.get('pages'),
+        'config_path': config_path,
+        'maps_path': os.path.normpath(os.path.join(os.path.dirname(config_path), cfg['maps'])) if cfg.get('maps') else os.path.join(HERE, f'maps_{uid}.json'),
+        'data_dir': os.path.join(repo, cfg.get('out') or f"sims/{entry.get('sim')}/data"),
+        'content_dir': os.path.join(repo, 'content', 'atlas', uid),
+        'asset_dir': os.path.join(repo, 'docs', 'assets', 'atlas', uid),
+        'work_dir': work_dir,
+    }
+
+
+def unit_work(rel):
+    """단원 작업 파일 경로(슬래시): u2 는 작업 폴더 그대로, 새 단원은 units/<id>/rel."""
+    return unit()['work_dir'] + '/' + rel.replace('\\', '/')
+
+
+UNIT_CONFIG = unit()['config_path']
 FONT_PATH = 'C:/Windows/Fonts/malgun.ttf'   # 검증 그림 한글 글꼴(없으면 PIL 기본 글꼴)
 BEZIER_STEPS = 16                            # 곡선 하나를 16 등분(곡률이 작아 오차 0.01pt 미만)
 
@@ -25,13 +94,14 @@ def unit_config():
 
 @functools.lru_cache(maxsize=None)
 def _maps():
-    path = os.path.normpath(os.path.join(os.path.dirname(UNIT_CONFIG), unit_config().get('maps', '../maps_u2.json')))
+    m = unit_config().get('maps')   # 설정 maps(설정 파일 기준) — 없으면 단원 기본 maps_<id>.json
+    path = os.path.normpath(os.path.join(os.path.dirname(UNIT_CONFIG), m)) if m else unit()['maps_path']
     with open(path, encoding='utf-8') as f:
         return {m['id']: m for m in json.load(f)}
 
 
 def maps():
-    """지도 id → maps_u2.json 항목."""
+    """지도 id → 단원 지도 목록(u2 = maps_u2.json) 항목."""
     return _maps()
 
 

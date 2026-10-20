@@ -17,10 +17,12 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { makeConverter } from './georef.mjs';
 import { WORK, loadFit } from './geo_util.mjs';
+import { resolveUnit, stripUnitArgs } from './unit.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..', '..');
-const CONFIG_FILE = process.env.ATLAS_UNIT_CONFIG || path.join(here, 'config', 'u2.json');
+const UNIT = resolveUnit();   // 단원 고르기(--unit uN · env ATLAS_UNIT · 옛 ATLAS_UNIT_CONFIG, 기본 u2) — scripts/atlas/unit.mjs
+const CONFIG_FILE = UNIT.configPath;
 const PY = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
 const CYLINDRICAL = new Set(['miller', 'robinson', 'equirectangular', 'mercator']);
 const DOMAIN_EPS_DEG = 0.05;   // 도메인 경계: 중심 경도 ± (180 − 이 값)
@@ -274,4 +276,4 @@ function main(argv) {
   console.log(`합계 ${rows.reduce((a, r) => a + r.kb, 0).toFixed(1)} KB`);
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(process.argv.slice(2));
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(stripUnitArgs(process.argv.slice(2)).rest);

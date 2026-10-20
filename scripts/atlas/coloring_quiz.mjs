@@ -13,9 +13,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeConverter } from './georef.mjs';
 import { WORK, REPO, loadFit, key, km, readJson, round, contains, nearKm, stampHash, writeIfChanged } from './geo_util.mjs';
+import { resolveUnit, stripUnitArgs } from './unit.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const CONFIG = process.env.ATLAS_UNIT_CONFIG || path.join(HERE, 'config', 'u2.json');
+const UNIT = resolveUnit();   // 단원 고르기(--unit uN · env ATLAS_UNIT · 옛 ATLAS_UNIT_CONFIG, 기본 u2) — scripts/atlas/unit.mjs
+const CONFIG = UNIT.configPath;
 
 // 한글 음절 = 0xAC00 + (초성 × 21 + 중성) × 28 + 종성 (유니코드 한글 음절 배치)
 const HANGUL_FIRST = 0xac00, HANGUL_COUNT = 11172, SYLLABLES_PER_INITIAL = 21 * 28;
@@ -133,7 +135,7 @@ export function coloringDoc(inp, countries) {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const bad = process.argv.slice(2).filter((a) => a !== '--write');
+  const bad = stripUnitArgs(process.argv.slice(2)).rest.filter((a) => a !== '--write');
   if (bad.length) { console.error(`모르는 옵션: ${bad.join(' ')} (쓸 수 있는 것: --write)`); process.exit(2); }
   try {
     const inp = loadInputs();

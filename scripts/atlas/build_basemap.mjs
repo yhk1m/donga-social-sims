@@ -16,9 +16,11 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { WORK, REPO, readJson, writeIfChanged, stampHash } from './geo_util.mjs';
+import { resolveUnit, stripUnitArgs } from './unit.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const CONFIG = process.env.ATLAS_UNIT_CONFIG || path.join(HERE, 'config', 'u2.json');
+const UNIT = resolveUnit();   // 단원 고르기(--unit uN · env ATLAS_UNIT · 옛 ATLAS_UNIT_CONFIG, 기본 u2) — scripts/atlas/unit.mjs
+const CONFIG = UNIT.configPath;
 const KINDS = ['land', 'countries', 'rivers', 'lakes'];
 
 /** 설정 levels → 객체 이름 순서(land, countries, rivers, lakes 순, 상세도 순). */
@@ -218,7 +220,7 @@ export async function buildBasemap({ force = false } = {}) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const args = process.argv.slice(2);
+  const args = stripUnitArgs(process.argv.slice(2)).rest;
   const bad = args.filter((a) => a !== '--force');
   if (bad.length) { console.error(`모르는 옵션: ${bad.join(' ')}`); process.exit(2); }
   buildBasemap({ force: args.includes('--force') }).catch((e) => { console.error(e.message); process.exit(1); });

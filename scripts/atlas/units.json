@@ -1,0 +1,5 @@
+{
+  "_doc": "단원 표: 파이프라인이 --unit uN(또는 env ATLAS_UNIT)으로 고르는 단원. config 는 scripts/atlas 기준. 2단계 설계 §4.2.",
+  "u2": { "sim": "atlas-u2-asia", "title": "Ⅱ. 아시아", "pages": [16, 25], "config": "config/u2.json" },
+  "u3": { "sim": "atlas-u3-europe", "title": "Ⅲ. 유럽", "pages": [26, 33], "config": "config/u3.json" }
+}

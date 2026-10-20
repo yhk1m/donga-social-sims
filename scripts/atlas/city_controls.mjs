@@ -20,10 +20,12 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { fitControls, robustFit, fitWithTps, applyFit, makeConverter } from './georef.mjs';
 import { key, km, median, neIndex as neIndexAt, WORK } from './geo_util.mjs';
+import { resolveUnit, stripUnitArgs } from './unit.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..', '..');
-const CONFIG_FILE = process.env.ATLAS_UNIT_CONFIG || path.join(here, 'config', 'u2.json');
+const UNIT = resolveUnit();   // 단원 고르기(--unit uN · env ATLAS_UNIT · 옛 ATLAS_UNIT_CONFIG, 기본 u2) — scripts/atlas/unit.mjs
+const CONFIG_FILE = UNIT.configPath;
 const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
 const CC = config.cityControls;
 const PC = config.places;                                     // neFile·neBox 는 places 와 함께 쓴다
@@ -186,4 +188,4 @@ function main(argv) {
   if (argv.includes('--write')) { writeMaps(sel); console.log(`maps_u2.json controls 에 src:'city' 기준점을 씀`); }
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(process.argv.slice(2));
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(stripUnitArgs(process.argv.slice(2)).rest);

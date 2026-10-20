@@ -58,11 +58,10 @@ function fileList() {
 }
 const hashAll = () => Object.fromEntries(Object.entries(fileList()).map(([k, p]) => [k, sha(p)]));
 
-/** 도장(inputsHash)을 뺀 JSON 이 같은가(둘 다 JSON 일 때만). */
+/** 도장(inputsHash) 값만 다르고 나머지 글자는 바이트까지 같은가(JSON 파일). */
 function onlyStamp(a, b) {
-  const strip = (o) => (Array.isArray(o) ? o.map(strip) : o && typeof o === 'object'
-    ? Object.fromEntries(Object.entries(o).filter(([k]) => k !== 'inputsHash').map(([k, v]) => [k, strip(v)])) : o);
-  try { return JSON.stringify(strip(JSON.parse(a))) === JSON.stringify(strip(JSON.parse(b))); } catch { return false; }
+  const strip = (t) => t.replace(/"inputsHash":\s*"[0-9a-f]*"/g, '"inputsHash":""');
+  return strip(a) !== a && strip(a) === strip(b);
 }
 
 /** 대조표 HTML → {counts, body(만든 때·캡처 때 줄 뺌)}. */
@@ -114,7 +113,7 @@ function check() {
     const kept = join(BASE, 'files', r.k.replace(':', '/'));
     if (r.kind === '다름' && existsSync(kept)) {
       const a = readFileSync(kept, 'utf8'), b = readFileSync(files[r.k], 'utf8');
-      if (r.k.endsWith('.json') && onlyStamp(a, b)) { note = '  — 도장(inputsHash)만 다름'; r.stampOnly = true; }
+      if (r.k.endsWith('.json') && onlyStamp(a, b)) { note = '  — 도장(inputsHash) 값만 다름(나머지 바이트 같음)'; r.stampOnly = true; }
       else { let i = 0; while (i < a.length && a[i] === b[i]) i++; note = `  — ${i}자째부터: 「${a.slice(i, i + 60)}」 → 「${b.slice(i, i + 60)}」`; }
     }
     console.log(`  ${r.kind}  ${r.k}${note}`);
