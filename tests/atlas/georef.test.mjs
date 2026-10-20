@@ -208,6 +208,30 @@ test('u3 fit: 지도마다 rmsMm·meanMm ≤ 0.5(approx 제외), 26·27쪽은 �
   }
 });
 
+// ── Ⅳ 아프리카(u4) fit: 같은 합격 기준 + 34·35쪽 정거 방위, projectionFrom 지도는 본 지도 도법 그대로, 38쪽 태양광은 태평양 중심 ─────
+const U4_MAPS = JSON.parse(readFileSync(new URL('../../scripts/atlas/maps_u4.json', import.meta.url), 'utf8'));
+const u4Fits = U4_MAPS.map((m) => [m.id, `${WORK_DIR}/geo/${m.id}.fit.json`]).filter(([, f]) => existsSync(f));
+test('u4 fit: 지도마다 rmsMm·meanMm ≤ 0.5(approx 제외), 34·35쪽 정거 방위, p38-solar 중심 경도 120~180', { skip: u4Fits.length ? false : '작업 폴더에 u4 fit 없음' }, () => {
+  assert.deepEqual(u4Fits.map(([id]) => id), U4_MAPS.map((m) => m.id), 'u4 fit 파일이 지도 목록과 다름');
+  assert.equal(U4_MAPS.length, 12);
+  const fits = Object.fromEntries(u4Fits.map(([id, f]) => [id, JSON.parse(readFileSync(f, 'utf8'))]));
+  for (const [id, fit] of Object.entries(fits)) {
+    if (fit.approx) continue;
+    assert.ok(fit.rmsMm <= 0.5 && fit.meanMm <= 0.5, `${id} rms ${fit.rmsMm} mean ${fit.meanMm}`);
+  }
+  for (const id of ['p34-africa', 'p35-coloring']) assert.equal(fits[id].family, 'azimuthalEquidistant', id);
+  const solar = fits['p38-solar'];
+  assert.ok(['miller', 'equirectangular', 'mercator', 'robinson'].includes(solar.family), solar.family);
+  const lon0 = ((solar.params[0] % 360) + 360) % 360;
+  assert.ok(lon0 >= 120 && lon0 <= 180, `p38-solar 중심 경도 ${solar.params[0]}`);
+  for (const m of U4_MAPS.filter((x) => x.projectionFrom)) {
+    const f = fits[m.id], parent = fits[m.projectionFrom];
+    assert.equal(f.fixed, true, m.id);
+    assert.equal(f.family, parent.family, m.id);
+    assert.deepEqual(f.params, parent.params, m.id);
+  }
+});
+
 test('고정 도법 후보 {family, params}: 매개변수는 그대로, 닮음 변환만 맞춤(29쪽 아이슬란드 삽입 = 본 지도 도법)', async () => {
   const { geoConicConformal } = await import('d3-geo');
   const P = geoConicConformal().rotate([-15, 0]).parallels([52.6, 52.6]).scale(540).translate([300, 800]);

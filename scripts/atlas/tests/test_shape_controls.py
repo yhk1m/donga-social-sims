@@ -152,6 +152,50 @@ class Synthetic(unittest.TestCase):
             for k, v in saved.items(): setattr(sc, k, v)
 
 
+class InitFromMapPts(unittest.TestCase):
+    """init {"fromMap", "pts"}: 참조 지도 식의 도법을 그대로 두고 지면 닮음 변환만 겹친다(39쪽 사막화 — 섬 없는 잘린 틀)."""
+    def test_page_similarity_recovers_transform(self):
+        k, mx, my = 0.5 * complex(math.cos(0.1), math.sin(0.1)), 30.0, -12.0
+        src = [(0, 0), (100, 10), (40, 80)]
+        dst = [((k * complex(x, y)).real + mx, (k * complex(x, y)).imag + my) for x, y in src]
+        a, b, tx, ty = sc.page_similarity(src, dst)
+        self.assertAlmostEqual(a, k.real); self.assertAlmostEqual(b, k.imag); self.assertAlmostEqual(tx, mx); self.assertAlmostEqual(ty, my)
+        with self.assertRaises(ValueError): sc.page_similarity([(0, 0)], [(1, 1)])
+
+    def test_compose_sim_equals_applying_both(self):
+        sim = {'a': 2.0, 'b': -0.5, 'tx': 7.0, 'ty': 3.0}; s = (0.4, 0.2, -5.0, 11.0)
+        ap = lambda q, u, v: (q['a'] * u - q['b'] * v + q['tx'], q['b'] * u + q['a'] * v + q['ty'])
+        c = sc.compose_sim(sim, s)
+        for u, v in [(0, 0), (3, -4), (10, 2)]:
+            x, y = ap(sim, u, v)
+            self.assertAlmostEqual(ap(c, u, v)[0], s[0] * x - s[1] * y + s[2])
+            self.assertAlmostEqual(ap(c, u, v)[1], s[1] * x + s[0] * y + s[3])
+
+    def test_initial_fit_from_map_pts(self):
+        # 참조 지도: 투영 단위 = (경도, 위도), sim = 배율 10·이동(100, 50). 이 지도는 그 지면을 절반으로 줄여 (−20, 5) 옮긴 것
+        ref_sim = {'a': 10.0, 'b': 0.0, 'tx': 100.0, 'ty': 50.0}
+        def node(ops):
+            out = []
+            for op in ops:
+                q = op['fit']['sim'] if 'fit' in op else None
+                if op['op'] == 'fit': out.append({'family': 'fake', 'params': [1.0], 'sim': dict(ref_sim)})
+                elif op['op'] == 'apply': out.append([[[q['a'] * p[0] - q['b'] * p[1] + q['tx'], q['b'] * p[0] + q['a'] * p[1] + q['ty']] for p in r] for r in op['rings']])
+                else: raise AssertionError(op)
+            return out
+        saved = {k: getattr(sc, k) for k in ('node', 'maps', '_base_controls', 'families_for')}
+        try:
+            sc.node = node; sc.maps = lambda: {'ref': {'id': 'ref', 'controls': []}}
+            sc._base_controls = lambda m: []; sc.families_for = lambda m: ['fake']
+            here = lambda ll: [0.5 * (10 * ll[0] + 100) - 20, 0.5 * (10 * ll[1] + 50) + 5]
+            pts = [{'name': 'a', 'c': here((1, 2)), 'at': [1, 2]}, {'name': 'b', 'c': here((8, -3)), 'at': [8, -3]}]
+            m = {'id': 'cut', 'shapes': {'init': {'fromMap': 'ref', 'pts': pts}}}
+            fit = sc.initial_fit(m, [], [], O)
+            self.assertEqual((fit['family'], fit['params']), ('fake', [1.0]))   # 도법·매개변수는 참조 그대로
+            for k, v in {'a': 5.0, 'b': 0.0, 'tx': 30.0, 'ty': 30.0}.items(): self.assertAlmostEqual(fit['sim'][k], v)
+        finally:
+            for k, v in saved.items(): setattr(sc, k, v)
+
+
 class Families(unittest.TestCase):
     def test_families_for_like_georef(self):
         self.assertEqual(sc.families_for({'families': ['miller']}), ['miller'])
@@ -183,6 +227,35 @@ class LandShapesU3(unittest.TestCase):
         self.assertTrue(o[0][2])   # 가장 큰 것 = 대륙(틀에 닿음)
         self.assertEqual([round(a, -1) for _, a, e in o[1:]], [940, 460, 360])
         self.assertFalse(any(e for _, _, e in o[1:]))
+
+
+def run_unit(unit_id, code):
+    env = {k: v for k, v in os.environ.items() if k not in ('ATLAS_UNIT', 'ATLAS_UNIT_CONFIG')}
+    env['ATLAS_UNIT'] = unit_id
+    r = subprocess.run([sys.executable, '-I', '-c', f'import sys, json; sys.path.insert(0, {HERE!r}); ' + code], env=env, capture_output=True)
+    if r.returncode != 0: raise AssertionError(r.stderr.decode('utf-8', 'replace'))
+    return json.loads(r.stdout.decode('utf-8'))
+
+
+@NEED_PDF
+class LandShapesU4(unittest.TestCase):
+    """흰 바탕 래스터 규칙 seaWhite(38쪽 태양광·37쪽 기후)와 쪽 전체 렌더 render: all(38쪽 언어 — 줄무늬 선만 있는 나라)."""
+    def test_solar_world_raster_islands(self):
+        # 파란 분류(0–3.0)가 땅인데도 바다는 흰 화소만: 섬(넓이 0.3pt² 이상, 잘리지 않음)이 수십 개, 적도선이 대륙을 잇지 않음
+        o = run_unit('u4', 'import land_shapes as ls; r = ls.shapes("p38-solar"); '
+                           'print(json.dumps([[s["kind"], s["area"], s["edge"]] for s in r["shapes"]]))')
+        isles = [a for k, a, e in o if k == 'land' and not e]
+        self.assertGreaterEqual(len(isles), 40)
+        self.assertLess(max(isles), 0.8 * sum(a for k, a, e in o if k == 'land'))   # 한 덩어리로 다 이어지지 않음
+
+    def test_language_map_keeps_striped_madagascar(self):
+        # 마다가스카르는 땅 채움 없이 줄무늬 선뿐 — 쪽 전체 렌더로 대륙 다음으로 큰 따로 된 육지(넓이 약 240pt²)
+        o = run_unit('u4', 'import land_shapes as ls; r = ls.shapes("p38-language"); '
+                           'print(json.dumps([[s["kind"], s["area"], s["edge"], s["c"]] for s in r["shapes"][:2]]))')
+        (k0, a0, e0, _), (k1, a1, e1, c1) = o
+        self.assertEqual((k0, e0, k1, e1), ('land', False, 'land', False))
+        self.assertGreater(a0, 10000); self.assertAlmostEqual(a1, 240, delta=30)
+        self.assertTrue(170 < c1[0] < 190 and 240 < c1[1] < 260, c1)
 
 
 if __name__ == '__main__': unittest.main()

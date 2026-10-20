@@ -28,6 +28,9 @@
       {"country": "BEL"} | {"land": [lon, lat]}  — 북쪽이 위인 지도: 교과서 도형(들)과 그 Natural Earth 도형의 넓이·중심으로 닮음 변환
       {"fromMap": "<지도 id>", "land": [lon, lat], "c": [x, y]} — 떼어 놓은 삽입: 그 지도(지도 목록에 적힌 기준점으로 바로 맞춘 식)의
                                                     도법·배율·회전에 이동만 맞춤
+      {"fromMap": "<지도 id>", "pts": [{"name", "c": [x, y], "at": [lon, lat]}, …]} — 같은 바탕 지도를 줄이거나 잘라 낸 지도(섬이 없는
+                                                    잘린 틀 등): 그 지도 식의 도법을 그대로 두고, 해안 끝점 두 곳 이상(어림)을 그 식으로 투영한 지면
+                                                    자리 → 이 지도 자리 c 닮음 변환을 sim 에 겹침(배율·회전·이동)
 
 출력(--write): 지도 목록 controls 에 src:'shape' 기준점(type 'centroid'·'tip', ne = Natural Earth 이름)을 쓴다(이전 shape 기준점은
   바꿈, 손·도시 기준점은 그대로). 그다음 python -I scripts/atlas/extract_vectors.py --controls all → node scripts/atlas/georef-cli.mjs --all.
@@ -243,10 +246,37 @@ def _containing(target, ll):
     raise ValueError(f'Natural Earth {target} 에 {ll} 를 담은 도형 없음')
 
 
+def page_similarity(src, dst):
+    """지면 점 짝(src → dst, 2쌍 이상) → 닮음 변환 (a, b, tx, ty) 최소제곱 닫힌 해: dst = (a + ib)·src + (tx + i·ty)."""
+    S = np.asarray(src, float); D = np.asarray(dst, float)
+    if len(S) < 2 or len(S) != len(D): raise ValueError('닮음 변환에는 점 짝이 2개 이상 필요')
+    s0 = S.mean(0); d0 = D.mean(0); u = S - s0; X = D - d0
+    den = float((u * u).sum())
+    if den < 1e-12: raise ValueError('닮음 변환 점 짝이 한 점에 모임(at 이 모두 같은 자리)')
+    a = float((u[:, 0] * X[:, 0] + u[:, 1] * X[:, 1]).sum()) / den
+    b = float((u[:, 0] * X[:, 1] - u[:, 1] * X[:, 0]).sum()) / den
+    return a, b, float(d0[0] - (a * s0[0] - b * s0[1])), float(d0[1] - (b * s0[0] + a * s0[1]))
+
+
+def compose_sim(sim, s):
+    """맞춘 식의 sim(투영 단위 → 참조 지면) 뒤에 지면 닮음 변환 s=(a, b, tx, ty)(참조 지면 → 이 지면)를 겹친 sim."""
+    a, b, tx, ty = s
+    return {'a': a * sim['a'] - b * sim['b'], 'b': a * sim['b'] + b * sim['a'],
+            'tx': a * sim['tx'] - b * sim['ty'] + tx, 'ty': b * sim['tx'] + a * sim['ty'] + ty}
+
+
 def initial_fit(m, base, shapes, o):
     init = m['shapes'].get('init') or {}
     fams = families_for(m); tgt = m['shapes'].get('target', 'land')
     cand = [s for s in shapes if not s['edge'] and s['kind'] == 'land']
+    if init.get('fromMap') and init.get('pts'):
+        if init.get('seeds') or init.get('land') or init.get('country'): raise ValueError(f"{m['id']}: init 에 pts 와 seeds·land·country 를 함께 적지 않음")
+        rm = maps()[init['fromMap']]
+        ref = fit_of(_base_controls(rm) + _shape_controls(rm), families_for(rm))
+        at = node([{'op': 'apply', 'fit': ref, 'rings': [[p['at'] for p in init['pts']]]}])[0][0]
+        if any(q is None for q in at): raise ValueError(f"{m['id']}: init.pts 의 경위도가 {init['fromMap']} 식으로 투영되지 않음")
+        sim = compose_sim(ref['sim'], page_similarity(at, [p['c'] for p in init['pts']]))
+        return {'family': ref['family'], 'params': ref['params'], 'sim': sim}
     if init.get('seeds'):
         cps = list(base)
         for sd in init['seeds']:

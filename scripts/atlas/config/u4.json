@@ -451,12 +451,12 @@
   "decimals": 2,
   "neFile": "raw/ne/ne_10m_populated_places.geojson",
   "neBox": [
-   -30,
-   -40,
-   65,
+   -37,
+   -39,
+   67,
    42
   ],
-  "_ne": "Natural Earth 10m 인구 지점(작업 폴더 neFile, NAME_KO 로 짝짓기), neBox = [경도 최소, 위도 최소, 경도 최대, 위도 최대] 아프리카 범위(34쪽 틀 + 여유). build_places(바로잡기·대조)와 city_controls(기준점)가 함께 쓴다.",
+  "_ne": "Natural Earth 10m 인구 지점(작업 폴더 neFile, NAME_KO 로 짝짓기), neBox = [경도 최소, 위도 최소, 경도 최대, 위도 최대] 아프리카 범위(= basemap.unitBoxes, 34쪽 틀을 fit 으로 되돌린 범위 — U4-2). build_places(바로잡기·대조)와 city_controls(기준점)가 함께 쓴다.",
   "kindList": [
    "country",
    "capital",
@@ -637,13 +637,13 @@
   "_sourceUrl": "커밋 SHA 고정(2022-06-02 master, 이미 받아 둔 파일과 바이트까지 같음 확인). 받을 때 60초 시간 제한·3번 시도, FeatureCollection·도형 수·필수 속성(나라 ADM0_A3·NAME_KO, 하천·호수 scalerank) 검사 뒤에만 저장.",
   "unitBoxes": [
    [
-    -30,
-    -40,
-    65,
+    -37,
+    -39,
+    67,
     42
    ]
   ],
-  "_unitBoxes": "[서, 남, 동, 북]. 아프리카 일반도(34쪽) 범위 어림 — U4-2 에서 34쪽 틀을 fit 으로 되돌린 범위로 다시 맞춘다. lod.js inUnit 이 basemap.json meta.unitBoxes 에서 읽는다.",
+  "_unitBoxes": "[서, 남, 동, 북]. 아프리카 일반도(34쪽) 지도 틀(쪽 전체) 41×41 격자를 p34-africa fit 으로 되돌린 경위도 범위(-36.3, -38.7, 66.9, 41.9)를 정수로 넓힘(U4-2). 정거 방위(중심 약 20°E·0°)라 틀 네 모서리가 경도 폭을 넓힌다. lod.js inUnit 이 basemap.json meta.unitBoxes 에서 읽는다.",
   "quantization": 100000,
   "maxBytes": 1024000,
   "levels": [

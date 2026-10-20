@@ -9,6 +9,12 @@
   {"mode": "raster", "dpi": 150, "seaBMinusR": 3}
                                                육지 = 래스터만 렌더(images_only)해서 파랑 − 빨강 > seaBMinusR 가 아닌 화소
                                                (자연색 화상: 바다·호수는 푸르고 육지는 초록·갈색. 눈 덮인 산은 구멍이 되지만 섬 중심은 바깥 고리로 잼)
+  {"mode": "raster", "dpi": 200, "seaWhite": 240}
+                                               (선택) 바다가 흰 바탕인 래스터(38쪽 태양광 세계 지도 — 파란 분류가 땅에 있어 파랑 − 빨강 규칙을 못 씀):
+                                               세 값이 모두 seaWhite 이상인 화소만 바다, 나머지는 육지. 있으면 seaBMinusR 대신 쓴다
+  "render": "all"                              (선택, raster 모드) 래스터만이 아니라 쪽 전체(벡터·글자 포함)를 렌더 — 땅 채움 없이 줄무늬 선만으로
+                                               칠한 나라가 있는 벡터 지도(38쪽 언어: 공용어 둘 이상인 나라는 클립한 굵은 선 줄무늬)를 seaWhite 로 가를 때.
+                                               글자·축척 막대도 땅이 되므로 덮개 상자·minAreaPt2 로 거른다
   "lake": [색…]                                (선택) 호수 채움 색 — 물 도형에 더함
   "minAreaPt2": 1.0                            이보다 작은 도형은 버림
   "minThicknessPt": 1.0                        (선택) 육지 색 채움 중 이보다 얇은 그리기(2·넓이/둘레, 경위선을 면으로 그린 것)는 뺀다
@@ -66,9 +72,12 @@ def _raster_land(m, cfg):
     dpi = cfg.get('dpi', 150)
     tmp_dir = unit_work('shapes'); os.makedirs(tmp_dir, exist_ok=True)
     tmp = f"{tmp_dir}/{m['id']}.raster.png"
-    pdfkit.render_clip(m['page'], m['bbox'], dpi, tmp, images_only=True)
+    render = cfg.get('render', 'images')
+    if render not in ('images', 'all'): raise ValueError(f"{m['id']}: shapes.render 는 'images' 또는 'all' (받은 값 {render!r})")
+    pdfkit.render_clip(m['page'], m['bbox'], dpi, tmp, images_only=render != 'all')
     im = np.asarray(Image.open(tmp).convert('RGB')).astype(int)
-    land = ~((im[..., 2] - im[..., 0]) > cfg.get('seaBMinusR', 3))
+    if cfg.get('seaWhite') is not None: land = ~(im.min(axis=2) >= cfg['seaWhite'])   # 흰 바탕 바다(세계 래스터 — 파란 분류가 땅에 있음)
+    else: land = ~((im[..., 2] - im[..., 0]) > cfg.get('seaBMinusR', 3))
     k = 72.0 / dpi; x0, y0 = m['bbox'][0], m['bbox'][1]
     polys = []
     for geom, val in rasterio.features.shapes(land.astype(np.uint8), mask=land, connectivity=8):

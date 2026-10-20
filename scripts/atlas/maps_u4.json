@@ -25,8 +25,1138 @@
   "projection": "정거 방위 도법",
   "scale": "1:36,000,000",
   "graticuleLabels": true,
-  "controls": [],
-  "notes": "전면(재단 여백까지) 지도 — 고도 색·음영 래스터 + 벡터 지명·국경·하천(서아시아·남유럽 일부 포함). 경위도 눈금 글자(˚E/˚N/˚S/˚W·0˚, DINPro 6pt) 32개가 지도 위·아래·양옆 가장자리에(아래 30°W~60°E, 양옆 30°N~30°S). 찾아보기 격자 글자(A~I 파랑 #0095da·1~7 초록 #00a650)는 눈금이 아님(˚ 가 없어 extract_vectors 가 읽지 않음). 왼쪽 아래 「아프리카」 제목 상자(도법·축척)와 오른쪽 아래 높이·깊이 범례가 지도를 덮는다. 아주 작은 그림 12,000여 개(사막 점무늬 조각)·회색 작은 채움(쪽 바탕 무늬)이 있어 그림·채움 후보 찾기는 크기 하한으로 거른다."
+  "controls": [
+   {
+    "name": "이스탄불",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     493.84,
+     6.5
+    ],
+    "lon": 28.9743,
+    "lat": 41.0176,
+    "ne": "Istanbul"
+   },
+   {
+    "name": "앙카라",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     523.61,
+     16.08
+    ],
+    "lon": 32.8624,
+    "lat": 39.9292,
+    "ne": "Ankara"
+   },
+   {
+    "name": "발렌시아",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     274.03,
+     15.71
+    ],
+    "lon": -0.402,
+    "lat": 39.487,
+    "ne": "Valencia"
+   },
+   {
+    "name": "반",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     604.65,
+     22.67
+    ],
+    "lon": 43.4,
+    "lat": 38.4954,
+    "ne": "Van"
+   },
+   {
+    "name": "마슈하드",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     731.75,
+     27.14
+    ],
+    "lon": 59.5681,
+    "lat": 36.272,
+    "ne": "Mashhad"
+   },
+   {
+    "name": "고르간",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     691.82,
+     27.9
+    ],
+    "lon": 54.48,
+    "lat": 36.8303,
+    "ne": "Gorgan"
+   },
+   {
+    "name": "라슈트",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     654.04,
+     28.45
+    ],
+    "lon": 49.63,
+    "lat": 37.3,
+    "ne": "Rasht"
+   },
+   {
+    "name": "세비야",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     228.35,
+     30.67
+    ],
+    "lon": -5.98,
+    "lat": 37.405,
+    "ne": "Seville"
+   },
+   {
+    "name": "아테네",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     455.93,
+     34.87
+    ],
+    "lon": 23.7314,
+    "lat": 37.9853,
+    "ne": "Athens"
+   },
+   {
+    "name": "가지안테프",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     561.08,
+     39.4
+    ],
+    "lon": 37.383,
+    "lat": 37.0769,
+    "ne": "Gaziantep"
+   },
+   {
+    "name": "안나바",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     332.9,
+     42.76
+    ],
+    "lon": 7.76,
+    "lat": 36.92,
+    "ne": "Annaba"
+   },
+   {
+    "name": "알제",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     296.78,
+     43.75
+    ],
+    "lon": 3.0486,
+    "lat": 36.765,
+    "ne": "Algiers"
+   },
+   {
+    "name": "오랑",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     267.16,
+     49.4
+    ],
+    "lon": -0.6219,
+    "lat": 35.7119,
+    "ne": "Oran"
+   },
+   {
+    "name": "발레타",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     384.62,
+     54
+    ],
+    "lon": 14.5147,
+    "lat": 35.8997,
+    "ne": "Valletta"
+   },
+   {
+    "name": "니코시아",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     532.01,
+     58.31
+    ],
+    "lon": 33.3666,
+    "lat": 35.1667,
+    "ne": "Nicosia"
+   },
+   {
+    "name": "라바트",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     216.54,
+     61.38
+    ],
+    "lon": -6.8364,
+    "lat": 34.0253,
+    "ne": "Rabat"
+   },
+   {
+    "name": "바그다드",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     621.5,
+     69.23
+    ],
+    "lon": 44.3919,
+    "lat": 33.3406,
+    "ne": "Baghdad"
+   },
+   {
+    "name": "포트엘리자베스",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     471.59,
+     680.09
+    ],
+    "lon": 25.5981,
+    "lat": -33.9681,
+    "ne": "Port Elizabeth"
+   },
+   {
+    "name": "케이프타운",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     414.86,
+     679.24
+    ],
+    "lon": 18.433,
+    "lat": -33.9181,
+    "ne": "Cape Town"
+   },
+   {
+    "name": "투구르트",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     316.22,
+     77.01
+    ],
+    "lon": 6.06,
+    "lat": 33.1,
+    "ne": "Touggourt"
+   },
+   {
+    "name": "암만",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     555.45,
+     86.73
+    ],
+    "lon": 35.9314,
+    "lat": 31.952,
+    "ne": "Amman"
+   },
+   {
+    "name": "미스라타",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     387.98,
+     85.8
+    ],
+    "lon": 15.1,
+    "lat": 32.38,
+    "ne": "Misrata"
+   },
+   {
+    "name": "투브루크",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     459.1,
+     88.59
+    ],
+    "lon": 23.96,
+    "lat": 32.08,
+    "ne": "Tubruq"
+   },
+   {
+    "name": "프라이아",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     45.82,
+     228.73
+    ],
+    "lon": -23.5167,
+    "lat": 14.9167,
+    "ne": "Praia"
+   },
+   {
+    "name": "빅토리아",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     745.06,
+     420
+    ],
+    "lon": 55.45,
+    "lat": -4.6166,
+    "ne": "Victoria"
+   },
+   {
+    "name": "산타크루스데테네리페",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     129.82,
+     104.59
+    ],
+    "lon": -16.25,
+    "lat": 28.47,
+    "ne": "Santa Cruz de Tenerife"
+   },
+   {
+    "name": "반다르아바스",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     727.68,
+     116.74
+    ],
+    "lon": 56.2721,
+    "lat": 27.2041,
+    "ne": "Bandar-e-Abbas"
+   },
+   {
+    "name": "블룸폰테인",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     478.41,
+     636.76
+    ],
+    "lon": 26.2299,
+    "lat": -29.12,
+    "ne": "Bloemfontein"
+   },
+   {
+    "name": "타부크",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     563.71,
+     118.54
+    ],
+    "lon": 36.555,
+    "lat": 28.3838,
+    "ne": "Tabuk"
+   },
+   {
+    "name": "마나마",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     682.42,
+     130.47
+    ],
+    "lon": 50.5831,
+    "lat": 26.2361,
+    "ne": "Manama"
+   },
+   {
+    "name": "살랄라",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     724.45,
+     214.35
+    ],
+    "lon": 54.0852,
+    "lat": 17.0255,
+    "ne": "Salalah"
+   },
+   {
+    "name": "인살라",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     281.98,
+     129.37
+    ],
+    "lon": 2.4666,
+    "lat": 27.2166,
+    "ne": "I-n-Salah"
+   },
+   {
+    "name": "음바바네",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     520.74,
+     613.04
+    ],
+    "lon": 31.1333,
+    "lat": -26.3167,
+    "ne": "Mbabane"
+   },
+   {
+    "name": "뤼데리츠",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     386.94,
+     614.95
+    ],
+    "lon": 15.1594,
+    "lat": -26.648,
+    "ne": "Lüderitz"
+   },
+   {
+    "name": "리야드",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     652.44,
+     146.96
+    ],
+    "lon": 46.7205,
+    "lat": 24.6345,
+    "ne": "Riyadh"
+   },
+   {
+    "name": "무르주크",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     376.16,
+     143.63
+    ],
+    "lon": 13.8972,
+    "lat": 25.9044,
+    "ne": "Marzuq"
+   },
+   {
+    "name": "메디나",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     592.4,
+     152.48
+    ],
+    "lon": 39.5781,
+    "lat": 24.5019,
+    "ne": "Medina"
+   },
+   {
+    "name": "다클라",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     123.57,
+     149.8
+    ],
+    "lon": -15.9368,
+    "lat": 23.7141,
+    "ne": "Ad Dakhla"
+   },
+   {
+    "name": "아스완",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     537.19,
+     157.6
+    ],
+    "lon": 32.8989,
+    "lat": 24.0875,
+    "ne": "Aswan"
+   },
+   {
+    "name": "가보로네",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     476.85,
+     595.51
+    ],
+    "lon": 25.9119,
+    "lat": -24.6463,
+    "ne": "Gaborone"
+   },
+   {
+    "name": "다카르",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     99.68,
+     234.21
+    ],
+    "lon": -17.4751,
+    "lat": 14.7178,
+    "ne": "Dakar"
+   },
+   {
+    "name": "이냠바느",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     557.15,
+     591.66
+    ],
+    "lon": 35.3398,
+    "lat": -23.858,
+    "ne": "Inhambane"
+   },
+   {
+    "name": "무칼라",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     683.5,
+     240.03
+    ],
+    "lon": 49.1259,
+    "lat": 14.5412,
+    "ne": "Al Mukalla"
+   },
+   {
+    "name": "비사우",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     112.06,
+     262.62
+    ],
+    "lon": -15.5984,
+    "lat": 11.865,
+    "ne": "Bissau"
+   },
+   {
+    "name": "월비스베이",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     380.51,
+     581.45
+    ],
+    "lon": 14.5053,
+    "lat": -22.9575,
+    "ne": "Walvis Bay"
+   },
+   {
+    "name": "누악쇼트",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     115.25,
+     203.65
+    ],
+    "lon": -15.9753,
+    "lat": 18.0864,
+    "ne": "Nouakchott"
+   },
+   {
+    "name": "갈카요",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     672.9,
+     312.85
+    ],
+    "lon": 47.43,
+    "lat": 6.77,
+    "ne": "Gaalkacyo"
+   },
+   {
+    "name": "프리타운",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     131.24,
+     295.9
+    ],
+    "lon": -13.2362,
+    "lat": 8.472,
+    "ne": "Freetown"
+   },
+   {
+    "name": "마하장가",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     658.22,
+     520.92
+    ],
+    "lon": 46.345,
+    "lat": -15.67,
+    "ne": "Mahajanga"
+   },
+   {
+    "name": "베이라",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     555.64,
+     555.03
+    ],
+    "lon": 34.87,
+    "lat": -19.82,
+    "ne": "Beira"
+   },
+   {
+    "name": "모가디슈",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     655.08,
+     356.1
+    ],
+    "lon": 45.3647,
+    "lat": 2.0686,
+    "ne": "Mogadishu"
+   },
+   {
+    "name": "베르베라",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     650.16,
+     279.5
+    ],
+    "lon": 45.0164,
+    "lat": 10.4355,
+    "ne": "Berbera"
+   },
+   {
+    "name": "사나",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     639.78,
+     234.47
+    ],
+    "lon": 44.2046,
+    "lat": 15.3567,
+    "ne": "Sanaa"
+   },
+   {
+    "name": "리빙스턴",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     478.96,
+     535.16
+    ],
+    "lon": 25.86,
+    "lat": -17.86,
+    "ne": "Livingstone"
+   },
+   {
+    "name": "모로니",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     634.41,
+     484.09
+    ],
+    "lon": 43.2402,
+    "lat": -11.7042,
+    "ne": "Moroni"
+   },
+   {
+    "name": "네마",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     189.2,
+     221.51
+    ],
+    "lon": -7.25,
+    "lat": 16.6171,
+    "ne": "Nema"
+   },
+   {
+    "name": "테트",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     546.18,
+     521.77
+    ],
+    "lon": 33.58,
+    "lat": -16.17,
+    "ne": "Tete"
+   },
+   {
+    "name": "가오",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     251.81,
+     227.32
+    ],
+    "lon": -0.05,
+    "lat": 16.2666,
+    "ne": "Gao"
+   },
+   {
+    "name": "카살라",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     571.11,
+     235.61
+    ],
+    "lon": 36.39,
+    "lat": 15.46,
+    "ne": "Kassala"
+   },
+   {
+    "name": "하르툼",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     537.27,
+     235.95
+    ],
+    "lon": 32.5322,
+    "lat": 15.59,
+    "ne": "Khartoum"
+   },
+   {
+    "name": "남풀라",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     596.75,
+     513.73
+    ],
+    "lon": 39.293,
+    "lat": -15.136,
+    "ne": "Nampula"
+   },
+   {
+    "name": "바마코",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     179.76,
+     258.52
+    ],
+    "lon": -8.002,
+    "lat": 12.652,
+    "ne": "Bamako"
+   },
+   {
+    "name": "루사카",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     500.24,
+     513.82
+    ],
+    "lon": 28.2814,
+    "lat": -15.4147,
+    "ne": "Lusaka"
+   },
+   {
+    "name": "타우아",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     297.67,
+     241.04
+    ],
+    "lon": 5.2599,
+    "lat": 14.9,
+    "ne": "Tahoua"
+   },
+   {
+    "name": "루방구",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     370.02,
+     509.44
+    ],
+    "lon": 13.49,
+    "lat": -14.91,
+    "ne": "Lubango"
+   },
+   {
+    "name": "말린디",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     607.94,
+     405.09
+    ],
+    "lon": 40.1,
+    "lat": -3.21,
+    "ne": "Malindi"
+   },
+   {
+    "name": "메켈레",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     599.16,
+     252.69
+    ],
+    "lon": 39.47,
+    "lat": 13.5,
+    "ne": "Mekele"
+   },
+   {
+    "name": "아베셰",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     434.59,
+     251.97
+    ],
+    "lon": 20.83,
+    "lat": 13.84,
+    "ne": "Abéché"
+   },
+   {
+    "name": "알파시르",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     474.5,
+     253.68
+    ],
+    "lon": 25.35,
+    "lat": 13.63,
+    "ne": "El Fasher"
+   },
+   {
+    "name": "니아메",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     269.64,
+     253.54
+    ],
+    "lon": 2.1147,
+    "lat": 13.5187,
+    "ne": "Niamey"
+   },
+   {
+    "name": "야무수크로",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     201.35,
+     312.92
+    ],
+    "lon": -5.2755,
+    "lat": 6.8184,
+    "ne": "Yamoussoukro"
+   },
+   {
+    "name": "모로고로",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     585.42,
+     437.76
+    ],
+    "lon": 37.66,
+    "lat": -6.82,
+    "ne": "Morogoro"
+   },
+   {
+    "name": "은자메나",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     384.96,
+     266.71
+    ],
+    "lon": 15.0472,
+    "lat": 12.115,
+    "ne": "N'Djamena"
+   },
+   {
+    "name": "보보디울라소",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     211.56,
+     272.74
+    ],
+    "lon": -4.29,
+    "lat": 11.18,
+    "ne": "Bobo Dioulasso"
+   },
+   {
+    "name": "나이로비",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     578.55,
+     387.81
+    ],
+    "lon": 36.8147,
+    "lat": -1.2814,
+    "ne": "Nairobi"
+   },
+   {
+    "name": "콜웨지",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     475.94,
+     471.79
+    ],
+    "lon": 25.4724,
+    "lat": -10.7167,
+    "ne": "Kolwezi"
+   },
+   {
+    "name": "쿠마시",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     234.06,
+     314.05
+    ],
+    "lon": -1.632,
+    "lat": 6.6919,
+    "ne": "Kumasi"
+   },
+   {
+    "name": "말란즈",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     394.64,
+     461.18
+    ],
+    "lon": 16.34,
+    "lat": -9.54,
+    "ne": "Malanje"
+   },
+   {
+    "name": "가루아",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     368.32,
+     292.4
+    ],
+    "lon": 13.39,
+    "lat": 9.3,
+    "ne": "Garoua"
+   },
+   {
+    "name": "시니앙가",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     547.86,
+     408.82
+    ],
+    "lon": 33.42,
+    "lat": -3.6596,
+    "ne": "Shinyanga"
+   },
+   {
+    "name": "진자",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     546.04,
+     371.81
+    ],
+    "lon": 33.1999,
+    "lat": 0.4404,
+    "ne": "Jinja"
+   },
+   {
+    "name": "이바단",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     283.89,
+     308.87
+    ],
+    "lon": 3.928,
+    "lat": 7.382,
+    "ne": "Ibadan"
+   },
+   {
+    "name": "에누구",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     315.27,
+     317.62
+    ],
+    "lon": 7.5,
+    "lat": 6.45,
+    "ne": "Enugu"
+   },
+   {
+    "name": "음부지마이",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     459.52,
+     430.82
+    ],
+    "lon": 23.5981,
+    "lat": -6.1481,
+    "ne": "Mbuji-Mayi"
+   },
+   {
+    "name": "음반자콩구",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     375.65,
+     431.96
+    ],
+    "lon": 14.24,
+    "lat": -6.2696,
+    "ne": "Mbanza-Congo"
+   },
+   {
+    "name": "주바",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     530.99,
+     332.39
+    ],
+    "lon": 31.58,
+    "lat": 4.83,
+    "ne": "Juba"
+   },
+   {
+    "name": "키고마",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     514.71,
+     419.81
+    ],
+    "lon": 29.61,
+    "lat": -4.8796,
+    "ne": "Kigoma"
+   },
+   {
+    "name": "야운데",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     352.56,
+     340.41
+    ],
+    "lon": 11.5147,
+    "lat": 3.8686,
+    "ne": "Yaoundé"
+   },
+   {
+    "name": "반둔두",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     403.72,
+     405.4
+    ],
+    "lon": 17.38,
+    "lat": -3.31,
+    "ne": "Bandundu"
+   },
+   {
+    "name": "킨두",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     480.87,
+     403.51
+    ],
+    "lon": 25.91,
+    "lat": -2.9639,
+    "ne": "Kindu"
+   },
+   {
+    "name": "아케티",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     461.26,
+     351.25
+    ],
+    "lon": 23.78,
+    "lat": 2.7405,
+    "ne": "Aketi"
+   },
+   {
+    "name": "프랑스빌",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     369.61,
+     390.85
+    ],
+    "lon": 13.5833,
+    "lat": -1.6333,
+    "ne": "Franceville"
+   },
+   {
+    "name": "상투메",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     307.95,
+     373.19
+    ],
+    "lon": 6.7297,
+    "lat": 0.3375,
+    "ne": "São Tomé"
+   },
+   {
+    "name": "음반다카",
+    "type": "city",
+    "src": "city",
+    "xy": [
+     411.61,
+     375.42
+    ],
+    "lon": 18.26,
+    "lat": 0.04,
+    "ne": "Mbandaka"
+   }
+  ],
+  "notes": "전면(재단 여백까지) 지도 — 고도 색·음영 래스터 + 벡터 지명·국경·하천(서아시아·남유럽 일부 포함). 경위도 눈금 글자(˚E/˚N/˚S/˚W·0˚, DINPro 6pt) 32개가 지도 위·아래·양옆 가장자리에(아래 30°W~60°E, 양옆 30°N~30°S). 찾아보기 격자 글자(A~I 파랑 #0095da·1~7 초록 #00a650)는 눈금이 아님(˚ 가 없어 extract_vectors 가 읽지 않음). 왼쪽 아래 「아프리카」 제목 상자(도법·축척)와 오른쪽 아래 높이·깊이 범례가 지도를 덮는다. 아주 작은 그림 12,000여 개(사막 점무늬 조각)·회색 작은 채움(쪽 바탕 무늬)이 있어 그림·채움 후보 찾기는 크기 하한으로 거른다.",
+  "controlsNote": "controls 의 src:'city' 는 교과서 도시 기호 위치 ↔ Natural Earth 10m 인구 지점 경위도 짝(scripts/atlas/city_controls.mjs --unit u4 가 고름). 경위선 교차점(src:'grid')만으로는 지도 가장자리(서아시아·남유럽·대서양 섬)를 붙잡지 못해 더했다. 교과서가 옮겨 그린 기호나 이름이 같은 다른 도시는 잔차로 걸러 기준점에서 뺐다."
  },
  {
   "id": "p35-coloring",
@@ -54,7 +1184,488 @@
   "projection": "정거 방위 도법",
   "scale": "1:36,000,000",
   "graticuleLabels": false,
-  "controls": [],
+  "controls": [
+   {
+    "name": "DZA@2.67,28.02",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     281.55,
+     121.56
+    ],
+    "lon": 2.6697,
+    "lat": 28.025,
+    "ne": "DZA"
+   },
+   {
+    "name": "COD@23.67,-2.76",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     457.77,
+     400.96
+    ],
+    "lon": 23.6687,
+    "lat": -2.7592,
+    "ne": "COD"
+   },
+   {
+    "name": "SDN@29.92,16.02",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     512.01,
+     231.83
+    ],
+    "lon": 29.9204,
+    "lat": 16.0226,
+    "ne": "SDN"
+   },
+   {
+    "name": "LBY@18.04,26.98",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     408.69,
+     134.66
+    ],
+    "lon": 18.042,
+    "lat": 26.9811,
+    "ne": "LBY"
+   },
+   {
+    "name": "ZAF@25.29,-29.03",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     468.36,
+     635.86
+    ],
+    "lon": 25.2913,
+    "lat": -29.029,
+    "ne": "ZAF"
+   },
+   {
+    "name": "TCD@18.67,15.33",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     413.37,
+     238.92
+    ],
+    "lon": 18.6657,
+    "lat": 15.3331,
+    "ne": "TCD"
+   },
+   {
+    "name": "MLI@-3.45,17.39",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     220.87,
+     216.12
+    ],
+    "lon": -3.4478,
+    "lat": 17.3914,
+    "ne": "MLI"
+   },
+   {
+    "name": "AGO@17.53,-12.34",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     403.11,
+     486.39
+    ],
+    "lon": 17.5324,
+    "lat": -12.3419,
+    "ne": "AGO"
+   },
+   {
+    "name": "NER@9.47,17.46",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     333.52,
+     218.94
+    ],
+    "lon": 9.4737,
+    "lat": 17.4617,
+    "ne": "NER"
+   },
+   {
+    "name": "ETH@39.59,8.59",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     599.8,
+     297.74
+    ],
+    "lon": 39.5885,
+    "lat": 8.5875,
+    "ne": "ETH"
+   },
+   {
+    "name": "EGY@29.75,26.42",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     506.85,
+     138.51
+    ],
+    "lon": 29.751,
+    "lat": 26.4213,
+    "ne": "EGY"
+   },
+   {
+    "name": "MRT@-10.32,20.18",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     163.93,
+     187.24
+    ],
+    "lon": -10.322,
+    "lat": 20.1837,
+    "ne": "MRT"
+   },
+   {
+    "name": "NGA@8.07,9.64",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     318.68,
+     289.43
+    ],
+    "lon": 8.0747,
+    "lat": 9.639,
+    "ne": "NGA"
+   },
+   {
+    "name": "NAM@17.08,-22.16",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     399.96,
+     574.29
+    ],
+    "lon": 17.0807,
+    "lat": -22.1565,
+    "ne": "NAM"
+   },
+   {
+    "name": "ZMB@27.76,-13.51",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     493.45,
+     497.06
+    ],
+    "lon": 27.7569,
+    "lat": -13.5118,
+    "ne": "ZMB"
+   },
+   {
+    "name": "MOZ@35.68,-17.09",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     562.24,
+     530.83
+    ],
+    "lon": 35.6777,
+    "lat": -17.0862,
+    "ne": "MOZ"
+   },
+   {
+    "name": "SDS@30.28,7.21",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     517.01,
+     311.67
+    ],
+    "lon": 30.2761,
+    "lat": 7.2068,
+    "ne": "SDS"
+   },
+   {
+    "name": "MDG@46.64,-19.51",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     655.09,
+     556.58
+    ],
+    "lon": 46.6446,
+    "lat": -19.5051,
+    "ne": "MDG"
+   },
+   {
+    "name": "CAF@20.42,6.60",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     428.95,
+     317.0
+    ],
+    "lon": 20.4222,
+    "lat": 6.5982,
+    "ne": "CAF"
+   },
+   {
+    "name": "BWA@23.80,-22.15",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     457.53,
+     574.15
+    ],
+    "lon": 23.7987,
+    "lat": -22.1478,
+    "ne": "BWA"
+   },
+   {
+    "name": "KEN@37.80,0.53",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     585.69,
+     371.16
+    ],
+    "lon": 37.8025,
+    "lat": 0.526,
+    "ne": "KEN"
+   },
+   {
+    "name": "ZWE@29.89,-19.01",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     511.06,
+     547.04
+    ],
+    "lon": 29.8926,
+    "lat": -19.008,
+    "ne": "ZWE"
+   },
+   {
+    "name": "CIV@-5.54,7.63",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     196.76,
+     305.51
+    ],
+    "lon": -5.5404,
+    "lat": 7.6305,
+    "ne": "CIV"
+   },
+   {
+    "name": "COG@15.36,-0.82",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     383.71,
+     383.47
+    ],
+    "lon": 15.3632,
+    "lat": -0.8206,
+    "ne": "COG"
+   },
+   {
+    "name": "BFA@-1.75,12.30",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     232.38,
+     263.29
+    ],
+    "lon": -1.7489,
+    "lat": 12.3035,
+    "ne": "BFA"
+   },
+   {
+    "name": "GHA@-1.23,7.93",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     235.31,
+     303.48
+    ],
+    "lon": -1.2253,
+    "lat": 7.9312,
+    "ne": "GHA"
+   },
+   {
+    "name": "GAB@11.82,-0.55",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     351.34,
+     380.99
+    ],
+    "lon": 11.8152,
+    "lat": -0.552,
+    "ne": "GAB"
+   },
+   {
+    "name": "GIN@-10.92,10.50",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     149.76,
+     277.3
+    ],
+    "lon": -10.9245,
+    "lat": 10.4956,
+    "ne": "GIN"
+   },
+   {
+    "name": "SEN@-14.37,14.58",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     122.81,
+     236.95
+    ],
+    "lon": -14.3681,
+    "lat": 14.5754,
+    "ne": "SEN"
+   },
+   {
+    "name": "TUN@9.49,34.11",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     341.91,
+     68.89
+    ],
+    "lon": 9.4936,
+    "lat": 34.1145,
+    "ne": "TUN"
+   },
+   {
+    "name": "BEN@2.34,9.73",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     267.69,
+     287.16
+    ],
+    "lon": 2.3353,
+    "lat": 9.7319,
+    "ne": "BEN"
+   },
+   {
+    "name": "ERI@38.32,15.69",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     583.42,
+     232.02
+    ],
+    "lon": 38.3219,
+    "lat": 15.6856,
+    "ne": "ERI"
+   },
+   {
+    "name": "LBR@-9.36,6.41",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     161.9,
+     316.08
+    ],
+    "lon": -9.3605,
+    "lat": 6.4146,
+    "ne": "LBR"
+   },
+   {
+    "name": "SLE@-11.75,8.61",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     141.51,
+     295.17
+    ],
+    "lon": -11.748,
+    "lat": 8.6098,
+    "ne": "SLE"
+   },
+   {
+    "name": "TGO@1.03,8.33",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     255.78,
+     300.8
+    ],
+    "lon": 1.0342,
+    "lat": 8.328,
+    "ne": "TGO"
+   },
+   {
+    "name": "LSO@28.24,-29.56",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     492.49,
+     641.13
+    ],
+    "lon": 28.2393,
+    "lat": -29.5565,
+    "ne": "LSO"
+   },
+   {
+    "name": "GNQ@10.53,1.58",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     339.59,
+     361.88
+    ],
+    "lon": 10.5251,
+    "lat": 1.5751,
+    "ne": "GNQ"
+   },
+   {
+    "name": "BDI@29.86,-3.45",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     513.53,
+     407.05
+    ],
+    "lon": 29.8584,
+    "lat": -3.4483,
+    "ne": "BDI"
+   },
+   {
+    "name": "SWZ@31.47,-26.56",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     520.67,
+     614.99
+    ],
+    "lon": 31.4672,
+    "lat": -26.5616,
+    "ne": "SWZ"
+   },
+   {
+    "name": "GNB@-14.66,12.19",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     118.75,
+     260.52
+    ],
+    "lon": -14.6643,
+    "lat": 12.1891,
+    "ne": "GNB"
+   }
+  ],
   "shapes": {
    "mode": "vector",
    "land": [
@@ -137,7 +1748,8 @@
     ]
    }
   },
-  "notes": "경위선 눈금 없음 → 나라·섬 중심 기준점(shape_controls). 왼쪽 아래 개관 글 상자(「아프리카의 국가와 주요 도시」, 범례 「수도·대도시」 포함 — cartoucheBbox)가 지도를 덮음. 오른쪽 위 학습 목표 상자 [497,43,712,72]는 지중해·서아시아(회색 땅) 위라 덮개로 빼지 않음. 나라 경계는 두꺼운 색 띠(칠하기용), 국가명은 초성 힌트(36)·이름이 쓰인 작은 나라와 서사하라(21), 수도는 손글씨(32)."
+  "notes": "경위선 눈금 없음 → 나라·섬 중심 기준점(shape_controls). 왼쪽 아래 개관 글 상자(「아프리카의 국가와 주요 도시」, 범례 「수도·대도시」 포함 — cartoucheBbox)가 지도를 덮음. 오른쪽 위 학습 목표 상자 [497,43,712,72]는 지중해·서아시아(회색 땅) 위라 덮개로 빼지 않음. 나라 경계는 두꺼운 색 띠(칠하기용), 국가명은 초성 힌트(36)·이름이 쓰인 작은 나라와 서사하라(21), 수도는 손글씨(32).",
+  "controlsNote": "controls 의 src:'shape' 는 교과서 섬·호수·나라 면의 넓이 중심(type centroid)과 해안·국경 꺾인 점(type tip) ↔ Natural Earth 10m 같은 도형(scripts/atlas/shape_controls.py --unit u4 가 고름, 교과서 도형은 land_shapes.py). 경위선 눈금이 없거나 적은 지도의 기준점."
  },
  {
   "id": "p36-relief",
@@ -159,7 +1771,560 @@
   ],
   "scale": "0–500km",
   "graticuleLabels": false,
-  "controls": [],
+  "controls": [
+   {
+    "name": "land@46.71,-19.32",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     464.58,
+     437.47
+    ],
+    "lon": 46.707,
+    "lat": -19.3181,
+    "ne": "land"
+   },
+   {
+    "name": "Lake Victoria@32.90,-1.10",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     389.38,
+     326.99
+    ],
+    "lon": 32.9024,
+    "lat": -1.1015,
+    "ne": "Lake Victoria"
+   },
+   {
+    "name": "Lake Malawi@34.51,-11.96",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     397.62,
+     391.76
+    ],
+    "lon": 34.5088,
+    "lat": -11.9613,
+    "ne": "Lake Malawi"
+   },
+   {
+    "name": "land@33.23,35.05",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     381.38,
+     112.55
+    ],
+    "lon": 33.2273,
+    "lat": 35.0502,
+    "ne": "land"
+   },
+   {
+    "name": "land@24.85,35.23",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     338.67,
+     112.87
+    ],
+    "lon": 24.8506,
+    "lat": 35.2332,
+    "ne": "land"
+   },
+   {
+    "name": "Lake Albert@30.92,1.64",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     377.82,
+     310.53
+    ],
+    "lon": 30.9168,
+    "lat": 1.6442,
+    "ne": "Lake Albert"
+   },
+   {
+    "name": "land@2.96,39.62",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     230.12,
+     84.7
+    ],
+    "lon": 2.9607,
+    "lat": 39.6199,
+    "ne": "land"
+   },
+   {
+    "name": "Lac Moeru@28.71,-9.00",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     364.26,
+     373.68
+    ],
+    "lon": 28.711,
+    "lat": -9.0021,
+    "ne": "Lac Moeru"
+   },
+   {
+    "name": "land@53.87,12.51",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     509.54,
+     242.31
+    ],
+    "lon": 53.872,
+    "lat": 12.5098,
+    "ne": "land"
+   },
+   {
+    "name": "Lake Tana@37.30,12.02",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     413.69,
+     249.14
+    ],
+    "lon": 37.2993,
+    "lat": 12.0184,
+    "ne": "Lake Tana"
+   },
+   {
+    "name": "Lake Urmia@45.43,37.69",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     440.29,
+     92.21
+    ],
+    "lon": 45.4294,
+    "lat": 37.6905,
+    "ne": "Lake Urmia"
+   },
+   {
+    "name": "Lake Van@42.96,38.65",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     427.23,
+     87.58
+    ],
+    "lon": 42.9567,
+    "lat": 38.6464,
+    "ne": "Lake Van"
+   },
+   {
+    "name": "Lac de Kossou@-5.59,7.41",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     163.6,
+     275.6
+    ],
+    "lon": -5.5862,
+    "lat": 7.4149,
+    "ne": "Lac de Kossou"
+   },
+   {
+    "name": "land@8.70,3.49",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     247.26,
+     299.12
+    ],
+    "lon": 8.6973,
+    "lat": 3.4886,
+    "ne": "land"
+   },
+   {
+    "name": "Lake Kivu@29.09,-2.02",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     366.93,
+     332.25
+    ],
+    "lon": 29.0949,
+    "lat": -2.0176,
+    "ne": "Lake Kivu"
+   },
+   {
+    "name": "Lake Edward@29.60,-0.35",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     370.0,
+     322.15
+    ],
+    "lon": 29.5969,
+    "lat": -0.353,
+    "ne": "Lake Edward"
+   },
+   {
+    "name": "Lac Mai-Ndombe@18.30,-2.00",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     303.38,
+     332.28
+    ],
+    "lon": 18.3002,
+    "lat": -1.9958,
+    "ne": "Lac Mai-Ndombe"
+   },
+   {
+    "name": "Lake Bangweulu@29.78,-11.16",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     370.38,
+     386.22
+    ],
+    "lon": 29.7785,
+    "lat": -11.1621,
+    "ne": "Lake Bangweulu"
+   },
+   {
+    "name": "land@57.57,-20.28",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     524.35,
+     448.26
+    ],
+    "lon": 57.5696,
+    "lat": -20.2792,
+    "ne": "land"
+   },
+   {
+    "name": "Lake Rukwa@32.08,-7.83",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     384.19,
+     366.78
+    ],
+    "lon": 32.0784,
+    "lat": -7.829,
+    "ne": "Lake Rukwa"
+   },
+   {
+    "name": "land@55.54,-21.12",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     512.2,
+     452.6
+    ],
+    "lon": 55.5416,
+    "lat": -21.1195,
+    "ne": "land"
+   },
+   {
+    "name": "land@27.95,36.19",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     353.48,
+     106.78
+    ],
+    "lon": 27.9503,
+    "lat": 36.1862,
+    "ne": "land"
+   },
+   {
+    "name": "land@-16.56,28.29",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     117.28,
+     143.03
+    ],
+    "lon": -16.5587,
+    "lat": 28.2867,
+    "ne": "land"
+   },
+   {
+    "name": "land@-15.59,27.95",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     121.91,
+     145.7
+    ],
+    "lon": -15.5851,
+    "lat": 27.9547,
+    "ne": "land"
+   },
+   {
+    "name": "land@-14.04,28.41",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     130.91,
+     143.95
+    ],
+    "lon": -14.0357,
+    "lat": 28.408,
+    "ne": "land"
+   },
+   {
+    "name": "Lake Eyasi@35.06,-3.60",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     401.94,
+     341.86
+    ],
+    "lon": 35.06,
+    "lat": -3.5977,
+    "ne": "Lake Eyasi"
+   },
+   {
+    "name": "Buhayrat ath Tharthar@43.26,33.96",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     433.46,
+     115.78
+    ],
+    "lon": 43.2633,
+    "lat": 33.9624,
+    "ne": "Buhayrat ath Tharthar"
+   },
+   {
+    "name": "land@43.34,-11.66",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     449.01,
+     390.43
+    ],
+    "lon": 43.3397,
+    "lat": -11.6554,
+    "ne": "land"
+   },
+   {
+    "name": "Chew Bahir@36.87,4.68",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     412.42,
+     292.65
+    ],
+    "lon": 36.8662,
+    "lat": 4.6838,
+    "ne": "Chew Bahir"
+   },
+   {
+    "name": "land@-25.49,37.80",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     89.48,
+     76.52
+    ],
+    "lon": -25.4861,
+    "lat": 37.8005,
+    "ne": "land"
+   },
+   {
+    "name": "land@-23.64,15.08",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     63.56,
+     222.76
+    ],
+    "lon": -23.6368,
+    "lat": 15.0818,
+    "ne": "land"
+   },
+   {
+    "name": "Lac Tumba@18.01,-0.79",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     301.68,
+     325.03
+    ],
+    "lon": 18.0135,
+    "lat": -0.7898,
+    "ne": "Lac Tumba"
+   },
+   {
+    "name": "land@-28.34,38.47",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     76.94,
+     68.7
+    ],
+    "lon": -28.3398,
+    "lat": 38.4668,
+    "ne": "land"
+   },
+   {
+    "name": "land@-13.64,29.03",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     133.78,
+     140.22
+    ],
+    "lon": -13.642,
+    "lat": 29.0261,
+    "ne": "land"
+   },
+   {
+    "name": "land@6.61,0.24",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     234.96,
+     318.88
+    ],
+    "lon": 6.6076,
+    "lat": 0.2356,
+    "ne": "land"
+   },
+   {
+    "name": "land@-27.21,38.72",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     83.44,
+     68.75
+    ],
+    "lon": -27.2071,
+    "lat": 38.7213,
+    "ne": "land"
+   },
+   {
+    "name": "land@-16.99,32.75",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     121.54,
+     115.09
+    ],
+    "lon": -16.99,
+    "lat": 32.7504,
+    "ne": "land"
+   },
+   {
+    "name": "land@-17.85,28.69",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     110.91,
+     139.7
+    ],
+    "lon": -17.8542,
+    "lat": 28.6911,
+    "ne": "land"
+   },
+   {
+    "name": "Lac Onangué@10.09,-0.96",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     254.98,
+     326.08
+    ],
+    "lon": 10.0864,
+    "lat": -0.956,
+    "ne": "Lac Onangué"
+   },
+   {
+    "name": "land@-24.40,14.93",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     58.88,
+     223.28
+    ],
+    "lon": -24.4001,
+    "lat": 14.9289,
+    "ne": "land"
+   },
+   {
+    "name": "Lake Abbe@41.77,11.19",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     439.92,
+     253.36
+    ],
+    "lon": 41.775,
+    "lat": 11.1891,
+    "ne": "Lake Abbe"
+   },
+   {
+    "name": "M'Bakaou Reservoir@12.82,6.40",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     271.2,
+     282.88
+    ],
+    "lon": 12.8199,
+    "lat": 6.4024,
+    "ne": "M'Bakaou Reservoir"
+   },
+   {
+    "name": "Lake Kwania@32.70,1.74",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     386.93,
+     310.82
+    ],
+    "lon": 32.6978,
+    "lat": 1.7362,
+    "ne": "Lake Kwania"
+   },
+   {
+    "name": "Lake Natron@36.03,-2.33",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     407.86,
+     334.43
+    ],
+    "lon": 36.0299,
+    "lat": -2.3349,
+    "ne": "Lake Natron"
+   },
+   {
+    "name": "Lake Manyara@35.81,-3.59",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     406.51,
+     341.63
+    ],
+    "lon": 35.8141,
+    "lat": -3.5869,
+    "ne": "Lake Manyara"
+   },
+   {
+    "name": "land@44.43,-12.21",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     455.28,
+     394.24
+    ],
+    "lon": 44.4348,
+    "lat": -12.2148,
+    "ne": "land"
+   }
+  ],
   "shapes": {
    "mode": "raster",
    "dpi": 150,
@@ -167,7 +2332,8 @@
    "minAreaPt2": 1.0,
    "_why": "바탕이 자연색 화상 한 장(naturalearthdata, 2023)이고 벡터 해안선이 없다 — 화상에서 바다·호수(파랑 > 빨강) 아닌 화소를 육지로(유럽 28쪽과 같음). tips 는 화소 경계가 거칠어 쓰지 않음(유럽 U3-2).",
    "init": {
-    "seeds": [
+    "fromMap": "p34-africa",
+    "pts": [
      {
       "name": "마다가스카르섬",
       "c": [
@@ -226,7 +2392,8 @@
     ]
    }
   },
-  "notes": "바탕이 쪽 전체를 덮는 래스터 한 장(naturalearthdata 자연색). 흰 국경선·하천·지형 이름 상자는 벡터. 왼쪽 아래 「활동하기 1」 상자(cartoucheBbox)가 지도를 덮음. 빈 핀 7개(#7251a1). 오른쪽·아래 사진 카드는 지도 밖."
+  "notes": "바탕이 쪽 전체를 덮는 래스터 한 장(naturalearthdata 자연색). 흰 국경선·하천·지형 이름 상자는 벡터. 왼쪽 아래 「활동하기 1」 상자(cartoucheBbox)가 지도를 덮음. 빈 핀 7개(#7251a1). 오른쪽·아래 사진 카드는 지도 밖.",
+  "controlsNote": "controls 의 src:'shape' 는 교과서 섬·호수·나라 면의 넓이 중심(type centroid)과 해안·국경 꺾인 점(type tip) ↔ Natural Earth 10m 같은 도형(scripts/atlas/shape_controls.py --unit u4 가 고름, 교과서 도형은 land_shapes.py). 경위선 눈금이 없거나 적은 지도의 기준점."
  },
  {
   "id": "p37-climate",
@@ -253,7 +2420,140 @@
   ],
   "scale": "0–500km",
   "graticuleLabels": true,
-  "controls": [],
+  "controls": [
+   {
+    "name": "land@46.71,-19.32",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     379.86,
+     365.82
+    ],
+    "lon": 46.7066,
+    "lat": -19.3181,
+    "ne": "land"
+   },
+   {
+    "name": "land@-16.56,28.29",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     113.76,
+     139.68
+    ],
+    "lon": -16.5587,
+    "lat": 28.2867,
+    "ne": "land"
+   },
+   {
+    "name": "land@8.70,3.49",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     213.21,
+     259.81
+    ],
+    "lon": 8.6973,
+    "lat": 3.4886,
+    "ne": "land"
+   },
+   {
+    "name": "land@-14.04,28.41",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     124.03,
+     140.27
+    ],
+    "lon": -14.0357,
+    "lat": 28.408,
+    "ne": "land"
+   },
+   {
+    "name": "land@39.35,-6.14",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     351.01,
+     303.77
+    ],
+    "lon": 39.355,
+    "lat": -6.1362,
+    "ne": "land"
+   },
+   {
+    "name": "land@-15.59,27.95",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     117.32,
+     141.71
+    ],
+    "lon": -15.5851,
+    "lat": 27.9547,
+    "ne": "land"
+   },
+   {
+    "name": "land@43.34,-11.66",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     367.89,
+     329.73
+    ],
+    "lon": 43.3397,
+    "lat": -11.6554,
+    "ne": "land"
+   },
+   {
+    "name": "land@6.61,0.24",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     203.72,
+     274.55
+    ],
+    "lon": 6.6076,
+    "lat": 0.2356,
+    "ne": "land"
+   },
+   {
+    "name": "land@40.14,15.69",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     352.57,
+     203.36
+    ],
+    "lon": 40.1377,
+    "lat": 15.6916,
+    "ne": "land"
+   },
+   {
+    "name": "land@10.87,33.79",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     227.99,
+     122.66
+    ],
+    "lon": 10.8708,
+    "lat": 33.7931,
+    "ne": "land"
+   },
+   {
+    "name": "land@39.77,-7.85",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     352.75,
+     311.7
+    ],
+    "lon": 39.7677,
+    "lat": -7.8531,
+    "ne": "land"
+   }
+  ],
   "shapes": {
    "mode": "raster",
    "dpi": 200,
@@ -309,11 +2609,14 @@
     ]
    }
   },
-  "notes": "곡선 경위선 + 경위도 글자 12개(20˚E·40˚E·20˚N·0˚·20˚S). 왼쪽 아래 「기후 구분」 범례와 「활동하기 2」 상자(cartoucheBbox)가 지도를 덮음. 기후 사진 핀 4개."
+  "notes": "곡선 경위선 + 경위도 글자 12개(20˚E·40˚E·20˚N·0˚·20˚S). 왼쪽 아래 「기후 구분」 범례와 「활동하기 2」 상자(cartoucheBbox)가 지도를 덮음. 기후 사진 핀 4개.",
+  "controlsNote": "controls 의 src:'shape' 는 교과서 섬·호수·나라 면의 넓이 중심(type centroid)과 해안·국경 꺾인 점(type tip) ↔ Natural Earth 10m 같은 도형(scripts/atlas/shape_controls.py --unit u4 가 고름, 교과서 도형은 land_shapes.py). 경위선 눈금이 없거나 적은 지도의 기준점."
  },
  {
   "id": "p37-jan",
   "page": 37,
+  "projectionFrom": "p37-climate",
+  "_projectionFrom": "기후 구분 지도(37쪽, 정거 방위 중심 20.0°E·0.1°)와 같은 바탕을 줄인 것 — 섬이 작아 넓이 중심 짝이 1개뿐이고 나머지는 해안 꺾인 점이라 자유 맞춤 중심이 21.0°E·−1.2° 로 벗어남. 고정: rms 0.84pt(자유 0.83), 겹 나누기 km 중앙 26.0·90% 72.6(자유 26.0·77.7).",
   "kind": "temp-precip",
   "title": "1월의 평균 기온과 강수량",
   "bbox": [
@@ -330,14 +2633,340 @@
   ],
   "scale": "0–1,000km",
   "graticuleLabels": false,
-  "controls": [],
+  "controls": [
+   {
+    "name": "land@46.71,-19.32",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     714.53,
+     233.7
+    ],
+    "lon": 46.7066,
+    "lat": -19.3181,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@10.16,33.84",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     631.08,
+     103.08
+    ],
+    "lon": 10.1631,
+    "lat": 33.8362,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@9.07,4.05",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     624.96,
+     175.44
+    ],
+    "lon": 9.0702,
+    "lat": 4.0514,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@11.06,37.01",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     633.6,
+     95.88
+    ],
+    "lon": 11.0581,
+    "lat": 37.006,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@51.22,11.85",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     726.84,
+     155.64
+    ],
+    "lon": 51.2229,
+    "lat": 11.8508,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-5.62,35.83",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     599.04,
+     95.88
+    ],
+    "lon": -5.616,
+    "lat": 35.8315,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-17.54,14.76",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     563.04,
+     148.08
+    ],
+    "lon": -17.536,
+    "lat": 14.7574,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@39.76,15.07",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     698.4,
+     147.36
+    ],
+    "lon": 39.7622,
+    "lat": 15.0739,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@32.50,-25.95",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     681.48,
+     248.16
+    ],
+    "lon": 32.5002,
+    "lat": -25.9548,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@8.85,-0.92",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     624.24,
+     188.4
+    ],
+    "lon": 8.847,
+    "lat": -0.9225,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-15.50,11.34",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     567.0,
+     157.44
+    ],
+    "lon": -15.5027,
+    "lat": 11.3367,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@40.63,-10.66",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     702.0,
+     211.8
+    ],
+    "lon": 40.6314,
+    "lat": -10.6629,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@34.53,-19.62",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     686.88,
+     234.48
+    ],
+    "lon": 34.5304,
+    "lat": -19.6237,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@32.08,31.36",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     678.96,
+     109.2
+    ],
+    "lon": 32.0765,
+    "lat": 31.3609,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@38.86,-6.16",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     698.4,
+     199.92
+    ],
+    "lon": 38.8568,
+    "lat": -6.1637,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@5.97,4.34",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     617.4,
+     175.44
+    ],
+    "lon": 5.9728,
+    "lat": 4.3448,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@35.57,23.21",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     688.32,
+     129.72
+    ],
+    "lon": 35.5747,
+    "lat": 23.2126,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@18.41,-34.30",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     648.36,
+     268.32
+    ],
+    "lon": 18.4063,
+    "lat": -34.3019,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@44.47,10.40",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     712.08,
+     159.6
+    ],
+    "lon": 44.4653,
+    "lat": 10.4015,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@19.89,-34.77",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     652.32,
+     270.12
+    ],
+    "lon": 19.8905,
+    "lat": -34.7697,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@42.63,11.48",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     707.76,
+     157.08
+    ],
+    "lon": 42.6336,
+    "lat": 11.4848,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@18.28,-31.96",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     648.0,
+     262.56
+    ],
+    "lon": 18.2759,
+    "lat": -31.9575,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@20.26,32.34",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     651.96,
+     107.4
+    ],
+    "lon": 20.2617,
+    "lat": 32.3395,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-17.10,20.86",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     565.92,
+     131.52
+    ],
+    "lon": -17.1046,
+    "lat": 20.8625,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@49.20,-12.15",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     721.44,
+     215.76
+    ],
+    "lon": 49.1991,
+    "lat": -12.152,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@44.45,-16.19",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     709.56,
+     225.84
+    ],
+    "lon": 44.4528,
+    "lat": -16.1867,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@50.34,-15.76",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     724.68,
+     225.12
+    ],
+    "lon": 50.341,
+    "lat": -15.7636,
+    "ne": "land"
+   }
+  ],
   "shapes": {
    "mode": "raster",
    "dpi": 200,
    "seaWhite": 240,
    "minAreaPt2": 0.3,
    "init": {
-    "seeds": [
+    "fromMap": "p34-africa",
+    "pts": [
      {
       "name": "마다가스카르섬",
       "c": [
@@ -386,11 +3015,14 @@
    },
    "tips": true
   },
-  "notes": "강수량은 래스터(worldclim 1970~2010), 바다는 그 래스터의 흰 바탕. 등온선(자홍) 10·20·30 벡터. 적도선과 「0˚」 글자 2개뿐이라 교차점이 없어 섬 기준점."
+  "notes": "강수량은 래스터(worldclim 1970~2010), 바다는 그 래스터의 흰 바탕. 등온선(자홍) 10·20·30 벡터. 적도선과 「0˚」 글자 2개뿐이라 교차점이 없어 섬 기준점.",
+  "controlsNote": "controls 의 src:'shape' 는 교과서 섬·호수·나라 면의 넓이 중심(type centroid)과 해안·국경 꺾인 점(type tip) ↔ Natural Earth 10m 같은 도형(scripts/atlas/shape_controls.py --unit u4 가 고름, 교과서 도형은 land_shapes.py). 경위선 눈금이 없거나 적은 지도의 기준점."
  },
  {
   "id": "p37-jul",
   "page": 37,
+  "projectionFrom": "p37-climate",
+  "_projectionFrom": "기후 구분 지도(37쪽, 정거 방위 중심 20.0°E·0.1°)와 같은 바탕을 줄인 것 — 자유 맞춤은 짝 되풀이 5번 안에 수렴하지 않고 중심이 22.6°E·−0.6° 로 벗어남. 고정: rms 0.88pt(자유 0.83), 겹 나누기 km 중앙 43.9·90% 141(자유 45.2·86.5 — 꺾인 점 몇 개가 큼).",
   "kind": "temp-precip",
   "title": "7월의 평균 기온과 강수량",
   "bbox": [
@@ -407,14 +3039,352 @@
   ],
   "scale": "0–1,000km",
   "graticuleLabels": false,
-  "controls": [],
+  "controls": [
+   {
+    "name": "land@46.71,-19.32",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     708.09,
+     429.25
+    ],
+    "lon": 46.7066,
+    "lat": -19.3181,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@10.07,33.95",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     624.6,
+     298.84
+    ],
+    "lon": 10.0713,
+    "lat": 33.9462,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@9.70,4.09",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     619.92,
+     371.92
+    ],
+    "lon": 9.6966,
+    "lat": 4.0939,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@11.01,37.08",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     627.12,
+     291.28
+    ],
+    "lon": 11.0127,
+    "lat": 37.0848,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@51.25,11.85",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     720.36,
+     350.68
+    ],
+    "lon": 51.2471,
+    "lat": 11.8476,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-5.73,35.82",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     591.84,
+     291.28
+    ],
+    "lon": -5.7299,
+    "lat": 35.8227,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@39.70,15.21",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     691.92,
+     342.76
+    ],
+    "lon": 39.7034,
+    "lat": 15.2094,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@38.86,-6.16",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     691.92,
+     394.96
+    ],
+    "lon": 38.8568,
+    "lat": -6.1637,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-17.44,14.69",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     556.56,
+     342.4
+    ],
+    "lon": -17.4398,
+    "lat": 14.6885,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@32.52,-25.95",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     675.0,
+     443.56
+    ],
+    "lon": 32.5166,
+    "lat": -25.95,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@18.42,-34.32",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     641.88,
+     464.44
+    ],
+    "lon": 18.4214,
+    "lat": -34.3185,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@8.71,-0.59",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     618.12,
+     382.72
+    ],
+    "lon": 8.7077,
+    "lat": -0.5922,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@44.47,10.40",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     703.44,
+     355.0
+    ],
+    "lon": 44.4653,
+    "lat": 10.4015,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@34.53,-19.62",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     680.4,
+     429.88
+    ],
+    "lon": 34.5304,
+    "lat": -19.6163,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@32.00,31.45",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     672.84,
+     304.96
+    ],
+    "lon": 31.9958,
+    "lat": 31.4457,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@40.63,-10.66",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     695.16,
+     406.48
+    ],
+    "lon": 40.6314,
+    "lat": -10.6629,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@11.13,35.22",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     627.12,
+     295.6
+    ],
+    "lon": 11.1314,
+    "lat": 35.218,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@5.86,4.41",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     610.92,
+     371.2
+    ],
+    "lon": 5.8556,
+    "lat": 4.4116,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-2.25,35.10",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     599.04,
+     294.52
+    ],
+    "lon": -2.2487,
+    "lat": 35.0972,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@20.07,32.18",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     645.12,
+     303.52
+    ],
+    "lon": 20.0715,
+    "lat": 32.1764,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@35.62,23.14",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     681.84,
+     325.12
+    ],
+    "lon": 35.6211,
+    "lat": 23.1393,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@39.55,-6.99",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     693.72,
+     400.0
+    ],
+    "lon": 39.5505,
+    "lat": -6.9938,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@43.36,12.33",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     701.64,
+     349.96
+    ],
+    "lon": 43.3648,
+    "lat": 12.3271,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-12.47,7.43",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     565.92,
+     362.56
+    ],
+    "lon": -12.4728,
+    "lat": 7.434,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@15.76,31.39",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     636.84,
+     305.32
+    ],
+    "lon": 15.7615,
+    "lat": 31.3881,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@49.09,-12.10",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     715.68,
+     411.16
+    ],
+    "lon": 49.093,
+    "lat": -12.0986,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@44.44,-16.20",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     703.08,
+     421.24
+    ],
+    "lon": 44.4447,
+    "lat": -16.1957,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@50.43,-15.60",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     718.2,
+     420.52
+    ],
+    "lon": 50.4299,
+    "lat": -15.6003,
+    "ne": "land"
+   }
+  ],
   "shapes": {
    "mode": "raster",
    "dpi": 200,
    "seaWhite": 240,
    "minAreaPt2": 0.3,
    "init": {
-    "seeds": [
+    "fromMap": "p34-africa",
+    "pts": [
      {
       "name": "마다가스카르섬",
       "c": [
@@ -463,11 +3433,14 @@
    },
    "tips": true
   },
-  "notes": "1월 지도와 같은 꼴(아래로 옮긴 배치). 강수량 래스터(바다 흰 바탕) + 등온선."
+  "notes": "1월 지도와 같은 꼴(아래로 옮긴 배치). 강수량 래스터(바다 흰 바탕) + 등온선.",
+  "controlsNote": "controls 의 src:'shape' 는 교과서 섬·호수·나라 면의 넓이 중심(type centroid)과 해안·국경 꺾인 점(type tip) ↔ Natural Earth 10m 같은 도형(scripts/atlas/shape_controls.py --unit u4 가 고름, 교과서 도형은 land_shapes.py). 경위선 눈금이 없거나 적은 지도의 기준점."
  },
  {
   "id": "p38-language",
   "page": 38,
+  "projectionFrom": "p34-africa",
+  "_projectionFrom": "34쪽 일반도와 같은 바탕 지도(정거 방위 중심 19.9°E·−0.4°)를 줄인 것(34·35·36·37쪽 큰 지도 넷이 따로 맞춰 모두 약 20°E·0° — 같은 바탕) — 자유 맞춤 중심 16.5°E·−2.9°, 짝 되풀이 수렴 안 함. 고정: rms 1.19pt(자유 1.26), 겹 나누기 km 중앙 64.8·90% 95.2(자유 66.3·138).",
   "kind": "language",
   "title": "주요 언어 분포",
   "bbox": [
@@ -484,7 +3457,356 @@
   ],
   "scale": "0–500km",
   "graticuleLabels": false,
-  "controls": [],
+  "controls": [
+   {
+    "name": "land@46.71,-19.32",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     178.38,
+     250.62
+    ],
+    "lon": 46.7069,
+    "lat": -19.3177,
+    "ne": "land"
+   },
+   {
+    "name": "Lake Victoria@32.90,-1.10",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     150.91,
+     212.45
+    ],
+    "lon": 32.9024,
+    "lat": -1.1015,
+    "ne": "Lake Victoria"
+   },
+   {
+    "name": "land@9.04,40.09",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     102.15,
+     124.05
+    ],
+    "lon": 9.035,
+    "lat": 40.0899,
+    "ne": "land"
+   },
+   {
+    "name": "land@55.54,-21.12",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     195.25,
+     255.31
+    ],
+    "lon": 55.5416,
+    "lat": -21.1195,
+    "ne": "land"
+   },
+   {
+    "name": "land@8.70,3.49",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     100.38,
+     202.98
+    ],
+    "lon": 8.6973,
+    "lat": 3.4886,
+    "ne": "land"
+   },
+   {
+    "name": "land@23.79,38.56",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     127.7,
+     126.82
+    ],
+    "lon": 23.793,
+    "lat": 38.5608,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@10.04,34.02",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     102.68,
+     137.44
+    ],
+    "lon": 10.0393,
+    "lat": 34.0161,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@11.01,37.08",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     104.48,
+     131.32
+    ],
+    "lon": 11.0127,
+    "lat": 37.0848,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@34.24,27.74",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     150.56,
+     150.76
+    ],
+    "lon": 34.245,
+    "lat": 27.7374,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@42.57,11.49",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     171.08,
+     185.32
+    ],
+    "lon": 42.5716,
+    "lat": 11.4905,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@19.53,30.40",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     121.76,
+     145.36
+    ],
+    "lon": 19.5305,
+    "lat": 30.3968,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-15.02,11.61",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     50.12,
+     185.68
+    ],
+    "lon": -15.0198,
+    "lat": 11.6077,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@32.79,-25.64",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     150.2,
+     264.88
+    ],
+    "lon": 32.7923,
+    "lat": -25.6401,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-16.58,13.99",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     46.16,
+     179.56
+    ],
+    "lon": -16.5764,
+    "lat": 13.989,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-16.41,20.68",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     47.6,
+     166.24
+    ],
+    "lon": -16.4087,
+    "lat": 20.675,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@6.72,4.80",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     94.04,
+     201.16
+    ],
+    "lon": 6.7219,
+    "lat": 4.7995,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@35.65,23.07",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     154.88,
+     160.84
+    ],
+    "lon": 35.6546,
+    "lat": 23.0738,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@39.49,15.52",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     163.52,
+     175.96
+    ],
+    "lon": 39.4949,
+    "lat": 15.5175,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@34.58,-19.60",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     154.52,
+     252.64
+    ],
+    "lon": 34.582,
+    "lat": -19.6027,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@38.81,-6.13",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     163.52,
+     223.84
+    ],
+    "lon": 38.8132,
+    "lat": -6.1306,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@19.70,-34.75",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     123.92,
+     284.68
+    ],
+    "lon": 19.6981,
+    "lat": -34.7537,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@40.50,-10.55",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     167.12,
+     232.48
+    ],
+    "lon": 40.499,
+    "lat": -10.5505,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@8.78,-0.79",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     100.52,
+     211.96
+    ],
+    "lon": 8.7844,
+    "lat": -0.7892,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@49.29,-11.95",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     183.32,
+     235.0
+    ],
+    "lon": 49.2883,
+    "lat": -11.9548,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@49.66,-15.63",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     185.12,
+     243.28
+    ],
+    "lon": 49.661,
+    "lat": -15.6277,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@44.47,-16.18",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     173.6,
+     243.64
+    ],
+    "lon": 44.4694,
+    "lat": -16.1822,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@19.59,41.61",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     118.52,
+     123.04
+    ],
+    "lon": 19.5923,
+    "lat": 41.6086,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@16.08,39.08",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     112.76,
+     127.36
+    ],
+    "lon": 16.083,
+    "lat": 39.0753,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@0.23,38.76",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     84.32,
+     127.0
+    ],
+    "lon": 0.2341,
+    "lat": 38.7579,
+    "ne": "land"
+   }
+  ],
   "shapes": {
    "mode": "raster",
    "render": "all",
@@ -493,7 +3815,8 @@
    "minAreaPt2": 0.3,
    "_why": "공용어 둘 이상인 나라(마다가스카르 등)는 땅 채움 없이 나라 모양으로 클립한 굵은 선 줄무늬라 채움 색 합으로는 대륙이 끊기고 섬이 빠진다 → 쪽 전체를 렌더해 흰 바탕이 아닌 화소를 땅으로(글자 「인도양」·축척 막대는 작아 짝이 없음).",
    "init": {
-    "seeds": [
+    "fromMap": "p34-africa",
+    "pts": [
      {
       "name": "마다가스카르섬",
       "c": [
@@ -553,11 +3876,14 @@
    },
    "tips": true
   },
-  "notes": "아프리카만 그린 작은 지도(바다 흰 바탕) — 나라 단위 8분류(공용어 둘 이상은 사선 줄무늬). 범례 왼쪽 아래."
+  "notes": "아프리카만 그린 작은 지도(바다 흰 바탕) — 나라 단위 8분류(공용어 둘 이상은 사선 줄무늬). 범례 왼쪽 아래.",
+  "controlsNote": "controls 의 src:'shape' 는 교과서 섬·호수·나라 면의 넓이 중심(type centroid)과 해안·국경 꺾인 점(type tip) ↔ Natural Earth 10m 같은 도형(scripts/atlas/shape_controls.py --unit u4 가 고름, 교과서 도형은 land_shapes.py). 경위선 눈금이 없거나 적은 지도의 기준점."
  },
  {
   "id": "p38-religion",
   "page": 38,
+  "projectionFrom": "p34-africa",
+  "_projectionFrom": "34쪽 일반도와 같은 바탕 지도(정거 방위 중심 19.9°E·−0.4°)를 줄인 것(34·35·36·37쪽 큰 지도 넷이 따로 맞춰 모두 약 20°E·0° — 같은 바탕) — 자유 맞춤 중심 16.2°E·1.3°. 고정: rms 0.84pt(자유 0.85), 겹 나누기 km 중앙 25.3·90% 75.8(자유 31.2·105).",
   "kind": "religion",
   "title": "주요 종교 분포",
   "bbox": [
@@ -574,7 +3900,284 @@
   ],
   "scale": "0–500km",
   "graticuleLabels": false,
-  "controls": [],
+  "controls": [
+   {
+    "name": "land@46.71,-19.32",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     359.79,
+     250.04
+    ],
+    "lon": 46.7069,
+    "lat": -19.3177,
+    "ne": "land"
+   },
+   {
+    "name": "Lake Victoria@32.90,-1.10",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     331.58,
+     212.12
+    ],
+    "lon": 32.9024,
+    "lat": -1.1015,
+    "ne": "Lake Victoria"
+   },
+   {
+    "name": "Lake Tanganyika@29.87,-6.21",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     325.3,
+     222.23
+    ],
+    "lon": 29.8747,
+    "lat": -6.2085,
+    "ne": "Lake Tanganyika"
+   },
+   {
+    "name": "Lake Malawi@34.51,-11.96",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     334.88,
+     234.29
+    ],
+    "lon": 34.5087,
+    "lat": -11.9613,
+    "ne": "Lake Malawi"
+   },
+   {
+    "name": "Lake Turkana@36.18,3.58",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     338.17,
+     202.51
+    ],
+    "lon": 36.1812,
+    "lat": 3.5839,
+    "ne": "Lake Turkana"
+   },
+   {
+    "name": "Lake Albert@30.92,1.64",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     327.6,
+     206.54
+    ],
+    "lon": 30.9168,
+    "lat": 1.6442,
+    "ne": "Lake Albert"
+   },
+   {
+    "name": "tip:land@34.95,29.55",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     330.98,
+     147.18
+    ],
+    "lon": 34.9513,
+    "lat": 29.5456,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@51.40,10.46",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     369.1,
+     185.83
+    ],
+    "lon": 51.4031,
+    "lat": 10.4567,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-15.04,11.98",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     233.8,
+     185.55
+    ],
+    "lon": -15.0387,
+    "lat": 11.978,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@11.13,35.22",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     285.09,
+     137.61
+    ],
+    "lon": 11.1314,
+    "lat": 35.218,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-8.98,37.07",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     252.47,
+     133.98
+    ],
+    "lon": -8.9808,
+    "lat": 37.0693,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@6.74,4.78",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     276.95,
+     201.28
+    ],
+    "lon": 6.7395,
+    "lat": 4.7792,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@13.18,-5.86",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     291.21,
+     221.95
+    ],
+    "lon": 13.1838,
+    "lat": -5.8565,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-17.36,14.74",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     229.18,
+     179.84
+    ],
+    "lon": -17.3636,
+    "lat": 14.7359,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@9.96,0.20",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     284.96,
+     209.62
+    ],
+    "lon": 9.9558,
+    "lat": 0.2,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@34.63,-19.65",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     335.23,
+     250.61
+    ],
+    "lon": 34.6302,
+    "lat": -19.6542,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-17.03,20.86",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     229.68,
+     166.97
+    ],
+    "lon": -17.0286,
+    "lat": 20.8608,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@32.79,-25.64",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     331.44,
+     263.33
+    ],
+    "lon": 32.7923,
+    "lat": -25.6401,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@8.58,4.78",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     281.39,
+     199.98
+    ],
+    "lon": 8.5765,
+    "lat": 4.7847,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@9.29,-1.57",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     283.46,
+     213.73
+    ],
+    "lon": 9.2866,
+    "lat": -1.5661,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@49.21,-11.99",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     365.04,
+     234.7
+    ],
+    "lon": 49.2126,
+    "lat": -11.9859,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@50.43,-15.60",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     367.52,
+     241.55
+    ],
+    "lon": 50.4299,
+    "lat": -15.6003,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@44.54,-16.18",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     355.2,
+     243.34
+    ],
+    "lon": 44.537,
+    "lat": -16.1765,
+    "ne": "land"
+   }
+  ],
   "shapes": {
    "mode": "vector",
    "land": [
@@ -588,7 +4191,8 @@
    ],
    "minAreaPt2": 0.3,
    "init": {
-    "seeds": [
+    "fromMap": "p34-africa",
+    "pts": [
      {
       "name": "마다가스카르섬",
       "c": [
@@ -637,11 +4241,14 @@
    },
    "tips": true
   },
-  "notes": "아프리카만 그린 작은 지도 — 지역 면 4분류(이슬람교·크리스트교·토속 종교·비거주지), 호수 하늘색 #c7dff4. 범례 왼쪽 아래."
+  "notes": "아프리카만 그린 작은 지도 — 지역 면 4분류(이슬람교·크리스트교·토속 종교·비거주지), 호수 하늘색 #c7dff4. 범례 왼쪽 아래.",
+  "controlsNote": "controls 의 src:'shape' 는 교과서 섬·호수·나라 면의 넓이 중심(type centroid)과 해안·국경 꺾인 점(type tip) ↔ Natural Earth 10m 같은 도형(scripts/atlas/shape_controls.py --unit u4 가 고름, 교과서 도형은 land_shapes.py). 경위선 눈금이 없거나 적은 지도의 기준점."
  },
  {
   "id": "p38-resources",
   "page": 38,
+  "projectionFrom": "p34-africa",
+  "_projectionFrom": "34쪽 일반도와 같은 바탕 지도(정거 방위 중심 19.9°E·−0.4°)를 줄인 것(34·35·36·37쪽 큰 지도 넷이 따로 맞춰 모두 약 20°E·0° — 같은 바탕) — 자유 맞춤 중심 9.8°E·5.4°(대륙이 틀 위에 닿아 짝이 17개뿐). 고정: rms 0.78pt(자유 0.85), 겹 나누기 km 중앙 42.5·90% 87.5(자유 78.3·139).",
   "kind": "resources",
   "title": "주요 자원의 생산량 비중",
   "bbox": [
@@ -653,7 +4260,212 @@
   "legendBbox": null,
   "scale": "0–1,000km",
   "graticuleLabels": false,
-  "controls": [],
+  "controls": [
+   {
+    "name": "land@46.71,-19.32",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     548.98,
+     264.78
+    ],
+    "lon": 46.7069,
+    "lat": -19.3177,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@34.77,28.09",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     526.23,
+     185.03
+    ],
+    "lon": 34.7708,
+    "lat": 28.0929,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@19.60,30.41",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     505.67,
+     183.56
+    ],
+    "lon": 19.596,
+    "lat": 30.412,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@10.07,33.95",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     491.03,
+     177.65
+    ],
+    "lon": 10.0713,
+    "lat": 33.9462,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@10.97,37.06",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     492.11,
+     171.67
+    ],
+    "lon": 10.9741,
+    "lat": 37.0613,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@34.57,-19.58",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     530.04,
+     265.47
+    ],
+    "lon": 34.5686,
+    "lat": -19.5759,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@13.17,-5.86",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     495.35,
+     242.75
+    ],
+    "lon": 13.1697,
+    "lat": -5.8617,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@32.77,-25.68",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     526.95,
+     275.11
+    ],
+    "lon": 32.7695,
+    "lat": -25.6817,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@9.72,4.11",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     489.9,
+     227.11
+    ],
+    "lon": 9.7195,
+    "lat": 4.1149,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@6.00,4.32",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     484.13,
+     226.52
+    ],
+    "lon": 5.9969,
+    "lat": 4.3194,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@18.41,-34.30",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     503.92,
+     290.02
+    ],
+    "lon": 18.4063,
+    "lat": -34.3019,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@35.50,-24.10",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     531.06,
+     272.7
+    ],
+    "lon": 35.4968,
+    "lat": -24.1013,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-17.10,20.88",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     447.67,
+     197.88
+    ],
+    "lon": -17.1014,
+    "lat": 20.8762,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@9.59,0.28",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     489.84,
+     232.32
+    ],
+    "lon": 9.5864,
+    "lat": 0.2836,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@49.22,-12.07",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     553.25,
+     252.94
+    ],
+    "lon": 49.2168,
+    "lat": -12.065,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@44.52,-25.28",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     544.83,
+     274.18
+    ],
+    "lon": 44.5169,
+    "lat": -25.2844,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@44.44,-16.27",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     545.37,
+     259.62
+    ],
+    "lon": 44.4385,
+    "lat": -16.2657,
+    "ne": "land"
+   }
+  ],
   "shapes": {
    "mode": "vector",
    "land": [
@@ -672,7 +4484,8 @@
    "minAreaPt2": 0.3,
    "_why": "틀은 둘레 고리 그래프 7개를 피해 작은 아프리카 지도만(고리 회색 조각이 땅 색 #ede9e4 와 비슷해서).",
    "init": {
-    "seeds": [
+    "fromMap": "p34-africa",
+    "pts": [
      {
       "name": "마다가스카르섬",
       "c": [
@@ -710,7 +4523,8 @@
    },
    "tips": true
   },
-  "notes": "작은 아프리카(+ 남유럽·서아시아) 지도 — 생산국 10 나라별 색 + 나라 이름, 둘레에 고리 그래프 7(보크사이트·우라늄·다이아몬드·크롬·코발트·백금·망간). 범례 없음."
+  "notes": "작은 아프리카(+ 남유럽·서아시아) 지도 — 생산국 10 나라별 색 + 나라 이름, 둘레에 고리 그래프 7(보크사이트·우라늄·다이아몬드·크롬·코발트·백금·망간). 범례 없음.",
+  "controlsNote": "controls 의 src:'shape' 는 교과서 섬·호수·나라 면의 넓이 중심(type centroid)과 해안·국경 꺾인 점(type tip) ↔ Natural Earth 10m 같은 도형(scripts/atlas/shape_controls.py --unit u4 가 고름, 교과서 도형은 land_shapes.py). 경위선 눈금이 없거나 적은 지도의 기준점."
  },
  {
   "id": "p38-solar",
@@ -731,11 +4545,919 @@
   ],
   "scale": "0–3,000km",
   "graticuleLabels": false,
-  "controls": [],
+  "controls": [
+   {
+    "name": "land@114.21,0.86",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     525.47,
+     442.06
+    ],
+    "lon": 114.213,
+    "lat": 0.8646,
+    "ne": "land"
+   },
+   {
+    "name": "land@46.69,-19.44",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     459.2,
+     462.14
+    ],
+    "lon": 46.6921,
+    "lat": -19.4368,
+    "ne": "land"
+   },
+   {
+    "name": "land@146.60,-42.02",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     556.95,
+     486.55
+    ],
+    "lon": 146.5964,
+    "lat": -42.0241,
+    "ne": "land"
+   },
+   {
+    "name": "land@-78.97,21.62",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     689.89,
+     418.34
+    ],
+    "lon": -78.9655,
+    "lat": 21.6188,
+    "ne": "land"
+   },
+   {
+    "name": "land@120.97,23.76",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     531.8,
+     419.31
+    ],
+    "lon": 120.9652,
+    "lat": 23.7576,
+    "ne": "land"
+   },
+   {
+    "name": "land@-153.55,57.44",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     617.37,
+     376.79
+    ],
+    "lon": -153.5514,
+    "lat": 57.4408,
+    "ne": "land"
+   },
+   {
+    "name": "land@-155.52,19.60",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     612.22,
+     422.38
+    ],
+    "lon": -155.5177,
+    "lat": 19.6008,
+    "ne": "land"
+   },
+   {
+    "name": "land@118.57,9.74",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     530.15,
+     432.8
+    ],
+    "lon": 118.5734,
+    "lat": 9.7411,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@12.83,55.40",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     425.56,
+     381.16
+    ],
+    "lon": 12.8288,
+    "lat": 55.4001,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@151.55,58.86",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     559.52,
+     376.51
+    ],
+    "lon": 151.5496,
+    "lat": 58.8639,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@56.61,24.50",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     469.12,
+     417.52
+    ],
+    "lon": 56.6112,
+    "lat": 24.4963,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@43.54,11.18",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     456.52,
+     431.92
+    ],
+    "lon": 43.5357,
+    "lat": 11.1837,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@110.03,20.30",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     520.24,
+     421.84
+    ],
+    "lon": 110.0271,
+    "lat": 20.3008,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@122.57,37.14",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     532.98,
+     404.62
+    ],
+    "lon": 122.5743,
+    "lat": 37.1444,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@4.30,51.27",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     416.56,
+     388.0
+    ],
+    "lon": 4.2987,
+    "lat": 51.2696,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@118.97,37.28",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     528.88,
+     403.48
+    ],
+    "lon": 118.9724,
+    "lat": 37.2807,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@21.66,60.53",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     432.69,
+     376.28
+    ],
+    "lon": 21.6556,
+    "lat": 60.5259,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-4.55,48.62",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     408.97,
+     391.56
+    ],
+    "lon": -4.5548,
+    "lat": 48.6197,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@5.61,60.27",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     418.42,
+     376.36
+    ],
+    "lon": 5.6148,
+    "lat": 60.2722,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@99.97,13.26",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     511.6,
+     430.84
+    ],
+    "lon": 99.9671,
+    "lat": 13.259,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@136.83,53.80",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     546.88,
+     382.6
+    ],
+    "lon": 136.8317,
+    "lat": 53.7991,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@51.26,11.68",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     464.04,
+     431.48
+    ],
+    "lon": 51.2557,
+    "lat": 11.6817,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-5.75,36.08",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     407.56,
+     406.0
+    ],
+    "lon": -5.7537,
+    "lat": 36.0756,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@94.57,15.94",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     506.12,
+     427.92
+    ],
+    "lon": 94.5666,
+    "lat": 15.9355,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-0.52,45.01",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     412.24,
+     397.36
+    ],
+    "lon": -0.5164,
+    "lat": 45.0114,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@9.69,54.82",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     421.96,
+     384.04
+    ],
+    "lon": 9.693,
+    "lat": 54.818,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@127.51,39.41",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     538.24,
+     402.4
+    ],
+    "lon": 127.5076,
+    "lat": 39.4092,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@59.84,22.48",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     472.35,
+     420.8
+    ],
+    "lon": 59.8394,
+    "lat": 22.4753,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-9.22,43.16",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     404.73,
+     397.96
+    ],
+    "lon": -9.2176,
+    "lat": 43.1553,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@9.76,3.63",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     423.04,
+     439.84
+    ],
+    "lon": 9.7596,
+    "lat": 3.6262,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@104.76,8.62",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     516.62,
+     434.79
+    ],
+    "lon": 104.7593,
+    "lat": 8.6156,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@21.04,55.42",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     432.76,
+     383.68
+    ],
+    "lon": 21.0415,
+    "lat": 55.4161,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@105.63,18.91",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     517.36,
+     424.72
+    ],
+    "lon": 105.6348,
+    "lat": 18.9098,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@18.35,-34.18",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     431.0,
+     477.69
+    ],
+    "lon": 18.3543,
+    "lat": -34.1754,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@71.93,21.13",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     484.6,
+     422.56
+    ],
+    "lon": 71.9263,
+    "lat": 21.13,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@129.12,35.14",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     540.4,
+     406.65
+    ],
+    "lon": 129.1193,
+    "lat": 35.1356,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@35.47,-23.88",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     448.54,
+     466.96
+    ],
+    "lon": 35.4661,
+    "lat": -23.8801,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@77.11,8.29",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     488.26,
+     434.56
+    ],
+    "lon": 77.1104,
+    "lat": 8.2852,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@90.41,22.24",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     503.32,
+     421.48
+    ],
+    "lon": 90.408,
+    "lat": 22.2404,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@9.58,56.97",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     421.22,
+     379.35
+    ],
+    "lon": 9.5808,
+    "lat": 56.973,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@34.53,-19.62",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     447.88,
+     462.88
+    ],
+    "lon": 34.5304,
+    "lat": -19.6237,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@109.04,11.59",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     520.95,
+     431.18
+    ],
+    "lon": 109.0383,
+    "lat": 11.5877,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@8.80,-0.73",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     422.0,
+     443.72
+    ],
+    "lon": 8.8003,
+    "lat": -0.7337,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@121.71,29.54",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     533.56,
+     412.55
+    ],
+    "lon": 121.7109,
+    "lat": 29.5386,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@23.40,59.97",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     437.12,
+     375.76
+    ],
+    "lon": 23.3987,
+    "lat": 59.9743,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-66.79,47.99",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     699.88,
+     389.8
+    ],
+    "lon": -66.7864,
+    "lat": 47.9922,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-139.51,59.42",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     628.28,
+     376.31
+    ],
+    "lon": -139.5076,
+    "lat": 59.416,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-87.84,18.28",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     680.32,
+     421.64
+    ],
+    "lon": -87.8414,
+    "lat": 18.2777,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-60.97,45.30",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     707.19,
+     392.86
+    ],
+    "lon": -60.9706,
+    "lat": 45.3017,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-87.47,13.39",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     679.36,
+     427.24
+    ],
+    "lon": -87.4746,
+    "lat": 13.3931,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-66.08,58.34",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     702.11,
+     375.97
+    ],
+    "lon": -66.0752,
+    "lat": 58.3366,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-65.09,43.76",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     702.76,
+     393.76
+    ],
+    "lon": -65.087,
+    "lat": 43.7579,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-69.97,41.84",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     697.36,
+     397.36
+    ],
+    "lon": -69.972,
+    "lat": 41.8392,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-83.58,29.76",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     685.84,
+     411.4
+    ],
+    "lon": -83.5768,
+    "lat": 29.765,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-60.99,8.56",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     705.65,
+     432.3
+    ],
+    "lon": -60.9872,
+    "lat": 8.5649,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-78.65,52.06",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     687.31,
+     383.24
+    ],
+    "lon": -78.6497,
+    "lat": 52.0587,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-97.74,27.39",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     670.72,
+     415.0
+    ],
+    "lon": -97.7401,
+    "lat": 27.3934,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@140.42,-17.66",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     551.2,
+     460.0
+    ],
+    "lon": 140.4241,
+    "lat": -17.6606,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@136.80,-12.45",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     547.59,
+     455.66
+    ],
+    "lon": 136.8006,
+    "lat": -12.4479,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@128.28,-15.38",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     539.68,
+     457.48
+    ],
+    "lon": 128.2803,
+    "lat": -15.3836,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@115.01,-34.16",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     526.72,
+     478.36
+    ],
+    "lon": 115.0099,
+    "lat": -34.1632,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@142.15,-10.95",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     552.28,
+     452.8
+    ],
+    "lon": 142.1511,
+    "lat": -10.9506,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@139.27,-35.48",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     549.76,
+     479.8
+    ],
+    "lon": 139.2739,
+    "lat": -35.4821,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@119.28,5.34",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     532.13,
+     437.26
+    ],
+    "lon": 119.2781,
+    "lat": 5.3446,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@115.99,-3.58",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     526.8,
+     447.36
+    ],
+    "lon": 115.9895,
+    "lat": -3.5827,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@116.72,6.98",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     527.59,
+     436.13
+    ],
+    "lon": 116.7189,
+    "lat": 6.9754,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@110.24,-2.97",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     521.51,
+     446.23
+    ],
+    "lon": 110.2402,
+    "lat": -2.9731,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@141.38,41.37",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     551.56,
+     399.16
+    ],
+    "lon": 141.3822,
+    "lat": 41.3726,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@139.82,34.92",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     550.29,
+     407.71
+    ],
+    "lon": 139.825,
+    "lat": 34.9214,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@163.23,56.14",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     572.44,
+     378.64
+    ],
+    "lon": 163.2304,
+    "lat": 56.1418,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@49.25,-12.18",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     462.04,
+     455.01
+    ],
+    "lon": 49.2492,
+    "lat": -12.1803,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@45.09,-25.51",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     457.21,
+     468.62
+    ],
+    "lon": 45.0877,
+    "lat": -25.5082,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@124.86,0.96",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     535.66,
+     442.22
+    ],
+    "lon": 124.863,
+    "lat": 0.9551,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@120.42,0.81",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     530.94,
+     442.06
+    ],
+    "lon": 120.422,
+    "lat": 0.8118,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@122.08,-4.77",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     533.95,
+     448.52
+    ],
+    "lon": 122.0828,
+    "lat": -4.7702,
+    "ne": "land"
+   }
+  ],
+  "families": [
+   "miller",
+   "equirectangular",
+   "robinson",
+   "mercator"
+  ],
+  "_families": "태평양 중심 세계 지도 — 도법 후보를 원통·의원통 도법으로 좁힘(방위·원뿔 도법은 섬 씨앗 몇 개로 잘못 맞춰져 짝이 3개뿐이었다). 원통 도법의 중심 경도는 닮음 변환과 구별되지 않아 georef 가 이음선을 기준점 경도 빈틈 한가운데로 옮겨 정한다(seamCentred — 아프리카 서쪽 끝과 브라질 끝 사이).",
   "shapes": {
    "mode": "raster",
    "dpi": 200,
-   "seaWhite": 240,
+   "seaWhite": 200,
    "openPt": 0.5,
    "minAreaPt2": 0.3,
    "_why": "세계 래스터(globalsolaratlas) 조각 수십 장, 바다는 흰 바탕. 「0–3.0」 분류가 파랑이라 파랑 − 빨강 규칙(seaBMinusR)은 땅을 바다로 본다 → 세 값이 모두 seaWhite 이상인 흰 화소만 바다. 래스터에 그려진 적도선(옅은 파랑, 약 0.4pt)이 대륙을 잇지 않게 openPt 로 끊음.",
@@ -753,46 +5475,61 @@
       ]
      },
      {
-      "name": "스리랑카섬",
+      "name": "오스트레일리아",
       "c": [
-       485.2,
-       439.8
+       545.6,
+       466.5
       ],
       "at": [
-       80.7,
-       7.7
+       134.0,
+       -25.0
+      ]
+     },
+     {
+      "name": "보르네오섬",
+      "c": [
+       525.5,
+       442.1
+      ],
+      "at": [
+       114.0,
+       0.5
+      ]
+     },
+     {
+      "name": "혼슈",
+      "c": [
+       548.5,
+       404.2
+      ],
+      "at": [
+       138.5,
+       36.5
       ]
      },
      {
       "name": "뉴질랜드 남섬",
       "c": [
        582.2,
-       486.0
+       486.4
       ],
       "at": [
        170.5,
        -43.5
       ]
-     },
-     {
-      "name": "뉴칼레도니아섬",
-      "c": [
-       575.4,
-       463.7
-      ],
-      "at": [
-       165.5,
-       -21.3
-      ]
      }
     ]
-   }
+   },
+   "tips": true
   },
-  "notes": "태평양 중심 세계 지도(아프리카 왼쪽·아메리카 오른쪽), 적도선만. 위는 북아시아가 잘림, 아래 남극 없음. 범례 오른쪽 아래."
+  "notes": "태평양 중심 세계 지도(아프리카 왼쪽·아메리카 오른쪽), 적도선만. 위는 북아시아가 잘림, 아래 남극 없음. 범례 오른쪽 아래.",
+  "controlsNote": "controls 의 src:'shape' 는 교과서 섬·호수·나라 면의 넓이 중심(type centroid)과 해안·국경 꺾인 점(type tip) ↔ Natural Earth 10m 같은 도형(scripts/atlas/shape_controls.py --unit u4 가 고름, 교과서 도형은 land_shapes.py). 경위선 눈금이 없거나 적은 지도의 기준점."
  },
  {
   "id": "p39-afcfta",
   "page": 39,
+  "projectionFrom": "p34-africa",
+  "_projectionFrom": "34쪽 일반도와 같은 바탕 지도(정거 방위 중심 19.9°E·−0.4°)를 줄인 것(34·35·36·37쪽 큰 지도 넷이 따로 맞춰 모두 약 20°E·0° — 같은 바탕) — 자유 맞춤 중심 24.1°E·−0.2°, 짝 되풀이 수렴 안 함. 고정: rms 1.04pt(자유 0.93), 겹 나누기 km 중앙 32.5·90% 96.1(자유 44.2·111).",
   "kind": "afcfta",
   "title": "아프리카 대륙 자유 무역 지대(AfCFTA)",
   "bbox": [
@@ -809,7 +5546,332 @@
   ],
   "scale": "0–500km",
   "graticuleLabels": false,
-  "controls": [],
+  "controls": [
+   {
+    "name": "land@46.71,-19.32",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     191.99,
+     394.12
+    ],
+    "lon": 46.7069,
+    "lat": -19.3177,
+    "ne": "land"
+   },
+   {
+    "name": "Lake Victoria@32.90,-1.10",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     161.4,
+     352.89
+    ],
+    "lon": 32.9024,
+    "lat": -1.1015,
+    "ne": "Lake Victoria"
+   },
+   {
+    "name": "Lake Tanganyika@29.87,-6.21",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     154.58,
+     363.88
+    ],
+    "lon": 29.8747,
+    "lat": -6.2085,
+    "ne": "Lake Tanganyika"
+   },
+   {
+    "name": "Lake Malawi@34.51,-11.96",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     164.97,
+     376.99
+    ],
+    "lon": 34.5087,
+    "lat": -11.9613,
+    "ne": "Lake Malawi"
+   },
+   {
+    "name": "Lake Turkana@36.18,3.58",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     168.54,
+     342.44
+    ],
+    "lon": 36.1812,
+    "lat": 3.5839,
+    "ne": "Lake Turkana"
+   },
+   {
+    "name": "Lake Albert@30.92,1.64",
+    "type": "centroid",
+    "src": "shape",
+    "xy": [
+     157.08,
+     346.82
+    ],
+    "lon": 30.9168,
+    "lat": 1.6442,
+    "ne": "Lake Albert"
+   },
+   {
+    "name": "tip:land@-16.65,12.57",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     51.74,
+     321.4
+    ],
+    "lon": -16.6454,
+    "lat": 12.5707,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@40.57,-10.60",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     178.21,
+     373.82
+    ],
+    "lon": 40.5681,
+    "lat": -10.5998,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@51.41,10.43",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     202.09,
+     324.3
+    ],
+    "lon": 51.411,
+    "lat": 10.4298,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@11.01,37.08",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     113.31,
+     265.15
+    ],
+    "lon": 11.0127,
+    "lat": 37.0848,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@9.30,-1.44",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     108.69,
+     353.48
+    ],
+    "lon": 9.2988,
+    "lat": -1.4441,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@10.16,33.84",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     110.96,
+     271.85
+    ],
+    "lon": 10.1631,
+    "lat": 33.8362,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-16.53,14.09",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     49.9,
+     317.71
+    ],
+    "lon": -16.5293,
+    "lat": 14.0852,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@13.18,-5.86",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     117.61,
+     363.58
+    ],
+    "lon": 13.1838,
+    "lat": -5.8565,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@42.60,11.47",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     184.61,
+     323.09
+    ],
+    "lon": 42.6038,
+    "lat": 11.4678,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@19.62,30.42",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     132.03,
+     281.19
+    ],
+    "lon": 19.6164,
+    "lat": 30.4214,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@6.62,4.33",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     102.55,
+     341.05
+    ],
+    "lon": 6.6185,
+    "lat": 4.3308,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@8.56,4.81",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     107.72,
+     339.84
+    ],
+    "lon": 8.5581,
+    "lat": 4.8144,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@34.53,-19.62",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     165.35,
+     394.73
+    ],
+    "lon": 34.5304,
+    "lat": -19.6237,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@32.50,-25.95",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     161.24,
+     408.57
+    ],
+    "lon": 32.5002,
+    "lat": -25.9548,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@20.05,32.15",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     133.21,
+     276.78
+    ],
+    "lon": 20.048,
+    "lat": 32.1461,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@33.85,31.16",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     159.24,
+     278.44
+    ],
+    "lon": 33.8543,
+    "lat": 31.1635,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-12.40,7.40",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     59.61,
+     332.38
+    ],
+    "lon": -12.4022,
+    "lat": 7.4046,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-14.69,11.06",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     54.64,
+     325.67
+    ],
+    "lon": -14.6852,
+    "lat": 11.0637,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@49.16,-12.20",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     197.68,
+     377.44
+    ],
+    "lon": 49.1636,
+    "lat": -12.2009,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@50.43,-15.60",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     200.38,
+     384.89
+    ],
+    "lon": 50.4299,
+    "lat": -15.6003,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@44.44,-16.27",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     187.09,
+     386.78
+    ],
+    "lon": 44.4385,
+    "lat": -16.2657,
+    "ne": "land"
+   }
+  ],
   "shapes": {
    "mode": "vector",
    "land": [
@@ -823,7 +5885,8 @@
    ],
    "minAreaPt2": 0.3,
    "init": {
-    "seeds": [
+    "fromMap": "p34-africa",
+    "pts": [
      {
       "name": "마다가스카르섬",
       "c": [
@@ -861,11 +5924,14 @@
    },
    "tips": true
   },
-  "notes": "아프리카만 그린 작은 지도 — 나라 3분류(비준 완료·협정 서명·협정 서명 전), 호수 하늘색. 범례 왼쪽 아래."
+  "notes": "아프리카만 그린 작은 지도 — 나라 3분류(비준 완료·협정 서명·협정 서명 전), 호수 하늘색. 범례 왼쪽 아래.",
+  "controlsNote": "controls 의 src:'shape' 는 교과서 섬·호수·나라 면의 넓이 중심(type centroid)과 해안·국경 꺾인 점(type tip) ↔ Natural Earth 10m 같은 도형(scripts/atlas/shape_controls.py --unit u4 가 고름, 교과서 도형은 land_shapes.py). 경위선 눈금이 없거나 적은 지도의 기준점."
  },
  {
   "id": "p39-desert",
   "page": 39,
+  "projectionFrom": "p34-africa",
+  "_projectionFrom": "34쪽 일반도와 같은 바탕 지도(정거 방위 중심 19.9°E·−0.4°)를 줄인 것(34·35·36·37쪽 큰 지도 넷이 따로 맞춰 모두 약 20°E·0° — 같은 바탕) — 잘린 틀이라 섬이 없고 해안 꺾인 점뿐 — 자유 맞춤 중심 21.4°E·−8.7°, 짝 되풀이 수렴 안 함. 고정: rms 1.12pt(자유 1.01), 겹 나누기 km 중앙 58.7·90% 73.3(자유 57.3·79.0).",
   "kind": "desertification",
   "title": "사막화 방지를 위한 아프리카의 노력",
   "bbox": [
@@ -882,7 +5948,188 @@
   ],
   "scale": "0–500km",
   "graticuleLabels": false,
-  "controls": [],
+  "controls": [
+   {
+    "name": "tip:land@-16.37,14.16",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     57.05,
+     553.25
+    ],
+    "lon": -16.3726,
+    "lat": 14.1624,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@42.56,11.57",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     227.01,
+     558.97
+    ],
+    "lon": 42.5635,
+    "lat": 11.5672,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@51.05,11.88",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     252.25,
+     558.01
+    ],
+    "lon": 51.0488,
+    "lat": 11.8786,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@10.27,36.85",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     136.0,
+     485.97
+    ],
+    "lon": 10.2702,
+    "lat": 36.8485,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-8.98,37.07",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     88.15,
+     483.7
+    ],
+    "lon": -8.9808,
+    "lat": 37.0693,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@39.72,15.09",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     219.21,
+     547.33
+    ],
+    "lon": 39.7156,
+    "lat": 15.0941,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-17.54,14.76",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     52.99,
+     549.39
+    ],
+    "lon": -17.536,
+    "lat": 14.7574,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-15.17,11.66",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     59.2,
+     559.81
+    ],
+    "lon": -15.1719,
+    "lat": 11.6596,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@20.05,32.15",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     162.31,
+     500.38
+    ],
+    "lon": 20.048,
+    "lat": 32.1461,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@5.64,5.54",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     119.97,
+     578.97
+    ],
+    "lon": 5.6399,
+    "lat": 5.5402,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@30.96,31.58",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     189.66,
+     500.38
+    ],
+    "lon": 30.9588,
+    "lat": 31.5781,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-17.09,20.91",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     55.91,
+     531.6
+    ],
+    "lon": -17.0904,
+    "lat": 20.914,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@35.72,23.99",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     206.68,
+     523.29
+    ],
+    "lon": 35.7175,
+    "lat": 23.9934,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@-13.23,8.65",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     65.34,
+     567.96
+    ],
+    "lon": -13.2272,
+    "lat": 8.6496,
+    "ne": "land"
+   },
+   {
+    "name": "tip:land@44.39,10.40",
+    "type": "tip",
+    "src": "shape",
+    "xy": [
+     232.36,
+     562.12
+    ],
+    "lon": 44.3892,
+    "lat": 10.3972,
+    "ne": "land"
+   }
+  ],
   "shapes": {
    "mode": "vector",
    "land": [
@@ -924,6 +6171,7 @@
     ]
    }
   },
-  "notes": "잘린 틀(사하라~사헬, 서쪽 대서양 해안·북쪽 지중해 해안·동쪽 아프리카의 뿔). 사막화 위험 5단계 + 건조 지역 + 사하라 사막 점무늬 + 사헬 지역 파란 빗금·경계 굵은 선 2줄, 흰 점선 국경. 범례(건조 지역·사하라 사막·사헬 지역)는 오른쪽 위, 위험 단계 범례와 「그레이트 그린 월」 원 크기 그래프는 틀 밖 아래."
+  "notes": "잘린 틀(사하라~사헬, 서쪽 대서양 해안·북쪽 지중해 해안·동쪽 아프리카의 뿔). 사막화 위험 5단계 + 건조 지역 + 사하라 사막 점무늬 + 사헬 지역 파란 빗금·경계 굵은 선 2줄, 흰 점선 국경. 범례(건조 지역·사하라 사막·사헬 지역)는 오른쪽 위, 위험 단계 범례와 「그레이트 그린 월」 원 크기 그래프는 틀 밖 아래.",
+  "controlsNote": "controls 의 src:'shape' 는 교과서 섬·호수·나라 면의 넓이 중심(type centroid)과 해안·국경 꺾인 점(type tip) ↔ Natural Earth 10m 같은 도형(scripts/atlas/shape_controls.py --unit u4 가 고름, 교과서 도형은 land_shapes.py). 경위선 눈금이 없거나 적은 지도의 기준점."
  }
 ]

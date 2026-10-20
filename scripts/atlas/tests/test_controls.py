@@ -113,11 +113,11 @@ class Controls(unittest.TestCase):
         self.assertEqual(ev.controls('p22-kashmir'), [])
 
 
-def controls_u3(map_id):
-    """단원 u3(ATLAS_UNIT=u3) 의 extract_vectors.controls(map_id) — 이 모듈은 u2 로 import 되므로 하위 프로세스로."""
+def controls_u3(map_id, unit_id='u3'):
+    """단원 u3(ATLAS_UNIT=u3, unit_id 로 다른 단원) 의 extract_vectors.controls(map_id) — 이 모듈은 u2 로 import 되므로 하위 프로세스로."""
     here = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
     env = {k: v for k, v in os.environ.items() if k not in ('ATLAS_UNIT', 'ATLAS_UNIT_CONFIG')}
-    env['ATLAS_UNIT'] = 'u3'
+    env['ATLAS_UNIT'] = unit_id
     code = (f'import sys, json; sys.path.insert(0, {here!r}); import extract_vectors as ev; '
             f'sys.stdout.buffer.write(json.dumps(ev.controls({map_id!r})).encode("utf-8"))')
     r = subprocess.run([sys.executable, '-I', '-c', code], env=env, capture_output=True)
@@ -142,6 +142,30 @@ class ControlsU3(unittest.TestCase):
         grid = [c for c in self.p26 if c['src'] == 'grid']
         self.assertGreaterEqual(len(grid), 20)          # 눈금 글자 21개 → 경선 8 × 위선 4 중 지도 안 교차점
         self.assertEqual({c['src'] for c in self.p26}, {'grid', 'city'})
+        for c in grid:
+            self.assertEqual(c['lon'] % 10, 0); self.assertEqual(c['lat'] % 10, 0)
+
+
+@NEED_PDF
+class ControlsU4(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.p34 = controls_u3('p34-africa', 'u4')
+
+    def test_p34_controls(self):
+        # 34쪽 아프리카 일반도: 경위선 교차점 + 도시 기호 기준점, 모두 경위도 범위·지도 둘레(남유럽·서아시아) 안
+        self.assertGreaterEqual(len(self.p34), 12)
+        for c in self.p34:
+            self.assertTrue(-180 <= c['lon'] <= 180 and -90 <= c['lat'] <= 90)
+            self.assertTrue(-37 <= c['lon'] <= 67 and -39 <= c['lat'] <= 42, (c['lon'], c['lat']))
+            self.assertEqual(len(c['xy']), 2)
+
+    def test_p34_grid_on_10deg_lattice(self):
+        # 눈금 글자 32개 → 경선 10 × 위선 6(적도는 가는 사각 채움 're' 라 경위선 후보가 아님 — 「0˚」 위선 글자 2개는 버림)
+        grid = [c for c in self.p34 if c['src'] == 'grid']
+        self.assertGreaterEqual(len(grid), 40)
+        self.assertEqual({c['src'] for c in self.p34}, {'grid', 'city'})
+        self.assertGreaterEqual(sum(c['src'] == 'city' for c in self.p34), 10)
         for c in grid:
             self.assertEqual(c['lon'] % 10, 0); self.assertEqual(c['lat'] % 10, 0)
 

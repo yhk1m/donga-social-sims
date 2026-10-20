@@ -90,6 +90,31 @@ class MapsU4(unittest.TestCase):
                     self.assertNotEqual(ref, m['id'])
                     self.assertLess(ids.index(ref), ids.index(m['id']))
 
+    def test_projection_from_has_reason(self):
+        # projectionFrom(본 지도 도법·매개변수 고정)은 까닭(_projectionFrom)을 적는다(유럽 U3-4 아이슬란드 결정)
+        for m in self.maps:
+            if m.get('projectionFrom'):
+                with self.subTest(id=m['id']): self.assertTrue(m.get('_projectionFrom'))
+
+    def test_control_sources(self):
+        # 일반도(34쪽)만 도시 기호 기준점(src:'city'), shapes 가 있는 지도는 섬·호수·나라 중심·꺾인 점(src:'shape') — 기준점이 있으면
+        for m in self.maps:
+            cs = m.get('controls', [])
+            if not cs: continue
+            city = [c for c in cs if c.get('src') == 'city']; sh = [c for c in cs if c.get('src') == 'shape']
+            with self.subTest(id=m['id']):
+                if m['id'] == 'p34-africa':
+                    self.assertGreaterEqual(len(city), 10)
+                    for c in city: self.assertTrue(c['ne'] and c['name'])
+                else:
+                    self.assertEqual(city, [])
+                if 'shapes' in m:
+                    self.assertGreaterEqual(len(sh), 10)
+                    for c in sh: self.assertIn(c['type'], ('centroid', 'tip')); self.assertTrue(c['ne'])
+                else:
+                    self.assertEqual(sh, [])
+                self.assertIn('Natural Earth', m.get('controlsNote', ''))
+
     def test_controls_shape(self):
         for m in self.maps:
             for c in m.get('controls', []):
