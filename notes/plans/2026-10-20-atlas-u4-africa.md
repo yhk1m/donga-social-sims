@@ -131,7 +131,7 @@ scripts/atlas/tests/test_maps_u4.py · test_text_u4.py                          
 
 까닭: u3 이 공개되었고, 이 단원은 엔진(줄무늬·점무늬·고리 기호·고리 그래프·작은 나라)과 공유 파이프라인(country_class·zones·charts_read·build_layers·build_basemap·compare)을 고친다. 지금 회귀 도구는 u2 뿐이라 u3 을 지킬 수단이 없다.
 
-- [ ] **Step 1: 실패하는 테스트** (`tests/atlas/regressUnit.test.mjs`)
+- [x] **Step 1: 실패하는 테스트** (`tests/atlas/regressUnit.test.mjs`)
 ```js
 import test from 'node:test'; import assert from 'node:assert/strict';
 import { unitSpec, pagePrefixes } from '../../scripts/atlas/regress_unit.mjs';
@@ -157,11 +157,11 @@ test('u3 명세: 단원 작업 폴더·공개본·26~33쪽만', () => {
 });
 test('모르는 단원·쪽 없는 단원은 오류', () => assert.throws(() => unitSpec('u9', W), /u9/));
 ```
-- [ ] **Step 2:** `npm test`로 실패 확인.
-- [ ] **Step 3: 구현** — `regress_u2.mjs` 본문을 `regress_unit.mjs`로 옮기고 단원 의존 값만 `unitSpec(id, env)`로 뺀다: `repoDirs`(`sims/<sim>/data`·`content/atlas/<id>`·`docs/assets/atlas/<id>` + u2 는 `docs/assets/atlas/common`, 공개된 단원은 `docs/<sim>`), `embed`, `prefixes`(units.json `pages` → `vec/<접두>-*.json`·`geo/<접두>*.fit.json`·`text/places-<접두>-*.json`), `workExtra`(u2 = 옛 목록 그대로, 새 단원 = `units/<id>/text/*-labels.json`·`units/<id>/tables/charts-<id>.json`·`units/<id>/geo/city-holdout.json`), `base`(`units/<id>/baseline`), `shots`·`compare`(u2 = `shots/e2`·`compare-u2.html`, 그 밖 = `UNIT.workFile('shots/compare')`·`UNIT.workFile('compare.html')`). 한 단원 값이 설정에 없으면 오류(조용히 넘어가지 않음). `import.meta` 가 진입점일 때만 명령줄을 돈다(테스트에서 import 가능). `regress_u2.mjs` = `regress_unit.mjs --unit u2 …`를 그대로 부르는 껍데기(머리 주석에 옮긴 까닭).
-- [ ] **Step 4: u2 동작 그대로 확인** — `node scripts/atlas/regress_u2.mjs --check` → 지금과 같은 출력(도장만 다름 2 = coloring.json·basemap.json, 캡처 41장 화소 차 0, 대조표 0/9/134/24). 기준선 파일은 건드리지 않는다.
-- [ ] **Step 5: u3 기준선** — `node scripts/atlas/compare_shots.mjs --unit u3` → `node scripts/atlas/compare.mjs --unit u3`(결과 0/26/118/42 확인) → `npm run embed -- atlas-u3-europe`(크기 1,461,440 B 근처 — 다르면 멈추고 까닭) → `node scripts/atlas/regress_unit.mjs --unit u3 --baseline` → 곧바로 `--check`로 「다른 파일 0, 화소 차 0」(도구 자체 검사). 해시 항목 수·캡처 31장·대조표 수·조각 크기를 「실행 중 결정」에.
-- [ ] **Step 6:** `npm test` 수를 적고 커밋(`scripts/atlas/regress_unit.mjs scripts/atlas/regress_u2.mjs tests/atlas/regressUnit.test.mjs`).
+- [x] **Step 2:** `npm test`로 실패 확인.
+- [x] **Step 3: 구현** — `regress_u2.mjs` 본문을 `regress_unit.mjs`로 옮기고 단원 의존 값만 `unitSpec(id, env)`로 뺀다: `repoDirs`(`sims/<sim>/data`·`content/atlas/<id>`·`docs/assets/atlas/<id>` + u2 는 `docs/assets/atlas/common`, 공개된 단원은 `docs/<sim>`), `embed`, `prefixes`(units.json `pages` → `vec/<접두>-*.json`·`geo/<접두>*.fit.json`·`text/places-<접두>-*.json`), `workExtra`(u2 = 옛 목록 그대로, 새 단원 = `units/<id>/text/*-labels.json`·`units/<id>/tables/charts-<id>.json`·`units/<id>/geo/city-holdout.json`), `base`(`units/<id>/baseline`), `shots`·`compare`(u2 = `shots/e2`·`compare-u2.html`, 그 밖 = `UNIT.workFile('shots/compare')`·`UNIT.workFile('compare.html')`). 한 단원 값이 설정에 없으면 오류(조용히 넘어가지 않음). `import.meta` 가 진입점일 때만 명령줄을 돈다(테스트에서 import 가능). `regress_u2.mjs` = `regress_unit.mjs --unit u2 …`를 그대로 부르는 껍데기(머리 주석에 옮긴 까닭).
+- [x] **Step 4: u2 동작 그대로 확인** — `node scripts/atlas/regress_u2.mjs --check` → 지금과 같은 출력(도장만 다름 2 = coloring.json·basemap.json, 캡처 41장 화소 차 0, 대조표 0/9/134/24). 기준선 파일은 건드리지 않는다.
+- [x] **Step 5: u3 기준선** — `node scripts/atlas/compare_shots.mjs --unit u3` → `node scripts/atlas/compare.mjs --unit u3`(결과 0/26/118/42 확인) → `npm run embed -- atlas-u3-europe`(크기 1,461,440 B 근처 — 다르면 멈추고 까닭) → `node scripts/atlas/regress_unit.mjs --unit u3 --baseline` → 곧바로 `--check`로 「다른 파일 0, 화소 차 0」(도구 자체 검사). 해시 항목 수·캡처 31장·대조표 수·조각 크기를 「실행 중 결정」에.
+- [x] **Step 6:** `npm test` 수를 적고 커밋(`scripts/atlas/regress_unit.mjs scripts/atlas/regress_u2.mjs tests/atlas/regressUnit.test.mjs`).
 
 ---
 
@@ -485,3 +485,10 @@ test('태양광 묶음은 태평양 중심 지도', () => assert.ok(by.potential
 
 ## 실행 중 결정
 
+- (U4-G0, 2026-10-20) 회귀 도구 단원 일반화 + u3 기준선 — `scripts/atlas/regress_unit.mjs --unit uN --baseline|--check`, `regress_u2.mjs` 는 `main(['--unit','u2',…])` 를 부르는 껍데기(옛 명령·출력 그대로)
+  - 단원 의존 값은 `unitSpec(id, env)` 한 곳: 저장소 `sims/<sim>/data`·`content/atlas/<id>`·`docs/assets/atlas/<id>`·`docs/assets/atlas/common` + 공개된 단원(`docs/versions.json` 에 sim 이 있음)은 공개본 `docs/<sim>`, 조각 `embed/<sim>.html`; 작업 폴더 = 단원 표 `pages` → 쪽 접두(`vec/<접두>-*.json`·`geo/<접두>*.fit.json`·`text/places-<접두>-*.json`) + 단원 설정 `content.labels`·`content.charts`·`charts.out.climate`·`places.index.out`(작업 폴더 기준 — 하나라도 없으면 오류) + u2 밖 단원은 단원 작업 폴더 `geo/city-holdout.json`; 캡처·대조표 자리는 대조표 설정 `<id>.compare.json` 의 `shotsDir`·`out`(없으면 `shots/compare`·`compare.html`, 단원 작업 폴더 기준 — compare_shots·compare.mjs 와 같은 규칙); 기준선 `$ATLAS_WORK/units/<id>/baseline/`. 비교 규칙(도장만 다름은 정당·조각 크기 ±1%·화면 지명 수 흔들림은 참고)은 옛 그대로.
+  - **판단 — u2 는 옛 목록 그대로**: u2 는 공개본 `docs/atlas-u2-asia`·`geo/city-holdout.json` 을 넣지 않는다(G0 기준선에 없는 키라 넣으면 「새로 생김」 실패 — 기준선을 다시 찍지 않는다는 계획을 따름). u2 설정에서 끌어낸 작업 산출물 4개가 옛 손 목록(p17-labels·charts-u2·climate-world·index)과 차례까지 같아 u2 만의 따로 된 목록은 두지 않았다. 쪽 무늬도 옛 정규식과 같은 파일을 고름(시험).
+  - **판단 — u3 도 common 을 지킴**: 계획 글은 「u2 는 common」이었으나 common(엔진 공유 래스터 natural·relief·tint-4096 3개 — src/atlas/natural·relief·tint.js 가 모든 단원에서 씀)은 u3 조각도 쓰므로 u3 에도 넣었다(공유 자산이 바뀌면 두 단원 모두 잡힘).
+  - u2 확인: 옮기기 전 `regress_u2.mjs --check` 출력과 옮긴 뒤 `regress_u2.mjs --check`·`regress_unit.mjs --unit u2 --check` 출력이 글자까지 같음(diff 0) — 해시 163개 중 도장만 다름 2(coloring.json·basemap.json), 캡처 41장 화소 차 0(화면 지명 수만 heritage 3장면 100→101, 참고), 대조표 0/9/134/24 수·HTML 같음, 조각 2,058.1 KB(+0.790%) — 회귀 없음. u2 기준선 파일은 건드리지 않음.
+  - u3 기준선: `compare_shots --unit u3`(31장) → `compare --unit u3`(다름 0 · 알려진 차이 26 · 같음 118 · 참고 42) → `npm run embed -- atlas-u3-europe`(1,461,440 B = 1,427.2 KB, 유럽 공개 때와 바이트 수 같음) → `--unit u3 --baseline`: 해시 194개(저장소 134 = sims/atlas-u3-europe/data 16 · content/atlas/u3 5 · docs/assets/atlas/u3 106 · common 3 · docs/atlas-u3-europe 3 · 조각 1; 작업 폴더 60 = vec 39 · fit 15 · places-p26 1 · units/u3 의 p27-labels·charts-u3·climate-world·index·city-holdout 5). 곧바로 `--check` 다름 0·화소 차 0. **캡처를 한 번 더 찍고 compare 다시 → `--check`도 다름 0·화소 차 0·화면 값 같음**(u3 캡처가 결정적임 — fixedNow 덕, u2 heritage 지명 수 흔들림 같은 것도 없음).
+  - 시험 `tests/atlas/regressUnit.test.mjs` 5개(쪽 접두·u2 명세 옛 값·u2 쪽 무늬 = 옛 정규식·u3 명세·모르는 단원/쪽 없음/설정 없음 오류). npm test: **Python 279 · Node 464**(459 + 5).
