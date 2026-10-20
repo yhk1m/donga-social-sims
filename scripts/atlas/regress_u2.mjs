@@ -5,7 +5,8 @@
 //   기준선: $ATLAS_WORK/units/u2/baseline/ (저장소 밖) — hashes.json · shots/<장면>.png · shots/manifest.json · compare.json · compare-u2.html
 //           · files/<repo|work>/<경로> (JSON·JS 원본 — 다를 때 내용 비교)
 //   먼저 돌릴 것: node scripts/atlas/compare_shots.mjs → node scripts/atlas/compare.mjs (이 스크립트는 그 결과를 읽기만 한다)
-//   - 해시: 저장소 sims/atlas-u2-asia/data/** · content/atlas/u2/** · docs/assets/atlas/** · embed/atlas-u2-asia.html,
+//   - 해시: 저장소 sims/atlas-u2-asia/data/** · content/atlas/u2/** · docs/assets/atlas/u2/** · docs/assets/atlas/common/** · embed/atlas-u2-asia.html
+//           (docs/assets/atlas 전체가 아니라 u2·common 만 — 다른 단원 사진·쪽(u3/ …)이 「새로 생김」 회귀로 잡히지 않게. 키는 전과 같은 repo:docs/assets/atlas/… 라 기준선 그대로 맞음),
 //           작업 폴더 vec/p16~p25-*.json · geo/p16~p25*.fit.json · text/places-p16~p25-*.json(다른 단원 지명 파일은 뺌) · text/p17-labels.json · tables/charts-u2.json·climate-world.json·index.json
 //     JSON 이 다르면 도장(inputsHash — 입력 스크립트 내용 해시)만 다른지도 따로 알린다(스크립트를 고치면 도장은 정당하게 바뀜).
 //     조각(embed)은 코드 위치가 바뀌면 달라지는 게 정당해(2단계 설계 §4.2) 해시 차이를 실패로 세지 않고 크기 차(±1%)만 본다.
@@ -45,7 +46,7 @@ const flat = (dir, re) => (existsSync(join(WORK, dir)) ? readdirSync(join(WORK, 
 /** 비교할 파일 목록: 'repo:경로' | 'work:경로' → 절대 경로. */
 function fileList() {
   const files = {};
-  for (const d of ['sims/atlas-u2-asia/data', 'content/atlas/u2', 'docs/assets/atlas']) for (const f of walk(join(ROOT, d))) files[`repo:${d}/${f}`] = join(ROOT, d, f);
+  for (const d of ['sims/atlas-u2-asia/data', 'content/atlas/u2', 'docs/assets/atlas/u2', 'docs/assets/atlas/common']) for (const f of walk(join(ROOT, d))) files[`repo:${d}/${f}`] = join(ROOT, d, f);
   if (existsSync(join(ROOT, EMBED))) files[`repo:${EMBED}`] = join(ROOT, EMBED);
   const work = [
     ...flat('vec', /^p(1[6-9]|2[0-5])-.*\.json$/),
