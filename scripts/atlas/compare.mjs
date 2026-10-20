@@ -20,7 +20,7 @@ const WORK = process.env.ATLAS_WORK || 'C:/Users/Public/atlas-work';
 const UNIT = resolveUnit();
 const CMP_FILE = UNIT.configPath.replace(/\.json$/, '.compare.json');
 const CMP = existsSync(CMP_FILE) ? JSON.parse(readFileSync(CMP_FILE, 'utf8')) : {};
-const CHECKS = { insetLayers: [], noScreenSymbols: [], centerChecks: [], mainMap: {}, ...CMP.checks };
+const CHECKS = { insetLayers: [], noScreenSymbols: [], centerChecks: [], mainMap: {}, known: [], teacher: [], ...CMP.checks };
 const NOTES = {
   recolored: '웹 바탕 위에서 너무 옅어 명도만 낮춤(설정 legendColors)', noVecLegend: '추출 산출물 없음 — 범례는 지면 범례 상자 글과 대조',
   mapLabelToLegend: '교과서의 지도 위 이름을 범례로', movedPlaces: '지면 위치에서 옮긴 지명(설정 places.relocate)',
@@ -117,7 +117,8 @@ function mapChecks(mapId, refs, shot, topicId) {
   for (const r of refs) {
     const L = layerFile(r.ref);
     const isOverlay = r.type === 'image';
-    const legend = isOverlay ? L.legend : L.properties.legend;
+    const cc = !isOverlay && L.type === 'countryClass'; // 나라 단위 분류(2단계 U3-3a) — 범례·분류가 properties 밖
+    const legend = isOverlay || cc ? L.legend : L.properties.legend;
     const vec = vecOf(r.ref.replace(/^(layer|overlay)-/, ''));
     const tag = refs.length > 1 ? `[${r.ref.replace(/^(layer|overlay)-/, '')}] ` : '';
     if (vec) {
@@ -161,6 +162,19 @@ function mapChecks(mapId, refs, shot, topicId) {
       out.push(check(`${tag}범례 글자 ↔ 지면 범례`, '범례 상자 글', absent.length ? `지면에 없는 글자: ${list(absent)}` : '모두 지면에 있음', absent.length ? DIFF : OK,
         absent.length ? `지면 범례 상자: 「${short(TB[page]?.legend?.[mapId], 140)}」` : ''));
       if (onMap.length) out.push(check(`${tag}지도 위 글자 → 범례`, '지도 위에 쓴 이름', `범례 항목으로: ${list(onMap)}`, KNOWN, NOTES.mapLabelToLegend));
+    }
+    if (cc) {
+      const per = {};
+      for (const v of Object.values(L.classes || {})) for (const k of [v].flat()) per[k] = (per[k] || 0) + 1;
+      const name = (k) => legend.find((e) => e.cls === k)?.label || k;
+      out.push(check(`${tag}나라 단위 분류`, '지면 색 표본(나라마다)', `${Object.keys(L.classes || {}).length}개 나라 — ${legend.filter((e) => per[e.cls]).map((e) => `${e.label} ${per[e.cls]}`).join(', ')}`, INFO,
+        '나라마다 안쪽 표본점의 지면 색을 범례색과 대조(다수결)'));
+      const fmt = (v) => (v == null ? '없음' : [v].flat().map(name).join('+'));
+      const ovs = L.overrides || [];
+      const changed = ovs.filter((o) => JSON.stringify(o.was ?? null) !== JSON.stringify(o.cls ?? null));
+      if (changed.length) out.push(check(`${tag}분류를 고친 나라`, `표본 분류 ${changed.length}`, list(changed.map((o) => `${o.iso} ${fmt(o.was)}→${fmt(o.cls)}`), 20), KNOWN, '설정 countryOverrides(까닭은 항목마다 — 교사 확인 항목 참고)'));
+      const confirmed = ovs.length - changed.length;
+      if (confirmed) out.push(check(`${tag}분류를 확인한 나라`, `${confirmed}개`, list(ovs.filter((o) => !changed.includes(o)).map((o) => `${o.iso} ${fmt(o.cls)}`), 20), INFO, '작은 나라·10a 에만 있는 나라를 확대해 하나씩 봄(값은 표본과 같음)'));
     }
     if (r.legendTitle) {
       const c = coverage(r.legendTitle, page), ov = OVERRIDES[`${topicId}.layers.${r.ref}.legendTitle`];
@@ -301,6 +315,26 @@ for (const t of topics) {
   }
 }
 
+// 단원 설정 checks.known: 자동 확인의 「다름」 중 결정 기록에 까닭이 있는 것 → 「알려진 차이」. 주제·항목 이름에 더해 교과서 값(tb)·
+// 웹 글 조각(webIncludes)이 맞을 때만 바꾼다(값이 달라지면 다시 「다름」으로 보이게).
+for (const k of CHECKS.known) {
+  const hits = rows.filter((r) => r.topic.id === k.topic && (k.map == null || r.mapId === k.map)).flatMap((r) => r.checks)
+    .filter((c) => c.status === DIFF && c.item === k.item && (k.tb == null || String(c.tb) === String(k.tb)) && (k.web == null || String(c.web) === String(k.web)) && (k.webIncludes == null || String(c.web).includes(k.webIncludes)));
+  if (!hits.length) console.log(`  (알림) checks.known 이 맞는 「다름」 없음: ${k.topic} / ${k.item}`);
+  for (const c of hits) { c.status = KNOWN; c.note = [c.note, k.note].filter(Boolean).join(' · '); }
+}
+// 단원 설정 checks.teacher: 교사가 확인할 결정(결정 기록의 「교사 확인 항목」) — 해당 행(map 이 있으면 그 지도 행, 없으면 주제 확인 행)에
+// 「알려진 차이」·「참고」 줄로 넣고, 머리에 쪽별 목록을 둔다.
+const teacher = [];
+for (const it of CHECKS.teacher) {
+  const row = rows.find((r) => r.topic.id === it.topic && (it.map ? r.mapId === it.map && r.kind === 'map' : r.kind === 'topic'));
+  if (!row) throw new Error(`checks.teacher: 행 없음 ${it.topic}${it.map ? ` / ${it.map}` : ''} — ${it.item}`);
+  const c = check(`교사 확인 · ${it.item}`, it.tb ?? '', it.web ?? '', it.status === 'info' ? INFO : KNOWN, it.note || '');
+  c.teacher = true;
+  row.checks.push(c);
+  teacher.push({ ...it, row });
+}
+
 // ---------- HTML ----------
 const fileUrl = (p) => pathToFileURL(p).href;
 const pageImg = (page) => fileUrl(join(ROOT, `${cfg.content.pageDir}/p${String(page).padStart(3, '0')}.jpg`));
@@ -380,7 +414,11 @@ body.simple .grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}body.simple 
 <div class="tools"><button type="button" id="mode" aria-pressed="false">간단히 보기(교과서 | 웹 두 칸)</button></div>
 </header><main>
 <nav class="toc">${topics.map((t) => `<a href="#t-${t.id}">${esc(t.title)}</a>`).join('')}</nav>
-${diffs.length ? `<div class="diffs"><strong>다름 ${diffs.length}건</strong><ol>${diffs.map(({ r, c }) => `<li><a href="#t-${r.topic.id}">${esc(r.topic.title)}</a>${r.title ? ` · ${esc(r.title)}` : ''} — ${esc(c.item)}: 교과서 ${esc(c.tb)} / 웹 ${esc(c.web)}</li>`).join('')}</ol></div>` : ''}
+${teacher.length ? `<style>/* 교사 확인 목록(checks.teacher 가 있을 때만 — u2 대조표 HTML 은 그대로) */
+.teacher{background:var(--card);border:1px solid var(--line);border-left:4px solid #e9c46a;border-radius:8px;padding:10px 14px;margin:8px 0 16px}.teacher h4{margin:8px 0 2px;font-size:13px}.teacher ol{margin:2px 0;padding-left:20px}.teacher li{margin:2px 0}
+body.simple .teacher{display:none}</style>
+<div class="teacher"><strong>교사 확인 항목 ${teacher.length}건</strong> <span class="cap">(아래 각 행의 노랑 「교사 확인 ·」 줄과 같음)</span>${[...new Set(teacher.map((x) => x.page))].map((pg) => `<h4>${esc(pg)}</h4><ol>${teacher.filter((x) => x.page === pg).map((x) => `<li><a href="#t-${x.topic}">${esc(x.item)}</a> — ${esc(x.note || x.web)}</li>`).join('')}</ol>`).join('')}</div>
+` : ''}${diffs.length ? `<div class="diffs"><strong>다름 ${diffs.length}건</strong><ol>${diffs.map(({ r, c }) => `<li><a href="#t-${r.topic.id}">${esc(r.topic.title)}</a>${r.title ? ` · ${esc(r.title)}` : ''} — ${esc(c.item)}: 교과서 ${esc(c.tb)} / 웹 ${esc(c.web)}</li>`).join('')}</ol></div>` : ''}
 `;
 for (const t of topics) {
   html += `<section class="topic" id="t-${t.id}"><h2>${esc(t.title)} <small>(${(t.pages || []).join('·')}쪽)</small></h2>\n`;

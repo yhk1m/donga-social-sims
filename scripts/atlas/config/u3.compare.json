@@ -1,0 +1,141 @@
+{
+ "_doc": "교과서 대조표(compare_shots.mjs · compare.mjs --unit u3) 단원 설정 — u2.compare.json 과 같은 꼴. 출력은 단원 작업 폴더 기본값($ATLAS_WORK/units/u3/shots/compare · compare.html). 경로는 작업 폴더 기준.",
+ "fixedNow": 1760918400000,
+ "_fixedNow": "캡처 쪽의 Date.now 고정값(ms, u2 와 같음) — 색칠하기 퀴즈 seed 기본값이 시각이라 캡처마다 문제가 달라지지 않게.",
+ "projections": {"default": "robinson", "extra": {"general": ["equalEarth"]}},
+ "_projections": "장면 = 주제마다 기본 도법(로빈슨) + 일반도 둘째 도법 이퀄어스(교과서 26쪽 람베르트 정각 원뿔은 웹 세계 도법 5종에 없음 — 정적 도법 하나를 더 봄). 묶음마다 한 장, 묶음이 없으면 주제 한 장 + 바로가기마다 한 장.",
+ "extraScenes": {
+  "general": [
+   {"name": "general-tint-off", "steps": [
+    {"eval": "{R}.atlasMap.setOptions({tint:false, natural:false})"}, {"idle": true}, {"sleep": 400}, {"scrollTop": true},
+    {"take": "general-tint-off", "info": {"kind": "extra", "note": "고도 색 끔(같은 보기)"}},
+    {"eval": "{R}.atlasMap.setOptions({tint:true, natural:false})"}, {"idle": true}, {"sleep": 400},
+    {"take": "general-tint-on", "info": {"kind": "extra", "note": "고도 색 켬(다시 켬 — 기본)"}}]}
+  ],
+  "coloring": [
+   {"name": "coloring-quiz", "steps": [
+    {"scrollTo": {"sel": ".at-quiz"}}, {"sleep": 400},
+    {"take": "coloring-quiz", "info": {"kind": "extra", "note": "색칠하기 활동(작은 나라 동그라미 — 처음 보기)"}}]},
+   {"name": "coloring-small", "steps": [
+    {"eval": "{R}.atlasMap.fitBounds([5, 40.5, 15.5, 45.5])"}, {"idle": true}, {"sleep": 400},
+    {"take": "coloring-small", "info": {"kind": "extra", "note": "작은 나라 동그라미 확대(모나코·산마리노·바티칸)"}},
+    {"eval": "{R}.atlasMap.fitBounds([-12, 34, 40, 66])"}, {"idle": true}]}
+  ],
+  "relief": [
+   {"name": "relief-base-tint", "steps": [
+    {"eval": "{R}.atlasMap.setOptions({tint:true, natural:false})"}, {"idle": true}, {"sleep": 400}, {"scrollTop": true},
+    {"take": "relief-base-tint", "info": {"kind": "extra", "note": "바탕 고도 색(같은 보기)"}}]},
+   {"name": "relief-base-none", "steps": [
+    {"eval": "{R}.atlasMap.setOptions({tint:false, natural:false})"}, {"idle": true}, {"sleep": 400}, {"scrollTop": true},
+    {"take": "relief-base-none", "info": {"kind": "extra", "note": "바탕 색 없음(같은 보기)"}}]},
+   {"name": "relief-base-natural", "steps": [
+    {"eval": "{R}.atlasMap.setOptions({tint:false, natural:true})"}, {"idle": true}, {"sleep": 600}, {"scrollTop": true},
+    {"take": "relief-base-natural", "info": {"kind": "extra", "note": "바탕 자연색(기본으로 되돌림)"}}]},
+   {"name": "relief-pins", "steps": [
+    {"scrollTo": {"sel": ".at-reveal-btn"}}, {"take": "relief-pins-hidden", "info": {"kind": "extra", "note": "핀 번호 숨김(처음)"}},
+    {"eval": "{R}.atlasTopic.pins.reveal({R}.atlasTopic.pins.markers[1].id)"}, {"sleep": 300},
+    {"take": "relief-pins-one", "info": {"kind": "extra", "note": "핀 하나 번호 보임"}},
+    {"eval": "{R}.querySelector('.at-reveal-btn').click()"}, {"sleep": 300},
+    {"take": "relief-pins-all", "info": {"kind": "extra", "note": "번호 모두 보기"}},
+    {"eval": "{R}.querySelector('.at-reveal-btn').click()"}, {"sleep": 200}]}
+  ],
+  "climate": [
+   {"name": "climate-charts", "steps": [
+    {"showGroup": 0}, {"idle": true},
+    {"scrollTo": {"sel": ".at-reveal-btn"}}, {"sleep": 300},
+    {"eval": "{R}.querySelector('.at-reveal-btn').click()"}, {"sleep": 300},
+    {"take": "climate-pins-all", "info": {"group": "@groupLabel", "kind": "extra", "note": "기후 그래프 핀 번호 모두 보기"}},
+    {"eval": "{R}.querySelector('.at-reveal-btn').click()"}, {"sleep": 200}]}
+  ],
+  "cities": [
+   {"name": "cities-legend-pop", "steps": [
+    {"showGroup": 0}, {"idle": true},
+    {"eval": "[...{R}.querySelectorAll('.at-legend-nest-item')][0].dispatchEvent(new MouseEvent('click', {bubbles: true}))"}, {"idle": true}, {"sleep": 400}, {"scrollTop": true},
+    {"take": "cities-legend-pop", "info": {"group": "@groupLabel", "groupIndex": "@groupIndex", "refs": "@groupRefs", "kind": "extra", "note": "도시 인구 범례 「1,000 이상」 고름(파리·모스크바)"}},
+    {"eval": "[...{R}.querySelectorAll('.at-legend-nest-item')][0].dispatchEvent(new MouseEvent('click', {bubbles: true}))"}, {"idle": true}]},
+   {"name": "cities-charts", "steps": [
+    {"scrollTo": {"sel": ".at-chart[data-chart=p30-finance]"}}, {"sleep": 400},
+    {"take": "cities-charts", "info": {"kind": "extra", "chart": "p30-finance", "note": "사이드바 막대그래프(금융 센터 지수 — 축 생략·런던 강조)"}}]}
+  ],
+  "sustainable": [
+   {"name": "sustainable-grouped", "steps": [
+    {"scrollTo": {"sel": ".at-chart[data-chart=p31-tallinn]"}}, {"sleep": 400},
+    {"take": "sustainable-charts", "info": {"kind": "extra", "chart": "p31-tallinn", "note": "사이드바 묶음 막대(탈린)"}},
+    {"eval": "{R}.querySelector('.at-chart[data-chart=p31-copenhagen]').closest('.at-card-chart').querySelector('.at-expand').click()"}, {"sleep": 800},
+    {"take": "sustainable-grouped-expand", "info": {"kind": "extra", "chart": "p31-copenhagen", "note": "묶음 막대 크게 보기(코펜하겐 3계열 × 6해)"}},
+    {"eval": "{R}.atlasUi.viewer.hide()"}, {"sleep": 200}]}
+  ],
+  "integration": [
+   {"name": "integration-legend-euro", "steps": [
+    {"showGroup": {"ref": "layer-p32-eu"}}, {"idle": true},
+    {"eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.includes('유로 사용')).click()"}, {"idle": true}, {"sleep": 400}, {"scrollTop": true},
+    {"take": "integration-legend-euro", "info": {"group": "@groupLabel", "groupIndex": "@groupIndex", "refs": "@groupRefs", "kind": "extra", "note": "EU 범례 「유로 사용 국가」 고름(윤곽 분류)"}},
+    {"eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.includes('유로 사용')).click()"}, {"idle": true}]}
+  ]
+ },
+ "checks": {
+  "_doc": "compare.mjs 의 단원 고유 확인(u2.compare.json checks 와 같은 키). coloringLabels = 27쪽 색칠하기 지면 글자(작업 폴더 기준), mainMap = 묶음·바로가기가 없는 주제의 대표 지도. 유럽은 확대 창·화면 기호 없는 레이어·도법 중심 확인 줄이 없다.",
+  "coloringLabels": "units/u3/text/p27-labels.json",
+  "insetLayers": [],
+  "noScreenSymbols": [],
+  "centerChecks": [],
+  "mainMap": {"general": "p26-europe", "coloring": "p27-coloring", "relief": "p28-relief", "feature": "p33-locator"},
+  "_known": "자동 확인의 「다름」 중 결정 기록에 까닭이 있는 것 → 「알려진 차이」(주제·항목 이름 + tb/web/webIncludes 가 맞을 때만 — 값이 바뀌면 다시 「다름」).",
+  "known": [
+   {"topic": "coloring", "item": "색칠하기 나라 수", "tb": 48, "web": 46, "note": "U3-8: 27쪽 나라 글자 48 = 나라 46 + 칼리닌그라드 소속 표시 「(러)」 + 두 줄로 쓴 「보스니아 / 헤르체고비나」(한 나라)"},
+   {"topic": "sustainable", "item": "글 일치(본문·제목·설명, 펼침면)", "webIncludes": "지면과 다름 1: 블록 p31-6「", "note": "U3-6: 31쪽 녹색 수도 글의 닫는 따옴표 ’ 가 PDF 글꼴 코드 문제로 「烋」로 읽힘 — 사진 captionOverride 로 ’ 로 바로잡은 글이라 PDF 글자와 92%"}
+  ],
+  "_teacher": "교사 확인 항목(계획 「실행 중 결정」의 U3-4~U3-9 「교사 확인 항목」) — 그 행에 노랑(known)·회색(info) 「교사 확인 ·」 줄 + 대조표 머리 쪽별 목록. page = 목록 묶음 이름, map 이 없으면 주제 확인 행.",
+  "teacher": [
+   {"page": "26쪽 일반도", "topic": "general", "map": "p26-europe", "item": "기호 3곳 위치 옮김", "tb": "체복사리·니스·뉴캐슬어폰타인 기호", "web": "Natural Earth 위치(체복사리 111km·니스 59km·뉴캐슬 50km)", "note": "교과서가 옆으로 옮겨 그린 기호를 실제 위치로 옮김 — 체복사리는 교과서에서 니즈니노브고로드 옆이라 111km 로 큼"},
+   {"page": "26쪽 일반도", "topic": "general", "map": "p26-europe", "item": "로스토프 = 로스토프나도누", "tb": "돈강 하구 「로스토프」", "web": "로스토프나도누 위치 그대로", "note": "Natural Earth 의 「로스토프」는 야로슬라블 근처 소도시라 별칭(neAlias)으로 돈강 하구 도시로 맞춤"},
+   {"page": "26쪽 일반도", "topic": "general", "map": "p26-europe", "item": "로마 수도 기호 약 14km 동쪽", "tb": "로마 수도 기호", "web": "교과서 자리 그대로(실제보다 약 14km 동쪽)", "status": "info", "note": "옮김 기준 30km 안이라 그대로 — 크게 확대하면 바티칸 동그라미와 떨어져 보임"},
+   {"page": "26쪽 일반도", "topic": "general", "map": "p26-europe", "item": "영문 이름 없는 나라·수도", "tb": "유럽 밖 나라 14·수도 12 영문 없음", "web": "교과서대로 영문 없음", "status": "info", "note": "튀르키예·조지아·마그레브·서아시아 나라와 앙카라·니코시아·예루살렘 등 수도는 교과서에도 영문이 없음"},
+   {"page": "26쪽 일반도", "topic": "general", "map": "p26-europe", "item": "리스본 다른 이름 「리스보아」", "tb": "리스본 (리스보아)", "web": "다른 이름(alt)으로 함께 보임", "status": "info", "note": "포르투갈어 표기 병기 — 교과서 그대로"},
+   {"page": "26쪽 일반도", "topic": "general", "map": "p26-europe", "item": "작은 나라 이름 글자 자리", "tb": "글자를 나라 옆 빈자리에 씀", "web": "교과서 글자 자리 그대로 — 크게 확대하면 떨어져 보임", "note": "「바티칸」 티레니아해, 「룩셈부르크」 프랑스 위, 「산마리노」·「모나코」 수도에서 떨어짐, 32쪽 「파다니아 지역」 코르시카 서쪽 바다(덧붙임 캡처 coloring-small)"},
+   {"page": "26쪽 일반도", "topic": "general", "item": "26쪽 제목 띄어쓰기 고침", "tb": "유 럽", "web": "유럽", "note": "글자 사이 띄움을 붙임(아시아 「아 시 아」와 같은 고침)"},
+   {"page": "26쪽 일반도", "topic": "general", "item": "고도 색 범례 글 「교과서 16쪽 범례」", "tb": "26쪽 범례(육지 3,000m·바다 4,000m 까지, 단계가 적음)", "web": "아시아와 같은 공용 고도 색 화상 + 글 「교과서 16쪽 범례」", "status": "info", "note": "질문: 범례 글을 단원별(「교과서 26쪽 범례」 등)로 바꿀까?"},
+   {"page": "26쪽 일반도", "topic": "general", "item": "1024×768 화면의 범례 칸", "tb": "—", "web": "범례 칸이 지도 오른쪽 아래를 꽤 가림(접기·끌기 가능)", "status": "info", "note": "아시아와 같은 동작 — 작은 화면에서 처음부터 접어 둘지"},
+   {"page": "26쪽 일반도", "topic": "general", "item": "화면용 색 보정·근사(approx) 지도", "tb": "—", "web": "둘 다 없음", "status": "info", "note": "웹 육지색과 가장 가까운 분류(빙설)도 색 차 21.5 로 충분 · 15장 모두 평균 잔차 0.5mm 안"},
+   {"page": "27쪽 색칠하기", "topic": "coloring", "item": "작은 나라 동그라미", "tb": "표시 없음(★·이름만)", "web": "화면에서 8px 보다 작은 나라에 반지름 7px 고리 — 칠하고 누를 수 있음", "note": "교과서에 없는 새 표시 — 바티칸·모나코는 최대 확대에서도 1~8px 라 손으로 칠할 수 없어서(덧붙임 캡처 coloring-quiz·coloring-small)"},
+   {"page": "27쪽 색칠하기", "topic": "coloring", "item": "바티칸 수도 칸 비움", "tb": "바티칸 수도 글자 없음", "web": "문제 화면 수도 「—」", "status": "info", "note": "27쪽에 바티칸 수도 글자가 없고 도시 국가라 비워 둠(설정 noCapital)"},
+   {"page": "28쪽 지형", "topic": "relief", "item": "베수비오산 핀 위치", "tb": "교과서 핀(산에서 56km)", "web": "베수비오산 지명 위치", "note": "멀리 떨어진 핀은 지명이 있는 점으로 옮기는 아시아 규칙(구이린 109km 와 같은 꼴) — 교과서 위치는 자료에 남김"},
+   {"page": "29쪽 기후", "topic": "climate", "item": "기후 그래프 핀 위치", "tb": "교과서 핀(파리 57km·리스본 16km·모스크바 294km 떨어짐)", "web": "그래프 도시 위치", "note": "그래프 도시로 옮김(아시아와 같음). 그레니비크는 일반도에 없어 아이슬란드 삽입 핀 그대로"},
+   {"page": "29쪽 기후", "topic": "climate", "item": "코미 원시림 사진 핀", "tb": "랴잔 근처(모스크바 남동쪽)", "web": "모스크바 그래프 자리", "status": "info", "note": "사진은 코미 원시림이지만 핀·그래프는 냉대 습윤 모스크바 — 교과서 핀 그대로의 짝"},
+   {"page": "29쪽 기후", "topic": "climate", "item": "그레니비크 그래프 잰 값", "tb": "숫자 없음(97쪽 표에도 없음)", "web": "그림에서 잰 값(기온 ±0.2℃·강수 ±1.1mm)", "status": "info", "note": "인쇄된 숫자가 없어 그래프를 재서 씀"},
+   {"page": "29쪽 기후", "topic": "climate", "map": "p29-climate", "item": "우랄 쪽 가장자리 약 50km 잘림", "tb": "기후 색이 지도 틀 끝까지", "web": "틀 안쪽 2.5pt(약 50km) 띠를 지움", "status": "info", "note": "흰 덮개 밖으로 새던 북아프리카·튀르키예 색 띠를 지우는 처리 — 우랄 너머 진짜 땅도 조금 잘림"},
+   {"page": "29쪽 기후", "topic": "climate", "map": "p29-climate", "item": "작은 섬 15곳 되살림", "tb": "페로 제도 등 작은 섬(바다색과 섞인 옅은 색)", "web": "가장 진한 화소로 분류해 되살림(페로 = 서안 해양성)", "status": "info", "note": "섬이 작아 색이 범례와 안 맞아 빠지던 것을 살림"},
+   {"page": "30쪽 도시의 기능", "topic": "cities", "map": "p30-urban", "item": "채널 제도·맨섬 80~100", "tb": "80~100 색", "web": "교과서 색 그대로 80~100", "note": "출처(UN) 값은 31%·53% 이지만 교과서대로 둠 — 실제 값으로 바꿀지"},
+   {"page": "30쪽 도시의 기능", "topic": "cities", "map": "p30-urban", "item": "키프로스 색 없음", "tb": "범례 상자 밑이라 안 보임", "web": "분류 없음(회색)", "status": "info", "note": "교과서에 보이지 않아 칠하지 않음"},
+   {"page": "30쪽 도시의 기능", "topic": "cities", "map": "p30-urban", "item": "겹친 도시 원 무리 근사", "tb": "런던·라인강 하류·밀라노 등 겹친 원", "web": "원 수가 조금 다를 수 있음(전체 217)", "status": "info", "note": "인쇄 화소에서 원을 하나씩 떼어 냄 — 겹친 무리는 근사"},
+   {"page": "30쪽 도시의 기능", "topic": "cities", "item": "베네치아 사진 두 카드", "tb": "위성 사진 + MOSE 방벽(설명 하나)", "web": "카드 둘이 같은 설명", "status": "info", "note": "한 덩어리로 자르면 MOSE 설명 글이 끼어 둘로 나눔"},
+   {"page": "30쪽 도시의 기능", "topic": "cities", "item": "막대그래프 잰 값", "tb": "금융 센터 지수·컨테이너 물동량 숫자 없음", "web": "그림에서 잰 값(±0.35·±0.13)", "status": "info", "note": "인쇄된 숫자가 없어 막대를 재서 씀"},
+   {"page": "30쪽 도시의 기능", "topic": "cities", "item": "소피아 앙티폴리스 표 카드", "tb": "수치 그림", "web": "표 카드(제목 = 사례 제목)", "status": "info", "note": "그림 대신 표로 — 표 제목은 사례 제목을 씀"},
+   {"page": "31쪽 지속가능한 도시", "topic": "sustainable", "map": "p31-green-capital", "item": "기호 14곳 위치 옮김", "tb": "녹색 수도 공·리스본 충전소 기호(글자 피해 −6~+5pt)", "web": "Natural Earth 도시 위치(녹색 수도 7·리스본 지도 7)", "note": "교과서 공이 실제와 최대 약 100km(스톡홀름 87·에센 104) 어긋나 도시 위치로 옮김"},
+   {"page": "31쪽 지속가능한 도시", "topic": "sustainable", "map": "p31-lisbon", "item": "도시 이름 상자", "tb": "녹색 수도는 기호 옆 글상자, 리스본은 값만", "web": "상자 맨 위에 도시 이름(녹색 수도 15·리스본 10)", "status": "info", "note": "값 상자가 일반도 도시 이름을 가려 어느 도시 값인지 알 수 없어서"},
+   {"page": "31쪽 지속가능한 도시", "topic": "sustainable", "item": "같은 설명을 쓰는 카드", "tb": "스톡홀름 사진·진공 파이프 그림, 류블랴나 사진·로고", "web": "카드 둘씩 같은 설명", "status": "info", "note": "베네치아(30쪽)까지 세 쌍"},
+   {"page": "31쪽 지속가능한 도시", "topic": "sustainable", "item": "코펜하겐 단위 「십 만」", "tb": "축 단위 「십 만 / 대, 명」", "web": "단위 글 그대로, 막대 값은 만 단위", "note": "교과서 원문 문제(막대 값은 만 단위) — 단위 글을 「만」으로 고칠지"},
+   {"page": "31쪽 지속가능한 도시", "topic": "sustainable", "item": "막대그래프 잰 값", "tb": "류블랴나·코펜하겐 숫자 없음", "web": "그림에서 잰 값(±0.17·±0.11)", "status": "info", "note": "인쇄된 숫자가 없어 막대를 재서 씀(탈린은 인쇄된 수)"},
+   {"page": "31쪽 지속가능한 도시", "topic": "sustainable", "item": "2021 고리그래프 → 원그래프", "tb": "고리(도넛) 그래프", "web": "원그래프(비율 22·11·35·32 그대로)", "note": "그래프 라이브러리(csat-chart.js)에 안쪽 반지름 옵션이 없음"},
+   {"page": "31쪽 지속가능한 도시", "topic": "sustainable", "item": "프라이부르크 표 카드", "tb": "수치 그림", "web": "표 카드", "status": "info", "note": "그림 대신 표로 — 「-37%」 붙임표는 인쇄 그대로"},
+   {"page": "31쪽 지속가능한 도시", "topic": "sustainable", "item": "리스본 글 띄어쓰기 고침", "tb": "전기 자 동차", "web": "전기 자동차", "note": "그림을 피해 줄 폭이 들쭉날쭉한 글상자라 낱말 안 줄바꿈이 띄어쓰기로 읽힘"},
+   {"page": "32쪽 통합과 분리", "topic": "integration", "map": "p32-eu", "item": "북키프로스 가입 + 유로", "tb": "키프로스 섬 전체 초록 + 노란 띠", "web": "교과서대로 섬 전체 가입 + 유로", "note": "실제 북키프로스는 EU 법 적용 유보·튀르키예 리라 사용 — 교과서대로 둘지"},
+   {"page": "32쪽 통합과 분리", "topic": "integration", "map": "p32-eu", "item": "올란드 제도", "tb": "회색", "web": "핀란드와 같게 가입 + 유로", "note": "실제 상태(핀란드 자치 지역, EU·유로)로 칠함"},
+   {"page": "32쪽 통합과 분리", "topic": "integration", "map": "p32-eu", "item": "건지섬", "tb": "초록(가입국)", "web": "분류 없음(회색)", "note": "실제 상태(영국 왕실령, EU 에 속한 적 없음)로 — 옆 저지섬은 교과서도 회색"},
+   {"page": "32쪽 통합과 분리", "topic": "integration", "map": "p32-eu", "item": "몰타 유로 띠", "tb": "초록만(작아서 띠 없음)", "web": "가입 + 유로(확대하면 노란 띠)", "note": "2008년부터 유로 사용 — 범례 뜻과 맞춤"},
+   {"page": "32쪽 통합과 분리", "topic": "integration", "map": "p32-belgium", "item": "브뤼셀 수도권 = 프랑스어", "tb": "초록 바탕 + 옅은 파랑 빗금(두 언어)", "web": "프랑스어 분류 + 화면 줄무늬", "note": "판단: 범례 3분류를 그대로 두려고 프랑스어로 분류"},
+   {"page": "32쪽 통합과 분리", "topic": "integration", "map": "p32-belgium", "item": "「브뤼셀」 두 번", "tb": "지역 이름 「브뤼셀」 하나", "web": "26쪽 수도 이름 + 32쪽 지역 이름이 함께 보임", "status": "info", "note": "하나를 숨길지"},
+   {"page": "32쪽 통합과 분리", "topic": "integration", "map": "p32-italy", "item": "파다니아 = 테두리 분류", "tb": "보라 띠로 둘러싼 지역", "web": "테두리만 그리는 분류(범례 6 = 5 + 파다니아)", "status": "info", "note": "면 색을 가리지 않게 테두리로"},
+   {"page": "33쪽 특집", "topic": "feature", "item": "특집 핀 12(07 이 둘)", "tb": "위치도 번호 01~11, 07 이 독일·이탈리아 둘", "web": "핀 12, 07 둘 다 번호 7·같은 제목", "status": "info", "note": "동전 사진 둘을 따로 핀으로"},
+   {"page": "33쪽 특집", "topic": "feature", "item": "07 큰 사진 핀 없음", "tb": "동전 디자인 전체 사진", "web": "사진 블록(핀 없음)", "status": "info", "note": "위치는 동전 두 핀(07)이 맡음"},
+   {"page": "33쪽 특집", "topic": "feature", "item": "05·08 확대 원 자르기", "tb": "사진 위로 튀어나온 확대 원", "web": "05 원 둘레에 쪽 바탕이 조금 낌, 08 원 윗부분 잘림", "note": "압정 그림을 피해 자름"},
+   {"page": "33쪽 특집", "topic": "feature", "item": "06 스위스 여권 핀", "tb": "롬바르디아 위(스위스 밖)", "web": "교과서 핀 그대로", "note": "베른으로 옮기면 05 핀과 겹쳐 누를 수 없어 교과서 자리로 되돌림"},
+   {"page": "33쪽 특집", "topic": "feature", "item": "지명으로 옮긴 핀 4", "tb": "교과서 핀", "web": "04 브뤼셀 59km·07 베를린 165km·07 로마 75km·09 프라하 175km", "note": "번호 핀을 사진 속 도시 위치로(아시아 규칙) — 교과서 위치는 자료에 남김"}
+  ]
+ },
+ "notes": {
+  "_doc": "대조표 「알려진 차이」·「참고」 줄의 단원 고유 설명.",
+  "viewProjection": "로빈슨(기본) · 둘째 캡처 이퀄어스(정적 도법)",
+  "viewProjectionNote": "웹은 세계 도법 5종만(람베르트 정각 원뿔 없음)"
+ }
+}
