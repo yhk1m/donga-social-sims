@@ -63,5 +63,28 @@ class Legends(unittest.TestCase):
         self.assertEqual(LG.legend_unit(m, cfg['flows']['unitTextRe']), '백억 달러, 2022')
 
 
+class RasterProtos(unittest.TestCase):
+    """U3-4: 래스터 지도 화소색이 범례 견본색과 다른 분류(29쪽 사막 = 지도 #fed08f, 범례 #fff56d)는 rasterAliases 로 더한 견본색.
+    legendOnly(교과서 지도에 면이 없는 범례 — 29쪽 온대·냉대 겨울 건조)는 화소 분류 후보에서 뺀다(가장자리 섞인 색이 그 분류로 잡히지 않게)."""
+    FILLS = [{'cls': 'c1', 'color': '#fff56d', 'label': '사막 기후'}, {'cls': 'c2', 'color': '#ffdd00', 'label': '스텝 기후'},
+             {'cls': 'c3', 'color': '#bed747', 'label': '온대 겨울 건조 기후'}]
+
+    def test_aliases_add_color_owned_by_legend_class(self):
+        import zones as Z
+        colors, owner = Z.raster_protos(self.FILLS, {'#fed08f': '사막 기후', '_doc': 'x'})
+        self.assertEqual(colors, ['#fff56d', '#ffdd00', '#bed747', '#fed08f'])
+        self.assertEqual(owner, [0, 1, 2, 0])
+        self.assertEqual(Z.raster_protos(self.FILLS, None), (['#fff56d', '#ffdd00', '#bed747'], [0, 1, 2]))
+        with self.assertRaises(ValueError): Z.raster_protos(self.FILLS, {'#fed08f': '없는 이름'})
+
+    def test_legend_only_marks_and_drops_from_fills(self):
+        import features as F
+        leg = [dict(e) for e in self.FILLS]
+        fills = F.mark_legend_only(leg, {'온대 겨울 건조 기후': '교과서 지도에 면이 없음'})
+        self.assertEqual([e['cls'] for e in fills], ['c1', 'c2'])
+        self.assertIs(leg[2]['geometry'], False)
+        with self.assertRaises(ValueError): F.mark_legend_only(leg, {'없는 이름': 'x'})
+
+
 if __name__ == '__main__':
     unittest.main()

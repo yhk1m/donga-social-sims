@@ -207,3 +207,17 @@ test('u3 fit: 지도마다 rmsMm·meanMm ≤ 0.5(approx 제외), 26·27쪽은 �
     if (id === 'p26-europe' || id === 'p27-coloring') assert.equal(fit.family, 'conicConformal', id);
   }
 });
+
+test('고정 도법 후보 {family, params}: 매개변수는 그대로, 닮음 변환만 맞춤(29쪽 아이슬란드 삽입 = 본 지도 도법)', async () => {
+  const { geoConicConformal } = await import('d3-geo');
+  const P = geoConicConformal().rotate([-15, 0]).parallels([52.6, 52.6]).scale(540).translate([300, 800]);
+  const cps = [[-22, 64], [-14, 65], [-18, 66.3], [-24, 65.6], [-16, 63.5], [-19, 64.8]].map(([lon, lat]) => ({ xy: P([lon, lat]), lon, lat }));
+  const fixed = { family: 'conicConformal', params: [15, 52.6, 52.6] };
+  const fit = fitControls(cps, [fixed]);
+  assert.equal(fit.family, 'conicConformal');
+  assert.deepEqual(fit.params, [15, 52.6, 52.6]);
+  assert.ok(fit.rmsPt < 1e-6, `${fit.rmsPt}`);
+  assert.equal(fit.fixed, true);
+  // 이름 후보와 섞으면 매개변수가 적은(고정 = 0) 쪽이 비슷한 잔차에서 이긴다
+  assert.equal(fitControls(cps, ['conicConformal', fixed]).fixed, true);
+});

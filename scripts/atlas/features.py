@@ -30,9 +30,21 @@ def _domain(map_id):
         return polygonal(shape(json.load(f)))
 
 
+def mark_legend_only(leg, legend_only):
+    """설정 legendOnly {범례 이름: 까닭}: 교과서 지도에 면이 없는 범례 항목(29쪽 온대·냉대 겨울 건조 — 21쪽과 같은 범례를 썼으나 유럽에는 없음)에
+    geometry:false 를 붙이고(제자리, 앱 범례에는 남고 「출력에 없는 분류」 검사에서 빠짐) 면 분류 후보(빗금 아닌 것)에서 뺀 목록을 돌려준다."""
+    lo = {k: v for k, v in (legend_only or {}).items() if not k.startswith('_')}
+    bad = [k for k in lo if not any(e['label'] == k for e in leg)]
+    if bad: raise ValueError(f'legendOnly 에 범례에 없는 이름 {bad}')
+    for e in leg:
+        if e['label'] in lo: e['geometry'] = False
+    return [e for e in leg if not e.get('pattern') and e.get('geometry') is not False]
+
+
 def area_polys(m, leg, cfg, warnings, report):
-    """지도 하나(m)의 분류 면 → polys [{cls, color, label, pattern?, polygons}] (범례 leg 는 이미 읽은 것 — 빗금은 leg 끝 항목)."""
-    fills = [e for e in leg if not e.get('pattern')]
+    """지도 하나(m)의 분류 면 → polys [{cls, color, label, pattern?, polygons}] (범례 leg 는 이미 읽은 것 — 빗금은 leg 끝 항목).
+    geometry:false 범례(legendOnly)는 분류 후보에서 뺀다."""
+    fills = [e for e in leg if not e.get('pattern') and e.get('geometry') is not False]
     zones, rep = (Z.vector_zones if cfg['mode'] == 'vector' else Z.raster_zones)(m, fills, cfg, warnings)
     report.update(rep)
     domain = _domain(m['id'])
@@ -66,6 +78,7 @@ def features(layer_id):
         leg = LG.legend(m, cfg)
         if cfg.get('hatch'):
             h = LG.hatch_legend(m, cfg['hatch']); h['cls'] = f'c{len(leg) + 1}'; leg.append(h)
+        if cfg.get('legendOnly'): mark_legend_only(leg, cfg['legendOnly'])
         if multi:
             out['parts'] = []
             for mid in multi:
@@ -105,7 +118,7 @@ def features(layer_id):
     for e in out['legend']: e.pop('box', None)
     present = ({p['cls'] for p in out['polys']} | {p['cls'] for part in out.get('parts', []) for p in part['polys']}
                | {s['cls'] for s in out['symbols']} | {l['cls'] for l in out['lines']})
-    absent = [e['label'] for e in out['legend'] if e['cls'] not in present]
+    absent = [e['label'] for e in out['legend'] if e['cls'] not in present and e.get('geometry') is not False]
     if absent: warnings.append(f'도형 없는 범례 분류: {absent}')
     exp = cfg.get('expectLegend')
     if exp is not None and len(out['legend']) != exp:

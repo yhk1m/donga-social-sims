@@ -353,15 +353,21 @@ function verify(layer) {
   const outPng = `${WORK}/shots/c1/${layer.id}.png`;
   fs.mkdirSync(`${WORK}/shots/c1`, { recursive: true });
   if (layer.source === 'ne') { run([path.join(here, 'kashmir.py'), '--verify', file.replace(/\\/g, '/'), outPng]); return outPng; }
+  // 여러 지도 한 레이어: 지도마다 그림 하나(본 지도 = <id>.png, 삽입 = <id>@<지도 id>.png) — 각자 자기 fit 으로 되돌림
+  for (const mid of (layer.maps || []).slice(1)) verifyMap(layer, file, mid, `${WORK}/shots/c1/${layer.id}@${mid}.png`);
+  return verifyMap(layer, file, layer.map, outPng);
+}
+
+function verifyMap(layer, file, mapId, outPng) {
   const gj = JSON.parse(fs.readFileSync(file, 'utf8'));
-  const m = maps[layer.map];
-  const cv = converter(layer, loadFit(layer.map));
+  const m = maps[mapId];
+  const cv = converter(layer, loadFit(mapId));
   // 경도를 앞 점에 이어 붙인 뒤 투영해야 날짜변경선 근처 고리가 지면에서 끊기지 않는다
   const back = (L) => { let prev = null; return L.map(([x, y]) => { if (prev != null) { while (x - prev > 180) x -= 360; while (x - prev < -180) x += 360; } prev = x; return cv.apply([x, y]); }).filter(Boolean); };
   const areas = [], points = [], paths = [];
   for (const f of gj.features) {
     const p = f.properties, g = f.geometry;
-    if (p.src && p.src !== layer.map) continue; // 여러 지도 한 레이어: 검증 그림은 본 지도만(삽입은 따로 fit)
+    if (p.src && p.src !== mapId) continue; // 여러 지도 한 레이어: 이 지도에서 온 도형만(삽입은 따로 fit)
     if (g.type === 'MultiPolygon') areas.push({ color: p.color, pattern: p.pattern, polygons: g.coordinates.map((poly) => poly.map(back)) });
     else if (g.type === 'Point') { const xy = cv.apply(g.coordinates); if (xy) points.push({ xy, color: p.color }); }
     else {
@@ -371,8 +377,8 @@ function verify(layer) {
     }
   }
   const span = Math.max(m.bbox[2] - m.bbox[0], m.bbox[3] - m.bbox[1]);
-  const ov = { page: m.page, bbox: m.bbox, dpi: Math.min(300, Math.max(110, Math.round(72 * VERIFY_TARGET_PX / span))), out: outPng, title: `${layer.id} (lon/lat -> page)`, areas, points, paths };
-  const ovf = `${WORK}/shots/c1/${layer.id}.overlay.json`;
+  const ov = { page: m.page, bbox: m.bbox, dpi: Math.min(300, Math.max(110, Math.round(72 * VERIFY_TARGET_PX / span))), out: outPng, title: `${layer.id}${mapId !== layer.map ? ` @ ${mapId}` : ''} (lon/lat -> page)`, areas, points, paths };
+  const ovf = outPng.replace(/\.png$/, '.overlay.json');
   fs.writeFileSync(ovf, JSON.stringify(ov));
   run([path.join(here, 'overlay.py'), ovf]);
   return outPng;

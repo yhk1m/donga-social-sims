@@ -87,7 +87,10 @@ def apply_covers(feats, covers):
     out = [polygonal(shape(ft['geometry'])) for ft in feats]
     if not covers: return out
     srcs = {c['src'] for c in covers}
-    cover = unary_union([polygonal(Polygon(c['ring'])) for c in covers])
+    # 되돌린 틀 고리가 꼬였거나(도법 가장자리) 접혀도 polygonal(make_valid — buffer(0) 과 달리 꼬인 고리의 두 쪽을 모두 남김)로 유효하게
+    rings = [polygonal(Polygon(c['ring'])) for c in covers]
+    if any(r is None for r in rings): raise ValueError(f"apply_covers: 넓이 없는 덮개 고리 {[c['src'] for c, r in zip(covers, rings) if r is None]}")
+    cover = unary_union(rings)
     for i, ft in enumerate(feats):
         if out[i] is not None and ft['properties'].get('src') not in srcs: out[i] = polygonal(out[i].difference(cover))
     return out

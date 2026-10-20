@@ -48,13 +48,22 @@ ${r.stdout}
 ${r.stderr}`);
 }
 
+/** 지도 id 의 맞춘 식 → 고정 도법 후보 {family, params}(georef.fitControls). */
+function fixedFrom(id, who) {
+  if (!fs.existsSync(fitPath(id))) throw new Error(`${who}: projectionFrom ${id} 의 fit 파일이 없음(그 지도를 먼저 맞춤)`);
+  const f = loadFit(id);
+  return { family: f.family, params: f.params };
+}
+
 function fitAll() {
   refreshControls();
   fs.mkdirSync(`${WORK}/geo`, { recursive: true });
   const rows = [];
   for (const m of maps) {
     if (!georefOn(m)) { rows.push([m.id, '(georef: false — 맞추기 없음)']); continue; }
-    const families = familiesFor(m, unitConfig);
+    // projectionFrom: 같은 쪽 다른 지도의 도법·매개변수를 그대로 쓰고 닮음 변환만 맞춘다(29쪽 아이슬란드 삽입 — 작은 섬 하나라 원뿔 매개변수가
+    // 정해지지 않아 짝 되풀이가 수렴하지 않았음). 그 지도가 목록에서 먼저 맞춰져 있어야 한다.
+    const families = m.projectionFrom ? [fixedFrom(m.projectionFrom, m.id)] : familiesFor(m, unitConfig);
     const all = loadCps(m.id);
     if (all.length < 4) throw new Error(`${m.id}: 기준점 ${all.length}개 — 4개 이상 필요(지도 목록 controls·경위선 눈금, 섬·호수 기준점은 shape_controls.py --write)`);
     const { cps, dropped } = robustFit(all, { families });
@@ -65,7 +74,7 @@ function fitAll() {
       sim: Object.fromEntries(Object.entries(fit.sim).map(([k, v]) => [k, +v.toPrecision(12)])),
       rmsPt: r2(fit.rmsPt), rmsMm: r2(fit.rmsPt * PT_MM), meanPt: r2(fit.meanPt), meanMm: r2(meanMm), maxPt: r2(Math.max(...fit.resid)),
       n: cps.length, src: [...new Set(cps.map((c) => c.src))],
-      ...(fit.smallArea ? { smallArea: true } : {}),
+      ...(fit.smallArea ? { smallArea: true } : {}), ...(fit.fixed ? { fixed: true, projectionFrom: m.projectionFrom } : {}),
       ...(fit.tps ? { tps: fit.tps, rmsTpsPt: r2(fit.rmsTpsPt), meanTpsPt: r2(fit.meanTpsPt), meanTpsMm: r2(fit.meanTpsPt * PT_MM),
         looMeanPt: r2(fit.looMeanPt), looMeanMm: r2(fit.looMeanPt * PT_MM) } : {}),
       dropped, candidates: fit.candidates.map((c) => ({ family: c.family, rmsPt: r2(c.rmsPt) })),

@@ -180,15 +180,20 @@ export function fitControls(cps, families = FAMILY_NAMES) {
     return { family: 'equirectangular', params, sim: e.sim, rmsPt: e.rms, meanPt: e.resid.reduce((a, b) => a + b, 0) / e.resid.length,
       resid: e.resid, smallArea: true, candidates: [{ family: 'equirectangular', rmsPt: e.rms }] };
   }
-  const all = families.map((fam) => ({ family: fam, ...fitFamily(fam, cps) })).filter((r) => Number.isFinite(r.rms));
+  // 후보는 도법 이름, 또는 고정 도법 {family, params}(매개변수를 맞추지 않고 닮음 변환만 — 29쪽 아이슬란드 삽입처럼 작은 지역이라
+  // 원뿔 매개변수가 정해지지 않는 지도를 같은 쪽 본 지도의 식으로. 매개변수 수 0 으로 친다)
+  const all = families.map((fam) => (typeof fam === 'object'
+    ? { family: fam.family, fixed: true, params: fam.params.slice(), ...evaluate(fam.family, fam.params, cps) }
+    : { family: fam, ...fitFamily(fam, cps) })).filter((r) => Number.isFinite(r.rms));
   if (!all.length) throw new Error('어느 도법으로도 기준점을 투영할 수 없음');
   all.sort((a, b) => a.rms - b.rms);
   const top = all[0];
-  const best = all.filter((r) => r.rms <= top.rms * 1.05 + 0.02).sort((a, b) => PARAMS[a.family] - PARAMS[b.family] || a.rms - b.rms)[0];
+  const nPar = (r) => (r.fixed ? 0 : PARAMS[r.family]);
+  const best = all.filter((r) => r.rms <= top.rms * 1.05 + 0.02).sort((a, b) => nPar(a) - nPar(b) || a.rms - b.rms)[0];
   return {
-    family: best.family, params: best.params, sim: best.sim, rmsPt: best.rms,
+    family: best.family, params: best.params, sim: best.sim, rmsPt: best.rms, ...(best.fixed ? { fixed: true } : {}),
     meanPt: best.resid.reduce((a, b) => a + b, 0) / best.resid.length, resid: best.resid,
-    candidates: all.map((r) => ({ family: r.family, rmsPt: r.rms })),
+    candidates: all.map((r) => ({ family: r.family, rmsPt: r.rms, ...(r.fixed ? { fixed: true } : {}) })),
   };
 }
 

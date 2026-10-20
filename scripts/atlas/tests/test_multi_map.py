@@ -37,6 +37,19 @@ class MultiMap(unittest.TestCase):
             for j in range(i + 1, len(res)):
                 if res[i] is not None and res[j] is not None: self.assertLess(res[i].intersection(res[j]).area, 1e-6)
 
+    def test_self_intersecting_cover_ring_made_valid(self):
+        # U3-3 리뷰(중요 2): 되돌린 틀 고리가 꼬여 있어도(나비 넥타이) 유효하게(polygonal = make_valid) 만든 뒤 뺀다 — 그냥 Polygon 이면
+        # difference 가 예외를 내거나 엉뚱한 곳을 지운다. 꼬인 고리의 두 삼각형 자리만 빠지고 나머지 본 지도 면은 그대로
+        bow = [(-25, 63), (-13, 67), (-13, 63), (-25, 67), (-25, 63)]
+        geoms = CL.apply_covers(self.feats, [{'src': 'p29-climate-iceland', 'ring': bow}])
+        g = geoms[0]
+        self.assertTrue(g.is_valid)
+        self.assertFalse(g.contains(Point(-14, 65)))          # 오른쪽 삼각형 안
+        self.assertFalse(g.contains(Point(-24, 65)))          # 왼쪽 삼각형 안(buffer(0) 이면 한쪽만 남을 수 있음 — make_valid 는 둘 다)
+        self.assertTrue(g.contains(Point(0, 50)))
+        lost = shape(self.feats[0]['geometry']).area - g.area
+        self.assertLess(lost, 12 * 4 / 2 + 1e-6)               # 두 삼각형 넓이(합 24°²) 넘게 지우지 않음
+
     def test_no_covers_unchanged(self):
         geoms = CL.apply_covers(self.feats, None)
         self.assertTrue(all(g.equals(shape(f['geometry'])) for g, f in zip(geoms, self.feats)))

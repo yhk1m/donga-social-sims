@@ -16,7 +16,7 @@ import { fitControls, robustFit, fitWithTps, makeConverter } from './georef.mjs'
 
 const fin = (p) => (p && Number.isFinite(p[0]) && Number.isFinite(p[1]) ? p : null);
 const slim = (f) => ({ family: f.family, params: f.params, sim: f.sim, rmsPt: f.rmsPt, meanPt: f.meanPt, resid: f.resid,
-  ...(f.tps ? { tps: f.tps } : {}), ...(f.smallArea ? { smallArea: true } : {}) });
+  ...(f.tps ? { tps: f.tps } : {}), ...(f.smallArea ? { smallArea: true } : {}), ...(f.fixed ? { fixed: true } : {}) });
 
 /** ops → 결과 목록. */
 export function runOps(ops) {

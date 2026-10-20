@@ -36,3 +36,24 @@ test('p30 도시화율: 나라 분류 수 ≥ 35, 범례 5단계 모두 있음, 
   assert.deepEqual(labelsOf(L, 'LIE'), ['50 이하']);   // 교과서가 따로 칠함(도시화율 약 14%)
   for (const iso of ['TUR', 'MAR', 'KAZ']) assert.deepEqual(labelsOf(L, iso), [], iso);   // 교과서 회색(유럽 밖)
 });
+
+/** 점 [lon, lat] 이 MultiPolygon 안인가(짝수-홀수 규칙, 작은 지역이라 평면으로) */
+const inRing = (R, [x, y]) => { let c = false; for (let i = 0, j = R.length - 1; i < R.length; j = i++) { const [xi, yi] = R[i], [xj, yj] = R[j]; if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c; } return c; };
+const inMulti = (g, p) => g.coordinates.some((poly) => inRing(poly[0], p) && !poly.slice(1).some((h) => inRing(h, p)));
+
+test('p29 기후 구분: 범례 10(면 8 + 지도에 없는 2), 경위도가 유럽, 아이슬란드는 삽입 지도의 툰드라', () => {
+  const gj = read('p29-climate');
+  const leg = gj.properties.legend;
+  assert.equal(leg.length, 10);
+  assert.deepEqual(leg.filter((e) => e.geometry === false).map((e) => e.label), ['온대 겨울 건조 기후', '냉대 겨울 건조 기후']);
+  const cls = new Set(gj.features.map((f) => f.properties.cls));
+  assert.equal(cls.size, 8, `분류 ${cls.size}`);
+  assert.deepEqual([...new Set(leg.map((e) => e.group))], ['건조', '온대', '냉대', '한대']);
+  for (const f of gj.features) { const [lon, lat] = f.properties.centroid; assert.ok(lon > -30 && lon < 70 && lat > 30 && lat < 82, f.properties.label); }
+  const at = (p) => gj.features.filter((f) => inMulti(f.geometry, p)).map((f) => [f.properties.label, f.properties.src]);
+  assert.deepEqual(at([-18, 65]), [['툰드라 기후', 'p29-climate-iceland']]);
+  assert.deepEqual(at([2.35, 48.86]), [['서안 해양성 기후', 'p29-climate']]);         // 파리
+  assert.deepEqual(at([37.6, 55.75]), [['냉대 습윤 기후', 'p29-climate']]);           // 모스크바
+  assert.deepEqual(at([46.5, 46.6]).map((x) => x[0]), ['사막 기후']);                 // 카스피해 북서 저지(지도색 #fed08f → 사막)
+  assert.deepEqual(at([5, 33]), []);                                                // 북아프리카는 교과서에서 흰 덮개로 가림
+});

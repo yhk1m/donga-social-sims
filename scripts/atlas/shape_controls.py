@@ -61,7 +61,11 @@ def opts():
 
 
 def families_for(m):
-    """georef.familiesFor 와 같은 규칙: 지도 항목 families → 단원 설정 georef.families → 1단계 8개."""
+    """georef-cli 와 같은 규칙: 지도 항목 projectionFrom(그 지도 fit 의 도법·매개변수 고정 — 닮음 변환만) → families
+    → 단원 설정 georef.families → 1단계 8개."""
+    if m.get('projectionFrom'):
+        with open(os.path.join(WORK, 'geo', f"{m['projectionFrom']}.fit.json"), encoding='utf-8') as f: fit = json.load(f)
+        return [{'family': fit['family'], 'params': fit['params']}]
     return m.get('families') or unit_config().get('georef', {}).get('families') or PHASE1_FAMILIES
 
 
