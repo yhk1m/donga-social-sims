@@ -180,7 +180,7 @@ function main(argv) {
   for (const s of otherPage) console.log('  다른 쪽에만:', s);
   console.log(`inIndex ${places.filter((p) => p.inIndex).length}/${places.length}`);
   console.log(`Natural Earth 위치로 옮김 ${snapped.length}곳 (${PC.snapKm}km 넘게 어긋난 점 지명, 이름이 하나뿐인 짝만):`);
-  for (const p of snapped) console.log(`  옮김: ${p.name}(${p.page}쪽 ${p.kind}) ${p.snapped.km}km  ${p.snapped.from} → ${p.lon},${p.lat}`);
+  for (const p of snapped) console.log(`  옮김: ${p.name}(${p.page}쪽 ${p.kind}) ${p.snapped.km}km  ${p.snapped.from} → ${p.lon},${p.lat}${PC.snapAlways?.[p.name] ? ' (snapAlways)' : ''}`);
   for (const p of moved) console.log(`  옮김(relocate): ${p.name} ${p.moved.from} → ${p.lon},${p.lat} — ${PC.relocate[p.name].why}`);
   const kept = Object.keys(PC.keepTextbookPosition || {});
   if (kept.length) console.log(`교과서 위치 그대로 둠(keepTextbookPosition): ${kept.join(', ')}`);
@@ -198,19 +198,27 @@ export const neIndex = (file = NE_FILE) => neIndexAt(file, PC.neBox);
  *  교과서 로스토프 = 「로스토프나도누」), 아니면 지명 그대로. */
 const neKey = (name, alias = PC.neAlias || {}) => key(alias[name]?.name ?? name);
 
+/** 지명 p 의 Natural Earth 후보 목록(없으면 undefined). 별칭에 nearest: true 가 있으면(설정이 있을 때만 — u4 트리폴리: NAME_KO
+ *  「트리폴리」가 리비아·레바논·그리스 셋) 교과서 자리(p.lon/lat)에서 가장 가까운 지점 하나만 남긴다. */
+export function neCands(p, by, alias = PC.neAlias || {}) {
+  const m = by.get(neKey(p.name, alias));
+  if (!m || !alias[p.name]?.nearest || m.length < 2) return m;
+  return [m.reduce((a, b) => (km([b.lon, b.lat], [p.lon, p.lat]) < km([a.lon, a.lat], [p.lon, p.lat]) ? b : a))];
+}
+
 /** 옮겨 그린 기호 바로잡기: 점 지명(도시·수도·산 봉우리) 중 Natural Earth 에 이름이 똑같은 지점이 하나뿐이고 places 에도 그 이름의
  *  점 지명이 하나뿐인데 snapKm 넘게 어긋나면 lon/lat·symbol 을 Natural Earth 경위도로 바꾸고 snapped: {from, km} 를 남긴다.
- *  keepTextbookPosition 에 있는 이름은 그대로. 면·선 지명은 건드리지 않는다. 바꾼 지명 목록을 돌려준다. */
-export function snapToNe(places, ne, { snapKm = PC.snapKm, keep = PC.keepTextbookPosition || {}, alias = PC.neAlias || {} } = {}) {
+ *  keepTextbookPosition 에 있는 이름은 그대로, snapAlways 에 있는 이름은 snapKm 안이어도 옮긴다. 면·선 지명은 건드리지 않는다. 바꾼 지명 목록을 돌려준다. */
+export function snapToNe(places, ne, { snapKm = PC.snapKm, keep = PC.keepTextbookPosition || {}, alias = PC.neAlias || {}, always = PC.snapAlways || {} } = {}) {
   const isPoint = (p) => !!p.symbol || PC.cityKinds.includes(p.kind);
   const count = new Map();
   for (const p of places) if (isPoint(p)) count.set(key(p.name), (count.get(key(p.name)) || 0) + 1);
   const out = [];
   for (const p of places) {
-    const m = ne.get(neKey(p.name, alias));
+    const m = neCands(p, ne, alias);
     if (!isPoint(p) || !m || m.length !== 1 || count.get(key(p.name)) !== 1 || keep[p.name]) continue;
     const d = km([p.lon, p.lat], [m[0].lon, m[0].lat]);
-    if (d <= snapKm) continue;
+    if (d <= (always[p.name] ? 0 : snapKm)) continue;               // snapAlways {이름: 까닭}(u4): snapKm 안이어도 옮김
     p.snapped = { from: [p.lon, p.lat], km: Math.round(d) };
     p.lon = round(m[0].lon); p.lat = round(m[0].lat);
     if (p.symbol) p.symbol = [p.lon, p.lat];
@@ -249,9 +257,9 @@ export function neCheck(places, file = NE_FILE, farKm = 40, alias = PC.neAlias |
   if (!by) return null;
   const ds = [], far = [];
   for (const p of places) {
-    const k = neKey(p.name, alias);
-    if (!PC.cityKinds.includes(p.kind) || !by.has(k)) continue;
-    const d = Math.min(...by.get(k).map((q) => km([q.lon, q.lat], [p.lon, p.lat]))); ds.push(d);
+    const m = PC.cityKinds.includes(p.kind) && neCands(p, by, alias);
+    if (!m) continue;
+    const d = Math.min(...m.map((q) => km([q.lon, q.lat], [p.lon, p.lat]))); ds.push(d);
     if (d > farKm) far.push(`${p.name}(${p.page}쪽) ${d.toFixed(0)}km`);
   }
   if (!ds.length) return null;

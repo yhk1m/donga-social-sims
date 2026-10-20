@@ -1,6 +1,7 @@
 # © 2026 김용현
 # scripts/atlas/tests/test_places.py — 일반도 지명 뽑기(places.py)·찾아보기 파싱 검사
 import os, re, sys, unittest
+from unittest import mock
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import pdfkit
 import places as PL
@@ -76,6 +77,19 @@ class Group(unittest.TestCase):
         spans = [_sp('보스니아', 100, 100), _sp('헤르체고비나', 96, 107)]
         names = [L['name'] for L in PL.group(spans, frozenset({'보스니아헤르체고비나'}))]
         self.assertEqual(names, ['보스니아 헤르체고비나'])
+
+    def test_opposite_glyph_directions_break_chain_only_with_min_dir_cos(self):
+        # 34쪽 하르툼: 백나일강(아래→위)·청나일강(위→아래) 끝 「강」끼리 맞닿음 — chain.minDirCos(u4 설정)가 있을 때만 끊는다
+        up, down = (0.3, -0.95), (0.35, 0.94)
+        spans = [_sp('백', 537.4, 281.7, 6.4, up), _sp('나', 538.8, 275.2, 6.4, up), _sp('일', 539.9, 268.7, 6.4, up),
+                 _sp('강', 541.5, 261.8, 6.4, up), _sp('청', 547.3, 243.5, 6.4, down), _sp('나', 549.5, 249.5, 6.4, down),
+                 _sp('일', 551.7, 254.5, 6.4, down), _sp('강', 554.5, 260.8, 6.4, down)]
+        base = dict(PL.places_config()['chain'])
+        base.pop('minDirCos', None)
+        with mock.patch.object(PL, '_chain', return_value=base):
+            self.assertEqual(len(PL.group(spans)), 1)                 # 옛 동작(u2·u3): 한 지명으로 이어짐
+        with mock.patch.object(PL, '_chain', return_value={**base, 'minDirCos': 0}):
+            self.assertEqual(sorted(L['name'] for L in PL.group(spans)), ['백나일강', '청나일강'])
 
 
 def _gs(text, x, y, font='HelveticaNeue-Roman', size=5.0, w=None, d=(1.0, 0.0), color='#231f20'):

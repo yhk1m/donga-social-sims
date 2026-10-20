@@ -910,7 +910,7 @@
   "seed": 7
  },
  "places": {
-  "_doc": "일반도 지명(U4-5 에서 34쪽 렌더·글자 양식 표를 보고 고침 — 지금은 유럽 표 복사). places.py(PDF → 지면 글자·기호, $ATLAS_WORK/text/places-p34-africa.json) → build_places.mjs(→ <out>/places.json). U4-2 도시 기호 기준점(city_controls)이 places-p34-africa.json 의 도시·수도 기호를 쓴다.",
+  "_doc": "일반도 지명(U4-5 — 유럽 표를 34쪽 렌더·글꼴 조사로 고침: 서사하라 갈보라 글자 region, 큰 상자 글자 「사 하 라 사 막」 자간, 남회귀선 무시, 희망봉 = 곶, 거꾸로 맞선 글자 끊기 chain.minDirCos, 수도 기호 snapAlways, 트리폴리 neAlias nearest). places.py(PDF → 지면 글자·기호, $ATLAS_WORK/text/places-p34-africa.json) → build_places.mjs(→ <out>/places.json). U4-2 도시 기호 기준점(city_controls)이 places-p34-africa.json 의 도시·수도 기호를 쓴다.",
   "maps": [
    "p34-africa"
   ],
@@ -955,7 +955,7 @@
    },
    {
     "color": "#d71920",
-    "why": "세계 유산 이름(지명이 아니라 유산; 기호는 별도)"
+    "why": "국립 공원·유적 붉은 글자(34쪽 4.9pt 74조각 — 교사 Q8 답: 지명에서 뺌, 찾아보기에도 없음)"
    },
    {
     "color": "#6d6e71",
@@ -969,7 +969,7 @@
    {
     "font": "^YDVYGOStd33$",
     "why": "북극권(선 이름) — 26쪽은 같은 5.6~5.7pt 굵은 고딕에 작은 수도(브라티슬라바·프리슈티나)와 괄호 병기 (리스보아)가 있어 크기 대신 글자로",
-    "textRe": "^(북극권|북회귀선|적도|날짜 변경선)$"
+    "textRe": "^(북극권|북회귀선|남회귀선|적도|날짜 변경선)$"
    },
    {
     "font": "^YDVYGOStd3[23]$",
@@ -1009,7 +1009,14 @@
     "font": "^InterGTOTFB",
     "color": "#ed1064",
     "joinEm": 1.6,
-    "_": "나라: 굵은 고딕 자홍(12.4~5.6pt)"
+    "_": "나라: 굵은 고딕 자홍(34쪽 6.8·7.8·9.7·12.7pt)"
+   },
+   {
+    "role": "region",
+    "font": "^InterGTOTFB",
+    "color": "#7e576b",
+    "joinEm": 1.6,
+    "_": "서사하라: 나라 색이 아닌 갈보라 글자(7.6pt) — 교사 Q1 답(나라 수 54 밖 「지역」) → region"
    },
    {
     "role": "countryEn",
@@ -1070,6 +1077,17 @@
     "color": "#0072bc",
     "joinEm": 2.8,
     "_": "바다·만·해협·호수·하천: 파란 명조"
+   },
+   {
+    "role": "landform",
+    "font": "^NanumMyeongjo",
+    "color": "#231f20",
+    "size": [
+     9.5,
+     12
+    ],
+    "joinEm": 5.5,
+    "_": "큰 상자 글자(「사 하 라 사 막」 9.8pt): 「라」와 「사」 사이가 4.66em 이라 따로"
    },
    {
     "role": "landform",
@@ -1161,7 +1179,7 @@
      "region"
     ],
     [
-     "곶$|장성$|기지$",
+     "곶$|봉$|장성$|기지$",
      "other"
     ],
     [
@@ -1173,6 +1191,12 @@
     [
      "",
      "city"
+    ]
+   ],
+   "region": [
+    [
+     "",
+     "region"
     ]
    ]
   },
@@ -1239,9 +1263,10 @@
    "touchSinglePerpEm": 0.8,
    "bendDeg": 15,
    "lineGapEm": 1.2,
-   "nextLineEm": 0.5
+   "nextLineEm": 0.5,
+   "minDirCos": 0
   },
-  "_chain": "묶기(places.py group) 수치. 같은 글자 줄 잇기: 두 방향 평균 축에 대한 수직 어긋남이 한 글자가 낀 연결이면 singlePerpEm(빈틈이 touchEm 안이면 touchSinglePerpEm)·크기 이하이거나 축과 bendDeg 안, 여러 글자끼리는 같은 기준선(touchPerpEm)에서 빈틈 touchEm 안일 때만. 여러 줄 지명 후보는 글자 상자 사이 lineGapEm·크기 안, 줄 바꿈 판정은 수직 nextLineEm·크기 초과.",
+  "_chain": "묶기(places.py group) 수치. 같은 글자 줄 잇기: 두 방향 평균 축에 대한 수직 어긋남이 한 글자가 낀 연결이면 singlePerpEm(빈틈이 touchEm 안이면 touchSinglePerpEm)·크기 이하이거나 축과 bendDeg 안, 여러 글자끼리는 같은 기준선(touchPerpEm)에서 빈틈 touchEm 안일 때만. 여러 줄 지명 후보는 글자 상자 사이 lineGapEm·크기 안, 줄 바꿈 판정은 수직 nextLineEm·크기 초과. minDirCos(u4 만): 두 조각의 글자 방향 cos 가 이보다 작으면(거꾸로 맞섬) 잇지 않음 — 34쪽 백나일강(아래→위)·청나일강(위→아래)이 하르툼에서 「강」끼리 맞닿아 「백나일강강일나청」이 됐음.",
   "rankBySize": [
    [
     11.0,
@@ -1323,8 +1348,22 @@
   },
   "snapKm": 30,
   "keepTextbookPosition": {},
-  "neAlias": {},
-  "_neAlias": "Natural Earth NAME_KO 가 교과서와 다른 도시를 가리키는 이름 → 짝지을 NAME_KO. U4-5 에서 채움(트리폴리 — 리비아·레바논 확인).",
+  "neAlias": {
+   "트리폴리": {
+    "nearest": true,
+    "why": "Natural Earth NAME_KO 「트리폴리」가 리비아(Tripoli, Admin-0 capital)·레바논(Ṭarābulus)·그리스(Tripoli) 셋이라 이름이 하나뿐인 짝이 안 됨 → 교과서 자리에서 가장 가까운 지점(리비아, 12km) 하나로 짝지음. 찾아보기 34E1 Tripoli = 리비아 수도"
+   }
+  },
+  "_neAlias": "Natural Earth NAME_KO 가 교과서와 다른 도시를 가리키는 이름 → {name: 짝지을 NAME_KO, why} 또는 같은 NAME_KO 가 여럿일 때 {nearest: true, why}(교과서 자리에서 가장 가까운 하나 — build_places neCands).",
+  "snapAlways": {
+   "킨샤사": "U4-2 도시 기준점에서 MAD 로 빠짐(3.6pt) — 교과서가 브라자빌과 겹치지 않게 콩고강 남쪽으로 옮겨 그림(48km, snapKm 30 으로도 옮겨지지만 fit 이 바뀌어도 지키려고 적음)",
+   "브라자빌": "U4-2 MAD 로 빠짐(2.4pt) — 킨샤사와 겹치지 않게 북쪽으로 옮겨 그림(28km, snapKm 안)",
+   "마세루": "U4-2 MAD 로 빠짐(2.3pt) — 작은 나라 레소토 안에 기호·이름을 넣으려 옮겨 그림(24km)",
+   "지부티": "U4-2 MAD 로 빠짐(2.2pt) — 작은 나라 지부티 안에 넣으려 옮겨 그림(29km)",
+   "방기": "U4-2 MAD 로 빠짐(2.1pt) — 우방기강(국경) 북쪽 중앙아프리카 공화국 안으로 옮겨 그림(29km)",
+   "로메": "U4-2 MAD 로 빠짐(2.0pt) — 좁은 토고 안에 넣으려 옮겨 그림(22km)"
+  },
+  "_snapAlways": "{이름: 까닭} — snapKm 안이어도 Natural Earth 위치로 옮기는 점 지명(U4-2 도시 기준점 MAD 거르기에서 교과서가 옮겨 그린 것으로 본 수도). snapped: {from, km} 기록은 같음.",
   "relocate": {},
   "_snap": "바탕 지도가 실제 지리(Natural Earth)라, 교과서가 겹치지 않게 옮겨 그린 도시 기호가 snapKm 넘게 어긋나면 Natural Earth 인구 지점 경위도로 옮긴다(이름이 똑같은 지점이 아시아에 하나뿐이고 places 에도 하나뿐일 때만, snapped: {from, km} 기록). 교과서 위치를 지켜야 할 지명은 keepTextbookPosition 에 {이름: 까닭}. 면·선 지명은 옮기지 않는다.",
   "leakRe": "^\\d|[˚°]|^[A-Z]{1,2}$|높이|깊이|^빙하$|^\\(|km$|도법|축척|북회귀선|북극권|^적도$|변경선|유빙",

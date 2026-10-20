@@ -189,7 +189,9 @@ def _chain_link(a, b, join_em):
     along, perp = vx * dx + vy * dy, abs(-vx * dy + vy * dx)
     size = max(a['size'], b['size'])
     gap = abs(along) - ha - hb
-    cost = max(gap, 0) / size + perp / size + 2 * (1 - (a['dir'][0] * b['dir'][0] + a['dir'][1] * b['dir'][1]))
+    cos = a['dir'][0] * b['dir'][0] + a['dir'][1] * b['dir'][1]
+    if 'minDirCos' in ch and cos < ch['minDirCos']: return None      # 설정이 있을 때만(u4): 글자 방향이 거꾸로 맞선 두 조각은 다른 지명
+    cost = max(gap, 0) / size + perp / size + 2 * (1 - cos)            # (34쪽 백나일강 ↑ · 청나일강 ↓ 가 하르툼에서 「강」끼리 맞닿음)
     if not (a['single'] or b['single']):                             # 여러 글자끼리는 같은 기준선에서 맞닿을 때만(글꼴이 바뀐 한 낱말)
         return cost if perp <= ch['touchPerpEm'] * size and gap <= ch['touchEm'] * size else None
     # 한 글자가 낀 연결: 글자 상자 중심이 기준선에서 흔들리고 줄이 휜다
