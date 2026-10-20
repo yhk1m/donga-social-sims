@@ -19,6 +19,11 @@
 //     조각(embed)은 코드 위치가 바뀌면 달라지는 게 정당해(2단계 설계 §4.2) 해시 차이를 실패로 세지 않고 크기 차(±1%)만 본다.
 //   - 캡처: 대조표 설정 shotsDir(없으면 shots/compare, 단원 작업 폴더 기준)의 manifest 장면마다 화소 비교(regress_png.py), 장면 이름·화면 값(stats) 비교.
 //   - 대조표: 대조표 설정 out(없으면 compare.html)의 수(다름·알려진 차이·같음·참고)와, 만든 때·캡처 때 줄을 뺀 HTML 전체가 같은지.
+//   - 해시에서 빼는 것: *.md(issues.md 같은 사람이 읽는 기록 — 산출물이 아님, U4-3 Step 0). 옛 기준선(u2·u3)에 남은 .md 키는
+//     check 가 기준선 쪽에서도 같은 규칙으로 걸러 본다 — 기준선 파일은 다시 찍지 않는다(이미지·자료 키는 그대로).
+//   - 낡은 출력 경고(U4-3 Step 0): 캡처 manifest·조각이 입력(src/** · sims/<sim>/** · 대조표 설정)보다, 대조표 HTML 이 캡처보다
+//     오래되었으면 알린다(다시 찍기를 잊고 낡은 출력끼리 견주어 통과하는 일을 막음 — 실패로 세지는 않음).
+//   - 기준선·캡처 manifest·대조표·조각이 없으면 ENOENT 대신 무엇을 먼저 돌릴지 알리고 종료 코드 2.
 //   디렉터리는 손 순회(readdirSync + statSync) — 이 PC 한글 경로에서 재귀 fs 옵션이 죽는다.
 //   진입점일 때만 명령줄을 돈다(시험에서 unitSpec·pagePrefixes 를 import 할 수 있게).
 import { spawnSync } from 'node:child_process';
@@ -56,7 +61,7 @@ export function workPattern(prefixes) {
 }
 
 /** 단원 설정에서 점 경로 값(없으면 오류 — 조용히 넘어가지 않음). */
-function need(cfg, id, dotted) {
+export function need(cfg, id, dotted) {
   const v = dotted.split('.').reduce((o, k) => (o == null ? undefined : o[k]), cfg);
   if (typeof v !== 'string' || !v) throw new Error(`${id}: 단원 설정에 ${dotted} 가 없음 — 회귀 작업 파일 목록을 정할 수 없다`);
   return slash(v);
@@ -79,7 +84,11 @@ export function unitSpec(id, env = process.env, { units = null } = {}) {
   if (!u.sim) throw new Error(`${id}: 단원 표에 sim 이 없음`);
   const prefixes = (() => { try { return pagePrefixes(u.pages); } catch (e) { throw new Error(`${id}: ${e.message}`); } })();
   const cfg = u.config;                                   // 없으면 오류(unit.mjs)
-  const legacy = id === DEFAULT_UNIT;                     // u2 = G0 기준선의 옛 목록 그대로
+  // u2 = G0 기준선의 옛 목록 그대로(legacy): regress_u2.mjs 시절 손 목록은 저장소 4폴더 + 조각 + 작업 파일 4개
+  //   (text/p17-labels · tables/charts-u2 · tables/climate-world · tables/index — 아래 u2 설정에서 끌어낸 값과 차례까지 같다).
+  //   공개본 docs/atlas-u2-asia 와 geo/city-holdout.json 은 그 목록에 없었다 — 넣으면 u2 기준선에 없는 키라 「새로 생김」으로
+  //   실패하고, 그러려면 u2 기준선을 다시 찍어야 하는데 계획이 그것을 막는다(공개본은 판 폴더라 새 판 없이는 안 바뀜).
+  const legacy = id === DEFAULT_UNIT;
   const repoDirs = [`sims/${u.sim}/data`, `content/atlas/${id}`, `docs/assets/atlas/${id}`, 'docs/assets/atlas/common'];
   if (!legacy && published(u.sim)) repoDirs.push(`docs/${u.sim}`);
   const workExtra = [need(cfg, id, 'content.labels'), need(cfg, id, 'content.charts'), need(cfg, id, 'charts.out.climate'), need(cfg, id, 'places.index.out')];
@@ -93,6 +102,7 @@ export function unitSpec(id, env = process.env, { units = null } = {}) {
     base: `${u.work}/units/${id}/baseline`,
     shots: u.workFile(cmp.shotsDir || 'shots/compare'),
     compare, compareName: compare.split('/').pop(),
+    compareConfig: existsSync(cmpFile) ? slash(cmpFile) : null,
   };
 }
 
@@ -119,7 +129,49 @@ function fileList(S) {
   for (const f of work) files[`work:${f}`] = join(S.work, f);
   return Object.fromEntries(Object.entries(files).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
-const hashAll = (S) => Object.fromEntries(Object.entries(fileList(S)).map(([k, p]) => [k, sha(p)]));
+/** 해시에 넣는 키인가 — *.md 는 사람이 읽는 기록(issues.md 등)이라 뺀다. 옛 기준선 키에도 같은 규칙. */
+export const hashable = (key) => !/\.md$/i.test(key);
+const hashAll = (S) => Object.fromEntries(Object.entries(fileList(S)).filter(([k]) => hashable(k)).map(([k, p]) => [k, sha(p)]));
+
+/** 디렉터리(또는 파일) 아래 가장 새 수정 시각(ms, 손 순회). 없으면 0. */
+function newestMtime(p) {
+  if (!existsSync(p)) return 0;
+  const st = statSync(p);
+  if (!st.isDirectory()) return st.mtimeMs;
+  let m = 0;
+  for (const n of readdirSync(p)) m = Math.max(m, newestMtime(join(p, n)));
+  return m;
+}
+
+/**
+ * 낡은 출력 경고 목록(순수 함수 — 시험용). t = { inputs, shots, compare, embed } 수정 시각 ms(없으면 null).
+ *   캡처·조각 < 입력, 대조표 < 캡처 이면 한 줄씩.
+ */
+export function staleWarnings(t) {
+  const out = [];
+  const iso = (ms) => new Date(ms).toISOString().replace('T', ' ').slice(0, 19);
+  if (t.shots != null && t.inputs != null && t.shots < t.inputs) out.push(`캡처 manifest(${iso(t.shots)})가 입력(src·sims·대조표 설정, ${iso(t.inputs)})보다 오래됨 — compare_shots 를 다시 돌렸나?`);
+  if (t.embed != null && t.inputs != null && t.embed < t.inputs) out.push(`조각(${iso(t.embed)})이 입력(${iso(t.inputs)})보다 오래됨 — npm run embed 를 다시 돌렸나?`);
+  if (t.compare != null && t.shots != null && t.compare < t.shots) out.push(`대조표 HTML(${iso(t.compare)})이 캡처(${iso(t.shots)})보다 오래됨 — compare.mjs 를 다시 돌렸나?`);
+  return out;
+}
+
+function stalenessOf(S) {
+  const mt = (p) => (existsSync(p) ? statSync(p).mtimeMs : null);
+  const inputs = Math.max(newestMtime(join(ROOT, 'src')), newestMtime(join(ROOT, 'sims', S.sim)), S.compareConfig ? newestMtime(S.compareConfig) : 0);
+  return staleWarnings({ inputs, shots: mt(join(S.shots, 'manifest.json')), compare: mt(S.compare), embed: mt(join(ROOT, S.embed)) });
+}
+
+/** 먼저 있어야 할 파일 — 빠진 것마다 무엇을 돌릴지 한 줄(빈 배열이면 다 있음). */
+export function missingInputs(S, mode, exists = existsSync) {
+  const out = [];
+  if (mode === 'check' && !exists(join(S.base, 'hashes.json'))) out.push(`기준선 ${S.base}/hashes.json — 먼저 node scripts/atlas/regress_unit.mjs --unit ${S.id} --baseline`);
+  if (mode === 'check' && !exists(join(S.base, 'shots', 'manifest.json'))) out.push(`기준선 캡처 ${S.base}/shots/manifest.json — 기준선을 다시 찍어야 함(--baseline)`);
+  if (!exists(join(S.shots, 'manifest.json'))) out.push(`캡처 ${S.shots}/manifest.json — 먼저 node scripts/atlas/compare_shots.mjs --unit ${S.id}`);
+  if (!exists(S.compare)) out.push(`대조표 ${S.compare} — 먼저 node scripts/atlas/compare.mjs --unit ${S.id}`);
+  if (!exists(join(ROOT, S.embed))) out.push(`조각 ${S.embed} — 먼저 npm run embed -- ${S.sim}`);
+  return out;
+}
 
 /** 도장(inputsHash) 값만 다르고 나머지 글자는 바이트까지 같은가(JSON 파일). */
 function onlyStamp(a, b) {
@@ -160,6 +212,8 @@ function check(S) {
   const BASE = S.base, EMBED = S.embed, SHOTS = S.shots, COMPARE = S.compare;
   let fail = 0;
   const base = readJson(join(BASE, 'hashes.json'));
+  const droppedMd = Object.keys(base.files).filter((k) => !hashable(k));
+  base.files = Object.fromEntries(Object.entries(base.files).filter(([k]) => hashable(k)));   // 옛 기준선의 .md 키 — 비교에서 뺌
   const now = hashAll(S);
   const files = fileList(S);
   // 1. 해시
@@ -173,6 +227,7 @@ function check(S) {
   }
   const real = rows.filter((r) => !r.embed);
   console.log(`\n[해시] ${keys.length}개 중 다른 파일 ${real.length}${rows.some((r) => r.embed) ? ' (+ 조각 — 크기만 봄)' : ''}`);
+  if (droppedMd.length) console.log(`  (참고) 기준선의 .md 키 ${droppedMd.length}개는 비교에서 뺌(사람이 읽는 기록): ${droppedMd.join(', ')}`);
   for (const r of real) {
     let note = '';
     const kept = join(BASE, 'files', r.k.replace(':', '/'));
@@ -257,7 +312,16 @@ export function main(argv = process.argv.slice(2), env = process.env) {
     return;
   }
   const S = unitSpec(id, { ATLAS_WORK: slash(env.ATLAS_WORK || 'C:/Users/Public/atlas-work') });
-  if (rest.includes('--baseline')) { baseline(S); keepSmallJson(S); }
+  const mode = rest.includes('--baseline') ? 'baseline' : 'check';
+  const miss = missingInputs(S, mode);
+  if (miss.length) {
+    console.error(`${id}: 필요한 파일이 없어 ${mode === 'baseline' ? '기준선을 찍을' : '비교할'} 수 없다:`);
+    for (const m of miss) console.error(`  - ${m}`);
+    process.exitCode = 2;
+    return;
+  }
+  for (const w of stalenessOf(S)) console.log(`[경고] ${w}`);
+  if (mode === 'baseline') { baseline(S); keepSmallJson(S); }
   else check(S);
 }
 

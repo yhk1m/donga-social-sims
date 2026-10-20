@@ -3,7 +3,7 @@
 //   명세(unitSpec)만 본다 — 해시·캡처 비교는 실제 기준선으로 `--check` 해서 확인(계획 U4-G0 Step 4·5).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { unitSpec, pagePrefixes, workPattern } from '../../scripts/atlas/regress_unit.mjs';
+import { unitSpec, pagePrefixes, workPattern, need, hashable, staleWarnings, missingInputs } from '../../scripts/atlas/regress_unit.mjs';
 
 const W = { ATLAS_WORK: 'C:/W' };
 
@@ -56,4 +56,36 @@ test('모르는 단원·쪽 없는 단원·설정 값 없는 단원은 오류', 
   assert.throws(() => unitSpec('ux', W, { units }), /ux.*pages/);
   const noCfg = { uy: { sim: 'atlas-uy', title: 'y', pages: [40, 41], config: 'config/nope-uy.json' } };
   assert.throws(() => unitSpec('uy', W, { units: noCfg }), /uy/);
+});
+
+test('need(): 설정에 없는 키는 키 이름을 담은 오류(U4-3 Step 0)', () => {
+  const cfg = { content: { labels: 'units/u9/text/x.json' }, charts: { out: {} } };
+  assert.equal(need(cfg, 'u9', 'content.labels'), 'units/u9/text/x.json');
+  assert.throws(() => need(cfg, 'u9', 'content.charts'), /u9.*content\.charts/);
+  assert.throws(() => need(cfg, 'u9', 'charts.out.climate'), /charts\.out\.climate/);
+  assert.throws(() => need({}, 'u9', 'places.index.out'), /places\.index\.out/);
+  assert.throws(() => need({ a: { b: '' } }, 'u9', 'a.b'), /a\.b/, '빈 문자열도 없음');
+});
+
+test('해시에서 *.md 는 뺌 — 이미지·자료 키는 그대로', () => {
+  assert.equal(hashable('repo:content/atlas/u3/issues.md'), false);
+  assert.equal(hashable('repo:content/atlas/u3/ISSUES.MD'), false);
+  for (const k of ['repo:content/atlas/u3/topics.json', 'repo:docs/assets/atlas/u3/photo/a.webp', 'work:vec/p26-europe.json', 'repo:embed/atlas-u3-europe.html']) assert.equal(hashable(k), true, k);
+});
+
+test('낡은 출력 경고: 캡처·조각 < 입력, 대조표 < 캡처', () => {
+  assert.deepEqual(staleWarnings({ inputs: 100, shots: 200, compare: 300, embed: 150 }), []);
+  const w = staleWarnings({ inputs: 500, shots: 200, compare: 100, embed: 400 });
+  assert.equal(w.length, 3);
+  assert.match(w[0], /캡처/); assert.match(w[1], /조각/); assert.match(w[2], /대조표/);
+  assert.deepEqual(staleWarnings({ inputs: 500, shots: null, compare: null, embed: null }), [], '없는 출력은 경고 아님(빠짐은 missingInputs 몫)');
+});
+
+test('빠진 기준선·캡처는 무엇을 돌릴지 알림(ENOENT 아님)', () => {
+  const S = unitSpec('u3', W);
+  const none = missingInputs(S, 'check', () => false);
+  assert.equal(none.length, 5);
+  assert.ok(none.some((m) => /--baseline/.test(m)) && none.some((m) => /compare_shots/.test(m)) && none.some((m) => /npm run embed/.test(m)));
+  assert.deepEqual(missingInputs(S, 'check', () => true), []);
+  assert.ok(missingInputs(S, 'baseline', () => false).every((m) => !/기준선/.test(m)), '기준선을 찍을 때는 기준선이 없어도 됨');
 });
