@@ -6,7 +6,7 @@
 //           · files/<repo|work>/<경로> (JSON·JS 원본 — 다를 때 내용 비교)
 //   먼저 돌릴 것: node scripts/atlas/compare_shots.mjs → node scripts/atlas/compare.mjs (이 스크립트는 그 결과를 읽기만 한다)
 //   - 해시: 저장소 sims/atlas-u2-asia/data/** · content/atlas/u2/** · docs/assets/atlas/** · embed/atlas-u2-asia.html,
-//           작업 폴더 vec/p16~p25-*.json · geo/p16~p25*.fit.json · text/places-*.json · text/p17-labels.json · tables/charts-u2.json·climate-world.json·index.json
+//           작업 폴더 vec/p16~p25-*.json · geo/p16~p25*.fit.json · text/places-p16~p25-*.json(다른 단원 지명 파일은 뺌) · text/p17-labels.json · tables/charts-u2.json·climate-world.json·index.json
 //     JSON 이 다르면 도장(inputsHash — 입력 스크립트 내용 해시)만 다른지도 따로 알린다(스크립트를 고치면 도장은 정당하게 바뀜).
 //     조각(embed)은 코드 위치가 바뀌면 달라지는 게 정당해(2단계 설계 §4.2) 해시 차이를 실패로 세지 않고 크기 차(±1%)만 본다.
 //   - 캡처: 기준선 manifest 의 장면마다 화소 비교(regress_png.py — 다른 화소 수와 상자), 장면 이름·화면에서 센 값(stats) 비교.
@@ -50,7 +50,7 @@ function fileList() {
   const work = [
     ...flat('vec', /^p(1[6-9]|2[0-5])-.*\.json$/),
     ...flat('geo', /^p(1[6-9]|2[0-5]).*\.fit\.json$/),
-    ...flat('text', /^places-.*\.json$/), ...flat('text', /^p17-labels\.json$/),
+    ...flat('text', /^places-p(1[6-9]|2[0-5])-.*\.json$/), ...flat('text', /^p17-labels\.json$/),
     ...flat('tables', /^(charts-u2|climate-world|index)\.json$/),
   ];
   for (const f of work) files[`work:${f}`] = join(WORK, f);

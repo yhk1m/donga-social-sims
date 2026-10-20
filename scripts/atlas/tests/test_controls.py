@@ -1,6 +1,6 @@
 # © 2026 김용현
 # scripts/atlas/tests/test_controls.py — 기준점 추출(extract_vectors.controls) 검사
-import os, sys, unittest
+import json, os, subprocess, sys, unittest
 import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import pdfkit
@@ -111,6 +111,39 @@ class Controls(unittest.TestCase):
 
     def test_kashmir_has_none(self):
         self.assertEqual(ev.controls('p22-kashmir'), [])
+
+
+def controls_u3(map_id):
+    """단원 u3(ATLAS_UNIT=u3) 의 extract_vectors.controls(map_id) — 이 모듈은 u2 로 import 되므로 하위 프로세스로."""
+    here = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+    env = {k: v for k, v in os.environ.items() if k not in ('ATLAS_UNIT', 'ATLAS_UNIT_CONFIG')}
+    env['ATLAS_UNIT'] = 'u3'
+    code = (f'import sys, json; sys.path.insert(0, {here!r}); import extract_vectors as ev; '
+            f'sys.stdout.buffer.write(json.dumps(ev.controls({map_id!r})).encode("utf-8"))')
+    r = subprocess.run([sys.executable, '-I', '-c', code], env=env, capture_output=True)
+    if r.returncode != 0: raise AssertionError(r.stderr.decode('utf-8', 'replace'))
+    return json.loads(r.stdout.decode('utf-8'))
+
+
+@NEED_PDF
+class ControlsU3(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.p26 = controls_u3('p26-europe')
+
+    def test_p26_controls(self):
+        # 26쪽 유럽 일반도: 경위선 교차점 + 도시 기호 기준점, 모두 경위도 범위 안
+        self.assertGreaterEqual(len(self.p26), 12)
+        for c in self.p26:
+            self.assertTrue(-180 <= c['lon'] <= 180 and -90 <= c['lat'] <= 90)
+            self.assertEqual(len(c['xy']), 2)
+
+    def test_p26_grid_on_10deg_lattice(self):
+        grid = [c for c in self.p26 if c['src'] == 'grid']
+        self.assertGreaterEqual(len(grid), 20)          # 눈금 글자 21개 → 경선 8 × 위선 4 중 지도 안 교차점
+        self.assertEqual({c['src'] for c in self.p26}, {'grid', 'city'})
+        for c in grid:
+            self.assertEqual(c['lon'] % 10, 0); self.assertEqual(c['lat'] % 10, 0)
 
 
 if __name__ == '__main__': unittest.main()

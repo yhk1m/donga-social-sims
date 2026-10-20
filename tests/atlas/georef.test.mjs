@@ -190,3 +190,17 @@ test('u2 지도의 도법 후보는 1단계 8개 그대로(후보를 더해도 �
   for (const f of OLD) assert.ok(FAMILY_NAMES.includes(f), f);
   assert.throws(() => familiesFor({ id: 'x', families: ['nope'] }, {}), /nope/);
 });
+
+// ── Ⅲ 유럽(u3) fit: 작업 폴더에 fit 파일이 있으면 1단계 합격 기준(평균 잔차 ≤ 0.5mm, approx 제외)과 도법 ─────────────
+import { existsSync, readFileSync } from 'node:fs';
+const U3_MAPS = JSON.parse(readFileSync(new URL('../../scripts/atlas/maps_u3.json', import.meta.url), 'utf8'));
+const WORK_DIR = (process.env.ATLAS_WORK || 'C:/Users/Public/atlas-work').replace(/\\/g, '/');
+const u3Fits = U3_MAPS.map((m) => [m.id, `${WORK_DIR}/geo/${m.id}.fit.json`]).filter(([, f]) => existsSync(f));
+test('u3 fit: 지도마다 rmsMm·meanMm ≤ 0.5(approx 제외), 26·27쪽은 람베르트 정각 원뿔', { skip: u3Fits.length ? false : '작업 폴더에 u3 fit 없음' }, () => {
+  for (const [id, f] of u3Fits) {
+    const fit = JSON.parse(readFileSync(f, 'utf8'));
+    if (fit.approx) continue;
+    assert.ok(fit.rmsMm <= 0.5 && fit.meanMm <= 0.5, `${id} rms ${fit.rmsMm} mean ${fit.meanMm}`);
+    if (id === 'p26-europe' || id === 'p27-coloring') assert.equal(fit.family, 'conicConformal', id);
+  }
+});

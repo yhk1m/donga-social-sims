@@ -42,11 +42,11 @@ class MapsU3(unittest.TestCase):
                     self.assertTrue(0 <= x0 < x1 <= PAGE_W and 0 <= y0 < y1 <= PAGE_H, b)
 
     def test_georef_source(self):
-        # 모든 지도를 맞춘다(모식도 없음): 경위선 눈금, 기준점 4개 이상, 또는 섬·호수 기준점 원천(shapes + 처음 식 init — U3-2 가 기준점을 씀)
+        # 모든 지도를 맞춘다(모식도 없음): 경위선 눈금 또는 기준점 4개 이상
         for m in self.maps:
             with self.subTest(id=m['id']):
                 self.assertNotEqual(m.get('georef', True), False)
-                self.assertTrue(m['graticuleLabels'] or len(m['controls']) >= 4 or (m.get('shapes') or {}).get('init'))
+                self.assertTrue(m['graticuleLabels'] or len(m['controls']) >= 4, len(m['controls']))
 
     def test_shapes_config(self):
         # 눈금 없는 지도는 섬·호수 기준점(land_shapes·shape_controls)의 원천 shapes 와 처음 식 init 을 적는다
@@ -68,6 +68,28 @@ class MapsU3(unittest.TestCase):
                     self.assertTrue(-32 <= c['lon'] <= 75 and 27 <= c['lat'] <= 75, (c['lon'], c['lat']))   # 유럽 + 둘레
                     x0, y0, x1, y1 = m['bbox']
                     self.assertTrue(x0 <= c['xy'][0] <= x1 and y0 <= c['xy'][1] <= y1, c['xy'])
+
+    def test_city_controls_only_on_general_map(self):
+        # 일반도(26쪽)만 도시 기호 기준점(src:'city')을 쓰고 그 까닭을 controlsNote 에
+        for m in self.maps:
+            city = [c for c in m['controls'] if c.get('src') == 'city']
+            with self.subTest(id=m['id']):
+                if m['id'] == 'p26-europe':
+                    self.assertGreaterEqual(len(city), 10)
+                    self.assertIn('Natural Earth', m['controlsNote'])
+                    for c in city: self.assertTrue(c['ne'] and c['name'])
+                else:
+                    self.assertEqual(city, [])
+
+    def test_shape_controls_from_shapes(self):
+        # src:'shape' 기준점(섬·호수·나라 중심, 꺾인 점)은 shapes 가 있는 지도에만, type 은 centroid·tip
+        for m in self.maps:
+            sh = [c for c in m['controls'] if c.get('src') == 'shape']
+            with self.subTest(id=m['id']):
+                if 'shapes' not in m: self.assertEqual(sh, []); continue
+                self.assertGreaterEqual(len(sh), 12)
+                self.assertIn('Natural Earth', m['controlsNote'])
+                for c in sh: self.assertIn(c['type'], ('centroid', 'tip')); self.assertTrue(c['ne'])
 
 
 if __name__ == '__main__': unittest.main()

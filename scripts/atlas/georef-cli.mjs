@@ -2,6 +2,7 @@
 // scripts/atlas/georef-cli.mjs — georef.mjs 를 단원 지도들에 돌리는 명령줄 도구
 //   node scripts/atlas/georef-cli.mjs --all             지도마다 $ATLAS_WORK/geo/<id>.fit.json + 표
 //   node scripts/atlas/georef-cli.mjs --verify <id|all> Natural Earth 해안선을 지도 렌더(150dpi) 위에 겹친 <id>.verify.png
+//                                                      (단원 작업 폴더 geo/ — u2 는 $ATLAS_WORK/geo/ 그대로, 새 단원은 units/<id>/geo/)
 //   단원: --unit uN(또는 env ATLAS_UNIT, 기본 u2) — 지도 목록은 단원 설정 maps(u2 = maps_u2.json, scripts/atlas/unit.mjs)
 // 기준점: python -I scripts/atlas/extract_vectors.py --controls all 이 쓴 $ATLAS_WORK/vec/<id>.controls.json
 //   (--all 은 controls.json 이 없거나 지도 목록·extract_vectors.py 보다 오래됐으면 먼저 다시 뽑는다)
@@ -54,7 +55,9 @@ function fitAll() {
   for (const m of maps) {
     if (!georefOn(m)) { rows.push([m.id, '(georef: false — 맞추기 없음)']); continue; }
     const families = familiesFor(m, unitConfig);
-    const { cps, dropped } = robustFit(loadCps(m.id), { families });
+    const all = loadCps(m.id);
+    if (all.length < 4) throw new Error(`${m.id}: 기준점 ${all.length}개 — 4개 이상 필요(지도 목록 controls·경위선 눈금, 섬·호수 기준점은 shape_controls.py --write)`);
+    const { cps, dropped } = robustFit(all, { families });
     const fit = fitWithTps(cps, { families });
     const meanMm = fit.meanPt * PT_MM;
     const out = {
@@ -106,12 +109,18 @@ function verify(target) {
       closePath() { if (cur && cur.length) cur.push(cur[0]); }, arc() {}, rect() {},
     };
     geoPath(fitProjection(fit), ctx)(getLand(res));
+    // 나라를 기준으로 맞춘 지도(shapes.target 'countries' — 벨기에·이탈리아처럼 해안이 거의 없음)는 Natural Earth 10m 국경선도 겹친다
+    if (m.shapes?.target === 'countries') {
+      const bf = `${WORK}/raw/ne/ne_10m_admin_0_boundary_lines_land.geojson`;
+      if (fs.existsSync(bf)) geoPath(fitProjection(fit), ctx)(JSON.parse(fs.readFileSync(bf, 'utf8')));
+    }
     const keep = lines.filter((L) => L.some(([x, y]) => x > x0 - pad && x < x1 + pad && y > y0 - pad && y < y1 + pad))
       .map((L) => L.map(([x, y]) => [r2(x), r2(y)]));
     const cps = loadCps(id).map((c) => { const p = applyFit(fit, [c.lon, c.lat]); return { xy: c.xy, fit: p && p.map(r2) }; });
-    const ov = { page: m.page, bbox: m.bbox, dpi: 150, lines: keep, cps, out: `${WORK}/geo/${id}.verify.png`,
+    const ov = { page: m.page, bbox: m.bbox, dpi: 150, lines: keep, cps, out: UNIT.workFile(`geo/${id}.verify.png`),
       title: `${id}  ${fit.family}  rms ${fit.rmsPt}pt  mean ${fit.meanMm}mm${fit.tps ? '  +TPS' : ''}  NE ${res}` };
-    const ovPath = `${WORK}/geo/${id}.overlay.json`;
+    const ovPath = UNIT.workFile(`geo/${id}.overlay.json`);
+    fs.mkdirSync(path.dirname(ovPath), { recursive: true });
     fs.writeFileSync(ovPath, JSON.stringify(ov));
     const r = spawnSync(process.env.PYTHON || 'python', ['-I', path.join(here, 'overlay.py'), ovPath], { encoding: 'utf8', env: UNIT.childEnv() });
     if (r.status !== 0) { console.error(r.stderr); return 1; }
