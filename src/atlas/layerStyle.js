@@ -233,9 +233,11 @@ export function shapePath(shape) { return SHAPE_D[shape] || SHAPE_D.circle; }
 
 /**
  * 레이어 자료 → 화면 범례 항목 [{cls, label, color, kind, shape?, pattern?, dashed?, geometry?, values?, widths?, unit?}].
- * 주제 레이어(FeatureCollection)는 properties.legend 그대로, 밀도 음영(overlay JSON)은 단계마다 cls 'd1'·'d2'… 를 붙인다.
+ * 주제 레이어(FeatureCollection)는 properties.legend 그대로(나라 단위 단계구분도 countryClass 는 맨 위 legend), 밀도 음영(overlay JSON)은 단계마다 cls 'd1'·'d2'… 를 붙인다.
  */
 export function legendItems(data) {
+  // 나라 단위 단계구분도(countryClass)는 범례가 자료 맨 위 legend
+  if (data?.type === 'countryClass') return (data.legend || []).map(({ present, ...e }) => ({ ...e }));
   if (data?.type === 'FeatureCollection') return (data.properties?.legend || []).map(({ present, ...e }) => ({ ...e }));
   return (data?.legend || []).map((e, i) => ({ cls: `d${i + 1}`, label: e.label, color: e.color, kind: 'fill' }));
 }

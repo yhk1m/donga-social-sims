@@ -180,10 +180,11 @@ function roundGeom(g) {
   }
 }
 
-function finish(layer, meta) {
-  const m = maps[layer.map];
-  const clipped = JSON.parse(fs.readFileSync(`${WORK}/geo/${layer.id}.clipped.geojson`, 'utf8'));
-  const features = clipped.features.map((f) => ({ type: 'Feature', properties: f.properties, geometry: roundGeom(f.geometry) }));
+/**
+ * 뽑은 범례(box 뺌) → 화면 범례 항목: 설정 legendShapes·legendStrokes·legendGroups·legendColors(+ legendStyles)를 붙인다.
+ * 설정 열쇠가 범례에 없는 이름이면 멈춘다. → {legend, colorOfCls(화면 색을 바꾼 분류 → 새 색)}
+ */
+export function decorateLegend(layer, rawLegend) {
   // 기호 모양(설정 legendShapes: 범례 이름 → 'circle'|'square'|'diamond'|'triangle'|'triangle-down'|'bar') — 앱 기호·범례 견본이 쓴다
   const shapes = layer.legendShapes || {};
   // 기호 테두리(설정 legendStrokes: 범례 이름 → 색 — 회색 석탄처럼 바탕에 묻히는 기호), 범례 묶음(설정 legendGroups: 묶음 이름 → [범례 이름] — 기후 열대·건조…)
@@ -191,7 +192,7 @@ function finish(layer, meta) {
   const groupOf = Object.fromEntries(Object.entries(layer.legendGroups || {}).flatMap(([g, names]) => names.map((n) => [n, g])));
   // 화면 색 바꾸기(설정 legendColors: 범례 이름 → {color, why} — 웹 바탕 위에서 너무 옅은 분류). 범례·도형 색을 바꾸고 인쇄 색은 printColor 로 남긴다.
   const recolor = layer.legendColors || {};
-  const legend = (meta.legend || []).map(({ box, ...e }) => ({
+  const legend = (rawLegend || []).map(({ box, ...e }) => ({
     ...e, ...(shapes[e.label] ? { shape: shapes[e.label] } : {}), ...(strokes[e.label] ? { stroke: strokes[e.label] } : {}), ...(groupOf[e.label] ? { group: groupOf[e.label] } : {}),
     ...(recolor[e.label] ? { color: recolor[e.label].color, printColor: e.color } : {}),
   }));
@@ -201,6 +202,14 @@ function finish(layer, meta) {
   }
   for (const [name, r] of Object.entries(recolor)) if (!/^#[0-9a-f]{6}$/.test(r?.color || '')) throw new Error(`${layer.id}: legendColors ${name} 색 ${r?.color}`);
   const colorOfCls = new Map(legend.filter((e) => e.printColor).map((e) => [e.cls, e.color]));
+  return { legend, colorOfCls };
+}
+
+function finish(layer, meta) {
+  const m = maps[layer.map];
+  const clipped = JSON.parse(fs.readFileSync(`${WORK}/geo/${layer.id}.clipped.geojson`, 'utf8'));
+  const features = clipped.features.map((f) => ({ type: 'Feature', properties: f.properties, geometry: roundGeom(f.geometry) }));
+  const { legend, colorOfCls } = decorateLegend(layer, meta.legend);
   for (const f of features) if (colorOfCls.has(f.properties.cls)) f.properties = { ...f.properties, color: colorOfCls.get(f.properties.cls) };
   const present = new Set(features.map((f) => f.properties.cls));
   const ne = layer.source === 'ne';
@@ -223,6 +232,42 @@ function finish(layer, meta) {
     id: layer.id, type: layer.type, legend: geomLegend.length, classes: present.size, features: features.length,
     kb: +(fs.statSync(file).size / 1024).toFixed(1), approx: props.approx,
     dropped: meta.convert ? `${meta.convert.dropped}/${meta.convert.points}` : '-', warnings: meta.warnings,
+  };
+}
+
+/**
+ * 나라 단위 단계구분도(type 'countryClass'): country_class.py 결과($WORK/geo/<id>.cc.json) → layer-<id>.json
+ * {type:'countryClass', properties:{id, map, page, title, kind, layerType, approx, source}, legend:[…, present], classes:{iso: cls}, overrides}.
+ * 범례 꾸밈(legendColors·legendStyles 등)은 면 레이어와 같다. 웹은 바탕 지도 나라 도형(iso)을 칠한다(src/atlas/countryClass.js).
+ */
+export function countryClassLayerJson(layer, cc, m, fit) {
+  const { legend } = decorateLegend(layer, cc.legend);
+  const present = new Set(Object.values(cc.classes));
+  const absent = legend.filter((e) => e.geometry !== false && !present.has(e.cls)).map((e) => e.label);
+  if (layer.expectLegend != null && legend.length !== layer.expectLegend) throw new Error(`${layer.id}: 범례 ${legend.length} ≠ expectLegend ${layer.expectLegend}`);
+  if (absent.length) throw new Error(`${layer.id}: 나라가 없는 범례 분류 ${absent.join(', ')}`);
+  return {
+    type: 'countryClass',
+    properties: {
+      id: layer.id, map: layer.map, page: m.page, title: m.title, kind: m.kind, layerType: layer.type,
+      approx: !!fit.approx, ...(fit.approx ? { approxReason: fit.approxReason } : {}),
+      source: `교과서 22개정 중학 사회과 부도 ${m.page}쪽 (나라별 분류 — Natural Earth 나라 표본점, 경위도 맞추기: ${fit.family})`,
+    },
+    legend: legend.map((e) => ({ ...e, present: present.has(e.cls) })),
+    classes: cc.classes,
+    overrides: cc.overrides || [],
+  };
+}
+
+function finishCountryClass(layer) {
+  const cc = JSON.parse(fs.readFileSync(`${WORK}/geo/${layer.id}.cc.json`, 'utf8'));
+  const out = countryClassLayerJson(layer, cc, maps[layer.map], loadFit(layer.map));
+  fs.mkdirSync(OUT, { recursive: true });
+  const file = path.join(OUT, `layer-${layer.id}.json`);
+  fs.writeFileSync(file, JSON.stringify(out));
+  return {
+    id: layer.id, type: layer.type, legend: out.legend.length, classes: new Set(Object.values(out.classes)).size, features: Object.keys(out.classes).length,
+    kb: +(fs.statSync(file).size / 1024).toFixed(1), approx: out.properties.approx, dropped: '-', warnings: cc.report?.warnings || [],
   };
 }
 
@@ -262,14 +307,25 @@ function main(argv) {
     const l = LAYERS.find((x) => x.id === id); if (!l) throw new Error(`모르는 레이어 ${id}`); return l;
   });
   fs.mkdirSync(`${WORK}/geo`, { recursive: true });
-  prepare(todo, { extract: flags.has('--extract') });
-  const metas = todo.map((l) => toRaw(l).meta);
-  process.stdout.write(run([path.join(here, 'clip_land.py'), ...todo.map((l) => l.id)]));
-  const rows = todo.map((l, i) => {
-    const r = finish(l, metas[i]);
-    if (flags.has('--verify')) r.png = verify(l);
-    return r;
-  });
+  // 나라 단위 단계구분도는 도형을 옮기지 않는다(country_class.py → 나라별 분류만)
+  const cc = todo.filter((l) => l.type === 'countryClass');
+  const geo = todo.filter((l) => l.type !== 'countryClass');
+  const byId = new Map();
+  if (geo.length) {
+    prepare(geo, { extract: flags.has('--extract') });
+    const metas = geo.map((l) => toRaw(l).meta);
+    process.stdout.write(run([path.join(here, 'clip_land.py'), ...geo.map((l) => l.id)]));
+    geo.forEach((l, i) => {
+      const r = finish(l, metas[i]);
+      if (flags.has('--verify')) r.png = verify(l);
+      byId.set(l.id, r);
+    });
+  }
+  if (cc.length) {
+    process.stdout.write(run([path.join(here, 'country_class.py'), ...cc.map((l) => l.id)]));
+    for (const l of cc) byId.set(l.id, finishCountryClass(l));
+  }
+  const rows = todo.map((l) => byId.get(l.id));
   console.log(['id', 'type', 'legend', 'classes', 'features', 'KB', 'approx', 'dropped', 'warnings', 'png'].join('\t'));
   for (const r of rows) console.log([r.id, r.type, r.legend, r.classes, r.features, r.kb, r.approx, r.dropped, r.warnings.length, r.png || ''].join('\t'));
   for (const r of rows) for (const w of r.warnings) console.log(`경고 ${r.id}: ${w}`);

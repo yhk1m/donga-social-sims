@@ -134,7 +134,7 @@ export function buildTopic({
       const outline = insets[ref.ref];
       // 확대 창 레이어는 큰 지도에 올리지 않으므로 map 구독도 하지 않는다(범례는 창이 구독)
       const L = layerFromRef(ref, layerData, {
-        map: outline ? null : map,
+        map: outline ? null : map, countryFeatures,
         onPick: (f) => card.show({ title: f.properties.label || f.properties.name, text: ref.label }),
       });
       made.push(L);

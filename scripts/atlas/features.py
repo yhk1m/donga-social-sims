@@ -16,8 +16,8 @@ from atlas_common import WORK, maps, layer_config, layer_ids, poly_coords, polyg
 
 
 def pdf_layer_ids():
-    """PDF 에서 뽑는 레이어(source 가 ne 가 아닌 것)."""
-    return [i for i in layer_ids() if layer_config(i).get('source') != 'ne']
+    """PDF 에서 도형을 뽑는 레이어(source 가 ne 가 아니고 나라 단위 단계구분도 type countryClass 도 아닌 것 — 그건 country_class.py)."""
+    return [i for i in layer_ids() if layer_config(i).get('source') != 'ne' and layer_config(i).get('type') != 'countryClass']
 
 
 def _domain(map_id):

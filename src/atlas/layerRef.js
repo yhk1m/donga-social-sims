@@ -7,6 +7,7 @@ import { legendItems } from './layerStyle.js';
 import { metaOf } from './layerCommon.js';
 import { areaLayer, symbolLayer, flowLayer } from './layers.js';
 import { imageLayer } from './imageLayer.js';
+import { countryClassLayer } from './countryClass.js';
 
 /**
  * 여러 레이어를 한 id 로 묶는다(렌더러에는 하나): draw 는 부분마다 save/restore, drawSvg 는 부분마다 자기 <g class="at-part">,
@@ -42,12 +43,13 @@ export function combineLayers(id, parts, { z = Math.min(...parts.map((p) => p.z 
 /**
  * topics.json 레이어 항목 {ref, type, legend?, label, legendTitle?, lineLegendTitle?, credit?, note?, approx?, approxNote?, group?} → 레이어 하나(id = ref).
  *   data = 그 레이어 자료(JSON) 또는 layers.js 묶음({ref: 자료}).
- *   type: 'area' → areaLayer, 'symbol' → symbolLayer, 'flow' → combineLayers(면 areaLayer + 흐름선 flowLayer), 'image' → imageLayer.
+ *   type: 'area' → areaLayer, 'symbol' → symbolLayer, 'flow' → combineLayers(면 areaLayer + 흐름선 flowLayer), 'image' → imageLayer,
+ *   'countryClass' → countryClassLayer(옵션 countryFeatures = 바탕 지도 나라 도형 {'50': [...], '10a': [...]} 필요).
  *   legend 를 안 주면 범례 항목이 있을 때 새 legendState 를 만든다(layer.legend). layer.legendItems = 화면 범례 항목,
  *   layer.meta = 레이어 자체 meta 에 {ref, type, title, legendTitle, lineLegendTitle, credit, note, group, page, approx, approxNote, approxReason} 을 덧씌움.
  *   그 밖의 옵션(extra)은 이미지 레이어 옵션으로 넘긴다(dimAlpha·onLoad·load).
  */
-export function layerFromRef(ref, data, { legend = undefined, map = null, onPick = null, ...extra } = {}) {
+export function layerFromRef(ref, data, { legend = undefined, map = null, onPick = null, countryFeatures = null, ...extra } = {}) {
   const d = data && data[ref.ref] ? data[ref.ref] : data;
   if (!d) throw new Error(`layerFromRef: 자료 없음 ${ref.ref}`);
   const items = legendItems(d);
@@ -66,6 +68,7 @@ export function layerFromRef(ref, data, { legend = undefined, map = null, onPick
       break;
     }
     case 'image': layer = imageLayer(ref.ref, d, { ...extra, ...common }); break;
+    case 'countryClass': layer = countryClassLayer(ref.ref, d, { ...common, countryFeatures }); break;
     default: throw new Error(`layerFromRef: 모르는 레이어 종류 ${ref.type} (${ref.ref})`);
   }
   const props = d.properties || {};

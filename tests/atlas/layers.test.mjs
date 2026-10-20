@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, statSync } from 'node:fs';
-import { convertPath, alignHole } from '../../scripts/atlas/build_layers.mjs';
+import { convertPath, alignHole, countryClassLayerJson, decorateLegend } from '../../scripts/atlas/build_layers.mjs';
 
 const DIR = 'sims/atlas-u2-asia/data';
 const load = (id) => JSON.parse(readFileSync(`${DIR}/layer-${id}.json`, 'utf8'));
@@ -174,4 +174,22 @@ test('convertPath: null 은 빼고 경도는 날짜변경선을 넘어 이어 �
   const [out, dropped] = convertPath(cv, [[1], [2], [3], [4]]);
   assert.equal(dropped, 1);
   assert.deepEqual(out, [[179, 60], [181, 61], [182, 62]]);
+});
+
+// ── 나라 단위 단계구분도(country_class.py → build_layers) ─────────────────
+test('countryClassLayerJson: 분류 + 범례 꾸밈(legendColors) + present, 범례 분류에 나라가 없으면·expectLegend 가 다르면 멈춤', () => {
+  const cc = { legend: [{ cls: 'c1', color: '#e8562a', label: '80~100', kind: 'fill' }, { cls: 'c2', color: '#fff3c8', label: '50 이하', kind: 'fill' }],
+    classes: { FRA: 'c1', ALB: 'c2' }, overrides: [{ iso: 'XKX', cls: 'c2', why: '코소보', was: null }] };
+  const layer = { id: 'p30-urban', map: 'p30-urban', type: 'countryClass', legendColors: { '50 이하': { color: '#f7dc8a', why: '바탕에 묻힘' } } };
+  const fit = { family: 'conicConformal' };
+  const out = countryClassLayerJson(layer, cc, { page: 30, title: '도시화율', kind: 'urban' }, fit);
+  assert.equal(out.type, 'countryClass');
+  assert.deepEqual(out.classes, cc.classes);
+  assert.deepEqual(out.legend.map((e) => [e.cls, e.color, e.printColor, e.present]), [['c1', '#e8562a', undefined, true], ['c2', '#f7dc8a', '#fff3c8', true]]);
+  assert.equal(out.properties.layerType, 'countryClass');
+  assert.equal(out.properties.page, 30);
+  assert.equal(out.overrides.length, 1);
+  assert.throws(() => countryClassLayerJson(layer, { ...cc, classes: { FRA: 'c1' } }, { page: 30 }, fit), /나라가 없는 범례 분류 50 이하/);
+  assert.throws(() => countryClassLayerJson({ ...layer, expectLegend: 3 }, cc, { page: 30 }, fit), /expectLegend/);
+  assert.throws(() => decorateLegend({ id: 'x', legendColors: { 없음: { color: '#000000' } } }, cc.legend), /범례에 없는 이름/);
 });

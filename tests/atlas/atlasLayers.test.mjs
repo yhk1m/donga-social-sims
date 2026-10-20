@@ -600,3 +600,65 @@ test('symbolLayer 레이어별 크기(properties.symbolStyle)·범례 stroke 테
   assert.deepEqual(res.properties.symbolStyle, { pxPerPt: 3.4, minPx: 8.5, maxPx: 20 });
   assert.equal(res.properties.legend.find((e) => e.label === '석탄').stroke, '#58595b');
 });
+
+// ── 나라 단위 단계구분도(countryClass, U3-3a) ─────────────────────────────
+const { countryClassFeatures, countryClassLayer, countryLevel } = await import('../../src/atlas/countryClass.js');
+const ccData = () => ({
+  type: 'countryClass', properties: { id: 'cc', title: '도시화율', approx: false, source: '시험' },
+  legend: [{ cls: 'c1', color: '#e8562a', label: '80~100', kind: 'fill', present: true }, { cls: 'c2', color: '#f6b26b', label: '70~80', kind: 'fill', present: true }],
+  classes: { AAA: 'c1', BBB: 'c2' }, overrides: [],
+});
+const country = (iso, ko, lon, d = 2) => ({ type: 'Feature', properties: { iso, ko }, geometry: { type: 'MultiPolygon', coordinates: [sq(lon, 10, d)] } });
+// 상세도별 나라 도형: 10a 는 같은 나라를 더 자세히(여기서는 크기만 다르게)
+const ccCountries = () => ({ 50: [country('AAA', '가나라', 10), country('BBB', '나나라', 20), country('CCC', '다나라', 30)],
+  '10a': [country('AAA', '가나라', 10, 2.5), country('BBB', '나나라', 20, 2.5), country('CCC', '다나라', 30, 2.5)] });
+
+test('countryClassFeatures: 분류 없는 나라는 칠하지 않고, 나라마다 범례 색·「이름 · 분류」 말풍선', () => {
+  const fc1 = countryClassFeatures(ccData(), ccCountries()['50']);
+  assert.deepEqual(fc1.features.map((f) => [f.properties.iso, f.properties.cls, f.properties.color, f.properties.label]),
+    [['AAA', 'c1', '#e8562a', '가나라 · 80~100'], ['BBB', 'c2', '#f6b26b', '나나라 · 70~80']]);
+  assert.deepEqual(fc1.properties.legend.map((e) => e.cls), ['c1', 'c2']);
+  assert.equal(countryClassFeatures({ ...ccData(), classes: {} }, ccCountries()['50']).features.length, 0);
+});
+
+test('countryClassLayer: 상세도가 바뀌어도 같은 iso 는 같은 색, 분류 없는 나라는 안 칠함, 맞히기·범례 고름·선택 윤곽은 면 레이어 그대로', () => {
+  const legend = createLegendState(['c1', 'c2']);
+  const map = fakeMap();
+  const L = countryClassLayer('cc', ccData(), { countryFeatures: ccCountries(), legend, map });
+  const fills = (detail) => { const v = viewOf(); v.view.detail = detail; return drawn(L, v).filter((o) => o.op === 'fill').map((o) => o.fillStyle); };
+  assert.deepEqual(fills('50'), ['#e8562a', '#f6b26b']);
+  assert.equal(L.level, '50');
+  assert.deepEqual(fills('10a'), ['#e8562a', '#f6b26b']);
+  assert.equal(L.level, '10a');
+  assert.equal(countryLevel({ detail: '110' }, ccCountries()), '50');
+  // 맞히기: 지금 상세도(10a)의 나라 — 10a 도형은 10~12.5° 라 12.2° 도 맞음
+  const f = L.hit([0, 0], [12.2, 11]);
+  assert.equal(f?.properties.iso, 'AAA');
+  assert.equal(L.hit([0, 0], [31, 11]), null, '분류 없는 나라(CCC)는 맞히지 않음');
+  fills('50');
+  assert.equal(L.hit([0, 0], [12.2, 11]), null, '50 도형(10~12°) 밖');
+  // 범례 고름 → 다른 분류 흐림 + 검은 윤곽, 지도 다시 그리기는 이 레이어 id 로 한 번
+  legend.toggle('c2');
+  assert.deepEqual(map.refreshed, ['cc']);
+  const v = viewOf(); v.view.detail = '50';
+  const ops = drawn(L, v);
+  assert.ok(ops.find((o) => o.op === 'fill' && o.fillStyle === '#e8562a').alpha < 0.5);
+  assert.equal(ops.filter((o) => o.op === 'stroke' && o.strokeStyle === SELECT_OUTLINE.color).length, 1);
+  // SVG 강조: 상세도마다 <g>, 지금 것만 보임
+  const g = document.createElementNS('svg', 'g');
+  const v2 = viewOf(); v2.view.detail = '10a';
+  L.drawSvg(g, v.project, v.view); L.drawSvg(g, v2.project, v2.view);
+  assert.deepEqual(g.childNodes.map((c) => c.getAttribute('display')), ['none', null]);
+  L.destroy();
+  assert.equal(map.handlerCount, 0);
+});
+
+test('layerFromRef: type countryClass → 나라 칠하기 레이어(범례 항목·meta), 나라 도형이 없으면 오류', () => {
+  const L = layerFromRef({ ref: 'cc', type: 'countryClass', label: '도시화율' }, { cc: ccData() }, { countryFeatures: ccCountries() });
+  assert.deepEqual(L.legendItems.map((e) => e.cls), ['c1', 'c2']);
+  assert.equal(L.legendItems[0].present, undefined);
+  assert.equal(L.meta.title, '도시화율');
+  assert.equal(L.meta.source, '시험');
+  assert.ok(L.legend);
+  assert.throws(() => layerFromRef({ ref: 'cc', type: 'countryClass' }, ccData()), /countryFeatures/);
+});
