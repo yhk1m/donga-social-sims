@@ -25,7 +25,7 @@ class LayerGeometry(unittest.TestCase):
             for ft in gj['features']:
                 g = ft['geometry']
                 if g['type'] != 'MultiPolygon': continue
-                with self.subTest(layer=os.path.basename(f), cls=ft['properties']['cls']):
+                with self.subTest(layer=os.path.basename(f), cls=ft['properties'].get('cls', ft['properties'].get('type'))):
                     for poly in g['coordinates']:
                         for r in poly:
                             self.assertGreaterEqual(len(r), 4)
@@ -40,7 +40,7 @@ class LayerGeometry(unittest.TestCase):
         for f in FILES:
             gj = json.load(open(f, encoding='utf-8'))
             areas = [(ft['properties']['cls'], shape(ft['geometry'])) for ft in gj['features']
-                     if ft['geometry']['type'] == 'MultiPolygon' and not ft['properties'].get('pattern')]
+                     if ft['geometry']['type'] == 'MultiPolygon' and not ft['properties'].get('pattern') and ft['properties'].get('type') != 'locator']  # 위치도 강조(카슈미르)는 종교 면과 겹치는 게 맞음
             for (a, ga), (b, gb) in itertools.combinations(areas, 2):
                 if a == b: continue
                 with self.subTest(layer=os.path.basename(f), pair=(a, b)):

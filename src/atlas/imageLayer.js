@@ -85,8 +85,9 @@ export function imageLayer(id, { url, fit, bbox, bounds = null, legend: legendSp
       if (off.width !== grid.cols || off.height !== grid.rows) { off.width = grid.cols; off.height = grid.rows; }
       const out = offCtx.createImageData(grid.cols, grid.rows);
       const o = out.data, { data, width: iw, height: ih } = img;
-      const sel = legend?.selected?.() ?? null;
-      const selIdx = sel ? items.findIndex((e) => e.cls === sel) : -1;
+      // 활성 단계(묶음 고름도 맞게 isActive) — 하나라도 흐리면 화소마다 그 단계가 활성인지 본다
+      const active = legend ? items.map((e) => legend.isActive(e.cls)) : null;
+      const dimAny = !!active && active.some((a) => !a);
       for (let k = 0, q = 0; k < grid.lon.length; k++, q += 4) {
         const fx = ix.x[k];
         if (Number.isNaN(fx)) continue;
@@ -96,7 +97,7 @@ export function imageLayer(id, { url, fit, bbox, bounds = null, legend: legendSp
         const a = data[s4 + 3];
         if (!a) continue;
         o[q] = data[s4]; o[q + 1] = data[s4 + 1]; o[q + 2] = data[s4 + 2];
-        o[q + 3] = selIdx >= 0 && cls && cls[pi] !== selIdx ? a * dimAlpha : a;
+        o[q + 3] = dimAny && cls && !active[cls[pi]] ? a * dimAlpha : a;
       }
       offCtx.putImageData(out, 0, 0);
       ctx.globalAlpha = opacity;

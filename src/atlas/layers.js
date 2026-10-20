@@ -31,6 +31,8 @@ export { imageLayer, loadImageData } from './imageLayer.js';
 const HALO = 'rgba(255,255,255,.9)';
 const LINE_PT = { isotherm: 0.8, line: 1.2 }; // 주제도 선 기본 굵기(pt) — lineWidthPx 로 화면 px
 const LABEL_FONT = '700 10px "Pretendard", "Malgun Gothic", sans-serif';
+/** 면 레이어 지명 글자 크기(px): 교과서 pt × 역할 배율 — 나라(분홍 6.7pt)·「카 슈 미 르」는 크게, 관할 이름(4.8pt)은 작게 */
+export const labelPx = (p) => Math.round(Math.min(22, Math.max(10, (p.size || 6) * ({ name: 2.7, country: 2.2, region: 2.4 }[p.role] ?? 2.2))));
 
 // ---------- 빗금(고산 기후) ----------
 const hatchTiles = new Map();
@@ -58,9 +60,13 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
   const feats = featuresOf(geojson);
   const legendList = legendItems(geojson);
   const dashed = new Set(legendList.filter((e) => e.dashed).map((e) => e.cls));
-  const areas = feats.filter((f) => isPoly(f) && !f.properties.pattern);
+  // type 'locator' 면(카슈미르 위치도 강조)은 큰 지도에 그리지 않는다 — topic.js 위치도가 쓴다(layer.locator)
+  const areas = feats.filter((f) => isPoly(f) && !f.properties.pattern && f.properties.type !== 'locator');
   const hatches = feats.filter((f) => isPoly(f) && f.properties.pattern === 'hatch');
   const lines = feats.filter(isLine);
+  // 지명(Point {type:'label', text, lines?, size(pt), color, role}) — 카슈미르 「카 슈 미 르」·관할 이름·나라 이름(교과서 글자 자리를 옮긴 것)
+  const labels = feats.filter((f) => f.geometry?.type === 'Point' && f.properties.type === 'label');
+  let labelBoxes = []; // 마지막 그림의 지명 상자(화면 px) — 바탕 지명이 피함
   const polys = [...areas, ...hatches]; // 맞히기 순서(위에 그린 것부터 거꾸로)
   const own = new Set(feats);
   const cache = new Map(); // f → {idx, bounds}
@@ -103,8 +109,37 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
     }
   }
 
+  /** 지명 글자: 흰 테두리 굵은 글자, 크기 = 교과서 pt × 역할 배율(나라·이름은 크게), 여러 줄이면 가운데 맞춰 쌓음. 범례와 상관없이 그대로. */
+  function drawPointLabels(ctx, view) {
+    labelBoxes = [];
+    if (!labels.length) return;
+    const proj = view.projection;
+    ctx.setLineDash([]); ctx.globalAlpha = 1; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+    for (const f of labels) {
+      const q = proj(f.geometry.coordinates);
+      if (!q || !Number.isFinite(q[0])) continue;
+      const p = f.properties;
+      const px = labelPx(p);
+      const lines = p.lines?.length ? p.lines : [p.text];
+      ctx.font = `${p.role === 'region' ? 600 : 800} ${px}px "Pretendard", "Malgun Gothic", sans-serif`;
+      const lh = px * 1.15, top = q[1] - ((lines.length - 1) * lh) / 2;
+      let wMax = 0;
+      lines.forEach((t, i) => {
+        const y = top + i * lh;
+        ctx.strokeStyle = HALO; ctx.lineWidth = Math.max(2.5, px * 0.28); ctx.strokeText(t, q[0], y);
+        ctx.fillStyle = p.color || '#231f20'; ctx.fillText(t, q[0], y);
+        wMax = Math.max(wMax, ctx.measureText ? ctx.measureText(t).width || t.length * px : t.length * px);
+      });
+      labelBoxes.push([q[0] - wMax / 2 - 2, top - lh / 2, q[0] + wMax / 2 + 2, top + (lines.length - 0.5) * lh]);
+    }
+  }
+
   const layer = {
     id, z, meta: metaOf(geojson), legendItems: legendList, features: feats,
+    /** 위치도 강조 면(type 'locator', 카슈미르) — 없으면 null */
+    locator: feats.find((f) => isPoly(f) && f.properties.type === 'locator') || null,
+    /** 지명 자리 피하기: 그린 지명 글자 상자 */
+    labelObstacles: () => labelBoxes.map((b) => [...b]),
     draw(ctx, path, view) {
       lastView = view;
       const rect = view.geoRect;
@@ -124,6 +159,7 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
       ctx.lineJoin = 'round'; ctx.lineCap = 'round';
       for (const f of lines) drawLine(ctx, path, f, view, alphaOf(legend, f.properties.cls, dimAlpha));
       drawIsoLabels(ctx, view);
+      drawPointLabels(ctx, view);
     },
     drawSvg(g, project, view) { // 강조 윤곽 하나(제자리에서 고침)
       if (!hoverEl || hoverEl.parentNode !== g) { hoverEl = s('path', { class: 'at-hover' }); g.append(hoverEl); }
@@ -185,6 +221,10 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
   const feats = featuresOf(points).filter((f) => f.geometry?.type === 'Point');
   const legendList = legendItems(points);
   const shapeOf = iconOf || defaultIconOf(legendList);
+  // 레이어별 크기(자료 properties.symbolStyle {pxPerPt, minPx, maxPx} — 24쪽 자원처럼 작은 기호를 키울 때)·분류별 테두리(범례 항목 stroke)
+  const symStyle = metaOf(points).symbolStyle || {};
+  const sizeOpts = { ...(symStyle.pxPerPt ? { pxPerPt: symStyle.pxPerPt } : {}), ...(symStyle.minPx ? { min: symStyle.minPx } : {}), ...(symStyle.maxPx ? { max: symStyle.maxPx } : {}) };
+  const strokeOf = new Map(legendList.filter((e) => e.stroke).map((e) => [e.cls, e.stroke]));
   const items = feats.map((f) => ({ f, shape: shapeOf(f) }));
   const byF = new Map(items.map((it) => [it.f, it]));
   let root = null;
@@ -193,7 +233,7 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
     root = s('g', { class: 'at-symbols' });
     for (const it of items) {
       // 캐시 초기화(새 요소에 맞춰 다시 계산)
-      Object.assign(it, { el: null, xy: null, box: null, r: 0, key: '', h: 0, w: 0, leader: null, dot: null, cells: null, label: null });
+      Object.assign(it, { el: null, xy: null, box: null, base: null, labelY: 0, r: 0, key: '', h: 0, w: 0, leader: null, dot: null, cells: null, label: null });
       const p = it.f.properties;
       const el = s('g', { class: `at-sym-item at-sym-${it.shape}`, on: { click: (e) => { e.stopPropagation(); onPick?.(it.f, e); } } });
       if (it.shape === 'bar') {
@@ -203,7 +243,9 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
         it.label = p.name ? s('text', { class: 'at-bar-label' }, p.name) : null;
         el.append(it.leader, it.dot, it.cells, ...(it.label ? [it.label] : []));
       } else {
-        el.append(s('path', { class: 'at-sym-shape', d: shapePath(it.shape), fill: p.color, 'vector-effect': 'non-scaling-stroke' }));
+        const shape = s('path', { class: `at-sym-shape${strokeOf.has(p.cls) ? ' has-stroke' : ''}`, d: shapePath(it.shape), fill: p.color, 'vector-effect': 'non-scaling-stroke' });
+        if (strokeOf.has(p.cls)) shape.style?.setProperty?.('--at-sym-stroke', strokeOf.get(p.cls)); // CSS 변수 — 강조(hover) 테두리는 CSS 가 그대로 이김
+        el.append(shape);
       }
       it.el = el;
       root.append(el);
@@ -228,12 +270,14 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
       it.cells.replaceChildren(...kids);
       it.h = m.height + m.gap + m.cell * 1.1 + 2 * hr;
       it.w = w;
-      if (it.label) setAttr(it.label, 'y', round1(m.cell * 1.1 + 4));
+      it.labelY = m.cell * 1.1 + 4;
+      if (it.label) setAttr(it.label, 'y', round1(it.labelY));
     }
     setAttr(it.cells, 'transform', `translate(${round1(base[0])},${round1(base[1])})`);
     if (it.label) { setAttr(it.label, 'x', round1(base[0])); setAttr(it.label, 'transform', `translate(0,${round1(base[1])})`); }
     // 막대 상자(맞히기·지시선)
     it.box = [base[0] - it.w / 2, base[1] - it.h, base[0] + it.w / 2, base[1] + (it.label ? 16 : 0)];
+    it.base = base;
     if (anchor) {
       const bx = Math.max(it.box[0], Math.min(anchor[0], it.box[2])), by = Math.max(base[1] - it.h, Math.min(anchor[1], base[1]));
       setAttr(it.leader, 'd', `M${round1(anchor[0])},${round1(anchor[1])}L${round1(bx)},${round1(by)}`);
@@ -261,7 +305,7 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
         } else {
           shown = shown && q[0] > -20 && q[0] < W + 20 && q[1] > -20 && q[1] < H + 20;
           if (shown) {
-            it.r = symbolPx(sizeOf(it.f) || 3, view.k) / 2;
+            it.r = symbolPx(sizeOf(it.f) || 3, view.k, sizeOpts) / 2;
             setAttr(it.el, 'transform', `translate(${round1(q[0])},${round1(q[1])}) scale(${round2(it.r)})`);
           }
         }
@@ -283,6 +327,24 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
         } else if (Math.hypot(xy[0] - it.xy[0], xy[1] - it.xy[1]) <= (it.r || 3) + 3) return it.f;
       }
       return null;
+    },
+    /** 지명 자리 피하기(E1): 지금 그린 기호 상자(화면 px) — 막대는 막대·사람·나라 이름까지, 그 밖은 기호 원. 흐린 분류는 뺀다. */
+    labelObstacles() {
+      const out = [];
+      for (const it of items) {
+        if (!it.xy || alphaOf(legend, it.f.properties.cls, 0) === 0) continue;
+        if (it.shape === 'bar') {
+          if (!it.box) continue;
+          out.push([it.box[0], it.box[1], it.box[2], it.base[1]]);
+          if (it.label) { // 나라 이름(12px 굵은 글자, 한글 한 자 ≈ 12px — 어림)
+            const tw = String(it.f.properties.name).length * 12 + 4, y = it.base[1] + it.labelY;
+            out.push([it.base[0] - tw / 2, y, it.base[0] + tw / 2, y + 15]);
+          }
+          if (it.f.properties.barAt) out.push([it.xy[0] - 3, it.xy[1] - 3, it.xy[0] + 3, it.xy[1] + 3]); // 지시선 끝 점
+        }
+        else { const r = (it.r || 3) + 1; out.push([it.xy[0] - r, it.xy[1] - r, it.xy[0] + r, it.xy[1] + r]); }
+      }
+      return out;
     },
     destroy() { offs.forEach((off) => off()); offs.length = 0; },
   };
@@ -369,22 +431,54 @@ const PIN_D = 'M0,0C-2.2,-5.2 -8,-8.8 -8,-15A8,8 0 1,1 8,-15C8,-8.8 2.2,-5.2 0,0
  * hit 은 Feature 모양 {type:'Feature', properties:{label: title, id, approx}, geometry, marker} 를 돌려준다(말풍선은 properties.label).
  * 핀 id 는 data-id 속성에만 둔다(문서 전역 id 아님).
  */
-export function markerLayer(id, markers, { map = null, layerId = id, onPick = null, numberOf = (m, i) => m.number ?? m.photo?.pin ?? i + 1, z = LAYER_Z.marker } = {}) {
+export function markerLayer(id, markers, {
+  map = null, layerId = id, onPick = null, numberOf = (m, i) => m.number ?? m.photo?.pin ?? i + 1, z = LAYER_Z.marker, hideNumbers = false, onReveal = null,
+} = {}) {
+  // hideNumbers(교과서 20쪽 활동하기 1 — 학생이 사진 번호를 빈 핀에 씀): 처음엔 번호 없는 빈 핀, 말풍선(hover)에도 이름 없음.
+  // 누른 핀은 번호·이름이 보이고(reveal), revealAll(true/false)로 모두 보이기·다시 숨기기. 바뀔 때마다 onReveal(드러난 수, 전체 수).
   const items = (markers || []).filter((m) => Array.isArray(m.lonlat)).map((m, i) => ({
-    m, n: numberOf(m, i), xy: null, el: null,
-    feature: { type: 'Feature', properties: { label: m.title ?? '', id: m.id, approx: !!m.approx }, geometry: { type: 'Point', coordinates: m.lonlat }, marker: m },
+    m, n: numberOf(m, i), xy: null, el: null, num: null, shown: !hideNumbers,
+    feature: { type: 'Feature', properties: { label: hideNumbers ? '' : m.title ?? '', id: m.id, approx: !!m.approx }, geometry: { type: 'Point', coordinates: m.lonlat }, marker: m },
   }));
+  // 숨긴 핀: 번호 글자 숨김 + is-blank(옅은 보라 — 아직 답하지 않은 빈칸), 말풍선 이름·읽기 이름도 「핀」만(답 = 사진 번호 ↔ 자리)
+  const paint = (it) => {
+    it.feature.properties.label = it.shown ? it.m.title ?? '' : '';
+    if (it.num) setAttr(it.num, 'display', it.shown ? null : 'none');
+    if (it.el) {
+      it.el.classList.toggle('is-blank', !it.shown);
+      setAttr(it.el, 'aria-label', it.shown ? it.m.title || (it.n != null ? `핀 ${it.n}` : '핀') : '핀');
+    }
+  };
+  const revealedCount = () => items.filter((it) => it.shown).length;
+  const notify = () => onReveal?.(revealedCount(), items.length);
+  const changed = () => { if (map && !map.destroyed) map.refreshLayer(layerId); notify(); };
+  // 누르기·Enter·Space 가 같은 길: 숨긴 핀이면 드러내고(다시 그리기는 select 가 한 번만), 고르고, onPick
+  const press = (it, e) => {
+    e.stopPropagation?.();
+    if (!it.shown) { it.shown = true; paint(it); notify(); }
+    layer.select(it.m.id);
+    onPick?.(it.m, e);
+  };
   const byFeature = new Map(items.map((it) => [it.feature, it]));
   let root = null, sel = null;
   function build(g) {
     root = s('g', { class: 'at-pins' });
     for (const it of items) {
       it.xy = null;
-      it.el = s('g', { class: 'at-pin', 'data-id': it.m.id, on: { click: (e) => { e.stopPropagation(); layer.select(it.m.id); onPick?.(it.m, e); } } },
+      it.num = it.n != null ? s('text', { class: 'at-pin-num', x: 0, y: -15 }, String(it.n)) : null;
+      // 키보드: 핀마다 Tab 으로 닿는 단추(role button) — Enter·Space 는 누르기와 같은 길. 무대 키(방향키·+−)는 무대 자체에 초점일 때만이라 겹치지 않음
+      it.el = s('g', {
+        class: 'at-pin', 'data-id': it.m.id, role: 'button', tabindex: '0',
+        on: {
+          click: (e) => press(it, e),
+          keydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault?.(); press(it, e); } },
+        },
+      },
         s('path', { class: 'at-pin-body', d: PIN_D }),
         s('circle', { class: 'at-pin-hole', cx: 0, cy: -15, r: 5.6 }),
-        it.n != null ? s('text', { class: 'at-pin-num', x: 0, y: -15 }, String(it.n)) : null,
+        it.num,
       );
+      paint(it);
       root.append(it.el);
     }
     g.append(root);
@@ -420,8 +514,19 @@ export function markerLayer(id, markers, { map = null, layerId = id, onPick = nu
       }
       return null;
     },
+    /** 지명 자리 피하기(E1): 핀 머리·꼬리 상자(화면 px) */
+    labelObstacles() {
+      return items.filter((it) => it.xy).map((it) => { const sc = it.m.id === sel ? 1.25 : 1; return [it.xy[0] - 8 * sc, it.xy[1] - 24 * sc, it.xy[0] + 8 * sc, it.xy[1]]; });
+    },
     select(mid) { select(mid); if (map && !map.destroyed) map.refreshLayer(layerId); },
     selected: () => sel,
+    /** 핀 하나의 번호·이름 보이기(hideNumbers) */
+    reveal(mid) { const it = items.find((x) => x.m.id === mid); if (!it || it.shown) return; it.shown = true; paint(it); changed(); },
+    /** 모두 보이기(true) · 다시 숨기기(false) */
+    // 다시 숨기기(false)는 하나씩 누른 핀까지 모두 숨긴다 — 활동을 처음부터 다시 하는 것이라 몇 개만 남기면 답이 드러남
+    revealAll(on = true) { for (const it of items) { it.shown = !!on; paint(it); } changed(); },
+    isRevealed: (mid) => !!items.find((x) => x.m.id === mid)?.shown,
+    get revealed() { return revealedCount(); },
     destroy() { offs.forEach((off) => off()); offs.length = 0; },
   };
   const offs = connect({ map, layerId, onHover });

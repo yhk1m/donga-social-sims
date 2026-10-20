@@ -3,18 +3,21 @@
 // 주제를 바꿀 때 destroy() 하고 다시 만들면 된다 — 지도·범례 구독, 무대 키 입력 등 붙인 것은 destroy 가 모두 푼다.
 //
 //   topicNav(panel, topics, onSelect, { current })  목차(세로 목록, 지금 주제 강조, 쪽 표시) — update(id)
-//   mapTools(stage, map, { relief })                 무대 오른쪽 위 도구(도법 5·대서양/태평양·경위선/지명/음영·확대/축소/전체) + 왼쪽 아래 축척 막대,
+//   mapTools(stage, map, { relief, tint })           무대 오른쪽 위 도구(도법 5·대서양/태평양·경위선/지명/음영·바탕 색 없음/고도 색/자연색·확대/축소/전체) + 왼쪽 아래 축척 막대,
 //                                                    무대 키보드(무대에 초점이 있을 때만: +/− 확대·축소, 방향키 이동, 0 전체) — update()
 //   legendBlock(panel, legend, items, opts)          범례(색 견본 + 이름, 누르면 legend.toggle) + 제목·출처·위치 근사·이미지 실패 알림
 //   detailCard(panel, { onExpand })                  .show({ title, photo, text, chart | charts, credit, approx }) / .hide()
 //   pageViewer(stage)                                「원본 쪽 보기」 겹침 창(absolute, z 20): .show({ url, title, bbox } | { title, node }) / .hide()
 //   tooltip(stage, { map })                          포인터 자리 이름 말풍선(map 을 주면 hover 를 구독)
-//   creditBlock(panel)                               출처 줄(바탕 지도: Natural Earth + 주제 레이어 출처) — update(credits)
+//   creditBlock(panel)                               출처 줄(바탕 지도: Natural Earth + 주제 레이어 출처) — update(credits), setNatural(on)(자연색 출처 줄)
 // 사진·원본 쪽은 공개 Pages 의 절대 주소 <img src> 로만 연결한다(ASSET_BASE). 개발 서버에서는 아직 공개 전이라 저장소 파일로 바꿔 쓴다.
 import { h, s, icon, append } from '../shared/dom.js';
 import { addBlock } from '../shared/shell.js';
 import { PROJECTIONS } from './projections.js';
 import { renderChart } from './charts.js';
+import { segButtons } from './seg.js';
+import { tintLegend } from './tint.js';
+import { BASE_MODES, baseModeOf, baseOptions, NATURAL_CREDIT } from './natural.js';
 import { scaleBarSpec, hoverLabel, pageCrop, pagesLabel, assetUrl, panTarget, ASSET_BASE } from './uiCore.js';
 import './ui.css';
 
@@ -68,24 +71,36 @@ export function topicNav(panel, topics, onSelect, { current = null } = {}) {
 }
 
 // ---------- 지도 도구 ----------
-function seg(items, label, onPick) {
-  const btns = items.map(([v, text, title]) => h('button', {
-    class: 'ds-seg-btn at-tools-seg-btn', type: 'button', 'aria-pressed': 'false', title: title || text, 'data-v': String(v),
-    on: { click: () => onPick(v) },
-  }, text));
-  const el = h('div', { class: 'ds-seg at-tools-seg', role: 'group', 'aria-label': label }, btns);
-  return { el, set(v) { btns.forEach((b) => b.setAttribute('aria-pressed', String(b.getAttribute('data-v') === String(v)))); } };
-}
+/** 지도 도구 고르기 단추(도법·중심 경도) — seg.js segButtons, 지금 값은 update() 가 view 로 맞춘다 */
+const seg = (items, label, onPick) => segButtons(items, { label, onPick, className: 'at-tools-seg', btnClass: 'at-tools-seg-btn' });
 
 const PROJ_SHORT = { miller: '밀러', mercator: '메르카토르', robinson: '로빈슨', goode: '구드', equalEarth: '이퀄어스' };
 
-export function mapTools(stage, map, { relief = true } = {}) {
+export function mapTools(stage, map, { relief = true, tint = true } = {}) {
   const proj = seg(Object.keys(PROJECTIONS).map((k) => [k, PROJ_SHORT[k] || PROJECTIONS[k].label, `${PROJECTIONS[k].label} 도법`]), '도법', (k) => { map.setProjection(k); update(); });
   const center = seg([[0, '대서양', '대서양 중심(경도 0°)'], [150, '태평양', '태평양 중심(경도 150°)']], '중심 경도', (c) => { map.setCenterLon(c); update(); });
   const opts = { graticule: true, labels: true, relief };
-  const check = (key, text) => {
+  // 바탕 색(없음·고도 색·자연색) 한 묶음 — 렌더러 옵션 tint·natural 두 개를 함께 바꾼다
+  const base = tint ? segButtons(BASE_MODES, { label: '바탕 색', className: 'at-tools-seg at-tools-base', btnClass: 'at-tools-seg-btn', current: baseModeOf(map.options),
+    onPick: (m) => { baseNote.hidden = true; map.setOptions(baseOptions(m)); base.set(baseModeOf(map.options)); } }) : null;
+  // 바탕 화상 알림 한 줄(범례 이미지 실패 알림과 같은 꼴 — role status): 자연색 화상을 못 불러와 앞 바탕으로 돌아갔을 때
+  const baseNote = h('p', { class: 'at-legend-fail at-tools-note', role: 'status' }, '자연색 화상을 불러오지 못해 앞의 바탕으로 돌아갔습니다.');
+  baseNote.hidden = true;
+  /** 바탕 단추 상태: 'loading'(단추 바쁨 — aria-busy) | 'failed'(바쁨 풀고 알림) | 'ready'·그 밖(바쁨·알림 풂) */
+  function setBaseState(mode, state) {
+    const b = base?.btns.find((x) => x.getAttribute('data-v') === mode);
+    if (!b) return;
+    const busy = state === 'loading';
+    if (busy) b.setAttribute('aria-busy', 'true'); else b.removeAttribute('aria-busy');
+    b.classList.toggle('is-busy', busy);
+    b.title = busy ? '자연색 화상을 불러오는 중…' : BASE_MODES.find((m) => m[0] === mode)?.[2] || b.title;
+    baseNote.hidden = state !== 'failed';
+  }
+  const inputs = {};
+  const check = (key, text, title = null) => {
     const input = h('input', { type: 'checkbox', class: 'at-tools-check-input', checked: opts[key], on: { change: (e) => { opts[key] = !!e.target.checked; map.setOptions({ [key]: opts[key] }); } } });
-    return h('label', { class: 'ds-check at-tools-check' }, input, text);
+    inputs[key] = input;
+    return h('label', { class: 'ds-check at-tools-check', title }, input, text);
   };
   const zoomBy = (f) => { const v = map.view; map.flyTo({ zoom: Math.max(1, Math.min(40, v.k * f)) }, 300); };
   const whole = () => map.flyTo({ center: [map.view.centerLon, 0], zoom: 1 }, 500);
@@ -94,7 +109,9 @@ export function mapTools(stage, map, { relief = true } = {}) {
     h('div', { class: 'at-tools-card' },
       proj.el,
       h('div', { class: 'at-tools-row' }, center.el,
-        check('graticule', '경위선'), check('labels', '지명'), relief ? check('relief', '음영') : null)),
+        check('graticule', '경위선'), check('labels', '지명'), relief ? check('relief', '음영') : null),
+      base ? h('div', { class: 'at-tools-row' }, h('span', { class: 'at-tools-label' }, '바탕'), base.el) : null,
+      base ? baseNote : null),
     h('div', { class: 'at-tools-zoom', role: 'group', 'aria-label': '확대·축소' },
       btn('plus', '확대', () => zoomBy(2)), btn('minus', '축소', () => zoomBy(0.5)), btn('globe', '세계 전체 보기', whole)));
   const barLine = h('div', { class: 'at-scale-bar' });
@@ -135,17 +152,44 @@ export function mapTools(stage, map, { relief = true } = {}) {
     if (sp) { barLine.style.width = `${Math.round(sp.px)}px`; barText.textContent = sp.label; }
   }
   const off = map.on('viewchange', update);
+  // 주제가 바탕 색을 바꾸면(일반도 = 고도 색, 지형 = 자연색) 단추·체크 상자도 따라간다
+  const offOpt = map.on('options', (o) => {
+    for (const [k, input] of Object.entries(inputs)) if (k in o && input.checked !== !!o[k]) { input.checked = !!o[k]; opts[k] = !!o[k]; }
+    base?.set(baseModeOf(o));
+  });
   update();
   return {
-    el, scale, update,
+    el, scale, update, base, setBaseState,
     destroy() {
-      off();
+      off(); offOpt();
       stage.removeEventListener('keydown', onKey);
       if (hadTab == null) stage.removeAttribute('tabindex'); else stage.setAttribute('tabindex', hadTab);
       stage.removeAttribute('aria-label');
       el.remove(); scale.remove();
     },
   };
+}
+
+// ---------- 고도 색 범례(교과서 16쪽 「육지 높이·바다 깊이」 상자) ----------
+/**
+ * 세로 색띠 + 칸 경계 숫자(m). 위에서부터 빙하 · 5,000 … 0 · 해수면 아래 땅 · 바다 200 … 8,000(교과서 차례).
+ * → { el, show(on), destroy() }. 누를 것 없음(그림과 글).
+ */
+export function tintLegendBlock(panel, { title = '높이와 깊이', note = null } = {}) {
+  const rows = tintLegend();
+  const items = rows.map((r, i) => h('div', { class: `at-tint-row at-tint-${r.kind}${i === rows.length - 1 ? ' at-tint-last' : ''}`, title: r.title },
+    h('span', { class: 'at-tint-top' }, r.top ?? ''),
+    h('span', { class: 'at-tint-sw', style: { background: r.kind === 'glacier' ? `repeating-linear-gradient(135deg, rgba(0, 0, 0, .08) 0 2px, transparent 2px 5px), ${r.color}` : r.color }, 'aria-hidden': 'true' }),
+    r.label ? h('span', { class: 'at-tint-label' }, r.label) : null));
+  const el = h('section', { class: 'at-legend at-tint-legend', 'aria-label': `${title} 범례` },
+    h('div', { class: 'at-legend-head' }, h('h3', { class: 'ds-h2 at-legend-title' }, title)),
+    h('div', { class: 'at-tint-cols' },
+      h('div', { class: 'at-tint-caption' }, h('span', {}, '육지 높이 (m)'), h('span', {}, '바다 깊이 (m)')),
+      h('div', { class: 'at-tint-ramp', role: 'img', 'aria-label': '육지 높이 0·100·200·500·1,000·2,000·3,000·4,000·5,000 m, 빙하, 해수면 아래 땅, 바다 깊이 200·1,000·2,000·4,000·6,000·8,000 m' },
+        items)),
+    note ? h('p', { class: 'at-legend-note' }, note) : null);
+  if (panel) addBlock(panel, el);
+  return { el, show(on) { el.hidden = !on; }, destroy() { el.remove(); } };
 }
 
 // ---------- 범례 ----------
@@ -163,7 +207,7 @@ function swatch(e) {
   if (e.shape) {
     const d = { circle: null, square: 'M2,2H10V10H2Z', diamond: 'M6,1L11,6L6,11L1,6Z', triangle: 'M6,1L11,10H1Z', 'triangle-down': 'M1,2H11L6,11Z' }[e.shape];
     return s('svg', { class: 'at-swatch at-swatch-sym', viewBox: '0 0 12 12', 'aria-hidden': 'true' },
-      d ? s('path', { d, fill: e.color, stroke: '#fff', 'stroke-width': 0.8 }) : s('circle', { cx: 6, cy: 6, r: 4.5, fill: e.color, stroke: '#fff', 'stroke-width': 0.8 }));
+      d ? s('path', { d, fill: e.color, stroke: e.stroke || '#fff', 'stroke-width': e.stroke ? 1 : 0.8 }) : s('circle', { cx: 6, cy: 6, r: 4.5, fill: e.color, stroke: e.stroke || '#fff', 'stroke-width': e.stroke ? 1 : 0.8 }));
   }
   const st = { background: e.color || '#ccc' };
   if (e.pattern === 'hatch') st.background = `repeating-linear-gradient(45deg, ${e.color || '#ba703d'} 0 1.5px, transparent 1.5px 4px)`;
@@ -188,6 +232,26 @@ export function legendBlock(panel, legend, items, opts = {}) {
     return b;
   };
   const fills = items.filter((e) => !lineKinds.has(e.kind));
+  // 묶음(항목 group — 기후 열대·건조·온대·냉대·한대): 이어진 같은 묶음을 제목 아래로. 제목을 누르면 그 묶음만(legend.toggleGroup).
+  const groupBtns = [];
+  const fillRows = () => {
+    const out = [];
+    for (let i = 0; i < fills.length;) {
+      const g = fills[i].group;
+      if (!g) { out.push(row(fills[i])); i++; continue; }
+      let j = i; while (j < fills.length && fills[j].group === g) j++;
+      const members = fills.slice(i, j);
+      const can = !!legend?.toggleGroup && members.every((e) => e.geometry !== false);
+      const head = h('button', {
+        class: 'at-legend-group-head', type: 'button', 'aria-pressed': 'false', disabled: can ? null : true, title: `「${g}」 묶음만 보기(다시 누르면 전체)`,
+        on: { click: () => { if (can) legend.toggleGroup(g, members.map((e) => e.cls)); } },
+      }, g);
+      groupBtns.push([g, head]);
+      out.push(h('div', { class: 'at-legend-group', role: 'group', 'aria-label': g }, head, h('div', { class: 'at-legend-group-items' }, members.map(row))));
+      i = j;
+    }
+    return out;
+  };
   const lines = items.filter((e) => lineKinds.has(e.kind));
   const reset = h('button', { class: 'ds-btn at-legend-reset', type: 'button', on: { click: () => legend?.reset() } }, '전체 보기');
   const notice = h('p', { class: 'at-legend-fail', role: 'status' }, '이미지를 불러오지 못했습니다. 지도의 다른 내용은 그대로 볼 수 있습니다.');
@@ -203,7 +267,7 @@ export function legendBlock(panel, legend, items, opts = {}) {
     opts.approx ? h('span', { class: 'at-badge', title: opts.approxReason || '교과서 지도의 위치를 눈으로 맞춘 근사' }, opts.approxNote || '위치 근사') : null);
   const el = h('section', { class: 'at-legend', 'aria-label': opts.title || '범례' },
     head,
-    fills.length ? h('div', { class: 'at-legend-list' }, fills.map(row)) : null,
+    fills.length ? h('div', { class: `at-legend-list${fills.some((e) => e.group) ? ' has-groups' : ''}` }, fillRows()) : null,
     lines.length ? h('div', { class: 'at-legend-sub' }, opts.lineTitle || null) : null,
     lines.length ? h('div', { class: 'at-legend-list' }, lines.map(row)) : null,
     widthRow,
@@ -213,13 +277,14 @@ export function legendBlock(panel, legend, items, opts = {}) {
   if (panel) addBlock(panel, el);
   const sync = (sel) => {
     for (const [e, b] of btns) b.setAttribute('aria-pressed', String(sel === e.cls));
+    for (const [g, b] of groupBtns) b.setAttribute('aria-pressed', String(sel === `group:${g}`));
     reset.hidden = sel == null;
   };
   const off = legend ? legend.onChange(sync) : null;
   sync(legend?.selected?.() ?? null);
   let alive = true;
   opts.ready?.then?.((ok) => { if (alive && ok === false) notice.hidden = false; });
-  return { el, update: sync, destroy() { alive = false; off?.(); el.remove(); btns.length = 0; } };
+  return { el, update: sync, destroy() { alive = false; off?.(); el.remove(); btns.length = 0; groupBtns.length = 0; } };
 }
 
 // ---------- 상세 카드 ----------
@@ -322,11 +387,14 @@ export function tooltip(stage, { map = null, offset = 14 } = {}) {
 // ---------- 출처 줄 ----------
 export function creditBlock(panel) {
   const list = h('ul', { class: 'at-credits-list' });
-  const el = h('footer', { class: 'at-credits' }, h('p', { class: 'at-credits-base' }, '바탕 지도: Natural Earth (공공 저작물) · 지형 음영: Natural Earth'), list);
+  const natural = h('p', { class: 'at-credits-base at-credits-natural', hidden: true }, NATURAL_CREDIT);
+  const el = h('footer', { class: 'at-credits' }, h('p', { class: 'at-credits-base' }, '바탕 지도: Natural Earth (공공 저작물) · 지형 음영: Natural Earth'), natural, list);
   if (panel) addBlock(panel, el);
   function update(credits = []) {
     list.replaceChildren(...[...new Set(credits.filter(Boolean))].map((c) => h('li', { class: 'at-credits-item' }, c)));
   }
   update();
-  return { el, update, destroy() { el.remove(); } };
+  /** 자연색 바탕이 보일 때 그 출처 줄(Natural Earth II) */
+  const setNatural = (on) => { natural.hidden = !on; };
+  return { el, update, setNatural, destroy() { el.remove(); } };
 }

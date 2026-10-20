@@ -103,7 +103,9 @@ test('레이어: 종류가 레이어 파일과 같고, 위치 근사·카슈미�
   }
   const sg = by.religion.layers.find((l) => l.ref === 'layer-p22-singapore');
   assert.equal(sg.approx, true); assert.equal(sg.approxNote, '위치 근사');
-  assert.equal(by.religion.layers.find((l) => l.ref === 'layer-p22-kashmir').note, '위치: 실제 경계 자료(Natural Earth)');
+  const ks = by.religion.layers.find((l) => l.ref === 'layer-p22-kashmir');
+  assert.match(ks.note, /^색이 흐린 지역은 비율이 낮은 지역\. 경계·정전 라인은 실제 자료\(Natural Earth\)/);
+  assert.equal(ks.approx, true, '카슈미르 종교 분포 안쪽 경계는 근사(E2 대조 반영)');
 });
 
 test('마커: 경위도·보기 범위가 정상, 지형 핀(위치 근사 지도)에는 approx', () => {

@@ -193,3 +193,14 @@ test('성능: 지명 900개 배치가 30ms 안(데운 뒤)', () => {
   assert.ok(out.length > 50, `${out.length}`);
   assert.ok(ms < 30, `${ms.toFixed(1)}ms`);
 });
+
+test('obstacles(레이어 기호 자리, E1): 그 자리를 먼저 차지 — 기호 있는 지명은 다른 빈 자리로, 면 지명은 빠짐, 잘못된 상자는 무시', () => {
+  const city = [{ name: '하노이', rank: 3, xy: [300, 300], size: 11, symbol: true }];
+  const free = placeLabels(city, opts({ k: 2 }))[0];
+  const moved = placeLabels(city, opts({ k: 2, obstacles: [free.bbox] }))[0];
+  assert.ok(moved, '다른 자리로');
+  assert.notDeepEqual(moved.at, free.at);
+  const area = [{ name: '중국', rank: 1, pathXY: [[200, 200], [260, 200]], size: 13 }];
+  assert.equal(placeLabels(area, opts({ obstacles: [[180, 180, 280, 220]] })).length, 0);
+  assert.equal(placeLabels(area, opts({ obstacles: [[NaN, 0, 1, 1], null] })).length, 1);
+});

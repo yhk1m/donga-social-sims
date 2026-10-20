@@ -7,7 +7,8 @@
 //   map.setProjection('robinson', { animate: true })   // 0.6초 보간(110m 육지만), 화면 가운데 경위도·k 유지
 //   map.setCenterLon(150)                              // 대서양(0)·태평양(150) — 애니메이션 없이, 가운데 경위도·k 유지
 //   map.flyTo({ center: [lon, lat], zoom } | { bounds }, ms = 700)   // bounds = [w,s,e,n] 또는 [[w,s],[e,n]]
-//   map.fitBounds(bounds, { ms = 700, pad = 24 })      // 투영할 수 없는 가운데·범위면 console.warn 한 번, 보기는 그대로
+//   map.fitBounds(bounds, { ms = 700, pad = 24, offset })  // 투영할 수 없는 가운데·범위면 console.warn 한 번, 보기는 그대로
+//                                                      offset = [dx, dy] 화면 px — 범위 가운데를 무대 가운데에서 그만큼 옮김(확대 창이 가리는 쪽을 피할 때)
 //   map.addLayer(layer) / removeLayer(id) / clearLayers()   // layer = { id, z, draw?, drawSvg?, hit?, destroy? } (아래 레이어 규칙)
 //   map.invalidate({ svgOnly } = {})  // 가벼운 다시 그리기(한 rAF 로 모음): 캔버스 + SVG 레이어, svgOnly 면 SVG 레이어만. 지명은 다시 놓지 않고 viewchange 없음
 //   map.refreshLayer(id)              // 그 레이어만 다시(SVG 레이어면 그 <g> 만, 캔버스 레이어면 캔버스 전체). 없는 id 면 false
@@ -16,10 +17,13 @@
 //     click: fn({ lonlat, xy, feature?, layerId?, detail })  detail = 브라우저 click 의 누른 횟수(1, 두 번째 누름이면 2 …)
 //     hover: fn({ lonlat, xy, feature?, layerId? }) — 움직이는 동안 건너뛰고, 멈추면 마지막 포인터 자리로 한 번 다시. 무대를 벗어나면 {lonlat:null, xy:null}
 //     viewchange: fn(view) — 보기(도법·중심 경도·변환·크기·상세도·움직임 여부)가 실제로 바뀔 때만. 레이어·옵션 변경으로는 나지 않음
+//     options: fn(options) — setOptions 로 값이 바뀌었을 때·고도 색 그리기 함수가 붙었을 때(지도 도구 체크 상자·고도 색 범례가 따라감)
 //   map.project(lonlat) → [x, y] | null,  map.invert(xy) → lonlat | null
 //   map.view → { key, centerLon, k, x, y, width, height, center, kmPerPx, detail, moving, projection, geoRect }
 //     읽기 전용 객체, 보기가 바뀔 때만 새로 만든다(같으면 같은 객체). center·kmPerPx 는 처음 읽을 때 한 번만 계산(지연 getter).
-//   map.setOptions({ graticule, labels, relief }), map.setReliefDrawer(fn), map.redraw()(전체 다시 그림 + 지명), map.destroy(), map.destroyed
+//   map.setOptions({ graticule, labels, relief, tint, natural }), map.options(사본), map.setReliefDrawer(fn), map.setTintDrawer(fn), map.tintReady,
+//   map.setNaturalDrawer(fn), map.naturalReady(자연색 — natural 이 켜져 있고 붙었으면 고도 색 대신 그 자리에, 음영 훅에는 natural: true),
+//   map.redraw()(전체 다시 그림 + 지명), map.destroy(), map.destroyed
 //     (destroy 뒤에는 setOptions·setReliefDrawer·setPlaces·invalidate·refreshLayer 가 아무것도 하지 않는다)
 //   map.layers(읽기 전용 getter, z 순서 배열 사본), map.stats(읽기 전용 getter, 시간 측정: render[{ms, detail, k, key, parts}]·labels·
 //     morphFrames·interactiveFrames·countryIndexMs)
@@ -27,6 +31,7 @@
 // 레이어 규칙
 //   - 캔버스 레이어 draw(ctx, path, view): ctx 단위 = 화면 CSS px(devicePixelRatio 는 렌더러가 처리), path = geoPath(화면 투영, ctx).
 //     z < 50 은 육지(+음영) 바로 위·호수/하천 아래(면 레이어), z ≥ 50 은 해안선 위. 각 호출은 save/restore 로 감싼다.
+//   - 레이어 labelObstacles?() → 화면 px 상자 목록: 지명을 놓을 때 그 자리를 먼저 차지한다(기호 위에 지명이 겹치지 않게, E1).
 //   - SVG 레이어 drawSvg(g, project, view): 레이어마다 자기 <g>(z 순서). 멈출 때와 움직이는 동안 프레임마다 불리므로
 //     요소를 제자리에서 고치게(빠르게) 만든다. 도법 전환 중에는 숨긴다. 자기 요소의 클릭은 스스로 처리하고 stopPropagation.
 //   - hit(xy, lonlat) → feature | null: 캔버스 레이어 맞히기(z 큰 것부터). 아무 레이어도 안 맞으면 바탕 지도 나라(layerId 'basemap').
@@ -35,6 +40,9 @@
 //   - 지형 음영 setReliefDrawer(fn): fn(ctx, projection, view, { land, under, path, clipOutside }) — 육지를 칠한 뒤(레이어 아래) 멈출 때만 불린다.
 //     land = 지금 상세도 육지(화면 상자로 자른 것), under = 10a 일 때 단원 상자 밖을 메우는 50m 육지(아니면 null),
 //     clipOutside = under 가 있을 때 ctx 를 단원 상자 밖으로 자르는 함수(under 는 그 안에서만 칠해졌다, 아니면 null). relief.js 참고.
+//   - 고도 색 setTintDrawer(fn): fn(ctx, projection, view, { phase, land, under, path, clipOutside, clipSphere, seal }) — 옵션 tint 일 때 멈출 때만,
+//     phase 'sea' = 바다를 칠한 직후(clipSphere 로 지구 안), phase 'land' = 육지를 칠한 직후·음영 전(seal(무늬) = 10a↔50m 상자 테두리 메우기). tint.js 참고.
+//   - 자연색 setNaturalDrawer(fn): 고도 색과 같은 인자·같은 자리. 옵션 natural 이 켜져 있고 붙었으면 고도 색 대신 부른다(natural.js). 음영 훅에 natural: true.
 //   - view.geoRect = 마지막 전체 그림 때 화면에 보이는 경위도 상자 [w, s, e, n](+여백, 경도는 중심 경도 기준으로 펴서 ±180 을 넘을 수 있음)
 //     | null(세계 보기). 바탕 지도는 이 상자로 미리 잘라 투영한다(geoClip.js clipIndexed — 구드 preclip 이 무거워서). 레이어도 써도 된다.
 import { geoPath, geoContains, geoBounds, geoGraticule } from 'd3-geo';
@@ -50,6 +58,7 @@ import { viewRect, indexGeometry, clipIndexed, dropBoxEdges, boxPolygon } from '
 import { riverStyle, lakeVisible, graticuleStep, borderWidth, coastWidth } from './lineStyle.js';
 import { fontPx, trimPath, glyphLayout, pathBroken } from './labelLayout.js';
 import { createZoomer } from './zoomer.js';
+import { createGridShare } from './relief.js';
 import './atlas.css';
 
 export const STYLE = {
@@ -111,16 +120,18 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   let morph = null; // {raf, finish}
   let settleTimer = 0, frameRaf = 0, hoverRaf = 0, pendingHover = null;
   let pendingView = null; // 크기를 모를 때 받은 flyTo/fitBounds
-  let reliefDrawer = null;
+  let reliefDrawer = null, tintDrawer = null, naturalDrawer = null;
+  // 음영·고도 색이 나눠 쓰는 화면 격자 역투영(그림 하나에 한 번, 격자 크기는 두 훅 합계 시간으로 그림마다 한 번 고름) — destroy 때 놓아줌
+  const gridShare = createGridShare();
   let viewCache = null; // map.view 객체(변환·투영·상세도·상태가 바뀔 때만 새로 만듦)
   let lastViewSig = ''; // 마지막으로 viewchange 를 낸 보기의 서명
   let hoverSkipped = false; // 움직이는 동안 건너뛴 hover 가 있었나(멈추면 마지막 자리로 한 번 다시)
   let idleHandle = null; // 나라 색인 미리 만들기 예약
   const dirty = { raf: 0, canvas: false, svgAll: false, svgIds: new Set(), labels: false }; // invalidate·refreshLayer·setPlaces 를 한 rAF 로
   const warned = new Set();
-  const opts = { graticule: true, labels: true, relief: true };
+  const opts = { graticule: true, labels: true, relief: true, tint: false, natural: false };
   const layers = []; // {layer, g}
-  const handlers = { click: new Set(), hover: new Set(), viewchange: new Set() };
+  const handlers = { click: new Set(), hover: new Set(), viewchange: new Set(), options: new Set() };
   const stats = { render: [], labels: [], labelCount: 0, morphFrames: [], interactiveFrames: [], countryIndexMs: null };
   const push = (arr, v) => { arr.push(v); if (arr.length > 60) arr.shift(); };
 
@@ -257,12 +268,12 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
    * 10a(상자 안)와 50m(상자 밖, evenodd 자르기) 육지가 만나는 상자 테두리: 두 쪽 다 경계 픽셀을 반쯤만 칠해(자르기·도형 끝 안티에일리어싱)
    * 바다색이 1px 선으로 비친다. 50m 육지 안에서만 상자 테두리를 육지색으로 1.5px 그어 메운다(하천·국경보다 먼저라 덮지 않음).
    */
-  function sealUnitSeam(path, landU) {
+  function sealUnitSeam(path, landU, strokeStyle = STYLE.land) {
     ctx.save();
     ctx.beginPath(); path(landU); ctx.clip();
     ctx.beginPath();
     for (const bp of boxPolys) path(bp);
-    ctx.strokeStyle = STYLE.land; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.strokeStyle = strokeStyle; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.restore();
   }
   function begin() {
@@ -306,6 +317,20 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     const path = geoPath(vp, ctx);
     const k = T.k;
     sphere(path, vp); ctx.fillStyle = STYLE.ocean; ctx.fill();
+    // 바탕 색: 자연색(natural)이 켜져 있고 붙었으면 자연색, 아니면 고도 색(tint) — 둘은 같은 자리(바다 직후·육지 직후)에 그린다
+    const naturalOn = !!(opts.natural && naturalDrawer);
+    const baseDrawer = naturalOn ? naturalDrawer : (opts.tint && tintDrawer) || null;
+    const tintOn = !!baseDrawer;
+    gridShare.begin();
+    const grid = () => gridShare.grid(vp, view);
+    const callTint = (phase, extra) => {
+      const th = now();
+      ctx.save();
+      try { baseDrawer(ctx, vp, view, { phase, path, grid, ...extra }); } catch (err) { console.error(naturalOn ? '자연색 실패' : '고도 색 실패', err); }
+      ctx.restore();
+      gridShare.add(now() - th);
+    };
+    if (tintOn) callTint('sea', { clipSphere: () => { sphere(path, vp); ctx.clip(); } });
     mark('sea');
     const C = (idx) => clipIndexed(idx, rect);
     const L = level(detail);
@@ -317,14 +342,21 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     fillGeo(path, landL, STYLE.land);
     if (under) sealUnitSeam(path, landU);
     mark('land');
+    if (tintOn) {
+      callTint('land', { land: landL, under: landU, clipOutside: under ? () => clipOutsideUnit(path) : null, seal: under ? (st) => sealUnitSeam(path, landU, st) : null });
+      mark('tint');
+    }
     // 지형 음영(D5)
     if (opts.relief && reliefDrawer) {
       ctx.save();
       const clipOutside = under ? () => clipOutsideUnit(path) : null;
-      try { reliefDrawer(ctx, vp, view, { land: landL, under: landU, path, clipOutside }); } catch (err) { console.error('지형 음영 실패', err); }
+      const th = now();
+      try { reliefDrawer(ctx, vp, view, { land: landL, under: landU, path, clipOutside, grid, natural: naturalOn }); } catch (err) { console.error('지형 음영 실패', err); }
       ctx.restore();
+      gridShare.add(now() - th);
       mark('relief');
     }
+    gridShare.end();
     canvasLayers(path, view, false);
     mark('areaLayers');
     // 호수·하천
@@ -449,7 +481,13 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
       if (!pathXY && !onScreenish(xy)) continue;
       items.push({ name: it.p.name, rank: it.rank, minK: it.minK, size: it.px, xy: xy || undefined, pathXY: pathXY || undefined, symbol: it.symbol, kind: it.kind, src: it });
     }
-    const placed = placeLabels(items, { width: W, height: H, measure, k, pad: 2, symbolR: 3 });
+    // 레이어 기호 자리(인구 막대·자원 기호·핀 — 방금 그린 SVG 레이어가 아는 화면 상자)를 지명보다 먼저 차지(E1: 「중국」 막대 이름 ↔ 「하노이」)
+    const obstacles = [];
+    for (const { layer } of layers) {
+      if (typeof layer.labelObstacles !== 'function') continue;
+      try { obstacles.push(...layer.labelObstacles()); } catch (err) { console.error(`레이어 ${layer.id} 지명 장애물 실패`, err); }
+    }
+    const placed = placeLabels(items, { width: W, height: H, measure, k, pad: 2, symbolR: 3, obstacles });
     const t1 = now();
     const nodes = placed.map(labelNode);
     gLabels.replaceChildren(...nodes);
@@ -578,7 +616,9 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
       let any = false;
       for (let i = 0; i <= 4 && !any; i++) for (let j = 0; j <= 4 && !any; j++) any = !!project0(base, [w0 + ((e1 - w0) * i) / 4, s0 + ((n0 - s0) * j) / 4]);
       if (!any) { warnOnce(`fitBounds: 이 도법(${key})에서 투영할 수 없는 범위라 보기를 그대로 둠: ${JSON.stringify(target.bounds)}`); return null; }
-      return constrain(fitBoundsTransform(base, b, W, H, target.pad ?? FIT_PAD, { minK: K_MIN, maxK: K_MAX }));
+      const t = fitBoundsTransform(base, b, W, H, target.pad ?? FIT_PAD, { minK: K_MIN, maxK: K_MAX });
+      if (target.offset) { t.x += target.offset[0] || 0; t.y += target.offset[1] || 0; }
+      return constrain(t);
     }
     const center = target.center || (vp && nearCenter(vp, W, H)) || [cLon, 0];
     const t = transformForCenter(base, center, target.zoom ?? T.k, W, H);
@@ -593,7 +633,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     if (!ms) { zb.interrupt(); setTransform(t); settle(); return; }
     zb.flyTo(t, ms);
   }
-  function fitBounds(bounds, { ms = 700, pad = FIT_PAD } = {}) { flyTo({ bounds, pad }, ms); }
+  function fitBounds(bounds, { ms = 700, pad = FIT_PAD, offset = null } = {}) { flyTo({ bounds, pad, offset }, ms); }
 
   // ---------- 크기 ----------
   function resize() {
@@ -720,8 +760,16 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     get view() { return viewState(); },
     get layers() { return sortLayers(layers.map((x) => x.layer)); },
     get stats() { return stats; },
+    /** 음영·고도 색 공유 격자 기록 { hits, misses, renders: [{hits, misses, hookMs, step}] } (확인용) */
+    get gridStats() { return gridShare.stats; },
     /** destroy 뒤 true(비동기로 붙는 것 — 지형 음영 attachRelief 등 — 이 늦게 와도 붙지 않게) */
     get destroyed() { return destroyed; },
+    /** 지금 옵션 사본 */
+    get options() { return { ...opts }; },
+    /** 고도 색 그리기 함수가 붙었는지(불러오기 실패면 false — 켜도 그림은 그대로) */
+    get tintReady() { return !!tintDrawer; },
+    /** 자연색 그리기 함수가 붙었는지(처음 자연색을 켤 때 불러옴 — 실패면 false) */
+    get naturalReady() { return !!naturalDrawer; },
     on(type, fn) {
       if (!handlers[type]) throw new Error(`모르는 이벤트: ${type}`);
       handlers[type].add(fn);
@@ -730,11 +778,15 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     setOptions(o = {}) {
       if (destroyed) return;
       let canvasChanged = false;
-      for (const k of ['graticule', 'relief']) if (k in o && opts[k] !== !!o[k]) { opts[k] = !!o[k]; canvasChanged = true; }
-      if ('labels' in o && opts.labels !== !!o.labels) { opts.labels = !!o.labels; dirty.labels = true; schedule(); }
+      let changed = false;
+      for (const k of ['graticule', 'relief', 'tint', 'natural']) if (k in o && opts[k] !== !!o[k]) { opts[k] = !!o[k]; canvasChanged = true; }
+      if ('labels' in o && opts.labels !== !!o.labels) { opts.labels = !!o.labels; dirty.labels = true; schedule(); changed = true; }
       if (canvasChanged) invalidate();
+      if (canvasChanged || changed) emit('options', { ...opts });
     },
     setReliefDrawer(fn) { if (destroyed) return; reliefDrawer = typeof fn === 'function' ? fn : null; invalidate(); },
+    setTintDrawer(fn) { if (destroyed) return; tintDrawer = typeof fn === 'function' ? fn : null; if (opts.tint) invalidate(); emit('options', { ...opts }); },
+    setNaturalDrawer(fn) { if (destroyed) return; naturalDrawer = typeof fn === 'function' ? fn : null; if (opts.natural) invalidate(); emit('options', { ...opts }); },
     /** 지명 목록 바꾸기: 바탕 지도 캐시는 그대로 두고 지명만 다시 놓는다(viewchange 없음). */
     setPlaces(list) { if (destroyed) return; placeItems = toItems(list); dirty.labels = true; schedule(); },
     redraw() { if (morph) morph.finish(); settle(); },
@@ -749,6 +801,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
       if (morph) cancelAnimationFrame(morph.raf);
       morph = null;
       zb.destroy();
+      gridShare.release();
       svg.removeEventListener('click', onClick);
       svg.removeEventListener('pointermove', onPointerMove);
       svg.removeEventListener('pointerleave', onPointerLeave);

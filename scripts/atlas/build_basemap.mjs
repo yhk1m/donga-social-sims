@@ -5,7 +5,7 @@
 //   입력: $ATLAS_WORK/<rawDir>/<이름>.geojson — 없으면 sourceUrl(nvkelso/natural-earth-vector 커밋 고정 geojson/)에서 받는다
 //         (시간 제한·다시 시도, GeoJSON 검사 뒤 저장). mapshaper 는 $ATLAS_WORK/tools/ 에 한 번 설치해 node 로 바로 실행.
 //   단계(mapshaper, 작업 폴더 $ATLAS_WORK/basemap 에서 — 한글 경로에 대량 출력하지 않음):
-//     1. 상세도(level)마다 나라: [단원 상자로 자르기] → iso(ADM0_A3)·ko(NAME_KO) → 단순화(keep-shapes) → 녹여 육지(land, 같은 호 공유)
+//     1. 상세도(level)마다 나라: [단원 상자로 자르기] → iso(ADM0_A3)·ko(NAME_KO) → 단순화(keep-shapes, simplifyByIso 면 나라별 비율) → 녹여 육지(land, 같은 호 공유)
 //        하천·호수: [자르기] → scalerank ≤ maxRank → s(scalerank) → 단순화. 결과는 양자화 없는 TopoJSON 조각.
 //     2. 조각을 combine-files 로 한 위상(topology)에 모아 quantization 으로 양자화 → 객체 순서 고정, meta{source, mapshaper, unitBoxes, inputsHash}.
 //   출력: out(basemap.json). maxBytes 를 넘으면 쓰지 않고 종료 코드 1. 내용이 같으면 쓰지 않는다.
@@ -109,11 +109,41 @@ function mapshaper(cfg, cwd, args) {
   return r.stderr + r.stdout;
 }
 
+const pct = (v) => {
+  const m = /^(\d+(?:\.\d+)?)%$/.exec(String(v));
+  if (!m || +m[1] <= 0 || +m[1] > 100) throw new Error(`단순화 비율은 「n%」(0 초과 100 이하): ${v}`);
+  return +m[1] / 100;
+};
+/**
+ * 나라 단순화 인자. byIso({ADM0_A3: 'n%'})가 있으면 그 나라만 다른 비율로(mapshaper `variable percentage=` 식 — 나라 Feature 마다 평가,
+ * 해안 호는 그 나라 것이라 그 나라 비율을 따른다). 예: 한반도(KOR·PRK)만 덜 단순화(E1, 교사 결정 2026-10-19).
+ */
+export function simplifyArgs(base, byIso) {
+  if (!byIso || !Object.keys(byIso).length) return [base];
+  const d = pct(base);
+  const terms = Object.entries(byIso).map(([iso, v]) => {
+    if (!/^[A-Z0-9]{3}$/.test(iso)) throw new Error(`simplifyByIso 열쇠는 ADM0_A3 세 글자: ${iso}`);
+    return `iso=='${iso}'?${pct(v)}:`;
+  });
+  return ['variable', `percentage=${terms.join('')}${d}`];
+}
+
+/** simplifyByIso 의 나라 열쇠가 만든 위상의 그 상세도 나라(countries<id>) iso 에 모두 있는지 — 없는 열쇠(오타·자르기 밖)는 오류. */
+export function checkByIso(topo, levels) {
+  for (const lv of levels) {
+    const keys = Object.keys(lv.simplifyByIso || {});
+    if (!keys.length) continue;
+    const have = new Set((topo.objects[`countries${lv.id}`]?.geometries || []).map((g) => g.properties?.iso));
+    const missing = keys.filter((k) => !have.has(k));
+    if (missing.length) throw new Error(`simplifyByIso: 상세도 ${lv.id} 나라에 없는 iso ${missing.join(', ')} — 설정 basemap.levels 확인`);
+  }
+}
+
 /** 상세도 하나의 mapshaper 단계들 → 만든 조각 파일 이름 목록. */
 function buildLevel(cfg, lv, cwd, raw) {
   const clip = lv.clip ? ['-clip', 'unit-boxes.json'] : [];
   const files = [];
-  const simp = (s) => (s ? ['-simplify', s, 'keep-shapes'] : []);
+  const simp = (s) => (s ? ['-simplify', ...simplifyArgs(s, lv.simplifyByIso), 'keep-shapes'] : []);
   const ctry = `part-${lv.id}-countries.json`;
   mapshaper(cfg, cwd, ['-i', `${raw}/${lv.countries}.geojson`, `name=countries${lv.id}`, ...clip,
     '-each', 'iso=ADM0_A3,ko=NAME_KO', '-filter-fields', 'iso,ko', ...simp(lv.simplify),
@@ -175,6 +205,7 @@ export async function buildBasemap({ force = false } = {}) {
   const parts = [];
   for (const lv of cfg.levels) { console.log(`상세도 ${lv.id}`); parts.push(...buildLevel(cfg, lv, cwd, raw)); }
   const topo = combine(cfg, cwd, parts, inputsHash);
+  checkByIso(topo, cfg.levels);
   const text = JSON.stringify(topo);
   const bytes = Buffer.byteLength(text);
   const sizes = Object.fromEntries(Object.keys(topo.objects).map((n) => [n, Buffer.byteLength(JSON.stringify(topo.objects[n]))]));

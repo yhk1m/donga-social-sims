@@ -23,8 +23,9 @@ const div = () => document.createElement('div');
 
 /** 렌더러 흉내: on() 구독 수, 부른 메서드 기록 */
 function fakeMap() {
-  const handlers = { click: new Set(), hover: new Set(), viewchange: new Set() };
+  const handlers = { click: new Set(), hover: new Set(), viewchange: new Set(), options: new Set() };
   const calls = [];
+  const opts = { graticule: true, labels: true, relief: true, tint: false };
   let view = { key: 'miller', centerLon: 0, k: 2, x: 0, y: 0, width: 800, height: 600, kmPerPx: 10 };
   return {
     calls, destroyed: false,
@@ -35,7 +36,8 @@ function fakeMap() {
     get handlerCount() { return Object.values(handlers).reduce((a, x) => a + x.size, 0); },
     setProjection(k) { calls.push(['setProjection', k]); view = { ...view, key: k }; },
     setCenterLon(c) { calls.push(['setCenterLon', c]); view = { ...view, centerLon: c }; },
-    setOptions(o) { calls.push(['setOptions', o]); },
+    setOptions(o) { calls.push(['setOptions', o]); Object.assign(opts, o); for (const fn of handlers.options) fn({ ...opts }); },
+    get options() { return { ...opts }; },
     flyTo(t, ms) { calls.push(['flyTo', t, ms]); },
     fitBounds(b, o) { calls.push(['fitBounds', b, o]); },
     invert(xy) { return [xy[0] / 10, xy[1] / 10]; },
@@ -81,7 +83,7 @@ test('mapTools: 도법·중심 경도·옵션·확대 버튼, 축척 막대 갱�
     assert.ok(base.getAttribute('aria-label'));
     assert.equal(overlay.getAttribute('role'), 'group');
     const segBtns = findAll(t.el, byClass('at-tools-seg-btn'));
-    assert.equal(segBtns.length, 7);
+    assert.equal(segBtns.length, 10, '도법 5 · 중심 경도 2 · 바탕 색 3');
     assert.equal(segBtns.find((b) => b.getAttribute('data-v') === 'miller').getAttribute('aria-pressed'), 'true');
     segBtns.find((b) => b.getAttribute('data-v') === 'goode').dispatch('click');
     assert.deepEqual(map.calls.at(-1), ['setProjection', 'goode']);
@@ -105,12 +107,64 @@ test('mapTools: 도법·중심 경도·옵션·확대 버튼, 축척 막대 갱�
     assert.deepEqual(map.calls.at(-1)[1].center, [24, 30]); // invert([400 − 160, 300]) = [24, 30]
     stage.dispatch('keydown', { key: '+', target: segBtns[0] });
     assert.equal(map.calls.length, n + 2);
+    // 바탕 색 한 묶음(없음·고도 색·자연색): 누르면 setOptions({tint, natural}) 둘을 함께, 주제가 옵션을 바꾸면(map 'options') 단추가 따라감
+    assert.equal(findAll(t.el, byClass('at-tools-check-input')).length, 3, '경위선·지명·음영 체크 상자(고도 색은 바탕 묶음으로)');
+    const baseBtn = (v) => findAll(t.el, byClass('at-tools-seg-btn')).find((b) => b.getAttribute('data-v') === v);
+    const pressed = () => ['none', 'tint', 'natural'].filter((v) => baseBtn(v).getAttribute('aria-pressed') === 'true');
+    assert.deepEqual(pressed(), ['none']);
+    baseBtn('tint').dispatch('click');
+    assert.deepEqual(map.calls.at(-1), ['setOptions', { tint: true, natural: false }]);
+    assert.deepEqual(pressed(), ['tint']);
+    baseBtn('natural').dispatch('click');
+    assert.deepEqual(map.calls.at(-1), ['setOptions', { tint: false, natural: true }]);
+    assert.deepEqual(pressed(), ['natural']);
+    map.setOptions({ tint: false, natural: false });
+    assert.deepEqual(pressed(), ['none'], '지도 옵션을 따라감');
+    map.setOptions({ tint: true });
+    assert.deepEqual(pressed(), ['tint']);
+    map.setOptions({ tint: false });
     t.destroy();
     assert.equal(map.handlerCount, 0, '구독 0');
     assert.equal(stage.listenerCount, 0, '무대 키 리스너 0');
     assert.equal(stage.getAttribute('tabindex'), null);
     assert.equal(stage.childNodes.length, 2, '도구·축척 떼어 냄');
   }
+});
+
+test('바탕 「자연색」 늦게 불러오기: 불러오는 동안 단추 aria-busy, 실패하면 단추가 앞 바탕으로 돌아가고 알림 한 줄, 다른 바탕을 고르면 알림 숨김, 성공하면 바쁨만 풂', async () => {
+  const { lazyNatural } = await import('../../src/atlas/natural.js');
+  const stage = div();
+  const map = fakeMap();
+  const t = mapTools(stage, map);
+  let resolve;
+  const lazy = lazyNatural(map, { attach: () => new Promise((r) => { resolve = r; }), onState: (st) => t.setBaseState('natural', st) });
+  const btn = (v) => findAll(t.el, byClass('at-tools-seg-btn')).find((b) => b.getAttribute('data-v') === v);
+  const note = find(t.el, byClass('at-tools-note'));
+  assert.equal(note.hidden, true);
+  btn('tint').dispatch('click');
+  btn('natural').dispatch('click');
+  assert.equal(btn('natural').getAttribute('aria-busy'), 'true', '불러오는 중');
+  assert.ok(btn('natural').classList.contains('is-busy'));
+  assert.equal(btn('natural').getAttribute('aria-pressed'), 'true');
+  resolve(null);
+  await lazy.loading;
+  assert.equal(btn('natural').getAttribute('aria-busy'), null, '바쁨 풂');
+  assert.equal(btn('tint').getAttribute('aria-pressed'), 'true', '앞 바탕(고도 색)으로 돌아감');
+  assert.equal(btn('natural').getAttribute('aria-pressed'), 'false');
+  assert.equal(note.hidden, false, '알림 한 줄');
+  assert.equal(note.getAttribute('role'), 'status');
+  btn('none').dispatch('click');
+  assert.equal(note.hidden, true, '다른 바탕을 고르면 알림 숨김');
+  btn('natural').dispatch('click');
+  assert.equal(btn('natural').getAttribute('aria-busy'), 'true', '다시 시도');
+  map.naturalReady = true;
+  resolve(() => {});
+  await lazy.loading;
+  assert.equal(btn('natural').getAttribute('aria-busy'), null);
+  assert.equal(btn('natural').getAttribute('aria-pressed'), 'true', '붙으면 자연색 그대로');
+  assert.equal(note.hidden, true);
+  lazy.destroy(); t.destroy();
+  assert.equal(map.handlerCount, 0);
 });
 
 test('legendBlock: 견본 + 이름, 누르면 legend.toggle(aria-pressed·전체 보기), 위치 근사 배지, 이미지 실패 알림, destroy 로 구독 해제', async () => {
@@ -293,4 +347,42 @@ test('heritageQuiz: 사진 + 나라/종교 보기 4개, 여러 종교는 묶음�
   q.answer('없는 종교');
   assert.deepEqual(q.score, { right: 1, total: 2 });
   q.destroy();
+});
+
+test('퀴즈: 빈 목록이면 문제를 내지 않고 알림(오류 없음) — 색칠하기 이름 맞히기·세계유산', () => {
+  const map = fakeMap();
+  const layer = coloringLayer([]);
+  const q = coloringQuiz(map, layer, [], { seed: 1 });
+  q.setMode('name');
+  assert.equal(q.current, null);
+  assert.match(find(q.el, byClass('at-quiz-feedback')).textContent, /없습니다/);
+  q.answer('아무 나라');
+  assert.deepEqual(q.score, { right: 0, total: 0 });
+  q.destroy();
+  const hq = heritageQuiz([], { seed: 1 });
+  hq.setKind('religion');
+  assert.equal(hq.current, null);
+  assert.match(find(hq.el, byClass('at-quiz-feedback')).textContent, /없습니다/);
+  hq.destroy();
+});
+
+test('legendBlock 묶음: 기후 범례는 열대·건조·온대·냉대·한대 제목 아래(고산은 따로), 제목을 누르면 그 묶음만, 항목 누르기도 그대로', () => {
+  const data = readJson(path.join(DATA, 'layer-p21-climate.json'));
+  const items = data.properties.legend.map(({ present, ...e }) => e);
+  const lg = createLegendState(items.map((e) => e.cls));
+  const b = legendBlock(div(), lg, items, { title: '기후 구분' });
+  const heads = findAll(b.el, byClass('at-legend-group-head'));
+  assert.deepEqual(heads.map((x) => x.textContent), ['열대', '건조', '온대', '냉대', '한대']);
+  const groups = findAll(b.el, byClass('at-legend-group'));
+  assert.deepEqual(groups.map((g) => findAll(g, byClass('at-legend-item')).length), [3, 2, 4, 2, 2]);
+  assert.equal(findAll(b.el, byClass('at-legend-item')).length, 14, '고산 기후는 묶음 밖');
+  heads[1].dispatch('click');
+  assert.equal(lg.selected(), 'group:건조');
+  assert.equal(heads[1].getAttribute('aria-pressed'), 'true');
+  const dry = items.filter((e) => e.group === '건조').map((e) => e.cls);
+  assert.ok(dry.every(lg.isActive) && !lg.isActive(items[0].cls));
+  findAll(b.el, byClass('at-legend-item'))[0].dispatch('click');
+  assert.equal(lg.selected(), items[0].cls);
+  assert.equal(heads[1].getAttribute('aria-pressed'), 'false');
+  b.destroy();
 });

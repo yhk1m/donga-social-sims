@@ -4,6 +4,7 @@
 //
 // 종류별 길(chartPlan):
 //   csat-chart.js  climograph → climate · line → line · stackedArea → line(stacked + areaFill) · pyramid → pyramid
+//                  (쌓은 면은 1년 칸으로 펴서 — annualSeries)
 //                  pie → stacked(pie) · 한 막대 stackedBar(카타르 외국인) → stacked(bar, labelInSegment) · bar → absbar
 //   직접(SVG)      여러 막대 stackedBar(자원·수출 비율) — csat 가로 100% 막대는 칸 안 이름을 못 쓰고(값만), 칸마다 다른 색·막대 굵기(칸의 30%)도
 //                  교과서(칸마다 「나라 비율」 글자, 지시선)와 달라 읽을 수 없다 · radialBar(고리 막대) — csat 에 없는 종류
@@ -102,32 +103,65 @@ export function taperNulls(values) {
   });
 }
 
-/** 가장 흔한 간격의 격자에 놓인 해만(2021 처럼 끼워 넣은 해는 뺌 — csat 꺾은선 가로축은 범주 축이라 간격이 고르지 않으면 어긋남) */
-function regularIndex(categories) {
-  const diffs = new Map();
-  for (let i = 1; i < categories.length; i++) { const d = categories[i] - categories[i - 1]; diffs.set(d, (diffs.get(d) || 0) + 1); }
-  const step = [...diffs.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 1;
-  const c0 = categories[0];
-  return categories.map((c, i) => ((c - c0) % step === 0 ? i : -1)).filter((i) => i >= 0);
+/**
+ * 해(정수) 범주 → 1년 간격 격자(쌓은 면, E1). csat 꺾은선 가로축은 범주 축이라 칸 간격이 고르다 — 10년 간격 그대로면
+ * 「아시아(1950년 전)」 → 중국·인도·그 밖 아시아로 넘어가는 1940~1950 이 10년 폭 사선이 된다(교과서는 1950 에서 곧게 바뀜).
+ * 1년 칸이면 넘어가는 폭이 1년(그래프 너비의 1/300)이라 곧게 보이고, 2021 처럼 고르지 않은 해도 제 자리에 들어간다.
+ *   - 값이 있는 이웃 두 범주 사이는 선형 보간(csat 이 원래 그리던 직선과 같다).
+ *   - 넘겨주기: 어떤 계열이 범주 i 에서 끝나고(다음 범주에 값 없음) 다음 범주 i+1 에서 시작하는 계열들이 있으면, 끝나는 계열은
+ *     i+1 바로 앞 해(c_{i+1} − 1)까지 「시작하는 계열들의 c_{i+1} 합」을 향해 보간하고, 시작하는 계열들은 그때까지 0 이다.
+ *     c_{i+1} 에서 끝난 계열은 0, 시작한 계열은 제 값 → 띠 경계가 1년 안에 바뀐다.
+ *   - 그 밖의 값 없는 칸은 값 있는 칸 바로 옆만 0(taperNulls).
+ * → { years: [c0, c0+1, …, cN], values: {이름: [..]} }
+ */
+export function annualSeries(categories, series) {
+  const c0 = categories[0], cN = categories[categories.length - 1];
+  const years = Array.from({ length: cN - c0 + 1 }, (_, i) => c0 + i);
+  const values = {};
+  const at = (s, i) => (i >= 0 && i < categories.length ? s.values[i] ?? null : null);
+  for (const s of series) {
+    const out = new Array(years.length).fill(null);
+    for (let i = 0; i < categories.length; i++) {
+      const v = at(s, i);
+      if (v == null) continue;
+      out[categories[i] - c0] = v;
+      const w = at(s, i + 1);
+      if (w != null) for (let y = categories[i] + 1; y < categories[i + 1]; y++) out[y - c0] = v + ((w - v) * (y - categories[i])) / (categories[i + 1] - categories[i]);
+    }
+    values[s.name] = out;
+  }
+  for (let i = 0; i + 1 < categories.length; i++) {
+    const ending = series.filter((s) => at(s, i) != null && at(s, i + 1) == null);
+    const starting = series.filter((s) => at(s, i) == null && at(s, i + 1) != null);
+    if (!ending.length || !starting.length) continue;
+    const target = starting.reduce((a, s) => a + at(s, i + 1), 0) / ending.length; // 끝나는 계열이 여럿이면 나눠 받음(지금은 하나)
+    const a = categories[i], b = categories[i + 1];
+    for (const s of ending) {
+      const v = at(s, i);
+      for (let y = a + 1; y < b; y++) values[s.name][y - c0] = v + ((target - v) * (y - a)) / (b - a);
+      values[s.name][b - c0] = 0;
+    }
+    for (const s of starting) for (let y = a; y < b; y++) values[s.name][y - c0] = 0;
+  }
+  for (const k of Object.keys(values)) values[k] = taperNulls(values[k]);
+  return { years, values };
 }
 
-/** stackedArea → csat LineGraphData(stacked, areaFill). 쌓는 순서 = spec.stackOrder(아래 → 위), 없으면 계열 역순. */
+/** stackedArea → csat LineGraphData(stacked, areaFill). 쌓는 순서 = spec.stackOrder(아래 → 위), 없으면 계열 역순. 가로는 1년 칸(annualSeries). */
 export function toStackedAreaData(spec) {
-  const idx = regularIndex(spec.categories);
+  const { years, values } = annualSeries(spec.categories, spec.series);
   const order = spec.stackOrder || spec.series.map((s) => s.name).reverse();
   const byName = new Map(spec.series.map((s) => [s.name, s]));
   const xStep = spec.axes?.x?.step ?? 50;
-  const cats = idx.map((i) => spec.categories[i]);
   const series = order.filter((n) => byName.has(n)).map((n) => {
-    const s = byName.get(n);
-    const fill = colorOf(s) || '#999';
-    return { label: n, values: taperNulls(idx.map((i) => s.values[i] ?? null)), areaFill: fill, stroke: fill, lineWidth: 0.5, lineStyle: 'solid' };
+    const fill = colorOf(byName.get(n)) || '#999';
+    return { label: n, values: values[n].map((v) => (v == null ? null : clean(v))), areaFill: fill, stroke: fill, lineWidth: 0.5, lineStyle: 'solid' };
   });
-  const totals = cats.map((_, k) => series.reduce((a, s) => a + (s.values[k] || 0), 0));
+  const totals = years.map((_, k) => series.reduce((a, s) => a + (s.values[k] || 0), 0));
   const r = valueRange(totals, 20);
   return {
     series,
-    xLabels: tickLabels(cats, xStep),
+    xLabels: tickLabels(years, xStep),
     xUnit: '(년)',
     yUnit: unitOf(spec),
     yRange: { min: r.min, max: r.max, auto: false, step: r.step },
@@ -291,4 +325,22 @@ export function laneLabels(items, { gap = 4, maxShift = 60 } = {}) {
     out[i] = { lane, x };
   }
   return out;
+}
+
+/** 천 단위 쉼표(정수 부분만): 146339 → 「146,339」 */
+export const fmtThousands = (v) => {
+  const [i, f] = String(v).split('.');
+  return i.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (f ? `.${f}` : '');
+};
+
+/** 100% 띠 칸 비율 글자: 그래프에 인쇄된 값 중 가장 긴 소수 자리(최대 2)로 맞춘다 → (v) => 글자 */
+export function shareFormatter(spec) {
+  const dec = Math.max(0, ...(spec.series || []).flatMap((q) => q.values).filter((v) => v != null).map((v) => (String(v).split('.')[1] || '').length));
+  const d = Math.min(dec, 2);
+  return (v) => v.toFixed(d);
+}
+
+/** 막대 합계 글자(stackCells 의 total {value, unit, year}) → 「5,438 (백만 톤, 2020년)」, 없으면 '' */
+export function totalText(total) {
+  return total ? `${fmtThousands(total.value)} (${total.unit}, ${total.year}년)` : '';
 }

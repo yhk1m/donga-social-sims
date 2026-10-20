@@ -1,0 +1,464 @@
+// tests/atlas/topic.test.mjs — 주제 조립(src/atlas/topic.js buildTopic, Task E1)을 가짜 DOM·가짜 지도로:
+// 8개 주제를 모두 펼치고 부수기를 되풀이해도 지도 레이어·구독·무대 요소가 남지 않는지, 레이어 묶음 바꾸기·보기 맞추기·확대 창(싱가포르)·
+// 막대 하나씩 보기(자원·수출)·세계유산 퀴즈 사진 자르기를 본다. 픽셀은 헤드리스 Chrome 캡처로 본다.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import { register } from 'node:module';
+import { REPO, readJson } from '../../scripts/atlas/geo_util.mjs';
+import { installFakeDom } from './helpers/fakeDom.mjs';
+import { feature } from 'topojson-client';
+
+register('./helpers/cssHooks.mjs', import.meta.url);
+const dom = installFakeDom();
+class FakeImage { addEventListener() {} set src(v) { this._src = v; } } // 밀도 음영 이미지: 불러오지도 실패하지도 않음
+globalThis.Image = FakeImage;
+const { buildTopic, layerGroups, groupView, groupBounds } = await import('../../src/atlas/topic.js');
+const { pageViewer, tooltip, creditBlock } = await import('../../src/atlas/ui.js');
+const { photoCropStyle } = await import('../../src/atlas/uiCore.js');
+const { insetProjection, geoBox } = await import('../../src/atlas/inset.js');
+test.after(() => { delete globalThis.Image; dom.restore(); });
+
+const DATA = path.join(REPO, 'sims/atlas-u2-asia/data');
+const topics = readJson(path.join(DATA, 'topics.json'));
+const charts = readJson(path.join(DATA, 'charts.json'));
+const outline = readJson(path.join(DATA, 'inset-p22-singapore.json'));
+const layerData = {};
+for (const t of topics) for (const r of t.layers || []) layerData[r.ref] = readJson(path.join(DATA, `${r.ref}.json`));
+const div = () => document.createElement('div');
+const TRADE = [55, -45, -60, 72];
+
+/** 렌더러 흉내: 레이어 목록(addLayer·removeLayer·clearLayers 가 destroy 를 부름 — 렌더러 계약), on() 구독 수, fitBounds 기록 */
+function fakeMap() {
+  const handlers = { click: new Set(), hover: new Set(), viewchange: new Set(), options: new Set() };
+  const layers = new Map();
+  const calls = [];
+  const opts = { tint: false, natural: false };
+  return {
+    tintReady: true, naturalReady: true,
+    get options() { return { ...opts }; },
+    calls, destroyed: false,
+    view: { key: 'miller', centerLon: 0, k: 2, x: 0, y: 0, width: 800, height: 600, kmPerPx: 10 },
+    on(type, fn) { handlers[type].add(fn); return () => handlers[type].delete(fn); },
+    get handlerCount() { return Object.values(handlers).reduce((a, x) => a + x.size, 0); },
+    get layers() { return [...layers.values()]; },
+    addLayer(L) { const old = layers.get(L.id); if (old && old !== L) old.destroy?.(); layers.set(L.id, L); },
+    removeLayer(id) { const L = layers.get(id); if (!L) return false; layers.delete(id); L.destroy?.(); return true; },
+    clearLayers() { for (const L of [...layers.values()]) L.destroy?.(); layers.clear(); },
+    refreshLayer() { return true; },
+    fitBounds(b, o) { calls.push(['fitBounds', b, o]); },
+    flyTo(t) { calls.push(['flyTo', t]); },
+    setCenterLon(c) { calls.push(['setCenterLon', c]); this.view = { ...this.view, centerLon: c }; },
+    setOptions(o) { calls.push(['setOptions', o]); Object.assign(opts, o); for (const fn of handlers.options) fn({ ...opts }); }, invalidate() {},
+  };
+}
+const find = (el, pred) => {
+  if (pred(el)) return el;
+  for (const c of el.childNodes || []) { const r = find(c, pred); if (r) return r; }
+  return null;
+};
+const findAll = (el, pred, out = []) => { if (pred(el)) out.push(el); for (const c of el.childNodes || []) findAll(c, pred, out); return out; };
+const byClass = (c) => (n) => n.classList?.contains(c);
+
+function setup() {
+  const stage = div(), panel = div(), body = div();
+  panel.append(body);
+  const map = fakeMap();
+  const viewer = pageViewer(stage);
+  const tip = tooltip(stage, { map });
+  const credits = creditBlock(panel);
+  const base = map.handlerCount;
+  const build = (topic, extra = {}) => buildTopic({
+    map, stage, body, viewer, credits, tip, topic, charts, layers: layerData, countryFeatures: { 50: [] },
+    insets: { 'layer-p22-singapore': outline }, boundsOf: { 'layer-p24-trade': TRADE }, centerLonOf: { 'layer-p24-trade': 150 }, seed: 7, ...extra,
+  });
+  return { stage, panel, body, map, viewer, tip, credits, base, build };
+}
+const topicOf = (id) => topics.find((t) => t.id === id);
+
+test('layerGroups·groupView·groupBounds: 같은 이름 레이어는 한 지도, 바로가기 짝, 교역은 지정 범위', () => {
+  const pop = layerGroups(topicOf('population'));
+  assert.deepEqual(pop.map((g) => g.refs.length), [2, 1], '인구 분포 = 밀도 음영 + 1억 명 막대');
+  const rel = topicOf('religion');
+  const gs = layerGroups(rel);
+  assert.deepEqual(gs.map((g) => groupView(rel, g)?.id), ['religion', 'kashmir', 'singapore']);
+  assert.deepEqual(groupBounds(rel, gs[2]), rel.views.find((v) => v.id === 'singapore').bounds);
+  const ind = topicOf('industry');
+  const trade = layerGroups(ind).find((g) => g.refs[0].ref === 'layer-p24-trade');
+  assert.deepEqual(groupBounds(ind, trade, { 'layer-p24-trade': TRADE }), TRADE);
+  assert.deepEqual(groupBounds(ind, layerGroups(ind)[0]), ind.view.bounds, '딸린 view 가 없으면 주제 view');
+});
+
+test('8개 주제를 차례로 펼치고 부수기를 두 번 되풀이: 제목·블록이 생기고, destroy 뒤 레이어 0·구독은 처음 그대로·무대에 확대 창 없음·본문 빔', () => {
+  const S = setup();
+  for (let round = 0; round < 2; round++) {
+    for (const t of topics) {
+      const T = S.build(t);
+      assert.equal(find(S.body, byClass('at-topic-title')).textContent, t.title);
+      const pages = findAll(S.body, byClass('at-page-btn'));
+      assert.equal(pages.length, t.blocks.filter((b) => b.type === 'page').length, `${t.id} 원본 쪽 보기 단추`);
+      assert.ok(S.map.layers.length >= (t.layers?.length ? 1 : 0) + (t.markers?.length ? 1 : 0), `${t.id} 레이어`);
+      if (t.markers?.length) assert.ok(T.pins, `${t.id} 핀`);
+      T.destroy();
+      assert.equal(S.map.layers.length, 0, `${t.id} 레이어 남음`);
+      assert.equal(S.map.handlerCount, S.base, `${t.id} 지도 구독 남음`);
+      assert.equal(S.body.childNodes.length, 0, `${t.id} 본문 남음`);
+      assert.equal(findAll(S.stage, byClass('at-inset')).length, 0, `${t.id} 확대 창 남음`);
+      T.destroy(); // 두 번 불러도 괜찮음
+    }
+  }
+});
+
+test('묶음 바꾸기: 앞 묶음 레이어·범례 블록을 내리고 새 묶음만, 보기 맞추기(인구 → 증가율), 출처 줄 갱신', () => {
+  const S = setup();
+  const t = topicOf('population');
+  const T = S.build(t);
+  assert.deepEqual(S.map.layers.map((L) => L.id).sort(), ['layer-p23-density-cities', 'overlay-p23-density']);
+  assert.equal(findAll(S.body, byClass('at-legend')).filter((e) => !e.classList.contains('at-tint-legend')).length, 2);
+  const seg = findAll(S.body, byClass('ds-seg-btn')).filter((b) => b.getAttribute('title'));
+  assert.equal(seg.length, 2);
+  assert.equal(seg[0].getAttribute('aria-pressed'), 'true');
+  seg[1].dispatch('click');
+  assert.equal(T.group, 1);
+  assert.deepEqual(S.map.layers.map((L) => L.id), ['layer-p23-growth']);
+  assert.equal(findAll(S.body, byClass('at-legend')).filter((e) => !e.classList.contains('at-tint-legend')).length, 1);
+  assert.equal(seg[1].getAttribute('aria-pressed'), 'true');
+  assert.deepEqual(S.map.calls.at(-1), ['fitBounds', t.view.bounds, undefined]);
+  assert.match(find(S.panel, byClass('at-credits-list')).textContent, /세계 인구 전망/);
+  T.destroy();
+  assert.equal(S.map.handlerCount, S.base);
+});
+
+test('산업: 교역 묶음은 지정 범위(날짜변경선 건넘)로 맞추고, 자원·수출 100% 띠는 막대 하나씩 보기(단추로 바꿈, 크게 보기 = 막대 전부)', () => {
+  const S = setup();
+  const T = S.build(topicOf('industry'));
+  const pickers = findAll(S.body, byClass('at-barpick'));
+  assert.equal(pickers.length, 2, '자원 생산·수출 비율');
+  const btns = findAll(pickers[0], byClass('at-barpick-btn'));
+  assert.deepEqual(btns.map((b) => b.textContent), charts['p24-resources'].categories);
+  assert.equal(find(pickers[0], byClass('at-barpick-cat')).textContent, '석탄');
+  btns[1].dispatch('click');
+  assert.equal(find(pickers[0], byClass('at-barpick-cat')).textContent, '석유');
+  assert.equal(btns[1].getAttribute('aria-pressed'), 'true');
+  const items = findAll(pickers[0], byClass('at-barpick-item'));
+  assert.equal(items.length, charts['p24-resources'].stackOrder['석유'].length);
+  assert.match(items[0].textContent, /^사우디아라비아\d/);
+  find(pickers[0], byClass('at-expand')).dispatch('click');
+  assert.ok(S.viewer.open);
+  const big = findAll(S.viewer.el, (n) => n.tagName === 'svg' && n.classList?.contains('at-chart-svg'));
+  assert.equal(big.length, 1);
+  assert.equal(findAll(big[0], byClass('at-ct-cat')).length, 5, '크게 보기 = 교과서 모양 막대 전부(5줄)');
+  const seg = findAll(S.body, byClass('ds-seg-btn')).filter((b) => b.getAttribute('title'));
+  seg[2].dispatch('click');
+  assert.deepEqual(S.map.calls.at(-1)[1], TRADE);
+  assert.deepEqual(S.map.calls.at(-2), ['setCenterLon', 150], '교역은 태평양 중심');
+  seg[0].dispatch('click');
+  assert.equal(S.map.view.centerLon, 0, '묶음을 떠나면 중심 경도 되돌림');
+  seg[2].dispatch('click');
+  S.map.setCenterLon(30); // 사용자가 바꿨으면
+  seg[1].dispatch('click');
+  assert.equal(S.map.view.centerLon, 30, '사용자가 바꾼 중심 경도는 그대로');
+  T.destroy();
+  assert.equal(S.viewer.open, false, '주제를 바꾸면 겹침 창도 닫음');
+});
+
+test('종교·문화: 싱가포르 묶음 = 큰 지도에는 위치 상자만, 무대에 확대 창(사원 76개·범례 같음·닫기·상자 누르면 다시 열림), 범례 고르면 창 기호도 흐려짐', () => {
+  const S = setup();
+  const t = topicOf('religion');
+  const T = S.build(t);
+  assert.equal(findAll(S.stage, byClass('at-inset')).length, 0);
+  const sg = T.groups.findIndex((g) => g.refs[0].ref === 'layer-p22-singapore');
+  T.showGroup(sg);
+  assert.deepEqual(S.map.layers.map((L) => L.id).filter((id) => !id.startsWith('markers')), ['layer-p22-singapore:box'], '기호 레이어는 큰 지도에 올리지 않음');
+  const inset = find(S.stage, byClass('at-inset'));
+  assert.ok(inset && !inset.hidden);
+  const syms = findAll(inset, byClass('at-inset-sym'));
+  assert.equal(syms.length, 76);
+  assert.equal(findAll(inset, byClass('at-inset-name')).length, 4, '이름 쓴 사원 4곳');
+  assert.equal(findAll(inset, byClass('at-inset-legend-item')).length, 5);
+  assert.ok(find(inset, byClass('at-badge')), '위치 근사');
+  // 범례: 사이드바 범례 블록을 누르면 창의 기호도 흐려짐
+  const lg = find(S.body, byClass('at-legend'));
+  const first = findAll(lg, byClass('at-legend-item'))[0];
+  first.dispatch('click');
+  const dim = syms.filter((c) => c.getAttribute('opacity') === '0.2').length;
+  assert.ok(dim > 0 && dim < 76, `흐린 기호 ${dim}`);
+  // 말풍선: 기호에 포인터
+  syms[0].dispatch('pointerenter', { clientX: 30, clientY: 40 });
+  assert.equal(S.tip.el.hidden, false);
+  assert.ok(S.tip.el.textContent.length > 0);
+  // 닫기 → 상자 누르면 다시 열림
+  find(inset, byClass('at-inset-close')).dispatch('click');
+  assert.equal(inset.hidden, true);
+  const box = S.map.layers.find((L) => L.id === 'layer-p22-singapore:box');
+  const g = document.createElementNS('svg', 'g');
+  box.drawSvg(g, ([lon, lat]) => [lon * 10, -lat * 10]);
+  find(g, byClass('at-inset-box')).dispatch('click');
+  assert.equal(inset.hidden, false);
+  // 다른 묶음으로 가면 창이 사라짐
+  T.showGroup(0);
+  assert.equal(findAll(S.stage, byClass('at-inset')).length, 0);
+  assert.deepEqual(S.map.layers.map((L) => L.id).filter((id) => !id.startsWith('markers')), ['layer-p22-religion']);
+  T.showGroup(sg);
+  T.destroy();
+  assert.equal(findAll(S.stage, byClass('at-inset')).length, 0);
+  assert.equal(S.map.handlerCount, S.base);
+});
+
+test('바로가기 블록: 「지도에서 보기」를 누르면 그 묶음을 고르거나(종교) 그 범위로 맞춤(일반도)', () => {
+  const S = setup();
+  const T = S.build(topicOf('general'));
+  const vb = findAll(S.body, byClass('at-view-btn'));
+  assert.equal(vb.length, 3);
+  vb[1].dispatch('click');
+  assert.deepEqual(S.map.calls.at(-1)[1], topicOf('general').views[1].bounds);
+  T.destroy();
+  const R = S.build(topicOf('religion'));
+  const btn = findAll(S.body, byClass('at-view-btn')).find((b) => /싱가포르/.test(b.textContent));
+  btn.dispatch('click');
+  assert.ok(find(S.stage, byClass('at-inset')));
+  R.destroy();
+});
+
+test('세계유산 퀴즈: 사진은 이름 띠를 뺀 부분만(photoCrop → 상자 비율·이미지 %), 캡션은 번호만 → 답하면 이름', () => {
+  const S = setup();
+  const t = topicOf('heritage');
+  assert.ok(t.markers.every((m) => Array.isArray(m.quiz.photoCrop)), '마커마다 photoCrop');
+  const T = S.build(t);
+  const cur = T.quiz.current;
+  const crop = find(S.body, byClass('at-quiz-crop'));
+  assert.ok(crop, '자른 상자');
+  const st = photoCropStyle(cur.quiz.photoCrop, cur.photo.width, cur.photo.height);
+  assert.equal(crop.style.aspectRatio, `${st.aspect}`);
+  const img = find(crop, byClass('at-quiz-crop-img'));
+  assert.equal(img.style.width, `${st.width}%`);
+  const cap = find(S.body, byClass('at-quiz-cap'));
+  assert.equal(cap.textContent, String(cur.photo.pin), '문제 낼 때는 번호만');
+  T.quiz.answer(cur.quiz.country);
+  assert.match(cap.textContent, new RegExp(cur.title));
+  T.destroy();
+});
+
+test('photoCropStyle·insetProjection·geoBox 순수 계산', () => {
+  assert.deepEqual(photoCropStyle([0, 0.25, 1, 0.75], 400, 200), { aspect: 4, width: 100, left: -0, top: -50 });
+  assert.equal(photoCropStyle([0, 0, 1, 1], 400, 200), null);
+  assert.equal(photoCropStyle([0.5, 0, 0.52, 1], 400, 200), null, '너무 좁음');
+  assert.equal(photoCropStyle(null, 400, 200), null);
+  const b = geoBox(outline);
+  assert.ok(b[0] > 103.5 && b[2] < 104.2 && b[1] > 1.1 && b[3] < 1.5, `싱가포르 윤곽 범위 ${b}`);
+  const P = insetProjection(b, { width: 520, pad: 10 });
+  const [x0, y0] = P.project([b[0], b[3]]), [x1, y1] = P.project([b[2], b[1]]);
+  assert.ok(Math.abs(x0 - 10) < 1e-9 && Math.abs(y0 - 10) < 1e-9 && Math.abs(x1 - 510) < 1e-9 && Math.abs(y1 - (P.height - 10)) < 1);
+  assert.ok(P.unitKm > 0.05 && P.unitKm < 0.2, `viewBox 1 = ${P.unitKm}km`);
+});
+
+test('주제를 바꾸면 말풍선을 숨김(destroy → tip.hide)', () => {
+  const S = setup();
+  const T = S.build(topicOf('religion'));
+  S.tip.show('술탄 모스크', [10, 10]);
+  assert.equal(S.tip.el.hidden, false);
+  T.destroy();
+  assert.equal(S.tip.el.hidden, true);
+});
+
+test('확대 창: 저절로 열릴 때는 초점 그대로, 상자를 눌러 열면 닫기 단추로 초점(Esc 가 창에 걸림), Esc 로 닫힘, 도로(고속·일반)를 사원 아래에, 위치 상자는 지명 장애물(상자 + 글자)', () => {
+  const S = setup();
+  const proto = Object.getPrototypeOf(document.createElement('div'));
+  let focused = null;
+  proto.focus = function focus() { focused = this; };
+  try {
+    const T = S.build(topicOf('religion'));
+    T.showGroup(T.groups.findIndex((g) => g.refs[0].ref === 'layer-p22-singapore'));
+    const inset = find(S.stage, byClass('at-inset'));
+    assert.equal(focused, null, '저절로 열릴 때는 초점을 가져가지 않음');
+    const svg = find(inset, byClass('at-inset-svg'));
+    const kids = svg.children.map((c) => c.getAttribute('class'));
+    assert.ok(kids.indexOf('at-inset-roads') > kids.indexOf('at-inset-land') && kids.indexOf('at-inset-roads') < kids.findIndex((c) => c === 'at-inset-sym'), `그리는 차례 ${kids.slice(0, 5)}`);
+    const nRoads = outline.features.filter((f) => f.geometry.type === 'LineString').length;
+    assert.ok(nRoads > 10);
+    assert.equal(findAll(inset, byClass('at-inset-road')).length, nRoads);
+    assert.equal(findAll(inset, byClass('at-inset-road-casing')).length, nRoads);
+    assert.ok(findAll(inset, byClass('at-inset-road-expressway')).length > 0, '고속 도로');
+    inset.dispatch('keydown', { key: 'Escape' });
+    assert.equal(inset.hidden, true);
+    focused = null;
+    const box = S.map.layers.find((L) => L.id === 'layer-p22-singapore:box');
+    assert.deepEqual(box.labelObstacles(), [], '그리기 전엔 없음');
+    const boxG = document.createElementNS('svg', 'g');
+    box.drawSvg(boxG, ([lon, lat]) => [lon * 10, -lat * 10]);
+    const ob = box.labelObstacles();
+    assert.equal(ob.length, 2);
+    assert.ok(ob[1][0] > ob[0][2], '글자 상자는 상자 오른쪽');
+    find(boxG, byClass('at-inset-box')).dispatch('click', { stopPropagation() {} });
+    assert.equal(inset.hidden, false);
+    assert.ok(focused?.classList.contains('at-inset-close'), '사용자가 열면(상자 누름 → show()) 닫기 단추에 초점');
+    T.destroy();
+  } finally { delete proto.focus; }
+});
+
+test('segButtons: 단추마다 ds-seg-btn·data-v·aria-pressed, set 은 표시만, 누르면 onPick(값)', async () => {
+  const { segButtons } = await import('../../src/atlas/seg.js');
+  const picked = [];
+  const sg = segButtons([[0, '가', '가 제목'], [1, '나']], { onPick: (v) => picked.push(v), label: '고르기', className: 'x', btnClass: 'y', current: 1 });
+  assert.equal(sg.el.getAttribute('class'), 'ds-seg x');
+  assert.equal(sg.el.getAttribute('aria-label'), '고르기');
+  assert.deepEqual(sg.btns.map((b) => [b.getAttribute('class'), b.getAttribute('data-v'), b.getAttribute('aria-pressed'), b.getAttribute('title')]),
+    [['ds-seg-btn y', '0', 'false', '가 제목'], ['ds-seg-btn y', '1', 'true', '나']]);
+  sg.btns[0].dispatch('click');
+  assert.deepEqual(picked, [0]);
+  assert.equal(sg.btns[0].getAttribute('aria-pressed'), 'false', '누르기만으로는 표시 안 바뀜(부르는 쪽이 set)');
+  sg.set(0);
+  assert.equal(sg.value, 0);
+  assert.equal(sg.btns[0].getAttribute('aria-pressed'), 'true');
+});
+
+test('insetAvoidOffset: 창 오른쪽에 자리가 있으면 그 가운데로(dx), 좁으면 창 아래로(dy), 크기 모르면 null', async () => {
+  const { insetAvoidOffset } = await import('../../src/atlas/inset.js');
+  const stage = { left: 0, top: 0, right: 1120, bottom: 900, width: 1120, height: 900 };
+  assert.deepEqual(insetAvoidOffset(stage, { left: 10, top: 10, right: 650, bottom: 480, width: 640, height: 470 }), [325, 0]);
+  assert.deepEqual(insetAvoidOffset({ ...stage, right: 700, width: 700 }, { left: 10, top: 10, right: 650, bottom: 480, width: 640, height: 470 }), [0, 240]);
+  assert.equal(insetAvoidOffset({ width: 0, height: 0 }, { width: 10 }), null);
+  assert.equal(insetAvoidOffset(stage, null), null);
+});
+
+test('카슈미르 묶음: 무대에 인도 위치도(분홍 = 레이어 locator 면, 파키스탄·인도 이름), 묶음을 바꾸면 사라짐', () => {
+  const S = setup();
+  const basemap = readJson(path.join(DATA, 'basemap.json'));
+  const countries50 = feature(basemap, basemap.objects.countries50).features;
+  const T = S.build(topicOf('religion'), { countryFeatures: { 50: countries50 }, locators: { 'layer-p22-kashmir': { bounds: [60, 5, 99, 38], names: { PAK: '파키스탄', IND: '인도' }, title: '인도 위치' } } });
+  const gi = T.groups.findIndex((g) => g.refs[0].ref === 'layer-p22-kashmir');
+  T.showGroup(gi);
+  const loc = find(S.stage, byClass('at-locator'));
+  assert.ok(loc, '위치도');
+  assert.ok(find(loc, byClass('at-locator-hl')).getAttribute('d').length > 50, '강조 면');
+  assert.deepEqual(findAll(loc, byClass('at-locator-name')).map((t) => t.textContent).sort(), ['인도', '파키스탄']);
+  T.showGroup(0);
+  assert.equal(find(S.stage, byClass('at-locator')), null);
+  T.destroy();
+});
+
+test('고도 색: 주제 기본값(tint)으로 map.setOptions, 켜져 있고 자료가 붙었을 때만 범례, 지도 도구로 끄면 범례도 숨김, destroy 로 구독 해제', () => {
+  const S = setup();
+  const T = S.build(topicOf('general'), { tint: true });
+  assert.deepEqual(S.map.calls.find((c) => c[0] === 'setOptions'), ['setOptions', { tint: true, natural: false }]);
+  const lg = find(S.body, byClass('at-tint-legend'));
+  assert.ok(lg && !lg.hidden, '일반도 = 고도 색 범례');
+  assert.equal(findAll(lg, byClass('at-tint-row')).length, 18, '빙하·육지 9·해수면 아래·바다 7');
+  S.map.setOptions({ tint: false });
+  assert.equal(lg.hidden, true, '끄면 범례도 숨김');
+  T.destroy();
+  assert.equal(S.map.handlerCount, S.base);
+  const T2 = S.build(topicOf('climate'), { tint: false });
+  assert.deepEqual(S.map.calls.filter((c) => c[0] === 'setOptions').at(-1), ['setOptions', { tint: false, natural: false }], '주제도는 끔');
+  assert.equal(find(S.body, byClass('at-tint-legend')).hidden, true);
+  S.map.tintReady = false;
+  S.map.setOptions({ tint: true });
+  assert.equal(find(S.body, byClass('at-tint-legend')).hidden, true, '자료를 못 불러왔으면 켜도 범례 없음');
+  T2.destroy();
+});
+
+test('바탕 색 baseColor: 지형 = 자연색(고도 색 범례 없음·출처 줄에 Natural Earth II), 고도 색으로 바꾸면 범례, 자료가 없으면 출처 줄 없음, 주제를 바꾸면 숨김', () => {
+  const S = setup();
+  const natCredit = () => find(S.credits.el, byClass('at-credits-natural'));
+  const tintLg = () => find(S.body, byClass('at-tint-legend'));
+  const T = S.build(topicOf('relief'), { baseColor: 'natural' });
+  assert.deepEqual(S.map.calls.filter((c) => c[0] === 'setOptions').at(-1), ['setOptions', { tint: false, natural: true }]);
+  assert.equal(tintLg().hidden, true, '자연색이면 고도 색 범례 없음');
+  assert.equal(natCredit().hidden, false);
+  assert.match(natCredit().textContent, /Natural Earth II/);
+  S.map.setOptions({ tint: true, natural: false });
+  assert.equal(tintLg().hidden, false, '고도 색으로 바꾸면 범례');
+  assert.equal(natCredit().hidden, true);
+  S.map.setOptions({ tint: true, natural: true });
+  assert.equal(tintLg().hidden, true, '둘 다 켜지면 자연색이 앞섬');
+  S.map.naturalReady = false;
+  S.map.setOptions({ graticule: false });
+  assert.equal(natCredit().hidden, true, '자연색 화상을 못 불러왔으면 출처 줄 없음');
+  assert.equal(tintLg().hidden, false, '그때 보이는 고도 색의 범례');
+  S.map.naturalReady = true;
+  T.destroy();
+  assert.equal(natCredit().hidden, true, '주제를 바꾸면 숨김');
+  S.build(topicOf('climate')).destroy();
+  assert.deepEqual(S.map.calls.filter((c) => c[0] === 'setOptions').at(-1), ['setOptions', { tint: false, natural: false }], '기본 = 없음');
+});
+
+test('지형 핀 번호 숨김(pinNumbers hidden): 빈 핀·말풍선 이름 없음 → 누른 핀만 번호·이름, 「번호 모두 보기」·「다시 숨기기」(고른 핀·카드 지움), 다시 펼치면 숨김, 다른 주제는 그대로', () => {
+  const S = setup();
+  const relief = topicOf('relief');
+  assert.equal(relief.pinNumbers, 'hidden');
+  const proj = (ll) => [400 + ll[0], 300 - ll[1]];
+  let T = S.build(relief);
+  let svg = document.createElementNS('svg', 'g');
+  T.pins.drawSvg(svg, proj, S.map.view);
+  const pinEls = () => findAll(svg, byClass('at-pin'));
+  const numShown = (el) => find(el, byClass('at-pin-num')).getAttribute('display') !== 'none';
+  assert.equal(pinEls().length, 7);
+  assert.ok(pinEls().every((el) => !numShown(el) && el.classList.contains('is-blank')), '처음엔 모두 빈 핀');
+  const feats = () => relief.markers.map((m) => { const q = proj(m.lonlat); return T.pins.hit([q[0], q[1] - 15]); });
+  assert.ok(feats().every((f) => f && f.properties.label === ''), '말풍선 이름도 없음');
+  const btn = find(S.body, byClass('at-reveal-btn'));
+  assert.ok(btn, '활동하기 1 에 단추');
+  assert.equal(btn.textContent, '번호 모두 보기');
+  // 키보드: 핀마다 role button·tabindex 0·읽기 이름 「핀」(숨김)
+  assert.ok(pinEls().every((el) => el.getAttribute('role') === 'button' && el.getAttribute('tabindex') === '0' && el.getAttribute('aria-label') === '핀'));
+  const first = pinEls().find((el) => el.getAttribute('data-id') === relief.markers[0].id);
+  let refreshes = 0;
+  const refresh0 = S.map.refreshLayer;
+  S.map.refreshLayer = () => { refreshes++; return true; };
+  first.dispatch('click');
+  S.map.refreshLayer = refresh0;
+  assert.equal(refreshes, 1, '처음 누를 때 다시 그리기 한 번');
+  assert.equal(first.getAttribute('aria-label'), relief.markers[0].title, '드러나면 읽기 이름 = 제목');
+  assert.equal(numShown(first), true, '누른 핀은 번호');
+  assert.equal(pinEls().filter(numShown).length, 1);
+  assert.equal(btn.textContent, '번호 모두 보기');
+  assert.equal(feats()[0].properties.label, relief.markers[0].title, '누른 핀은 이름도');
+  assert.equal(T.card.el.hidden, false, '카드는 그대로 열림');
+  // Enter·Space 는 누르기와 같은 길(다른 키는 무시)
+  const second = pinEls().find((el) => el.getAttribute('data-id') === relief.markers[1].id);
+  second.dispatch('keydown', { key: 'a' });
+  assert.equal(numShown(second), false);
+  const ev = second.dispatch('keydown', { key: 'Enter' });
+  assert.equal(numShown(second), true); assert.ok(ev.defaultPrevented, 'Space 가 쪽을 내리지 않게');
+  assert.equal(T.pins.selected(), relief.markers[1].id);
+  const third = pinEls().find((el) => el.getAttribute('data-id') === relief.markers[2].id);
+  third.dispatch('keydown', { key: ' ' });
+  assert.equal(numShown(third), true, 'Space');
+  btn.dispatch('click');
+  assert.equal(pinEls().filter(numShown).length, 7);
+  assert.equal(btn.textContent, '다시 숨기기');
+  assert.equal(btn.getAttribute('aria-pressed'), null, '글자가 바뀌는 단추라 aria-pressed 없음');
+  btn.dispatch('click');
+  assert.equal(pinEls().filter(numShown).length, 0);
+  assert.equal(T.pins.selected(), null, '고른 핀 지움');
+  assert.equal(T.card.el.hidden, true, '카드 지움(답이 남지 않게)');
+  assert.equal(btn.textContent, '번호 모두 보기');
+  for (const el of pinEls()) el.dispatch('click');
+  assert.equal(btn.textContent, '다시 숨기기', '하나씩 다 누르면 「다시 숨기기」');
+  T.destroy();
+  T = S.build(relief);
+  svg = document.createElementNS('svg', 'g');
+  T.pins.drawSvg(svg, proj, S.map.view);
+  assert.equal(pinEls().filter(numShown).length, 0, '주제를 다시 펼치면 처음처럼 숨김');
+  T.destroy();
+  const H = S.build(topicOf('heritage'));
+  svg = document.createElementNS('svg', 'g');
+  H.pins.drawSvg(svg, proj, S.map.view);
+  assert.ok(pinEls().length > 0 && pinEls().every((el) => !el.classList.contains('is-blank') && numShown(el)), '세계유산 핀은 번호 그대로');
+  assert.equal(find(S.body, byClass('at-reveal-btn')), null);
+  H.destroy();
+});
+
+test('확대 창 기호 흐리기는 legend.isActive — 범례 묶음 고름(toggleGroup)에도 맞음', () => {
+  const S = setup();
+  const T = S.build(topicOf('religion'));
+  T.showGroup(T.groups.findIndex((g) => g.refs[0].ref === 'layer-p22-singapore'));
+  const L = T.layers[0];
+  const [c1, c2] = L.legend.classes;
+  L.legend.toggleGroup('둘', [c1, c2]);
+  const syms = findAll(S.stage, byClass('at-inset-sym'));
+  const op = (cls) => new Set(syms.filter((e) => e.getAttribute('data-cls') === cls).map((e) => e.getAttribute('opacity')));
+  assert.deepEqual([...op(c1)], ['1']); assert.deepEqual([...op(c2)], ['1']);
+  assert.deepEqual([...op(L.legend.classes[2])], ['0.2']);
+  T.destroy();
+});

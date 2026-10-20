@@ -165,7 +165,7 @@ def process(lid):
         gj = json.load(f)
     feats = gj['features']
     area_idx = [i for i, ft in enumerate(feats) if ft['geometry']['type'] in ('Polygon', 'MultiPolygon')]
-    cov_idx = [i for i in area_idx if not feats[i]['properties'].get('pattern')]
+    cov_idx = [i for i in area_idx if not feats[i]['properties'].get('pattern') and feats[i]['properties'].get('type') != 'locator']  # 위치도 강조 면은 덮개 밖(종교 면과 겹침)
     geoms = {}
     cov_tol = tol * cfg['coverageTolFactor']
     for i, g in zip(cov_idx, coverage([polygonal(shape(feats[i]['geometry'])) for i in cov_idx], cov_tol, min_area, clip)):

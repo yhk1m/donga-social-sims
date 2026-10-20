@@ -270,3 +270,56 @@ test('destroy 뒤: map.destroyed 는 true, setReliefDrawer·invalidate·refreshL
   dom.flushRaf();
   assert.equal(called, 0);
 });
+
+test('고도 색 훅: tint 일 때만 sea → land 차례, 음영과 같은 공유 격자(그림마다 invertGrid 한 번 — miss 1 · hit 2), options 알림, destroy 로 격자 놓아줌', () => {
+  const { map } = setup();
+  const seq = [];
+  const seen = [];
+  map.setReliefDrawer((ctx, projection, view, o) => { seq.push('relief'); seen.push(o.grid()); });
+  map.setTintDrawer((ctx, projection, view, o) => { seq.push(o.phase); seen.push(o.grid()); });
+  const opts = [];
+  const off = map.on('options', (o) => opts.push(o.tint));
+  dom.flushRaf();
+  assert.deepEqual(seq, ['relief'], 'tint 끔이면 고도 색 훅 안 부름');
+  assert.equal(map.tintReady, true);
+  seq.length = 0; seen.length = 0;
+  map.setOptions({ tint: true });
+  dom.flushRaf();
+  assert.deepEqual(seq, ['sea', 'land', 'relief']);
+  assert.ok(seen[0] === seen[1] && seen[1] === seen[2], '같은 격자 객체');
+  const last = map.gridStats.renders.at(-1);
+  assert.deepEqual([last.misses, last.hits], [1, 2]);
+  assert.deepEqual(opts, [true]);
+  map.redraw();
+  assert.notEqual(seen.at(-1), seen[0], '다음 그림은 새 격자');
+  off();
+  map.destroy();
+});
+
+test('자연색 훅: natural 이 켜져 있고 붙었으면 고도 색 대신 같은 자리(sea → land, 같은 공유 격자), 음영 훅에 natural: true, 안 붙었으면 고도 색 그대로', () => {
+  const { map } = setup();
+  const seq = [];
+  map.setReliefDrawer((ctx, projection, view, o) => { seq.push(`relief:${!!o.natural}`); o.grid(); });
+  map.setTintDrawer((ctx, projection, view, o) => { seq.push(`tint:${o.phase}`); });
+  map.setOptions({ tint: true, natural: true });
+  dom.flushRaf();
+  assert.deepEqual(seq, ['tint:sea', 'tint:land', 'relief:false'], '자연색이 아직 안 붙었으면 고도 색');
+  assert.equal(map.naturalReady, false);
+  const opts = [];
+  const off = map.on('options', (o) => opts.push(o.natural));
+  seq.length = 0;
+  map.setNaturalDrawer((ctx, projection, view, o) => { seq.push(`natural:${o.phase}`); assert.equal(typeof o.grid, 'function'); o.grid(); });
+  dom.flushRaf();
+  assert.equal(map.naturalReady, true);
+  assert.deepEqual(opts, [true], '붙으면 options 알림');
+  assert.deepEqual(seq, ['natural:sea', 'natural:land', 'relief:true']);
+  const last = map.gridStats.renders.at(-1);
+  assert.deepEqual([last.misses, last.hits], [1, 2], '자연색 두 단계 + 음영이 격자 하나');
+  seq.length = 0;
+  map.setOptions({ natural: false });
+  dom.flushRaf();
+  assert.deepEqual(seq, ['tint:sea', 'tint:land', 'relief:false'], '끄면 다시 고도 색');
+  assert.equal(map.options.natural, false);
+  off();
+  map.destroy();
+});

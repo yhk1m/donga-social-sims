@@ -46,6 +46,7 @@
 /* 기호: 흰 테두리, 누를 수 있음 */
 .ds-sim .at-sym-item { cursor: pointer; }
 .ds-sim .at-sym-shape { stroke: #fff; stroke-width: 1px; stroke-linejoin: round; }
+.ds-sim .at-sym-shape.has-stroke { stroke: var(--at-sym-stroke, #fff); stroke-width: 1.1px; }
 .ds-sim .at-sym-item.is-hover .at-sym-shape { stroke: #1f2a44; stroke-width: 2px; }
 .ds-sim .at-bar-cell { stroke: #fff; stroke-width: .6px; }
 .ds-sim .at-bar-person { stroke: #fff; stroke-width: .8px; }
@@ -67,6 +68,9 @@
 .ds-sim .at-pin-body { fill: #7251a1; stroke: #fff; stroke-width: 1.4px; }
 .ds-sim .at-pin-hole { fill: #fff; }
 .ds-sim .at-pin-num { font-family: var(--font); font-size: 9px; font-weight: 800; fill: #4b2f78; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.ds-sim .at-pin.is-blank .at-pin-body { fill: #9a84c2; }
 .ds-sim .at-pin.is-hover .at-pin-body { fill: #5b3d8a; }
 .ds-sim .at-pin.is-selected .at-pin-body { fill: #e8590c; }
 .ds-sim .at-pin.is-selected .at-pin-num { fill: #a63c06; }
+.ds-sim .at-pin:focus { outline: none; }
+.ds-sim .at-pin:focus-visible .at-pin-body { stroke: #1d4ed8; stroke-width: 2.6px; }

@@ -1,0 +1,8 @@
+{"_doc": "고도 색 분류 규칙 표 — tests/atlas/tint.test.mjs(앱 tintClassOf)와 scripts/atlas/tests/test_tint.py(build_tint.classify)가 함께 쓴다. [높이 m, 육지, 빙하, 번호] — 0..6 바다(얕은 → 깊은), 7 해수면 아래 땅, 8..16 육지(0~100 → 5,000 이상), 17 빙하.",
+ "cases": [
+  [-50, true, false, 7], [0, true, false, 8], [99.9, true, false, 8], [100, true, false, 9], [199, true, false, 9], [200, true, false, 10],
+  [499, true, false, 10], [500, true, false, 11], [1000, true, false, 12], [1999, true, false, 12], [2000, true, false, 13], [3000, true, false, 14],
+  [4000, true, false, 15], [4999, true, false, 15], [5000, true, false, 16], [8848, true, false, 16], [300, true, true, 17], [-30, true, true, 17],
+  [-10, false, true, 0], [5, false, false, 0], [-199, false, false, 0], [-200, false, false, 1], [-999, false, false, 1], [-1000, false, false, 2],
+  [-2000, false, false, 3], [-4000, false, false, 4], [-6000, false, false, 5], [-8000, false, false, 6], [-10994, false, false, 6]
+ ]}

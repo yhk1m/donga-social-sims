@@ -5,6 +5,7 @@
 //   mulberry32(seed)·shuffle·quizOptions·pickNext   씨앗 고정 난수와 보기 만들기
 //   pageCrop(bbox)                원본 쪽 이미지에서 bbox 부분만 보이게 하는 백분율
 //   pagesLabel(pages)·assetUrl(path)·panTarget(key, W, H)
+//   photoCropStyle(crop, w, h)    사진 일부(비율 상자)만 보이는 백분율(세계유산 퀴즈의 이름 띠 빼기)
 
 /** 공개 이미지 자리(GitHub Pages). 사진·원본 쪽은 여기 아래 절대 주소로만 연결한다(조각 규칙의 이미지 예외). */
 export const ASSET_BASE = 'https://yhk1m.github.io/donga-social-sims/assets/atlas/';
@@ -107,4 +108,19 @@ export function panTarget(key, W, H) {
     case 'ArrowDown': return [cx, cy + dy];
     default: return null;
   }
+}
+
+/**
+ * 사진 일부만 보이기(E1 세계유산 퀴즈 — 교과서 번호·이름 띠 빼기). crop = [x0, y0, x1, y1](사진 너비·높이에 대한 비율), w·h = 사진 화소.
+ * → { aspect: 담는 상자 가로/세로, width, left, top: 이미지의 %(상자 기준, absolute) } | null(잘라 낼 것 없음·잘못된 값).
+ * 상자: aspect-ratio + overflow hidden, 이미지: position absolute, width = 100/(x1−x0)%, left = −x0/(x1−x0)%, top = −y0/(y1−y0)%
+ * (absolute 의 top % 는 담는 상자 높이 기준이고, 이미지 높이 / 상자 높이 = 1/(y1−y0) 이라 맞는다).
+ */
+export function photoCropStyle(crop, w, h) {
+  if (!Array.isArray(crop) || crop.length !== 4 || !(w > 0) || !(h > 0)) return null;
+  const [x0, y0, x1, y1] = crop;
+  if (![x0, y0, x1, y1].every(Number.isFinite) || x0 < 0 || y0 < 0 || x1 > 1 || y1 > 1 || x1 - x0 < 0.05 || y1 - y0 < 0.05) return null;
+  if (x0 === 0 && y0 === 0 && x1 === 1 && y1 === 1) return null;
+  const r = (v) => Math.round(v * 1000) / 1000;
+  return { aspect: r(((x1 - x0) * w) / ((y1 - y0) * h)), width: r(100 / (x1 - x0)), left: r((-100 * x0) / (x1 - x0)), top: r((-100 * y0) / (y1 - y0)) };
 }

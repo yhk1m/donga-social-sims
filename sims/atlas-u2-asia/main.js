@@ -1,158 +1,92 @@
 // © 2026 김용현
-// 사회과부도 Ⅱ 아시아 — (임시, Task D7) 화면 부품 확인용 mount: 목차 + 지도 도구 + 범례 + 상세 카드 + 그래프 + 퀴즈 + 원본 쪽 보기 + 말풍선.
-// 주제 조립의 최종판(topic.js buildTopic)은 Task E1 에서 만든다. 여기서는 주제마다 부품을 만들고 바꿀 때 destroy 하는 간단한 연결만 둔다.
-// 규칙(EMBED_RULES.md): DOM 은 h() 로만, 검색은 root 안에서만, 자료는 정적 import.
+// 사회과부도 Ⅱ 아시아(16~25쪽) — 조각 조립(Task E1): 셸 → 지도(createMap) → 지도 도구·말풍선·원본 쪽 보기 → 목차 → 주제(buildTopic).
+// 주제를 바꾸면 이전 주제(topic.js 가 만든 레이어·범례·카드·그래프·퀴즈·확대 창)를 destroy 하고 새로 펼친다. 목차·도구·출처 줄은 그대로.
+// 규칙(EMBED_RULES.md): DOM 은 h() 로만, 검색은 root 안에서만, 자료는 정적 import(fetch 없음), 사진·쪽·음영은 공개 Pages 절대 주소.
 import { feature } from 'topojson-client';
 import { createShell, addBlock } from '../../src/shared/shell.js';
-import { h, icon } from '../../src/shared/dom.js';
+import { h } from '../../src/shared/dom.js';
 import { createMap } from '../../src/atlas/renderer.js';
 import { attachRelief } from '../../src/atlas/relief.js';
-import { markerLayer } from '../../src/atlas/layers.js';
-import { layerFromRef } from '../../src/atlas/layerRef.js';
-import { topicNav, mapTools, legendBlock, detailCard, pageViewer, tooltip, creditBlock, imageUrl } from '../../src/atlas/ui.js';
-import { renderChart } from '../../src/atlas/charts.js';
-import { coloringLayer, coloringQuiz, heritageQuiz } from '../../src/atlas/quiz.js';
+import { attachTint } from '../../src/atlas/tint.js';
+import { attachNatural, lazyNatural, releaseNatural } from '../../src/atlas/natural.js';
+import { topicNav, mapTools, pageViewer, tooltip, creditBlock } from '../../src/atlas/ui.js';
+import { buildTopic } from '../../src/atlas/topic.js';
 import basemap from './data/basemap.json';
 import places from './data/places.json';
 import topics from './data/topics.json';
 import charts from './data/charts.json';
 import layerData from './data/layers.js';
+import singaporeOutline from './data/inset-p22-singapore.json';
 
-const TRADE_BOUNDS = [55, -45, -60, 72]; // 교역 흐름선(세계 지도 쪽): 날짜변경선을 건너는 범위
+// 교역 흐름선(24쪽 주제도 활동, 세계 지도 쪽): 상대국이 아메리카까지라 주제 view 밖 — 날짜변경선을 건너는 범위
+const BOUNDS_OF = { 'layer-p24-trade': [55, -45, -60, 72] };
+const CENTER_LON_OF = { 'layer-p24-trade': 150 }; // 교과서 24쪽 교역 지도도 태평양 중심(밀러) — 미국행 흐름선이 지도 끝에서 끊기지 않게
+// 무대 위 확대 창으로 그릴 레이어(큰 지도에서는 섬이 30px 남짓이라 기호 76개가 겹침) → 바탕 윤곽
+const INSETS = { 'layer-p22-singapore': singaporeOutline };
+// 작은 위치도(교과서 22쪽 카슈미르 지도 오른쪽 위의 인도 위치도) — 레이어의 type 'locator' 면(분쟁 지역)을 분홍으로
+// 주제별 바탕 색 기본값(지도 도구 「바탕」으로 바꿀 수 있음): 일반도 = 고도 색(교과서 16·18·19쪽 높이·깊이 색), 지형 = 자연색(교과서 20쪽
+// Natural Earth 자연색 화상), 나머지 주제도 = 없음(주제 색이 잘 보이게)
+const BASE_COLOR = { general: 'tint', relief: 'natural' };
+const LOCATORS = { 'layer-p22-kashmir': { bounds: [60, 5, 99, 38], names: { PAK: '파키스탄', IND: '인도' }, title: '인도 위치 — 분홍이 카슈미르' } };
 
 export default function mount(root) {
   const { stage, panel } = createShell(root, 'atlas-u2-asia');
   const map = createMap(stage, { basemap, places, unitBoxes: basemap.meta.unitBoxes });
-  root.atlasMap = map; // 확인용(헤드리스 캡처·성능 측정)
-  attachRelief(map).then((d) => { root.atlasRelief = d; });
+  attachRelief(map).then((d) => { root.atlasRelief = d; }); // 공개 Pages 의 음영 이미지(실패하면 음영 없이 그대로)
+  attachTint(map).then((d) => { root.atlasTint = d; });     // 공개 Pages 의 고도 색 분류 화상(실패하면 고도 색 없이 그대로)
 
   const tools = mapTools(stage, map);
+  // 자연색 화상(1 MB)은 처음 자연색을 켤 때 불러온다 — 그동안 「자연색」 단추는 바쁨(aria-busy), 실패하면 앞 바탕으로 되돌리고 도구에 알림 한 줄
+  // (다음에 다시 켜면 다시 시도)
+  const natural = lazyNatural(map, {
+    attach: (m) => attachNatural(m).then((d) => { root.atlasNatural = d; return d; }),
+    onState: (st) => tools.setBaseState('natural', st),
+  });
   const tip = tooltip(stage, { map });
   const viewer = pageViewer(stage);
-  const nav = topicNav(panel, topics, (id) => showTopic(id));
+  const nav = topicNav(panel, topics, (id) => show(id));
   const body = addBlock(panel, h('div', { class: 'at-topic' }));
   const credits = creditBlock(panel);
   const countryFeatures = {
     50: feature(basemap, basemap.objects.countries50).features,
     '10a': feature(basemap, basemap.objects.countries10a).features,
   };
-  let parts = []; // 주제를 바꿀 때 destroy 할 것들
-  const keep = (x) => { parts.push(x); return x; };
-  root.atlasUi = { map, tools, tip, viewer, nav }; // 확인용
 
-  const blockTitle = (text) => h('h3', { class: 'ds-h2' }, text);
-  const chartBox = (spec) => {
-    const box = h('div', { class: 'at-card-chart' });
-    keep(renderChart(box, spec));
-    box.append(h('button', { class: 'ds-btn at-expand', type: 'button', title: '그래프 크게 보기', 'aria-label': '그래프 크게 보기', on: { click: () => viewer.show({ title: spec.title, chart: spec }) } }, icon('expand'), '크게 보기'));
-    return box;
-  };
-
-  function showLayers(t, refs, card, legendBox) {
-    for (const L of map.layers) if (L.id !== `markers-${t.id}`) map.removeLayer(L.id);
-    for (const p of parts.filter((x) => x.isLegend)) p.destroy();
-    parts = parts.filter((x) => !x.isLegend);
-    const made = [];
-    for (const ref of refs) {
-      const L = layerFromRef(ref, layerData, { map, onPick: (f) => card.show({ title: f.properties.label || f.properties.name, text: ref.label }) });
-      map.addLayer(L);
-      made.push(L);
-      if (L.legendItems?.length) {
-        const lb = legendBlock(null, L.legend, L.legendItems, { ...L.meta, title: L.meta.legendTitle || L.meta.title, lineTitle: L.meta.lineLegendTitle, ready: L.ready });
-        lb.isLegend = true;
-        legendBox.append(lb.el);
-        keep(lb);
-      }
-    }
-    credits.update(made.map((L) => L.meta?.credit));
-    const v = (t.views || []).find((x) => refs.some((r) => r.ref === x.layer || r.ref.endsWith(`-${x.id}`)));
-    const b = refs.some((r) => r.type === 'flow') ? TRADE_BOUNDS : (v || t.view)?.bounds;
-    if (b) map.fitBounds(b);
-    root.atlasLayers = made; // 확인용
+  let current = null;
+  function show(id) {
+    const topic = topics.find((t) => t.id === id) || topics[0];
+    current?.destroy();
+    nav.update(topic.id);
+    current = buildTopic({
+      map, stage, body, viewer, credits, tip, topic, charts, layers: layerData, countryFeatures, insets: INSETS, boundsOf: BOUNDS_OF, centerLonOf: CENTER_LON_OF, locators: LOCATORS, baseColor: BASE_COLOR[topic.id] || 'none',
+    });
+    root.atlasTopic = current; // 확인용(헤드리스 캡처)
+    return current;
   }
 
-  function showTopic(id) {
-    parts.forEach((p) => p.destroy());
-    parts = [];
-    map.clearLayers();
-    viewer.hide();
-    body.replaceChildren();
-    const t = topics.find((x) => x.id === id) || topics[0];
-    nav.update(t.id);
-    body.append(h('h2', { class: 'at-topic-title' }, t.title));
-    const card = keep(detailCard(null, { onExpand: (sp) => viewer.show({ title: sp.title, chart: sp }) }));
-    const legendBox = h('div', { class: 'at-legends' });
-
-    // 레이어: 같은 이름끼리 묶어(인구 분포 = 밀도 음영 + 1억 명 막대) 고르기
-    const groups = [];
-    for (const ref of t.layers || []) {
-      const g = groups.find((x) => x.label === (ref.label || ref.ref));
-      if (g) g.refs.push(ref); else groups.push({ label: ref.label || ref.ref, refs: [ref] });
-    }
-    if (groups.length > 1) {
-      const btns = groups.map((g, i) => h('button', {
-        class: 'ds-seg-btn', type: 'button', 'aria-pressed': String(i === 0), title: g.label,
-        on: { click: () => { btns.forEach((b, j) => b.setAttribute('aria-pressed', String(j === i))); showLayers(t, g.refs, card, legendBox); } },
-      }, g.label));
-      body.append(h('div', { class: 'ds-ctl' }, h('span', { class: 'ds-label' }, '지도'), h('div', { class: 'ds-seg at-seg-wrap' }, btns)));
-    }
-    if (t.views?.length && !groups.length) {
-      body.append(h('div', { class: 'ds-ctl' }, h('span', { class: 'ds-label' }, '바로가기'),
-        h('div', { class: 'ds-row' }, t.views.map((v) => h('button', { class: 'ds-btn', type: 'button', on: { click: () => map.fitBounds(v.bounds) } }, v.label)))));
-    }
-    body.append(legendBox, card.el);
-    if (groups.length) showLayers(t, groups[0].refs, card, legendBox);
-    else { credits.update([]); if (t.view?.bounds) map.fitBounds(t.view.bounds); }
-
-    // 핀
-    let pins = null;
-    if (t.markers?.length) {
-      pins = markerLayer(`markers-${t.id}`, t.markers, {
-        map,
-        onPick: (m) => card.show({ kicker: `${m.photo?.pin ?? ''}`, title: m.title, photo: m.photo, text: m.text, chart: m.chart ? charts[m.chart] : null, approx: m.approx }),
-      });
-      map.addLayer(pins);
-    }
-
-    // 퀴즈
-    if (t.quiz?.type === 'coloring') {
-      const layer = coloringLayer(countryFeatures);
-      map.addLayer(layer);
-      const q = keep(coloringQuiz(map, layer, t.quiz.countries));
-      body.append(q.el);
-      root.atlasQuiz = q;
-    } else if (t.quiz?.type === 'heritage') {
-      const q = keep(heritageQuiz(t.markers, { onFocus: (m) => pins?.select(m.id) }));
-      body.append(h('h3', { class: 'ds-h2' }, '어느 나라·어느 종교?'), q.el);
-      root.atlasQuiz = q;
-    }
-
-    // 사이드바 글·그래프·사진·원본 쪽
-    for (const b of t.blocks || []) {
-      if (b.type === 'text' || b.type === 'activity') {
-        body.append(h('div', { class: `at-text at-text-${b.role || b.type}` },
-          b.title ? blockTitle(b.title) : null, h('p', { class: 'at-card-text' }, b.text), b.credit ? h('p', { class: 'at-card-credit' }, b.credit) : null));
-      } else if (b.type === 'chart' && charts[b.ref]) {
-        body.append(h('div', { class: 'at-text' }, b.text ? h('p', { class: 'at-card-text' }, b.text) : null), chartBox(charts[b.ref]),
-          b.note ? h('p', { class: 'at-card-credit' }, b.note) : null);
-      } else if (b.type === 'photo') {
-        const c = keep(detailCard(null));
-        c.show({ title: b.title, photo: b.photo, text: b.text });
-        body.append(c.el);
-      } else if (b.type === 'card') {
-        const c = keep(detailCard(null, { onExpand: (sp) => viewer.show({ title: sp.title, chart: sp }) }));
-        c.show({ title: b.title, photo: b.photo, text: b.text, chart: b.chart ? charts[b.chart] : null, charts: (b.charts || []).map((r) => charts[r]).filter(Boolean) });
-        body.append(c.el);
-      } else if (b.type === 'page') {
-        body.append(h('button', { class: 'ds-btn at-page-btn', type: 'button', on: { click: () => viewer.show({ url: b.url, page: b.page, title: b.title ? `${b.title} (교과서 ${b.page}쪽)` : `교과서 ${b.page}쪽`, bbox: b.bbox }) } },
-          icon('page'), b.bbox ? `원본 쪽 보기 — ${b.title || '부분'} (${b.page}쪽)` : `원본 쪽 보기 (${b.page}쪽)`));
-      }
-    }
-    root.atlasPins = pins; // 확인용
+  let first = topics[0].id;
+  if (import.meta.env?.DEV) {
+    // 개발 미리보기 전용(조각 빌드에서는 DEV 가 false 로 접혀 없어짐): ?topic=<id>&proj=<도법> — E2 대조표 캡처용
+    const q = new URLSearchParams(root.ownerDocument?.defaultView?.location?.search || '');
+    if (q.get('proj')) map.setProjection(q.get('proj'));
+    if (topics.some((t) => t.id === q.get('topic'))) first = q.get('topic');
   }
+  show(first);
 
-  showTopic('general');
-  root.atlasShowTopic = showTopic; // 확인용(캡처 스크립트)
+  // 확인용(헤드리스 캡처·성능 측정): 지도·부품·주제 바꾸기
+  root.atlasMap = map;
+  root.atlasUi = { map, tools, tip, viewer, nav, credits };
+  root.atlasShowTopic = show;
   root.atlasCharts = charts;
-  root.atlasImageUrl = imageUrl;
+
+  /** 조각을 떼어 낼 때(개발 미리보기·시험용): 주제·구독·도구·지도를 모두 푼다 */
+  function destroy() {
+    current?.destroy(); current = null;
+    natural.destroy();
+    tools.destroy(); tip.destroy(); viewer.destroy(); nav.destroy(); credits.destroy();
+    map.destroy();
+    releaseNatural(); // 캐시한 자연색 화소(약 32MB)도 놓아줌
+  }
+  root.atlasDestroy = destroy;
+  return { destroy };
 }

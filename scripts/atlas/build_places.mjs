@@ -12,8 +12,9 @@
 //      개관도에 없으면 지역도 단계 + regionalRankPenalty (1~6으로 자름). size·page 는 위치를 준 글자.
 //   4b. 옮겨 그린 기호 바로잡기(snapToNe): 바탕 지도가 실제 지리라, 교과서가 겹치지 않게 옮겨 그린 도시 기호(에르데네트·냐짱 등)는
 //      Natural Earth 위치로 옮기고 snapped: {from, km} 로 남긴다(설정 snapKm, keepTextbookPosition).
+//   4c. 면 지명 옮기기(relocate): 교과서가 땅 밖에 쓴 나라 이름(대한민국·미국)을 본토 위로(설정 relocate, moved: {from}).
 //   5. inIndex = 찾아보기에 16~19쪽 참조가 있는 지명. 찾아보기의 16~19쪽 지명이 없으면(indexExclude 제외) 누락 목록을 출력.
-//   출력 항목: {name, lon, lat, rank, kind, size, page, symbol?: [lon,lat], path?: [[lon,lat]...], angle?, en?, alt?, elev?, snapped?, inIndex}
+//   출력 항목: {name, lon, lat, rank, kind, size, page, symbol?: [lon,lat], path?: [[lon,lat]...], angle?, en?, alt?, elev?, snapped?, moved?, inIndex}
 //   --verify: 지명을 같은 fit 으로 지면에 되돌려 교과서 렌더와 겹친 그림 $ATLAS_WORK/shots/c2/<map>.png
 import fs from 'node:fs';
 import path from 'node:path';
@@ -149,6 +150,7 @@ function main(argv) {
   const ne = neIndex(NE_FILE);
   if (!ne) warnings.push(`Natural Earth 인구 지점 파일이 없어 옮겨 그린 기호 바로잡기(snapToNe)를 못 함: ${NE_FILE}`);
   const snapped = ne ? snapToNe(places, ne) : [];
+  const moved = relocate(places, PC.relocate || {});
   const inIdx = new Set(mapRows.map((r) => key(r.name)));
   for (const p of places) p.inIndex = inIdx.has(key(p.name));
   places.sort((a, b) => cmp(a.rank, b.rank) || cmp(b.size, a.size) || a.name.localeCompare(b.name, 'ko') || cmp(a.lon, b.lon) || cmp(a.lat, b.lat));
@@ -177,6 +179,7 @@ function main(argv) {
   console.log(`inIndex ${places.filter((p) => p.inIndex).length}/${places.length}`);
   console.log(`Natural Earth 위치로 옮김 ${snapped.length}곳 (${PC.snapKm}km 넘게 어긋난 점 지명, 이름이 하나뿐인 짝만):`);
   for (const p of snapped) console.log(`  옮김: ${p.name}(${p.page}쪽 ${p.kind}) ${p.snapped.km}km  ${p.snapped.from} → ${p.lon},${p.lat}`);
+  for (const p of moved) console.log(`  옮김(relocate): ${p.name} ${p.moved.from} → ${p.lon},${p.lat} — ${PC.relocate[p.name].why}`);
   const kept = Object.keys(PC.keepTextbookPosition || {});
   if (kept.length) console.log(`교과서 위치 그대로 둠(keepTextbookPosition): ${kept.join(', ')}`);
   const nec = neCheck(places);
@@ -205,6 +208,29 @@ export function snapToNe(places, ne, { snapKm = PC.snapKm, keep = PC.keepTextboo
     p.snapped = { from: [p.lon, p.lat], km: Math.round(d) };
     p.lon = round(m[0].lon); p.lat = round(m[0].lat);
     if (p.symbol) p.symbol = [p.lon, p.lat];
+    out.push(p);
+  }
+  return out;
+}
+
+/** 면 지명 옮기기(relocate, 설정 {이름: {path:[[lon,lat]...], why}}): 교과서 지면이 좁아 땅 밖에 쓴 나라 이름(「대한민국」은 동해,
+ *  아시아 지도에는 알래스카만 보여 「미국」은 알래스카)을 웹지도(세계 전체·확대)에서 그 나라 본토 위로. lon/lat = path 가운데,
+ *  angle 은 지움(가로 글자), moved: {from} 을 남긴다(까닭은 설정 why). 점 지명(기호)은 받지 않는다(snapToNe 몫). 이름이 없거나 둘 이상이면 오류('_' 로 시작하는 열쇠는 설명이라 건너뜀). 옮긴 목록을 돌려준다. */
+export function relocate(places, table) {
+  const out = [];
+  for (const [name, r] of Object.entries(table)) {
+    if (name.startsWith('_')) continue;
+    const found = places.filter((x) => x.name === name && !x.symbol);
+    if (!found.length) throw new Error(`relocate: 면 지명 「${name}」 없음 — 설정 places.relocate 확인`);
+    if (found.length > 1) throw new Error(`relocate: 면 지명 「${name}」 이 ${found.length}개 — 어느 것을 옮길지 모름`);
+    const p = found[0];
+    if (!Array.isArray(r.path) || r.path.length < 2 || !r.why) throw new Error(`relocate.${name}: path(2점 이상)·why 필요`);
+    const n = r.path.length;
+    const mid = n % 2 ? r.path[(n - 1) / 2] : [(r.path[n / 2 - 1][0] + r.path[n / 2][0]) / 2, (r.path[n / 2 - 1][1] + r.path[n / 2][1]) / 2];
+    p.moved = { from: [p.lon, p.lat] }; // 까닭(why)은 설정에만 둔다(생성물 크기)
+    p.lon = round(mid[0]); p.lat = round(mid[1]);
+    p.path = r.path.map(rr);
+    delete p.angle;
     out.push(p);
   }
   return out;
