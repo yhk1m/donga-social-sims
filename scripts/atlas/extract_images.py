@@ -7,6 +7,7 @@
 #                 items·exclude 어디에도 안 덮인 후보는 경고(빠뜨린 사진 찾기). 확정 목록은 사람이 설정 items 에 쓴다.
 #   --photos      items 마다 bbox 를 원본 해상도(덮는 이미지 배치의 dpi, 벡터 그림은 vectorDpi, 상한 maxDpi)로 렌더 →
 #                 docs/assets/atlas/u2/photo/<id>.jpg·.webp. 글(제목·설명·출처)은 pdfkit.box_text(원문 그대로).
+#                 항목에 imagesOnly 가 있으면 래스터 그림만 렌더(pdfkit.render_clip images_only — 오려 낸 그림 위 글 지움).
 #                 핀: 지도마다 핀 위치(지면 pt)를 찾아(pins 설정: 도형 또는 번호 글자) 번호로, 번호 없는 핀은 pinNear 지명과
 #                 가장 가까운 짝(헝가리안)으로 고르고, pt2lonlat.mjs(경위도 맞추기 fit)로 경위도 → content/atlas/u2/photos.json
 #   --pages       원본 쪽 이미지 p016.jpg~ (pageImage.dpi, maxBytes 안으로 품질을 낮춰 가며)
@@ -141,6 +142,14 @@ def save_photo(src_png, pid, c, mask=None):
         return im.size
 
 
+def render_item(it, dpi, tmp, render=None):
+    """사진 항목 하나를 렌더 → (너비px, 높이px, dpi). imagesOnly = 쪽의 래스터 그림만(글자·벡터 도형을 지움 — 오려 낸 사진 위·옆에
+    설명 글이 겹칠 때, u4 38·39쪽). 키가 없으면 옛 호출 그대로(images_only 인자를 넘기지 않음)."""
+    render = render or pdfkit.render_clip
+    if it.get('imagesOnly'): return render(it['page'], it['bbox'], dpi, tmp, images_only=True)
+    return render(it['page'], it['bbox'], dpi, tmp)
+
+
 def build_photos(warnings):
     c = cfg()
     os.makedirs(TMP, exist_ok=True)
@@ -154,7 +163,7 @@ def build_photos(warnings):
         if pno not in infos: infos[pno] = pdfkit.doc()[pno - 1].get_image_info()
         dpi = native_dpi(infos[pno], it['bbox'], c)
         tmp = os.path.join(TMP, f'{it["id"]}.png')
-        w, h, dpi = pdfkit.render_clip(pno, it['bbox'], dpi, tmp)
+        w, h, dpi = render_item(it, dpi, tmp)
         save_photo(tmp, it['id'], c, it.get('mask'))
         for ext in ('jpg', 'webp'): total += os.path.getsize(repo(c['assetDir'], 'photo', f'{it["id"]}.{ext}'))
         rec = {'id': it['id'], 'page': pno, 'bbox': it['bbox'], 'topic': it['topic']}

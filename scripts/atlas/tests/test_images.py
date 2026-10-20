@@ -64,6 +64,16 @@ class PureFunctions(unittest.TestCase):
         self.assertEqual(X.main(['--nope']), 2)
 
 
+class RenderItem(unittest.TestCase):
+    def test_images_only_only_with_key(self):
+        calls = []
+        rec = lambda *a, **k: calls.append((a, k)) or (1, 1, a[2])
+        X.render_item({'page': 38, 'bbox': [0, 0, 10, 10]}, 150, 't.png', rec)
+        X.render_item({'page': 38, 'bbox': [0, 0, 10, 10], 'imagesOnly': True}, 150, 't.png', rec)
+        self.assertEqual(calls[0], ((38, [0, 0, 10, 10], 150, 't.png'), {}))          # 키 없음 = 옛 호출 그대로
+        self.assertEqual(calls[1], ((38, [0, 0, 10, 10], 150, 't.png'), {'images_only': True}))
+
+
 class PagesQuality(unittest.TestCase):
     def setUp(self):
         rng = np.random.default_rng(0)
