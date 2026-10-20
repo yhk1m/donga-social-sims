@@ -26,6 +26,8 @@ def _colors(cid, ch):
     m = {}
     for s in cfg.get('series', []):
         if isinstance(s, dict) and s.get('color'): m[s['name']] = s['color']
+    if ch.get('ring') or ch['type'] == 'bubbleRow':   # 아프리카(U4-7): 설정 계열이 없고 뽑은 자료에 조각 색(교과서 색)이 있는 그래프
+        return [s.get('color') or PALETTE[i % len(PALETTE)] for i, s in enumerate(ch['series'])]
     return [m.get(s['name'], PALETTE[i % len(PALETTE)]) for i, s in enumerate(ch['series'])]
 
 
@@ -132,6 +134,18 @@ def _plot(cid, ch, ax):
                 ax.text(cx - 1.15, r - 0.1, f'{s["name"]} {v:g}', fontsize=6, ha='right')
             ax.text(cx, 0, cat, ha='center', va='center')
         ax.set_xlim(-2.6, 3.6); ax.set_ylim(-1.2, 1.2)
+    elif t == 'pie' and ch.get('ring'):   # 아프리카(U4-7) 고리: 구멍 + 가운데 글자
+        vals = [s['values'][0] for s in ch['series']]
+        ax.pie(vals, labels=[f'{s["name"]}\n{s["values"][0]:g}' for s in ch['series']], colors=cols, startangle=90, counterclock=False,
+               textprops={'fontsize': 8}, wedgeprops={'width': 1 - ch['ring'], 'edgecolor': 'white'})
+        ax.text(0, 0, '\n'.join(ch.get('center', [])), ha='center', va='center', fontsize=9)
+    elif t == 'bubbleRow':   # 아프리카(U4-7) 원 크기 줄: 원 넓이 ∝ 값
+        vals = ch['series'][0]['values']; vmax = max(vals)
+        for i, (n, v) in enumerate(zip(cats, vals)):
+            r = 0.45 * (v / vmax) ** 0.5
+            ax.add_patch(plt.Circle((i, r), r, color=cols[0]))
+            ax.text(i, -0.12, f'{n}\n{v:g}', ha='center', va='top', fontsize=7)
+        ax.set_xlim(-0.6, len(cats) - 0.4); ax.set_ylim(-0.5, 1.0); ax.set_aspect('equal'); ax.axis('off')
     elif t == 'pie':
         vals = [s['values'][0] for s in ch['series']]
         ax.pie(vals, labels=[f'{s["name"]}\n{s["values"][0]:g}' for s in ch['series']], colors=cols, startangle=90, counterclock=False,

@@ -78,7 +78,8 @@ def extract_charts(warnings):
     cfg = charts_config()
     rows = climate_table()
     ctx = {'warnings': warnings, 'climate': rows, 'climatePage': cfg['climateTable']['page'], 'climateDecimals': _decimals(rows),
-           'notInTable': climate_not_in_table(), 'defaults': defaults(), 'climateAliases': cfg['climateTable'].get('aliases', {})}
+           'notInTable': climate_not_in_table(), 'defaults': defaults(), 'climateAliases': cfg['climateTable'].get('aliases', {}),
+           'layers': unit_config().get('layers', {})}   # 그래프 이름을 레이어 범례에서(U4-7 고리 namesFrom)
     out = {}
     for cid, c in cfg['items'].items():
         try:

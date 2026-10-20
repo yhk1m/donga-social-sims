@@ -436,5 +436,112 @@ class ChartsU3(unittest.TestCase):
         self.assertEqual(json.dumps(self.again, ensure_ascii=False, sort_keys=True), json.dumps(self.charts, ensure_ascii=False, sort_keys=True))
 
 
+U4_CONFIG = os.path.join(os.path.dirname(__file__), '..', 'config', 'u4.json')
+U4_RINGS = ('p38-bauxite', 'p38-uranium', 'p38-diamond', 'p38-chromium', 'p38-cobalt', 'p38-platinum', 'p38-manganese')
+
+
+@NEED_PDF
+class ChartsU4(unittest.TestCase):
+    """U4-7 아프리카 그래프 15: 기후 4(표 2·잰 값 2) · 고리 7(조각 밖 인쇄 %) · 그림 막대 피라미드 2(렌더 화소) · 수치 그림 1 · 원 크기 줄 1."""
+    @classmethod
+    def setUpClass(cls):
+        import json
+        from unittest import mock
+        import extract_tables as et
+        cls.et = et
+        with open(U4_CONFIG, encoding='utf-8') as f: full = json.load(f)
+        cls.cfg = full['charts']
+        cls.warnings = []
+        et._climate.clear()
+        try:
+            with mock.patch.object(et, 'charts_config', lambda: cls.cfg), mock.patch.object(et, 'unit_config', lambda: full):
+                cls.charts = et.extract_charts(cls.warnings)
+                cls.again = et.extract_charts([])
+                cls.rows = et.climate_table()
+        finally:
+            et._climate.clear()
+
+    def test_count_and_warnings(self):
+        self.assertEqual(len(self.charts), 15)
+        self.assertEqual(set(self.charts), set(self.cfg['items']))
+        self.assertEqual(self.warnings, [])
+        self.assertEqual(self.et.validate(self.charts, self.cfg), [])
+
+    def test_climate(self):
+        want = {'p37-cairo': ('카이로', '사막', 'printed'), 'p37-kisangani': ('키상가니', '열대 우림', 'measured'),
+                'p37-dodoma': ('도도마', '사바나', 'measured'), 'p37-capetown': ('케이프타운', '지중해성', 'printed')}
+        for cid, (city, zone, method) in want.items():
+            with self.subTest(cid):
+                c = self.charts[cid]
+                self.assertEqual((c['city'], c['climate']), (city, zone))
+                self.assertEqual([len(s['values']) for s in c['series']], [12, 12])
+                for s in c['series']:
+                    self.assertEqual(s['method'], method)
+                    self.assertTrue(all(isinstance(v, (int, float)) for v in s['values']))
+                    if method == 'measured': self.assertIsInstance(s['precision'], float)
+        self.assertEqual(self.charts['p37-cairo']['series'][1]['values'], self.rows['카이로']['prec'])
+        self.assertEqual(self.charts['p37-capetown']['series'][0]['values'], self.rows['케이프타운']['temp'])
+        self.assertEqual(self.charts['p37-cairo']['noBarMonths'], [5, 6, 7, 8])      # 막대 없는 달 = 97쪽 표 0.0mm
+        self.assertEqual(self.charts['p37-dodoma']['noBarMonths'], [7, 8])
+        self.assertNotIn('키상가니', self.rows); self.assertNotIn('도도마', self.rows)
+
+    def test_rings_sum_100(self):
+        for cid in U4_RINGS:
+            with self.subTest(cid):
+                r = self.charts[cid]
+                self.assertEqual(r['type'], 'pie')
+                self.assertAlmostEqual(sum(s['values'][0] for s in r['series']), 100, delta=0.5)
+                self.assertAlmostEqual(r['check']['measuredSum'], 100, delta=0.5)
+                self.assertTrue(0.4 < r['ring'] < 0.6)
+                self.assertEqual(r['series'][-1]['name'], '기타')
+                self.assertEqual(len(r['center']), 3)
+        self.assertEqual([s['values'][0] for s in self.charts['p38-diamond']['series']][:3], [17.2, 9.8, 6.6])
+        self.assertEqual([s['name'] for s in self.charts['p38-diamond']['series']][:3], ['보츠와나', '콩고 민주 공화국', '앙골라'])
+        self.assertEqual(self.charts['p38-uranium']['center'], ['40.795', '(톤)', '2021년'])          # 인쇄 그대로(issues.md)
+        self.assertEqual(self.charts['p38-diamond']['center'][0], '13.800')
+        self.assertEqual({s['name']: s['values'][0] for s in self.charts['p38-manganese']['series']}, {'남아프리카 공화국': 34.4, '가나': 3.4, '기타': 62.2})
+
+    def test_pyramids(self):
+        for cid in ('p38-pyramid-world', 'p38-pyramid-africa'):
+            with self.subTest(cid):
+                p = self.charts[cid]
+                self.assertEqual(p['type'], 'pyramid')
+                self.assertEqual(len(p['categories']), 18)
+                self.assertEqual((p['categories'][0], p['categories'][-1]), ('0~4', '85 이상'))
+                self.assertEqual([s['name'] for s in p['series']], ['남', '여'])
+                self.assertAlmostEqual(sum(v for s in p['series'] for v in s['values']), 100, delta=2.0)
+                for s in p['series']:
+                    self.assertEqual(len(s['values']), 18); self.assertEqual(s['method'], 'measured'); self.assertIsInstance(s['precision'], float)
+        w, a = self.charts['p38-pyramid-world'], self.charts['p38-pyramid-africa']
+        self.assertGreater(a['series'][0]['values'][0], w['series'][0]['values'][0])     # 아프리카 0~4세 비중이 더 큼
+
+    def test_greenwall(self):
+        g = self.charts['p39-greenwall']
+        self.assertEqual(g['type'], 'bubbleRow')
+        self.assertEqual(len(g['categories']), 11)
+        v = g['series'][0]['values']
+        self.assertEqual((v[0], v[-1]), (2006, 0.13))
+        self.assertEqual(g['series'][0]['method'], 'printed')
+        d = {c['name']: c['diamPt'] for c in g['check']['circles']}
+        self.assertAlmostEqual(d['에티오피아'] / d['니제르'], (2006 / 809) ** 0.5, delta=0.01)
+        self.assertIn('윌', g['title'])                                                    # 교과서 오타 그대로(issues.md)
+
+    def test_afcfta_table(self):
+        t = self.charts['p39-afcfta']
+        self.assertEqual(t['type'], 'table')
+        self.assertEqual(t['categories'][0], '2021년 국가')
+        self.assertEqual(t['series'][0]['values'], ['47개국', '13억 명', '3.4조 달러', '무역 2배 성장', '17억 명', '6.7조 달러'])
+
+    def test_every_measured_has_precision(self):
+        for cid, c in self.charts.items():
+            for s in c['series']:
+                if s['method'] == 'measured':
+                    with self.subTest(f'{cid} {s["name"]}'): self.assertIsInstance(s.get('precision'), (int, float))
+
+    def test_deterministic(self):
+        import json
+        self.assertEqual(json.dumps(self.again, ensure_ascii=False, sort_keys=True), json.dumps(self.charts, ensure_ascii=False, sort_keys=True))
+
+
 if __name__ == '__main__':
     unittest.main()

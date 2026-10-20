@@ -372,11 +372,11 @@ test('rank 1~6, kind 목록 안', () => { for (const p of places) { assert.ok(p.
 | `p39-greenwall` | bubbleRow | 인쇄 값 printed | 에티오피아 2,006·니제르 809·에리트레아 501·세네갈 119·수단 88·부르키나파소 53·차드 16·말리 6·모리타니 3.4·나이지리아 3·지부티 0.13(십 km², UNCCD 2019) |
 | `p39-afcfta` | table | 인쇄 글자 | 2021년: 국가 47개국·인구 13억 명·구매력 3.4조 달러 / 2030년 목표: 아프리카 내 무역 2배 성장·인구 17억 명·구매력 6.7조 달러 |
 
-- [ ] **Step 1:** 기후 4 — `climateTable` 그대로(u3 꼴: 제목 둘째 줄 「(사막 기후)」 → climate, 97쪽 표 zone 과 다르면 경고, 표에 없는 도시는 `notInTable`). 97쪽 표 u4 사본은 u2 표와 바이트 같아야 함.
-- [ ] **Step 2:** 고리 7 — 유럽 `donut` 읽개(색마다 가장 큰 채움 = 조각, 가운데 = 안쪽 호 중심 중앙값)로 각·인쇄 % 짝(헝가리안), 출력에 `ring`(안쪽/바깥 반지름 비)·`center`(총량·단위·해 글자). 인쇄 「13.800」·「40.795」(쉼표 자리에 마침표)는 **원문 그대로 두고** `content/atlas/u4/issues.md`에 적는다.
-- [ ] **Step 3:** 피라미드 2 — 새 읽개 `pyramidRaster`(설정 `reader: 'pyramidRaster'`일 때만): 그래프 상자를 400dpi 로 렌더 → 막대 색 가면(남·여 색은 범례 「남」「여」 글자 색 근처 화소에서 견본) → 나이 줄마다(나이 글자 세로 가운데 ± 줄 높이/2) 가운데 축에서 왼쪽·오른쪽 끝 화소 → 축 눈금 글자(벡터)로 % 환산. `measured` + `precision`(화소 1개 = 몇 %). 유럽 U3-4 30쪽 원 기호(인라인 그림 → 렌더 화소)와 같은 길.
-- [ ] **Step 4:** 원 크기 — `bubbleRow` 읽개: 보라 원 채움(벡터)마다 지름, 아래 이름·값 글자 짝. 값은 인쇄 글자(printed), 지름 비가 √값 비와 맞는지 경고만(교과서 그림 확인).
-- [ ] **Step 5: 테스트** (`test_tables.py` `ChartsU4` — u3 꼴로 u4 설정을 모의)
+- [x] **Step 1:** 기후 4 — `climateTable` 그대로(u3 꼴: 제목 둘째 줄 「(사막 기후)」 → climate, 97쪽 표 zone 과 다르면 경고, 표에 없는 도시는 `notInTable`). 97쪽 표 u4 사본은 u2 표와 바이트 같아야 함.
+- [x] **Step 2:** 고리 7 — 유럽 `donut` 읽개(색마다 가장 큰 채움 = 조각, 가운데 = 안쪽 호 중심 중앙값)로 각·인쇄 % 짝(헝가리안), 출력에 `ring`(안쪽/바깥 반지름 비)·`center`(총량·단위·해 글자). 인쇄 「13.800」·「40.795」(쉼표 자리에 마침표)는 **원문 그대로 두고** `content/atlas/u4/issues.md`에 적는다.
+- [x] **Step 3:** 피라미드 2 — 새 읽개 `pyramidRaster`(설정 `reader: 'pyramidRaster'`일 때만): 그래프 상자를 400dpi 로 렌더 → 막대 색 가면(남·여 색은 범례 「남」「여」 글자 색 근처 화소에서 견본) → 나이 줄마다(나이 글자 세로 가운데 ± 줄 높이/2) 가운데 축에서 왼쪽·오른쪽 끝 화소 → 축 눈금 글자(벡터)로 % 환산. `measured` + `precision`(화소 1개 = 몇 %). 유럽 U3-4 30쪽 원 기호(인라인 그림 → 렌더 화소)와 같은 길.
+- [x] **Step 4:** 원 크기 — `bubbleRow` 읽개: 보라 원 채움(벡터)마다 지름, 아래 이름·값 글자 짝. 값은 인쇄 글자(printed), 지름 비가 √값 비와 맞는지 경고만(교과서 그림 확인).
+- [x] **Step 5: 테스트** (`test_tables.py` `ChartsU4` — u3 꼴로 u4 설정을 모의)
 ```python
 class ChartsU4(unittest.TestCase):
     def test_count_and_warnings(self):
@@ -404,7 +404,7 @@ class ChartsU4(unittest.TestCase):
         self.assertEqual(len(g['categories']), 11); self.assertEqual(g['values'][0], 2006); self.assertEqual(g['values'][-1], 0.13)
 ```
   (`run_charts`·출력 키 이름은 지금 `test_tables.py` 도우미와 chartCore 가 받는 꼴에 맞춘다 — 피라미드는 u2 `pyramid` 출력 꼴 그대로.)
-- [ ] **Step 6:** 경고 0으로 `charts-u4.json` + 도장. 대조표 `units/u4/shots/c4/charts-37~39.png` 눈으로. `charts_read.py`를 고쳤으므로 u2·u3 `extract_tables` 다시 → `charts-u2.json`·`charts-u3.json` 바이트 같음(도장 파일만 정당하게 새 값) + `regress_unit --check` 둘 다. 커밋.
+- [x] **Step 6:** 경고 0으로 `charts-u4.json` + 도장. 대조표 `units/u4/shots/c4/charts-37~39.png` 눈으로. `charts_read.py`를 고쳤으므로 u2·u3 `extract_tables` 다시 → `charts-u2.json`·`charts-u3.json` 바이트 같음(도장 파일만 정당하게 새 값) + `regress_unit --check` 둘 다. 커밋.
 
 ### Task U4-8: 주제 내용
 
@@ -655,3 +655,26 @@ test('태양광 묶음은 태평양 중심 지도', () => assert.ok(by.potential
   - 회귀(extract_images 를 고침): u2·u3 `--photos --pages` 다시 → content/atlas/u2|u3/photos.json·docs/assets/atlas/u2|u3 git 차이 없음(render_item 으로 옮긴 뒤 한 번 더 — 같음, u4 도 해시 같음). `--unit u2 --check`: 처음에 낡음 경고(조각·캡처가 U4-5 places 다시 쓰기보다 오래됨) → embed·compare_shots·compare 다시 → [경고] 없음, 해시 162개 중 도장만 다름 2, 캡처 41장 화소 차 0(heritage 지명 수 100→101 참고), 대조표 0/9/134/24, 조각 +0.945% — 회귀 없음. `--unit u3 --check`: [경고] 없음, 다른 파일 0, 캡처 31장 화소 차 0, 대조표 0/26/118/42, 조각 +0.222% — 회귀 없음.
   - 시험: `tests/atlas/units/u4.photos.test.mjs` 7(주제·쪽별 수, Q7 카드, 핀 11·번호 숨김 짝, 핀이 아프리카 안·서로 떨어짐, 대표 핀(킬리만자로·케이프타운 1° 안 등), 글 — 烋·깨진 글자·따옴표 짝·titleOverride·같은 설명 카드, 파일 크기) + test_images 1. npm test: **Python 311 · Node 535**(통과 534, skip 1 — 고리 레이어).
   - 교사 대조표에 올릴 것(U4-10): ① 면적 비교 카드에 제목·설명 글과 제목 띠 끝이 그림 안에 보임. ② 오려 낸 그림 8장은 그림만(흰 바탕) — 교과서의 겹친 글 없음, 마타이 사진 위 파란 선은 남음. ③ 카사바·푸푸를 두 카드로(겹친 가장자리), 가면·피카소·AU·의제 2063 은 같은 설명 두 카드. ④ 37쪽 야생 동물 대이동 핀이 도도마 서쪽(교과서대로 — 세렝게티 아님). ⑤ 사진 카드에 기후 그래프 출처를 넣지 않음. ⑥ 39쪽 그래프 제목 「그레이트 그린 **윌** 프로젝트」(본문·사진은 「월」) — 교과서 오타로 보임(U4-7·U4-8 issues.md 후보).
+- (U4-7, 2026-10-21) 그래프 숫자 15개 — `config/u4.json charts.items`, 경고 0, `units/u4/tables/charts-u4.json`(19,741 B) + 도장, 대조표 `units/u4/shots/c4/charts-37~39.png`(눈으로 봄 — 교과서 그림과 다시 그린 그림이 맞음)
+  - 그래프 표:
+
+    | id | 형식(출력 type) | 값 출처 | 정밀도 |
+    |---|---|---|---|
+    | p37-cairo · p37-capetown | climograph | 97쪽 표 printed(잰 값과 차 기온 0.19·0.16℃, 강수 1.3·0.7mm) | 인쇄값 |
+    | p37-kisangani · p37-dodoma | climograph | 도형 측정 measured(notInTable) | 기온 ±0.218℃ · 강수 ±1.088mm |
+    | p38-bauxite·uranium·diamond·chromium·cobalt·platinum·manganese | pie + ring 0.51 | 조각 밖 인쇄 % printed(잰 각과 차 ≤ 0.01%p, 각 합 100.0) | 0.05(인쇄 소수 한 자리) |
+    | p38-pyramid-world · p38-pyramid-africa | pyramid(읽개 pyramidRaster) | 400dpi 렌더 화소 measured(합 99.99 · 99.66) | ±0.033%(화소 0.179pt) |
+    | p39-afcfta | table(읽개 figure) | 인쇄 글자 6칸 | — |
+    | p39-greenwall | bubbleRow | 인쇄 값 printed(지름 √값 비 확인 — 최대 0.40pt, 지부티) | — |
+
+  - **기후 4**: 37쪽 그래프 4개는 유럽 29쪽과 같은 틀·같은 자리라 u3 상자를 그대로(도시·기후·출처 글자 실측으로 확인). climate = 제목 둘째 줄(사막·열대 우림·사바나·지중해성) — 97쪽 표 zone 과 같음. 새 키 `barsByMonth`(있을 때만): 카이로 강수 막대 8개·도도마 10개(비가 거의 없는 달은 막대가 없음)라 옛 길은 「12개여야 함」 경고와 달이 밀린 비교(카이로 7.9mm 어긋남)를 냈다 → 막대를 가로 위치가 가장 가까운 기온 점(달)에 붙이고 빈 달은 잰 값 0, 출력 `noBarMonths`(카이로 5~8 = 표 0.0mm, 도도마 7·8). 97쪽 표 u4 사본 = u2 표와 바이트 같음.
+  - **고리 7 — `read_donut` 에 `valuesOutside` 길**(키가 있을 때만 `read_donut_outside` 로, 없으면 유럽 코펜하겐 옛 길 그대로): 38쪽 고리는 조각마다 가운데에서 뻗은 **부채꼴 채움** 위에 흰 원(r 12.57pt)을 덮어 구멍을 낸 그림이다(안쪽 호가 없음 — 유럽 코펜하겐은 조각마다 안쪽 호). 그래서 가운데·안쪽 반지름 = `holeColor` 원, 조각 = 색마다 가장 큰 채움(넓이 5pt² 미만 — 지도 땅 부스러기 #ede9e4 — 은 뺌), 각 = 바깥 호가 쓸어 간 각, 차례 = 12시에서 시계 방향 시작 각. 인쇄된 % 는 조각 밖이라 구멍 밖 수 글자를 (글자 시계 각 ↔ 조각 가운데 각)/10° + |값 − 잰 %| 헝가리안 짝(다이아몬드 1.5·0.8 처럼 좁은 조각 둘의 글자도 바르게 갈림). 조각 이름 = `namesFrom {layer: 'p38-resources', otherColor '#ede9e4', otherName '기타'}` — 그 레이어 설정 `legendItems` 색과 조각 색이 똑같음(ΔE 0). 이 때문에 extract_tables ctx 에 `layers`(단원 설정 layers)를 더함(다른 읽개는 안 씀). 가운데 글자 = 구멍 안 줄(cell_text — 「2020」+「년」을 붙여 읽음), `center` 로 인쇄 그대로(우라늄 「40.795」·다이아몬드 「13.800」 → issues.md 1). ring = 구멍/바깥 반지름 0.51(U4-4 어림 0.48 은 지름 52.5pt 상자 기준이었음). bbox 는 가운데 ± 30pt(부채꼴 rect 가 곡선 조절점까지라 ± 27 이면 다이아몬드 「기타」 조각이 상자 밖으로 빠졌음), labelBox ± 36pt(망간만 아래 출처 「2023」 피해 305).
+  - **피라미드 2 — 새 읽개 `pyramidRaster`**(유럽 30쪽 래스터 원 검출과 같은 꼴 — 설정 type 이 있을 때만): 막대는 인라인 그림이라 벡터 채움이 없다(images_only 렌더에서도 사라짐 — 그림 지우개가 xref 0 그림까지 지움). plotBox 를 400dpi 로 작업 폴더 임시 PNG 에 렌더 → 막대 색(설정 = 범례 「남」「여」 글자 색 #fcbb76·#f4858e, 렌더 화소 #fcbc77·#f3868f — ΔE ≤ 12) 가면 → 나이 글자 줄마다(세로 가운데 ± 0.8pt) 가운데 0 선 열에서 바깥으로 이어진 막대 화소(틈 4화소까지 — 「남」「여」 글자도 막대 색이라 이어진 것만, 0 선 회색 눈금선이 막대 위에 겹쳐 시작 허용 6화소) 끝 + 가장자리 화소의 덮인 몫(막대 색 ↔ 두 칸 바깥 배경 사이 투영)의 중앙값 → 가로축. 가로축은 세로 눈금선 벡터 7개(653.1~718.7)에 붙은 눈금 글자만(`xRequireSnap`): 양끝 「8」은 눈금선이 없고 오른쪽 8 은 「(%)」에 밀려 3pt 왼쪽(issues.md 7). 출력은 u2 pyramid 꼴 그대로(type 'pyramid', 18구간, series 남·여 measured + precision 0.033). 제목 = 소제목 「아프리카의 인구 구성」, `subtitle` = 「세계(2021년)」·「아프리카(2021년)」(흰 글자 띠). 아프리카 85세 이상 남자는 막대가 약 0.03%p 라 0.0(1200dpi 로 확인).
+  - **원 크기 줄 — 새 읽개 `bubbleRow`**: 보라 원(#9e7eb9) 채움 11, 이름 줄·값 줄을 가운데 x 로 짝, 값은 인쇄 글자. 지름 비 확인은 `check.circles`(지름·기대 지름·지름에서 되돌린 값) + `warnDiamPt 0.5` 넘으면 경고 — 작은 값 넷(말리·모리타니·나이지리아·지부티)이 최소 크기로 그려져 0.12~0.40pt 큼(경고 아님, issues.md 6). 단위는 위첨자 「2」 때문에 설정 `unit` 「십 km²」. 제목은 인쇄 그대로 「‘그레이트 그린 윌 프로젝트’…」 — 1,200dpi 렌더로도 「윌」이라 교과서 오타(본문·사진 「월」, U4-6 발견 → issues.md 2).
+  - **AfCFTA 표** — 유럽 `figure` 읽개 + 칸 키 `groupBox`(있을 때만 — 칸 머리 글자 「2021년」「2030년 목표」를 이름 앞에)·칸별 `nameLine`(없으면 그래프 값 — 옛 동작 그대로). 「무역」+「2」(12.4pt)는 틈이 0.15em 안이라 붙어 replace. 범주 「2021년 국가·인구·구매력 / 2030년 목표 아프리카 내·인구·구매력」, 값 「47개국·13억 명·3.4조 달러 / 무역 2배 성장·17억 명·6.7조 달러」. 그림 자체 제목·출처가 없어 소제목·지도 출처(AfCFTA, 2023)를 씀.
+  - 피라미드 출처 글자는 「(UN, 「세계 인구 전망」, 2022)」로 읽힘(쪽 렌더도 홑낫표 꼴 — 37쪽 『이과연표』는 겹낫표로 바르게 읽힘). 손대지 않음.
+  - 대조표(chart_sheets.py, 키가 있을 때만): 고리(ring)는 구멍 + 가운데 글자, 조각 색 = 자료 color; bubbleRow 그림 길 새로. u2·u3 그래프에는 ring·bubbleRow 가 없어 그대로.
+  - **고리 레이어**: `build_layers --unit u4 p38-resource-charts` → `sims/atlas-u4-africa/data/layer-p38-resource-charts.json`(2.6KB, 고리 7 — series·ring 0.51·center 는 그래프 자료에서, 자리는 U4-4 리뷰 lonlat). u4.layers 시험의 skip 이 없어지고 13개 모두 통과.
+  - 시험: test_tables `ChartsU4` 8(15개·경고 0·validate, 기후 4 × 12·12 + 표 값·noBarMonths, 고리 합 100·ring·기타·다이아몬드 차례·가운데 글자 원문, 피라미드 18구간·합 100±2·precision·아프리카 0~4세 > 세계, 원 크기 줄 2,006…0.13·지름 비·「윌」, AfCFTA 표, 잰 값 precision, 결정성). npm test: **Python 319 · Node 535(skip 0)**.
+  - **회귀**(charts_read·extract_tables·chart_sheets 고침 — 도장 입력이 아닌 단원 그래프 스크립트, 단 charts 도장은 코드 해시라 u2·u3 `charts-*.stamp.json` 은 정당하게 새 값): `extract_tables --unit u2|u3 --climate --charts` → `charts-u2.json`·`charts-u3.json`·`tables/climate-world.json`·`units/u3/tables/climate-world.json` md5 같음. `regress_unit --unit u2 --check`: [경고] 없음, 해시 162개 중 도장만 다름 2(G0 과 같음), 캡처 41장 화소 차 0(heritage 지명 수 100→101 참고), 대조표 0/9/134/24, 조각 +0.945% — 회귀 없음. `--unit u3 --check`: [경고] 없음, 다른 파일 0, 캡처 31장 화소 차 0, 대조표 0/26/118/42, 조각 +0.222% — 회귀 없음. src 는 안 고침.
+  - 교사 대조표에 올릴 것(U4-10): ① 우라늄·다이아몬드 고리 가운데 「40.795」「13.800」 원문 그대로. ② 피라미드 2 = 잰 값(값이 인쇄되어 있지 않음, ±0.03%p). ③ 키상가니·도도마 = 잰 값(97쪽 표에 없음). ④ 카이로·도도마 막대 없는 달 = 0mm. ⑤ 「그레이트 그린 윌」 그래프 제목 오타 그대로. ⑥ 원 크기 그래프 작은 원 4개가 실제 비보다 큼(웹 bubbleSvg 는 지름 ∝ √값·최소 2px — 교과서와 같은 모양은 아님). ⑦ AfCFTA 표 카드 범주 이름 「2030년 목표 아프리카 내」 / 값 「무역 2배 성장」(그림 두 줄을 칸 첫 줄·나머지로 나눔). ⑧ 고리 조각 이름(생산국)은 지도 범례 색으로 붙임 — 교과서 고리에는 나라 이름이 없음.
