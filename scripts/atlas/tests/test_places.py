@@ -64,6 +64,52 @@ class Group(unittest.TestCase):
         spans = [_sp('벨', 100, 100), _sp('기', 107, 100), _sp('에', 114, 100), _sp('독', 122, 100), _sp('일', 129, 100)]
         self.assertEqual([L['name'] for L in PL.group(spans, frozenset({'벨기에', '독일'}))], ['벨기에', '독일'])
 
+    def test_single_char_line_joins_without_space(self):
+        # 세로로 쌓인 강 이름(엘 / 베강, 26쪽): 한 글자 줄이 낀 여러 줄 지명은 공백 없이 — 「엘 베강」이 아니라 「엘베강」
+        d = (0.846, 0.533)
+        spans = [_sp('엘', 330, 352, d=d), _sp('베', 330.6, 360, d=d), _sp('강', 333.5, 366.6, d=d)]
+        names = [L['name'] for L in PL.group(spans, frozenset({'엘베강'}))]
+        self.assertEqual(names, ['엘베강'])
+
+
+def _gs(text, x, y, font='HelveticaNeue-Roman', size=5.0, w=None, d=(1.0, 0.0), color='#231f20'):
+    w = w if w is not None else 0.5 * size * len(text)
+    return {'text': text, 'size': size, 'font': font, 'color': color, 'dir': list(d), 'bbox': [x, y, x + w, y + size]}
+
+
+class Glue(unittest.TestCase):
+    """places.glue_spans: 흐름 순서로 맞닿은 조각을 하나로(글꼴이 바뀐 낱자 ş·ă, 한 글자씩 기울여 놓은 산 높이)."""
+    PATCH = {'font': '^(HelveticaNeue-Roman|MicrosoftSansSerif)$', 'color': '#231f20', 'require': '^MicrosoftSansSerif$',
+             'map': {'㏇': 'ă'}, 'maxGapEm': 0.5}
+    DIGITS = {'font': '^DINPro-Regular$', 'color': '#231f20', 'textRe': '^[0-9]$', 'maxGapEm': 0.5}
+
+    def test_patch_glyphs_are_glued_and_mapped(self):
+        spans = [_gs('Chi', 517.1, 452, w=8.1), _gs('ş', 524.1, 452, font='MicrosoftSansSerif', w=3.5),
+                 _gs('in', 526.4, 452, w=4.7), _gs('㏇', 530.0, 452, font='MicrosoftSansSerif', w=3.7), _gs('u', 532.6, 452, w=3.7)]
+        out = PL.glue_spans(spans, [self.PATCH])
+        self.assertEqual([(s['text'], s['font']) for s in out], [('Chişinău', 'HelveticaNeue-Roman')])
+        self.assertEqual(out[0]['bbox'], [517.1, 452, 536.3, 457.0])
+
+    def test_run_without_required_font_is_left_alone(self):
+        # 맞닿은 영문 두 조각이라도 바꿀 낱자(require)가 없으면 그대로 — 남의 이름을 잇지 않는다
+        spans = [_gs('Bucure', 486.8, 483, w=15.9), _gs('Sofia', 503.0, 483, w=11)]
+        self.assertEqual([s['text'] for s in PL.glue_spans(spans, [self.PATCH])], ['Bucure', 'Sofia'])
+
+    def test_far_or_other_style_breaks_run(self):
+        spans = [_gs('Chi', 0, 0, w=8), _gs('ş', 30, 0, font='MicrosoftSansSerif', w=3.5), _gs('x', 33.6, 0, color='#ed1064', w=2)]
+        self.assertEqual([s['text'] for s in PL.glue_spans(spans, [self.PATCH])], ['Chi', 'ş', 'x'])
+
+    def test_rotated_digits_become_one_elevation(self):
+        d = (0.77, -0.63)
+        spans = [_gs(c, 675.2 + 2.33 * i, 41.3 - 1.9 * i, font='DINPro-Regular', size=6.0, w=6.2, d=d) for i, c in enumerate('1895')]
+        spans.append(_gs('˚E', 652.1, 13.1, font='DINPro-Regular', size=6.0, w=9.3))
+        out = PL.glue_spans(spans, [self.DIGITS])
+        self.assertEqual([s['text'] for s in out], ['1895', '˚E'])
+
+    def test_no_rules_is_identity(self):
+        spans = [_gs('a', 0, 0), _gs('b', 2.5, 0)]
+        self.assertIs(PL.glue_spans(spans, []), spans)
+
 
 class Pair(unittest.TestCase):
     """assign.pair: 덩어리마다 최적 짝(헝가리안). 짝 없음 = miss(item) 비용, 안 되는 쌍은 아주 큰 비용."""

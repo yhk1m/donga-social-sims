@@ -115,6 +115,35 @@ def _thin(path, k=6):
     return [path[round(i * (len(path) - 1) / (k - 1))] for i in range(k)]
 
 
+# ── 잇기(묶기 전) ─────────────────────────────────────────────────────────
+def glue_spans(spans, rules):
+    """흐름 순서로 맞닿은 조각을 한 조각으로(설정 places.glue). 규칙 = {font, color?, textRe?(조각마다), maxGapEm, require?, map?}.
+    같은 규칙에 맞고 크기(±0.35pt)·방향(cos > 0.95)이 같으며 글자 상자 빈틈 ≤ maxGapEm·크기인 연속 조각을 잇는다(글자 사이 공백 없음).
+    require 가 있으면 그 글꼴 조각이 낀 묶음만 잇고(바꿀 낱자 ş·ă 가 낀 영문 이름), 이은 조각의 글꼴·색은 require 아닌 첫 조각 것.
+    map = 낱자 바꾸기(글꼴이 바뀐 낱자가 다른 코드로 나오는 것 — ㏇ → ă). 26쪽: Chi|ş|in|㏇|u → Chişinău, 1|8|9|5 → 1895."""
+    if not rules: return spans
+    def fits(r, s): return re.search(r['font'], s['font']) and ('color' not in r or r['color'] == s['color'])         and ('textRe' not in r or re.search(r['textRe'], s['text'].strip()))
+    def touch(r, a, b):
+        cos = a['dir'][0] * b['dir'][0] + a['dir'][1] * b['dir'][1]
+        return abs(a['size'] - b['size']) <= 0.35 and cos > 0.95 and _gap(a['bbox'], b['bbox']) <= r['maxGapEm'] * a['size']
+    def emit(r, run, out):
+        if len(run) > 1 and (not r.get('require') or any(re.search(r['require'], x['font']) for x in run)):
+            base = next((x for x in run if not (r.get('require') and re.search(r['require'], x['font']))), run[0])
+            mp = r.get('map', {})
+            text = ''.join(''.join(mp.get(ch, ch) for ch in x['text']) for x in run)
+            out.append({**base, 'text': text, 'bbox': [round(v, 1) for v in _union([x['bbox'] for x in run])]})
+        else: out.extend(run)
+    out, run, rr = [], [], None
+    for s in spans:
+        r = next((r for r in rules if fits(r, s)), None)
+        if run and r is rr and touch(r, run[-1], s): run.append(s); continue
+        if run: emit(rr, run, out)
+        run, rr = ([s], r) if r is not None else ([], None)
+        if r is None: out.append(s)
+    if run: emit(rr, run, out)
+    return out
+
+
 # ── 묶기 ────────────────────────────────────────────────────────────────
 def _span_ends(s):
     """조각 하나의 글자 줄 양 끝 글자 중심(dir 방향)."""
@@ -203,7 +232,8 @@ def _label(lines):
     parts = [_line(L) for L in lines]
     if len(parts) == 1: name, path = parts[0]
     else:
-        name = ' '.join(p[0] for p in parts)
+        # 줄 사이 공백(보스니아 헤르체고비나). 한 글자 줄이 끼면 낱말 가운데서 줄이 꺾인 것이라 공백 없이(세로로 쌓인 엘 / 베강)
+        name = ('' if any(len(key(p[0])) == 1 for p in parts) else ' ').join(p[0] for p in parts)
         main = max(parts, key=lambda p: _plen(p[1]))[1]
         (ux, uy), mx, my = _centre(bb), sum(q[0] for q in main) / len(main), sum(q[1] for q in main) / len(main)
         path = [(x + ux - mx, y + uy - my) for x, y in main]
@@ -412,7 +442,7 @@ def extract(map_id, keys=None):
     excl = excluded_boxes(m)
     warnings, dropped, kept, elevs, notes = [], [], [], [], []
     unknown = Counter()
-    for s in pdfkit.page_spans(pno):
+    for s in glue_spans(pdfkit.page_spans(pno), cfg.get('glue', [])):
         b = s['bbox']
         if not _in_box(b, m['bbox']): dropped.append({'text': s['text'], 'why': '지도 틀 밖'}); continue
         if any(_in_box(b, e) for e in excl): dropped.append({'text': s['text'], 'why': '범례·제목 상자'}); continue

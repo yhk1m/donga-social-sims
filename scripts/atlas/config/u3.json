@@ -558,7 +558,7 @@
   "seed": 7
  },
  "places": {
-  "_doc": "일반도 지명(U3-5 에서 26쪽 렌더를 보고 styles 표를 고침 — 지금은 u2 표 복사). places.py(PDF → 지면 글자·기호, $ATLAS_WORK/text/places-<map>.json) → build_places.mjs(→ <out>/places.json). U3-2 도시 기호 기준점(city_controls)이 places-p26-europe.json 의 도시·수도 기호를 쓴다.",
+  "_doc": "일반도 지명(U3-5, 26쪽 렌더·글자 양식 표를 보고 u2 표를 고침). places.py(PDF → 지면 글자·기호, $ATLAS_WORK/text/places-p26-europe.json) → build_places.mjs(→ <out>/places.json). U3-2 도시 기호 기준점(city_controls)이 places-p26-europe.json 의 도시·수도 기호를 쓴다. u2 와 다른 것: glue(글꼴이 바뀐 낱자·기울인 산 높이 잇기), 선 이름은 글자로(북극권 — 같은 5.6~5.7pt 굵은 고딕에 작은 수도가 있음), 소속 표시 고딕, 유빙 한계 #005aaa, 큰 바다 글자 자간, 영문 수도 이름 고딕(Reykjavik), 산 삼각형 닫는 선(l 5개).",
   "maps": [
    "p26-europe"
   ],
@@ -607,7 +607,7 @@
    },
    {
     "color": "#6d6e71",
-    "why": "철도 이름(18쪽)"
+    "why": "철도 이름(시베리아 횡단 철도(TSR))"
    },
    {
     "font": "^YDVYGOStd3[23]$",
@@ -616,11 +616,8 @@
    },
    {
     "font": "^YDVYGOStd33$",
-    "size": [
-     5.6,
-     5.8
-    ],
-    "why": "북극권·북회귀선·적도·날짜 변경선(선 이름)과 축척 쌍점"
+    "why": "북극권(선 이름) — 26쪽은 같은 5.6~5.7pt 굵은 고딕에 작은 수도(브라티슬라바·프리슈티나)와 괄호 병기 (리스보아)가 있어 크기 대신 글자로",
+    "textRe": "^(북극권|북회귀선|적도|날짜 변경선)$"
    },
    {
     "font": "^YDVYGOStd3[23]$",
@@ -635,14 +632,23 @@
     "color": "#231f20",
     "size": [
      0,
-     5.5
+     5.0
     ],
-    "why": "괄호 안 다른 이름 병기(쯔엉사 군도, 스프래틀리 군도, …)"
+    "why": "괄호 안 다른 이름 병기(u2 규칙) — 26쪽에는 없고 5.3pt 반도 이름(카닌반도·브르타뉴반도)이 있어 5.0pt 이하로 좁힘"
    },
    {
     "font": "^YDVYMjOStd32$",
     "color": "#ed1064",
     "why": "나라 소속 표시((인), (러), (예멘))"
+   },
+   {
+    "font": "^YDVYGOStd32$",
+    "color": "#ed1064",
+    "why": "나라 소속 표시 고딕((에)·(영) — 세우타·멜리야·지브롤터)"
+   },
+   {
+    "color": "#005aaa",
+    "why": "유빙 한계(선 이름, 26쪽은 #005aaa)·쪽 제목 숫자"
    }
   ],
   "styles": [
@@ -674,6 +680,18 @@
     "_": "수도 영문 이름"
    },
    {
+    "role": "cityEn",
+    "font": "^YDVYGOStd33$",
+    "color": "#231f20",
+    "textRe": "^[A-Za-z]",
+    "attachTo": [
+     "city"
+    ],
+    "attachSymbol": "capital",
+    "maxDistEm": 3.0,
+    "_": "수도 영문 이름이 굵은 고딕으로 찍힌 것(Reykjavik 7.1pt)"
+   },
+   {
     "role": "waterEn",
     "font": "^TimesNewRoman",
     "color": "#0072bc",
@@ -687,6 +705,17 @@
     "role": "water",
     "font": "^YDVYMjOStd33$",
     "color": "#0072bc",
+    "size": [
+     9.5,
+     12
+    ],
+    "joinEm": 6.0,
+    "_": "큰 바다 이름(지 중 해 9.8pt): 글자 사이가 4.6em 로 벌어져 있어 따로"
+   },
+   {
+    "role": "water",
+    "font": "^YDVYMjOStd33$",
+    "color": "#0072bc",
     "joinEm": 2.8,
     "_": "바다·만·해협·호수·하천: 파란 명조"
    },
@@ -695,7 +724,7 @@
     "font": "^NanumMyeongjo",
     "color": "#231f20",
     "joinEm": 4.0,
-    "_": "산맥·사막·평원·고원·지역: 굵은 명조(곡선 글자)"
+    "_": "산맥·평원·고원·반도(상자 글자, 자간 벌림): 굵은 명조"
    },
    {
     "role": "land",
@@ -721,12 +750,12 @@
     "font": "^YDVYGOStd33$",
     "color": "#231f20",
     "size": [
-     5.9,
+     5.6,
      7.3
     ],
     "joinEm": 0.4,
     "point": true,
-    "_": "큰 도시·수도: 굵은 고딕"
+    "_": "큰 도시·수도: 굵은 고딕(작은 나라 수도 5.6pt — 브라티슬라바·프리슈티나)"
    }
   ],
   "exclude": [
@@ -826,8 +855,8 @@
       "#d71920",
       "#231f20"
      ],
-     "ops": "^l{3,4}$",
-     "_": "산: 붉은·검은 삼각형"
+     "ops": "^l{3,5}$",
+     "_": "산: 붉은·검은 삼각형(26쪽은 닫는 선까지 l 5개 — 헤클라산)"
     },
     {
      "cls": "city",
@@ -942,16 +971,45 @@
   },
   "snapKm": 30,
   "keepTextbookPosition": {},
+  "neAlias": {
+   "로스토프": {
+    "name": "로스토프나도누",
+    "why": "교과서 로스토프(39.7°E, 47.2°N, 돈강 하구)는 로스토프나도누 — Natural Earth NAME_KO 「로스토프」는 야로슬라블 근처 소도시(57.2°N)라 그대로 짝지으면 1,108km 옮겨 버린다"
+   }
+  },
+  "_neAlias": "Natural Earth NAME_KO 가 교과서와 다른 도시를 가리키는 이름 → 짝지을 NAME_KO(바로잡기 snapToNe·대조 neCheck). city_controls 기준점은 이 표를 쓰지 않음(로스토프는 잔차로 이미 빠짐).",
   "relocate": {},
   "_snap": "바탕 지도가 실제 지리(Natural Earth)라, 교과서가 겹치지 않게 옮겨 그린 도시 기호가 snapKm 넘게 어긋나면 Natural Earth 인구 지점 경위도로 옮긴다(이름이 똑같은 지점이 아시아에 하나뿐이고 places 에도 하나뿐일 때만, snapped: {from, km} 기록). 교과서 위치를 지켜야 할 지명은 keepTextbookPosition 에 {이름: 까닭}. 면·선 지명은 옮기지 않는다.",
   "leakRe": "^\\d|[˚°]|^[A-Z]{1,2}$|높이|깊이|^빙하$|^\\(|km$|도법|축척|북회귀선|북극권|^적도$|변경선|유빙",
   "indexExclude": {},
-  "extraNames": {},
+  "extraNames": {
+   "이베리아고원": "26쪽 상자 글자인데 찾아보기에 없어(이베리아반도만 있음) 「이베리아 + 고원」으로 나뉘지 않게 더한다",
+   "키엘체": "26쪽 도시인데 찾아보기에 없어, 맞닿은 「카토비체」와 이어지지 않게 더한다"
+  },
   "_areaPosition": "면·선 지명(나라·바다·산맥·하천·섬 등)은 같은 이름이면 거리와 상관없이(dedupKm.area) 하나로 합친다. 위치는 가장 큰 축척 지도의 글자(가장 자세한 위치)인데, 나라(overviewKinds)와 개관도 글자가 overviewMinSize pt 이상인 큰 지물(대양·큰 바다·큰 나라)은 개관도(16쪽) 글자를 쓴다 — 지역도 글자는 그 지도 창 안쪽에 치우쳐 있다(러시아·인도양). 점 지명(도시·수도·산 봉우리)은 가장 큰 축척 지도의 기호 위치.",
   "overviewKinds": [
    "country"
   ],
-  "overviewMinSize": 9.0
+  "overviewMinSize": 9.0,
+  "glue": [
+   {
+    "font": "^(HelveticaNeue-Roman|MicrosoftSansSerif)$",
+    "color": "#231f20",
+    "require": "^MicrosoftSansSerif$",
+    "map": {
+     "㏇": "ă"
+    },
+    "maxGapEm": 0.5,
+    "why": "영문 수도 이름의 ş·ă 는 다른 글꼴(MicrosoftSansSerif) 낱자로 끼어 있고 ă 는 ㏇ 코드로 나온다 — Chi|ş|in|㏇|u → Chişinău, Bucure|ş|ti → Bucureşti(찾아보기 영문과 같음)"
+   },
+   {
+    "font": "^DINPro-Regular$",
+    "color": "#231f20",
+    "textRe": "^[0-9]$",
+    "maxGapEm": 0.5,
+    "why": "기울여 한 글자씩 놓은 산 높이(나로드나야산 1|8|9|5) → 한 조각이 되어 산 높이 규칙에 맞음"
+   }
+  ]
  },
  "photos": {
   "_doc": "C3 사진·그림·원본 쪽·밀도 음영(extract_images.py). items = 확정 사진 목록(사람이 고침): bbox(pt) = 렌더 영역(교과서 위 글자·번호는 그대로 둔다), titleBox·captionBox = 제목·설명 글 영역(pdfkit.box_text 로 원문 그대로), captionOverride = 기하로 못 가르는 강제 줄바꿈 등을 바로잡은 설명(까닭 _why), creditBox = 사진 출처, pin = 사진에 찍힌 번호, map = 핀이 있는 지도, pinNear = 번호 없는 핀을 고를 places.json 지명(헝가리안 최소 거리). exclude = 학습자가 볼 사진이 아닌 래스터(까닭). 후보 찾기는 래스터 배치를 변으로 맞닿은 것끼리 묶어 제안하고, items·exclude 어디에도 안 덮인 후보는 경고.",

@@ -11,7 +11,7 @@
 //      위치 = 가장 큰 축척 지도(점은 기호 있는 것 우선, 나라·큰 지물은 개관도), rank = 개관도(overview) 글자 크기 단계 + rankAdjust,
 //      개관도에 없으면 지역도 단계 + regionalRankPenalty (1~6으로 자름). size·page 는 위치를 준 글자.
 //   4b. 옮겨 그린 기호 바로잡기(snapToNe): 바탕 지도가 실제 지리라, 교과서가 겹치지 않게 옮겨 그린 도시 기호(에르데네트·냐짱 등)는
-//      Natural Earth 위치로 옮기고 snapped: {from, km} 로 남긴다(설정 snapKm, keepTextbookPosition).
+//      Natural Earth 위치로 옮기고 snapped: {from, km} 로 남긴다(설정 snapKm, keepTextbookPosition). NAME_KO 가 다른 도시인 이름은 neAlias 로 짝짓는다.
 //   4c. 면 지명 옮기기(relocate): 교과서가 땅 밖에 쓴 나라 이름(대한민국·미국)을 본토 위로(설정 relocate, moved: {from}).
 //   5. inIndex = 찾아보기에 16~19쪽 참조가 있는 지명. 찾아보기의 16~19쪽 지명이 없으면(indexExclude 제외) 누락 목록을 출력.
 //   출력 항목: {name, lon, lat, rank, kind, size, page, symbol?: [lon,lat], path?: [[lon,lat]...], angle?, en?, alt?, elev?, snapped?, moved?, inIndex}
@@ -194,16 +194,20 @@ function main(argv) {
 /** Natural Earth 10m 인구 지점 색인(places.neFile·neBox): NAME_KO 열쇠 → [{lon, lat, ne}]. 파일이 없으면 null. */
 export const neIndex = (file = NE_FILE) => neIndexAt(file, PC.neBox);
 
+/** Natural Earth 짝짓기 열쇠: 설정 neAlias {이름: {name, why}} 에 있으면 그 이름(NAME_KO 「로스토프」는 야로슬라블 근처 소도시라
+ *  교과서 로스토프 = 「로스토프나도누」), 아니면 지명 그대로. */
+const neKey = (name, alias = PC.neAlias || {}) => key(alias[name]?.name ?? name);
+
 /** 옮겨 그린 기호 바로잡기: 점 지명(도시·수도·산 봉우리) 중 Natural Earth 에 이름이 똑같은 지점이 하나뿐이고 places 에도 그 이름의
  *  점 지명이 하나뿐인데 snapKm 넘게 어긋나면 lon/lat·symbol 을 Natural Earth 경위도로 바꾸고 snapped: {from, km} 를 남긴다.
  *  keepTextbookPosition 에 있는 이름은 그대로. 면·선 지명은 건드리지 않는다. 바꾼 지명 목록을 돌려준다. */
-export function snapToNe(places, ne, { snapKm = PC.snapKm, keep = PC.keepTextbookPosition || {} } = {}) {
+export function snapToNe(places, ne, { snapKm = PC.snapKm, keep = PC.keepTextbookPosition || {}, alias = PC.neAlias || {} } = {}) {
   const isPoint = (p) => !!p.symbol || PC.cityKinds.includes(p.kind);
   const count = new Map();
   for (const p of places) if (isPoint(p)) count.set(key(p.name), (count.get(key(p.name)) || 0) + 1);
   const out = [];
   for (const p of places) {
-    const m = ne.get(key(p.name));
+    const m = ne.get(neKey(p.name, alias));
     if (!isPoint(p) || !m || m.length !== 1 || count.get(key(p.name)) !== 1 || keep[p.name]) continue;
     const d = km([p.lon, p.lat], [m[0].lon, m[0].lat]);
     if (d <= snapKm) continue;
@@ -240,13 +244,14 @@ export function relocate(places, table) {
 
 /** 도시·수도 위치를 Natural Earth 10m 인구 지점(NAME_KO 가 같은 것, 아시아 범위)과 견준다.
  *  → {n, median, p90, max, far: ['이름(쪽) 거리', ...]} (km). 파일이 없거나 맞는 이름이 없으면 null. */
-export function neCheck(places, file = NE_FILE, farKm = 40) {
+export function neCheck(places, file = NE_FILE, farKm = 40, alias = PC.neAlias || {}) {
   const by = neIndex(file);
   if (!by) return null;
   const ds = [], far = [];
   for (const p of places) {
-    if (!PC.cityKinds.includes(p.kind) || !by.has(key(p.name))) continue;
-    const d = Math.min(...by.get(key(p.name)).map((q) => km([q.lon, q.lat], [p.lon, p.lat]))); ds.push(d);
+    const k = neKey(p.name, alias);
+    if (!PC.cityKinds.includes(p.kind) || !by.has(k)) continue;
+    const d = Math.min(...by.get(k).map((q) => km([q.lon, q.lat], [p.lon, p.lat]))); ds.push(d);
     if (d > farKm) far.push(`${p.name}(${p.page}쪽) ${d.toFixed(0)}km`);
   }
   if (!ds.length) return null;
