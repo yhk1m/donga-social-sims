@@ -17,6 +17,8 @@
 //              첫 활동 블록 아래 「번호 모두 보기」·「다시 숨기기」 단추. 주제를 다시 펼치면 처음처럼 숨김.
 //     locators { 레이어 ref: {bounds, names, title} } — 그 레이어를 고르면 무대에 작은 위치도(locatorInset — 레이어의 type 'locator' 면을 강조,
 //              바탕은 countryFeatures['50']). 카슈미르 = 인도 위치도(교과서 22쪽 오른쪽 위).
+//     legendPanel 무대 위 떠 있는 범례 칸(ui.js legendPanel — 조각에 하나, 주제를 바꿔도 자리·접힘 그대로). 주면 범례 블록·고도 색 범례를 그 body 에
+//              넣고(교사 요청 2026-10-20 「범례를 지도의 우하단으로」), 없으면 사이드바(body)에. 보이는 범례가 없으면 칸째 숨김(legendPanel.sync).
 //     centerLonOf { 레이어 ref: 중심 경도 } — 그 레이어를 고를 때 지도 중심 경도(교역 = 150, 교과서도 태평양 중심 밀러). 묶음을 떠나면 되돌린다
 //              (그사이 사용자가 중심 경도를 바꿨으면 그대로 둔다).
 //   → { topic, groups, showGroup(i), group, pins, quiz, layers, inset, card, destroy() }
@@ -59,7 +61,7 @@ export function groupBounds(topic, group, boundsOf = {}) {
 
 export function buildTopic({
   map, stage = null, body, viewer = null, credits = null, tip = null, topic, charts = {}, layers: layerData = {}, countryFeatures = null,
-  insets = {}, boundsOf = {}, centerLonOf = {}, locators = {}, tint = false, baseColor = tint ? 'tint' : 'none', seed = undefined,
+  insets = {}, boundsOf = {}, centerLonOf = {}, locators = {}, tint = false, baseColor = tint ? 'tint' : 'none', seed = undefined, legendPanel = null,
 }) {
   const parts = [];            // 주제가 끝날 때 destroy 할 사이드바 부품(카드·그래프·퀴즈)
   let groupParts = [];         // 묶음을 바꿀 때 destroy 할 것(범례 블록·확대 창·지도에 안 올린 레이어)
@@ -88,18 +90,21 @@ export function buildTopic({
       h('div', { class: 'ds-row at-topic-views' }, topic.views.map((v) => h('button', { class: 'ds-btn', type: 'button', on: { click: () => goView(v) } }, v.label)))));
   }
   // 바탕 색: 주제 기본값으로 맞추고, 고도 색이 켜져 있고 자료가 붙었을 때만 범례(자연색이 앞서면 범례 없음), 자연색이 보이면 출처 줄
-  const tintBox = tintLegendBlock(null, { note: '높이 자료: ETOPO 2022(NOAA), 단계와 색은 교과서 16쪽 범례' });
+  // 단계를 누르면 그 단계만 색칠(map 옵션 tintSelection) — 범례를 버릴 때(주제 바꿈) 고름도 풂
+  const tintBox = tintLegendBlock(null, { note: '높이 자료: ETOPO 2022(NOAA), 단계와 색은 교과서 16쪽 범례', map });
+  const panelSync = () => legendPanel?.sync?.();
   const syncTint = () => {
     const o = map.options || {};
     const naturalShown = !!(o.natural && map.naturalReady);
     tintBox.show(!!(o.tint && map.tintReady && !naturalShown));
     credits?.setNatural?.(naturalShown);
+    panelSync();
   };
   map.setOptions?.(baseOptions(baseColor));
   let offTint = null;
   try { offTint = map.on('options', syncTint); } catch { offTint = null; } // 옵션 알림이 없는 지도(시험용)면 처음 값만
+  if (legendPanel) { legendPanel.body.append(legendBox, tintBox.el); body.append(card.el); } else body.append(legendBox, tintBox.el, card.el);
   syncTint();
-  body.append(legendBox, tintBox.el, card.el);
 
   function goView(v) {
     const gi = groups.findIndex((g) => groupView(topic, g) === v);
@@ -162,6 +167,7 @@ export function buildTopic({
       }
     }
     credits?.update(made.map((L) => L.meta?.credit));
+    panelSync();
     const c = g.refs.map((r) => centerLonOf[r.ref]).find((v) => v != null);
     if (c != null && map.view && map.view.centerLon !== c) { centerRestore = { from: map.view.centerLon, to: c }; map.setCenterLon(c); }
     if (fit) {
@@ -261,6 +267,8 @@ export function buildTopic({
     alive = false;
     offTint?.();
     tintBox.destroy();
+    legendBox.remove(); // 떠 있는 범례 칸에 넣었으면 body 비우기로 안 빠지므로
+    panelSync();
     credits?.setNatural?.(false);
     clearGroup();
     for (let i = parts.length - 1; i >= 0; i--) parts[i].destroy();

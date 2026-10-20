@@ -158,6 +158,15 @@ export function invertGrid(invert, width, height, { step = 2, block = 4, tol = 0
  * 그림이 끝나면(end) 두 훅을 합친 시간으로 다음 그림의 격자 크기를 한 번만 고른다(nextStep, 첫 계산은 데우기라 빼고).
  * stats = { hits, misses, renders: [{ hits, misses, hookMs, step }] } — 무거운 보기에서 그림마다 miss 1 · hit 1(음영 + 고도 색)인지 확인용.
  */
+/**
+ * 렌더러 보기 두 개가 같은 화면인지 값으로(렌더러는 전체 그림마다 view·투영 객체를 새로 만든다 — 범례·고도 색 단계만 바뀐 다시 그리기도 격자를 다시 쓰게).
+ * 도법 key 가 있는 렌더러 보기끼리만 견주고(시험용 보기 {width, height} 는 객체가 같아야 같음), 도법·중심 경도·변환·크기가 모두 같아야 같다.
+ */
+export function sameView(a, b) {
+  if (!a || !b || a.key == null || b.key == null) return false;
+  return a.key === b.key && a.centerLon === b.centerLon && a.k === b.k && a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+}
+
 export function createGridShare({ budget = RELIEF_BUDGET_MS, initialStep = 2 } = {}) {
   let step = initialStep, warmed = false, cur = null, frame = null;
   const stats = { hits: 0, misses: 0, renders: [] };
@@ -167,7 +176,7 @@ export function createGridShare({ budget = RELIEF_BUDGET_MS, initialStep = 2 } =
     begin() { frame = { hits: 0, misses: 0, hookMs: 0, step }; },
     grid(projection, view) {
       const st = frame ? frame.step : step;
-      if (cur && cur.view === view && cur.projection === projection && cur.step === st) {
+      if (cur && cur.step === st && (cur.view === view ? cur.projection === projection : sameView(cur.view, view))) {
         stats.hits++; if (frame) frame.hits++;
         return cur.grid;
       }

@@ -107,9 +107,14 @@ function mapChecks(mapId, refs, shot, topicId) {
       const rep = vec.report || {};
       out.push(eq(`${tag}범례 분류 수`, vec.legend.length, legend.length));
       const labelDiff = vec.legend.filter((e) => !legend.some((w) => w.cls === e.cls && w.label === e.label)).map((e) => `${e.label}`);
-      const colorDiff = vec.legend.filter((e) => { const w = legend.find((x) => x.cls === e.cls); return w && w.color.toLowerCase() !== e.color.toLowerCase(); }).map((e) => `${e.label} ${e.color}→${legend.find((x) => x.cls === e.cls).color}`);
+      // 설정 legendColors 로 화면 색만 바꾼 분류(printColor = 인쇄 색)는 「알려진 차이」로 따로
+      const same = (a, b) => a.toLowerCase() === b.toLowerCase();
+      const webOf = (e) => legend.find((x) => x.cls === e.cls);
+      const recolored = vec.legend.filter((e) => { const w = webOf(e); return w && !same(w.color, e.color) && w.printColor && same(w.printColor, e.color); });
+      const colorDiff = vec.legend.filter((e) => { const w = webOf(e); return w && !same(w.color, e.color) && !recolored.includes(e); }).map((e) => `${e.label} ${e.color}→${webOf(e).color}`);
       out.push(check(`${tag}범례 글자`, '추출 그대로', labelDiff.length ? `다름: ${list(labelDiff)}` : '모두 같음', labelDiff.length ? DIFF : OK));
-      out.push(check(`${tag}범례 색`, '추출 그대로', colorDiff.length ? list(colorDiff) : '모두 같음', colorDiff.length ? DIFF : OK));
+      out.push(check(`${tag}범례 색`, '추출 그대로', colorDiff.length ? list(colorDiff) : recolored.length ? '나머지 모두 같음' : '모두 같음', colorDiff.length ? DIFF : OK));
+      if (recolored.length) out.push(check(`${tag}범례 색(화면용으로 바꿈)`, list(recolored.map((e) => `${e.label} ${e.color}`)), list(recolored.map((e) => `${webOf(e).color}`)), KNOWN, '교사 요청(2026-10-20): 웹 바탕 위에서 너무 옅어 명도만 낮춤(설정 legendColors)'));
       const present = legend.filter((e) => e.present !== false).length;
       const tbPresent = rep.outputClasses ?? (vec.legend.length - (rep.absent || []).length);
       out.push(eq(`${tag}지도에 있는 분류`, tbPresent, present, (rep.absent || []).length ? `교과서 추출에서 빠진 분류: ${rep.absent.join(', ')}` : ''));

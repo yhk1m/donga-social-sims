@@ -21,7 +21,7 @@
 //   map.project(lonlat) → [x, y] | null,  map.invert(xy) → lonlat | null
 //   map.view → { key, centerLon, k, x, y, width, height, center, kmPerPx, detail, moving, projection, geoRect }
 //     읽기 전용 객체, 보기가 바뀔 때만 새로 만든다(같으면 같은 객체). center·kmPerPx 는 처음 읽을 때 한 번만 계산(지연 getter).
-//   map.setOptions({ graticule, labels, relief, tint, natural }), map.options(사본), map.setReliefDrawer(fn), map.setTintDrawer(fn), map.tintReady,
+//   map.setOptions({ graticule, labels, relief, tint, natural, tintSelection }), map.options(사본), map.setReliefDrawer(fn), map.setTintDrawer(fn), map.tintReady,
 //   map.setNaturalDrawer(fn), map.naturalReady(자연색 — natural 이 켜져 있고 붙었으면 고도 색 대신 그 자리에, 음영 훅에는 natural: true),
 //   map.redraw()(전체 다시 그림 + 지명), map.destroy(), map.destroyed
 //     (destroy 뒤에는 setOptions·setReliefDrawer·setPlaces·invalidate·refreshLayer 가 아무것도 하지 않는다)
@@ -129,7 +129,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   let idleHandle = null; // 나라 색인 미리 만들기 예약
   const dirty = { raf: 0, canvas: false, svgAll: false, svgIds: new Set(), labels: false }; // invalidate·refreshLayer·setPlaces 를 한 rAF 로
   const warned = new Set();
-  const opts = { graticule: true, labels: true, relief: true, tint: false, natural: false };
+  const opts = { graticule: true, labels: true, relief: true, tint: false, natural: false, tintSelection: null };
   const layers = []; // {layer, g}
   const handlers = { click: new Set(), hover: new Set(), viewchange: new Set(), options: new Set() };
   const stats = { render: [], labels: [], labelCount: 0, morphFrames: [], interactiveFrames: [], countryIndexMs: null };
@@ -326,7 +326,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     const callTint = (phase, extra) => {
       const th = now();
       ctx.save();
-      try { baseDrawer(ctx, vp, view, { phase, path, grid, ...extra }); } catch (err) { console.error(naturalOn ? '자연색 실패' : '고도 색 실패', err); }
+      try { baseDrawer(ctx, vp, view, { phase, path, grid, selection: naturalOn ? null : opts.tintSelection, ...extra }); } catch (err) { console.error(naturalOn ? '자연색 실패' : '고도 색 실패', err); }
       ctx.restore();
       gridShare.add(now() - th);
     };
@@ -781,6 +781,10 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
       let changed = false;
       for (const k of ['graticule', 'relief', 'tint', 'natural']) if (k in o && opts[k] !== !!o[k]) { opts[k] = !!o[k]; canvasChanged = true; }
       if ('labels' in o && opts.labels !== !!o.labels) { opts.labels = !!o.labels; dirty.labels = true; schedule(); changed = true; }
+      if ('tintSelection' in o) { // 고도 색 단계 고르기(분류 번호 목록, 빈 목록·null = 전체) — 정렬·중복 없앰, 값이 같으면 그대로
+        const sel = Array.isArray(o.tintSelection) && o.tintSelection.length ? [...new Set(o.tintSelection)].sort((a, b) => a - b) : null;
+        if (String(sel) !== String(opts.tintSelection)) { opts.tintSelection = sel; if (opts.tint && !opts.natural) canvasChanged = true; else changed = true; }
+      }
       if (canvasChanged) invalidate();
       if (canvasChanged || changed) emit('options', { ...opts });
     },
