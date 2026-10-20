@@ -80,10 +80,10 @@
   "noScreenSymbols": [],
   "centerChecks": [],
   "mainMap": {"general": "p26-europe", "coloring": "p27-coloring", "relief": "p28-relief", "feature": "p33-locator"},
-  "_known": "자동 확인의 「다름」 중 결정 기록에 까닭이 있는 것 → 「알려진 차이」(주제·항목 이름 + tb/web/webIncludes 가 맞을 때만 — 값이 바뀌면 다시 「다름」).",
+  "_known": "자동 확인의 「다름」 중 결정 기록에 까닭이 있는 것 → 「알려진 차이」(주제·항목 이름 + tb/web/webIncludes/pct 가 맞을 때만 — 값이 바뀌면 다시 「다름」). pct(U4-10) = webIncludes 바로 뒤 글 일치율 % 고정.",
   "known": [
    {"topic": "coloring", "item": "색칠하기 나라 수", "tb": 48, "web": 46, "note": "U3-8: 27쪽 나라 글자 48 = 나라 46 + 칼리닌그라드 소속 표시 「(러)」 + 두 줄로 쓴 「보스니아 / 헤르체고비나」(한 나라)"},
-   {"topic": "sustainable", "item": "글 일치(본문·제목·설명, 펼침면)", "webIncludes": "지면과 다름 1: 블록 p31-6「", "note": "U3-6: 31쪽 녹색 수도 글의 닫는 따옴표 ’ 가 PDF 글꼴 코드 문제로 「烋」로 읽힘 — 사진 captionOverride 로 ’ 로 바로잡은 글이라 PDF 글자와 92%"}
+   {"topic": "sustainable", "item": "글 일치(본문·제목·설명, 펼침면)", "webIncludes": "지면과 다름 1: 블록 p31-6「", "pct": 92, "note": "U3-6: 31쪽 녹색 수도 글의 닫는 따옴표 ’ 가 PDF 글꼴 코드 문제로 「烋」로 읽힘 — 사진 captionOverride 로 ’ 로 바로잡은 글이라 PDF 글자와 92%"}
   ],
   "_teacher": "교사 확인 항목(계획 「실행 중 결정」의 U3-4~U3-9 「교사 확인 항목」) — 그 행에 노랑(known)·회색(info) 「교사 확인 ·」 줄 + 대조표 머리 쪽별 목록. page = 목록 묶음 이름, map 이 없으면 주제 확인 행.",
   "teacher": [

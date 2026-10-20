@@ -14,6 +14,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { resolveUnit } from './unit.mjs';
+import { knownMatch } from './compare_known.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..', '..');
 const WORK = process.env.ATLAS_WORK || 'C:/Users/Public/atlas-work';
@@ -176,6 +177,12 @@ function mapChecks(mapId, refs, shot, topicId) {
       const confirmed = ovs.length - changed.length;
       if (confirmed) out.push(check(`${tag}분류를 확인한 나라`, `${confirmed}개`, list(ovs.filter((o) => !changed.includes(o)).map((o) => `${o.iso} ${fmt(o.cls)}`), 20), INFO, '작은 나라·10a 에만 있는 나라를 확대해 하나씩 봄(값은 표본과 같음)'));
     }
+    if (!isOverlay && L.type === 'chartSymbols') { // 지도 위 고리 기호(u4) — 교과서 수 = 단원 설정 레이어 items(지면 고리 가운데 자리)
+      const tbN = cfg.layers?.[r.ref.replace(/^layer-/, '')]?.items?.length ?? '설정 없음';
+      out.push(eq(`${tag}지도 위 그래프 기호 수`, tbN, (L.items || []).length));
+      const noChart = (L.items || []).filter((it) => !charts[it.chart]).map((it) => it.chart);
+      out.push(check(`${tag}기호 그래프 자료`, '그래프마다 자료', noChart.length ? `없음: ${list(noChart)}` : '모두 있음(누르면 카드 그래프)', noChart.length ? DIFF : OK));
+    }
     if (r.legendTitle) {
       const c = coverage(r.legendTitle, page), ov = OVERRIDES[`${topicId}.layers.${r.ref}.legendTitle`];
       out.push(check(`${tag}범례 제목`, ov ? ov.from : short(r.legendTitle, 40), c >= 0.99 ? '지면과 같음' : `${r.legendTitle}${ov ? '' : ` (지면과 ${Math.round(c * 100)}%)`}`, c >= 0.99 ? OK : ov ? KNOWN : DIFF, ov ? `사람이 고침: ${ov.why}` : ''));
@@ -210,6 +217,16 @@ function placeChecks(mapId, shot) {
   return out;
 }
 
+// 주제가 쓰는 그래프: 그래프 블록·카드·핀 + 지도 위 고리 기호(u4 chartSymbols — 누르면 카드, build_content 의 참조 셈과 같음)
+function topicChartRefs(t) {
+  const refs = new Set();
+  for (const b of t.blocks || []) { if (b.type === 'chart') refs.add(b.ref); if (b.chart) refs.add(b.chart); for (const c of b.charts || []) refs.add(c); }
+  for (const m of t.markers || []) if (m.chart) refs.add(m.chart);
+  for (const r of t.layers || []) { const L = layerFile(r.ref); if (L?.type === 'chartSymbols') for (const it of L.items || []) if (it.chart) refs.add(it.chart); }
+  return refs;
+}
+const topicBlob = (t) => squash(JSON.stringify(t) + JSON.stringify([...topicChartRefs(t)].map((id) => charts[id])));
+const topicRefsExcept = (id) => new Set(topics.filter((x) => x.id !== id).flatMap((x) => [...topicChartRefs(x)]));
 // 주제 전체 확인: 핀·사진·그래프·출처·글
 function topicChecks(t) {
   const out = [];
@@ -236,10 +253,10 @@ function topicChecks(t) {
   }).map((p) => p.title);
   if (tbPhotos.length) out.push(check('사진 제목', '사진 추출 제목', titleDiff.length ? `다름: ${list(titleDiff)}` : '모두 같음', titleDiff.length ? DIFF : OK));
   // 그래프
-  const refs = new Set();
-  for (const b of t.blocks || []) { if (b.type === 'chart') refs.add(b.ref); if (b.chart) refs.add(b.chart); for (const c of b.charts || []) refs.add(c); }
-  for (const m of t.markers || []) if (m.chart) refs.add(m.chart);
-  const tbCharts = Object.entries(chartsTb).filter(([, c]) => pages.includes(c.page)).map(([id]) => id);
+  const refs = topicChartRefs(t);
+  // 같은 쪽을 나눠 쓰는 주제(u4 38쪽 문화·잠재력, 39쪽 협력·지속가능): 다른 주제만 쓰는 그래프는 이 주제 몫에서 뺌(u2·u3 는 그런 그래프가 없어 그대로)
+  const otherRefs = topicRefsExcept(t.id);
+  const tbCharts = Object.entries(chartsTb).filter(([id, c]) => pages.includes(c.page) && (refs.has(id) || !otherRefs.has(id))).map(([id]) => id);
   const missCharts = tbCharts.filter((id) => !refs.has(id));
   if (tbCharts.length || refs.size) {
     out.push(check('그래프 수', tbCharts.length, `${refs.size}${missCharts.length ? ` · 빠짐: ${list(missCharts)}` : ''} · 사이드바 ${st.charts ?? '-'}`, missCharts.length || tbCharts.length !== refs.size ? DIFF : OK, '기후 그래프는 핀 카드 안, 일부는 카드(겹침 창) 안이라 사이드바 수와 다를 수 있음'));
@@ -249,11 +266,16 @@ function topicChecks(t) {
     out.push(check('그래프 제목 ↔ 지면', '지면 글', notOnPage.length ? `지면과 다름: ${list(notOnPage)}` : '모두 지면에 있음', notOnPage.length ? DIFF : OK));
   }
   // 출처(설정 expectCredits — 이 주제 쪽에 인쇄된 출처가 생성물 어딘가에)
-  const blob = squash(JSON.stringify(t) + JSON.stringify([...refs].map((id) => charts[id])));
+  const blob = topicBlob(t);
   const exp = pages.flatMap((p) => cfg.content.expectCredits[p] || []);
   if (exp.length) {
-    const miss = exp.filter((c) => !blob.includes(squash(c)));
-    out.push(check('인쇄 출처', `${exp.length}개`, miss.length ? `생성물에 없음: ${list(miss)}` : `${exp.length}개 모두 있음`, miss.length ? DIFF : OK));
+    const miss0 = exp.filter((c) => !blob.includes(squash(c)));
+    // 같은 쪽을 나눠 쓰는 주제(u4 38·39쪽)가 가진 출처는 그 주제 몫(u2·u3 는 빠진 출처가 없어 그대로)
+    const others = topics.filter((x) => x.id !== t.id && (x.pages || []).some((p) => pages.includes(p))).map(topicBlob);
+    const elsewhere = miss0.filter((c) => others.some((b) => b.includes(squash(c))));
+    const miss = miss0.filter((c) => !elsewhere.includes(c));
+    const okText = elsewhere.length ? `${exp.length - elsewhere.length}개 모두 있음 · 같은 쪽 다른 주제 ${elsewhere.length}: ${list(elsewhere)}` : `${exp.length}개 모두 있음`;
+    out.push(check('인쇄 출처', `${exp.length}개`, miss.length ? `생성물에 없음: ${list(miss)}` : okText, miss.length ? DIFF : OK));
   }
   // 글 일치: 글 블록·핀·카드·사진 설명이 지면 글에 들어 있는가
   const texts = [];
@@ -289,9 +311,23 @@ for (const t of topics) {
   const groups = groupsOf(t);
   if (groups.length) {
     for (const [i, g] of groups.entries()) {
-      const mapId = mapOfRef(g.refs[0].ref);
+      const own = mapOfRef(g.refs[0].ref);
       const shots = shotsOf((s) => s.topic === t.id && (s.groupIndex === i && s.kind !== 'topic'));
       const main = shots.find((s) => s.proj === 'robinson' && s.kind === 'group');
+      if (!own) {
+        // 쪽 지도가 없는 레이어(u4 미확정 국경 — Natural Earth·바탕 지도 자료)만 든 묶음: 주제 대표 지도(checks.mainMap) 위에 덧그린 것으로 보고
+        // 바로가기 행처럼 지명·도법 확인 + 레이어 확인(u2·u3 에는 이런 묶음이 없어 그대로)
+        const mapId = MAIN_MAP[t.id];
+        const m = mapById[mapId];
+        if (!m) throw new Error(`${t.id}: 묶음 「${g.label}」의 레이어에 지도가 없음 — checks.mainMap 에 주제 대표 지도를 적으세요`);
+        const checks = [check('지도', `${m.title} (${m.page}쪽)`, `${t.title} · 레이어 「${g.label}」를 덧그림`, INFO)];
+        checks.push(...placeChecks(mapId, main), ...mapChecks(mapId, g.refs, main, t.id));
+        if (m.projection) checks.push(check('도법', m.projection, NOTES.viewProjection, KNOWN, NOTES.viewProjectionNote));
+        if (m.scale) checks.push(check('축척', m.scale, '축척 막대(확대에 따라 바뀜)', INFO));
+        rows.push({ kind: 'map', topic: t, title: `${t.title} · ${g.label}`, mapId, shots, checks });
+        continue;
+      }
+      const mapId = own;
       const checks = [check('지도 제목', mapById[mapId].title, g.label, squash(mapById[mapId].title) === squash(g.label) ? OK : DIFF)];
       const cov = coverage(g.label, mapById[mapId].page);
       checks.push(check('지도 제목 ↔ 지면', '지면 글', cov >= 0.99 ? '지면에 있음' : `지면에 없음(${Math.round(cov * 100)}%)`, cov >= 0.99 ? OK : INFO, cov >= 0.99 ? '' : '교과서 활동 지도는 제목이 따로 인쇄되지 않음 — 목록 제목'));
@@ -316,11 +352,12 @@ for (const t of topics) {
 }
 
 // 단원 설정 checks.known: 자동 확인의 「다름」 중 결정 기록에 까닭이 있는 것 → 「알려진 차이」. 주제·항목 이름에 더해 교과서 값(tb)·
-// 웹 글 조각(webIncludes)이 맞을 때만 바꾼다(값이 달라지면 다시 「다름」으로 보이게).
+// 웹 글 조각(webIncludes)·글 일치율(pct, U4-10)이 맞을 때만 바꾼다(값이 달라지면 다시 「다름」으로 보이게 — compare_known.mjs).
 for (const k of CHECKS.known) {
-  const hits = rows.filter((r) => r.topic.id === k.topic && (k.map == null || r.mapId === k.map)).flatMap((r) => r.checks)
-    .filter((c) => c.status === DIFF && c.item === k.item && (k.tb == null || String(c.tb) === String(k.tb)) && (k.web == null || String(c.web) === String(k.web)) && (k.webIncludes == null || String(c.web).includes(k.webIncludes)));
-  if (!hits.length) console.log(`  (알림) checks.known 이 맞는 「다름」 없음: ${k.topic} / ${k.item}`);
+  const cands = rows.filter((r) => r.topic.id === k.topic && (k.map == null || r.mapId === k.map)).flatMap((r) => r.checks).map((c) => ({ c, m: knownMatch(c, k) }));
+  const hits = cands.filter((x) => x.m.hit).map((x) => x.c);
+  for (const x of cands.filter((y) => y.m.pctMismatch)) console.log(`  (알림) pct 다름: ${k.topic} / ${k.item} — 고정 ${k.pct}, 지금 ${x.m.pctNow ?? '없음'}`);
+  if (!hits.length && !cands.some((y) => y.m.pctMismatch)) console.log(`  (알림) checks.known 이 맞는 「다름」 없음: ${k.topic} / ${k.item}`);
   for (const c of hits) { c.status = KNOWN; c.note = [c.note, k.note].filter(Boolean).join(' · '); }
 }
 // 단원 설정 checks.teacher: 교사가 확인할 결정(결정 기록의 「교사 확인 항목」) — 해당 행(map 이 있으면 그 지도 행, 없으면 주제 확인 행)에
