@@ -1,0 +1,358 @@
+# 사회과부도 아틀라스 2단계 — G 일반화 + Ⅲ 유럽 구현 계획
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** ① 아시아 전용으로 굳은 추출 파이프라인·조립 코드·대조표·테스트를 단원 번호(`--unit uN`)로 돌게 일반화하고, 아시아 조각 결과가 바뀌지 않았음을 증명한다(G). ② 그 위에서 사회과부도 Ⅲ 유럽(26~33쪽)을 조각 `atlas-u3-europe`으로 만들어 교사 대조표 승인 뒤 공개한다.
+
+**Architecture:** 1단계와 같다. Python(PyMuPDF)으로 PDF 글자·도형·이미지를 뽑아 `C:\Users\Public\atlas-work\`에 두고 → Node 가 앱과 같은 d3 투영(`src/atlas/fitCore.js`)으로 경위도를 맞춰 GeoJSON·지명·내용 JSON 을 만들고 → 공유 엔진(`src/atlas/`)이 단원 조각을 그린다. 새로 생기는 것: 단원 고르기 한 곳(`scripts/atlas/unit.mjs`·`atlas_common.unit()`), 조립 공유(`src/atlas/mountAtlas.js`), 단원 표(`scripts/atlas/units.json`).
+
+**Tech Stack:** 1단계와 같음 — Vite 6, d3-geo(+projection·polygon), csat-chart.js 저수준 API, PyMuPDF·numpy·shapely(≥2.1)·Pillow·rasterio, mapshaper(버전 고정), `node:test`, Python `unittest`.
+
+**Spec:** `notes/specs/2026-10-20-atlas-phase2-design.md`(반드시 먼저 읽기), 1단계 설계 `notes/specs/2026-10-09-atlas-asia-design.md`, 1단계 계획의 「실행 중 결정」(`notes/plans/2026-10-09-atlas-asia.md` 784줄부터 — 모든 교사 결정이 이 단원의 기본값). 규칙: `EMBED_RULES.md`.
+
+---
+
+## 공통 사항 (모든 작업자 필독)
+
+- 저장소 루트: `C:\Users\김용현\Desktop\동아출판 사회과 바이브코딩\app`(아래 경로는 모두 여기 기준). 가지 `atlas-phase2`(main 에서 만듦, 워크트리 없음). PDF: `..\22개정_중학_사회과 부도_교과서_본문.pdf`(인쇄 쪽 = PDF 쪽).
+- **ASCII 작업 폴더** `C:\Users\Public\atlas-work\`(env `ATLAS_WORK`). 이 PC 는 한글 경로에 대량 출력하면 도구가 죽는다(0xC0000409). Node 에서 `cpSync`/`rmSync({recursive})` 금지 — 손 순회(`compare_shots.mjs rmTree` 꼴). 2단계 쪽 렌더는 `C:\Users\Public\atlas-work\phase2\pages\pNNN.png`(100dpi, 8~15·26~55·97~104쪽)에 있다.
+- Python 은 항상 `python -I`, 한글 출력은 `sys.stdout.reconfigure(encoding='utf-8')`. 내려받은 원본은 `atlas-work/raw/<출처>/`(SOURCE.txt 에 주소·날짜·용량·해시).
+- git: **`git add -A` 금지**(서브에이전트의 미완성 파일이 딸려 들어감). 자기 파일만 경로로 add. 커밋 메시지는 한국어, 끝에 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. author 는 저장소 로컬 설정(noreply).
+- 전역 훅: Write 할 때 파일 머리에 `© 2026 김용현` 줄이 들어간다 — **지우지 않는다**. Bash 할 때 build-check 가 돈다.
+- 헤드리스 Chrome: `--headless=new --disable-gpu --use-angle=swiftshader --enable-unsafe-swiftshader`, 매번 새 `--user-data-dir`, `--disk-cache-size=0`, 출력은 `C:/Users/Public/...` 슬래시 경로. (GPU 쓰는 헤드리스는 이 PC 에서 블루스크린 0x10E.)
+- UI 문구는 한국어, 이모지 금지(`src/shared/dom.js icon()` 선 아이콘). 그래프는 csat-chart.js 저수준 렌더러만(`CsatChart` 클래스 import 금지 — 외부 글꼴 코드).
+- 테스트: `npm test`(Python `python -I -m unittest discover -s scripts/atlas/tests -v` + Node `node --test "tests/**/*.test.mjs"`). 지금 기준: Python 184 · Node 350 통과.
+- 조각 검사: `npm run embed -- <id>` → `embed/<id>.html`, `npm run check:embed`. 공개: `npm run release -- <id> --note "…"`.
+- 리뷰 관문: 작업마다 끝나면 코드 리뷰(서브에이전트 `superpowers:requesting-code-review`) → 고침 → 커밋. **교사 관문**은 ⓣ로 표시한 곳(대조표 승인, 교사 질문 Q1~Q4 답) — 답이 오기 전에 그 결정을 전제로 한 코드를 공개하지 않는다.
+- 단원 고르기(G1 뒤): 모든 파이프라인 명령은 `--unit u3`(또는 env `ATLAS_UNIT=u3`)를 받는다. 이 계획의 유럽 명령은 모두 `--unit u3`를 붙여 쓴다. 안 붙이면 u2(아시아)다.
+
+## 파일 구조 (이 계획이 만들거나 바꾸는 것)
+
+```
+scripts/atlas/
+  units.json              단원 표 {u2: {sim, title, pages, config}, u3: …}            (G1 새로)
+  unit.mjs                resolveUnit(argv, env) — Node 단원 고르기 한 곳              (G1 새로)
+  atlas_common.py         unit() — Python 단원 고르기(같은 규칙)                         (G1 고침)
+  georef-cli.mjs          maps 경로를 단원 설정에서                                       (G2 고침)
+  compare.mjs             --unit, 아시아 전용 분기 → 설정 compare.checks                 (G3 고침)
+  compare_shots.mjs       --unit, 장면 = 주제·묶음 + 설정 compare.extraScenes            (G3 고침)
+  regress_u2.mjs          기준선 저장(--baseline)·비교(--check)                          (G0 새로)
+  config/u3.json          유럽 단원 설정                                                  (U3-1 새로)
+  maps_u3.json            유럽 지도 목록                                                  (U3-1 새로)
+src/atlas/
+  mountAtlas.js           단원 조각 조립(지금 sims/atlas-u2-asia/main.js 본문)           (G4 새로)
+  (U3-D 에서) layers.js·layerStyle.js·charts.js·chartCore.js·ui.js 에 유럽용 기능 더함
+sims/atlas-u2-asia/main.js   자료 import + mountAtlas 호출로 줄임                       (G4 고침)
+sims/atlas-u3-europe/        index.html · main.js · data/*(생성물)                      (U3-E1 새로)
+content/atlas/u3/            topics.json · overrides.json · photos.json · coloring.json · issues.md
+docs/assets/atlas/u3/        photo/ · page/
+tests/atlas/unitContract.test.mjs   units.json 단원마다 생성물 계약 검사                  (G5 새로)
+scripts/atlas/tests/test_unit.py    Python 단원 고르기 테스트                             (G1 새로)
+tests/atlas/unit.test.mjs           Node 단원 고르기 테스트                               (G1 새로)
+```
+
+---
+
+## G. 파이프라인 일반화 (아시아 결과는 그대로)
+
+### Task G0: 회귀 기준선 `regress_u2.mjs --baseline`
+
+**Files:** Create `scripts/atlas/regress_u2.mjs`; Output `$ATLAS_WORK/units/u2/baseline/`(저장소 밖)
+
+- [ ] **Step 1:** `regress_u2.mjs`를 만든다. `--baseline`이면 다음 파일의 sha256 을 `$ATLAS_WORK/units/u2/baseline/hashes.json`에 쓴다(경로 → 해시, 정렬). 디렉터리는 손 순회(`readdirSync` + `statSync`), 재귀 fs 옵션 금지.
+  - 저장소: `sims/atlas-u2-asia/data/**`, `content/atlas/u2/**`, `docs/assets/atlas/**`, `embed/atlas-u2-asia.html`
+  - 작업 폴더: `vec/p1[6-9]-*.json`·`vec/p2[0-5]-*.json`, `geo/p1[6-9]*.fit.json`·`geo/p2[0-5]*.fit.json`, `text/places-*.json`, `text/p17-labels.json`, `tables/charts-u2.json`, `tables/climate-world.json`, `tables/index.json`
+- [ ] **Step 2:** 대조표 기준선: `node scripts/atlas/compare_shots.mjs` → `shots/e2/*.png` 41장과 `manifest.json`을 `units/u2/baseline/shots/`로 복사(손 순회), `node scripts/atlas/compare.mjs` 결과 줄(같음·알려진 차이·참고·다름 수)을 `baseline/compare.json`으로.
+- [ ] **Step 3:** `--check`: 같은 목록을 다시 해시해 다른 파일을 출력하고(종료 코드 1), PNG 는 화소 비교(Python Pillow `ImageChops.difference().getbbox()` — 다른 화소 수와 상자), 대조표 수 비교, 조각 크기 차(%)를 표로 낸다. 화소 비교는 `scripts/atlas/regress_png.py`(작은 도우미)로.
+- [ ] **Step 4:** `node scripts/atlas/regress_u2.mjs --baseline` 실행 → `hashes.json` 항목 수와 41장을 출력해 확인. `--check`를 바로 돌려 「다른 파일 0, 화소 차 0」을 확인(도구 자체 검사).
+- [ ] **Step 5:** 커밋(`scripts/atlas/regress_u2.mjs scripts/atlas/regress_png.py`).
+
+### Task G1: 단원 고르기 한 곳 `units.json` · `unit.mjs` · `atlas_common.unit()`
+
+**Files:** Create `scripts/atlas/units.json`, `scripts/atlas/unit.mjs`, `tests/atlas/unit.test.mjs`, `scripts/atlas/tests/test_unit.py`; Modify `scripts/atlas/atlas_common.py`
+
+- [ ] **Step 1:** `units.json`
+```json
+{
+  "_doc": "단원 표: 파이프라인이 --unit uN(또는 env ATLAS_UNIT)으로 고르는 단원. config 는 scripts/atlas 기준. 2단계 설계 §4.2.",
+  "u2": { "sim": "atlas-u2-asia", "title": "Ⅱ. 아시아", "pages": [16, 25], "config": "config/u2.json" },
+  "u3": { "sim": "atlas-u3-europe", "title": "Ⅲ. 유럽", "pages": [26, 33], "config": "config/u3.json" }
+}
+```
+- [ ] **Step 2: 실패하는 테스트 (Node)**
+```js
+// tests/atlas/unit.test.mjs
+import test from 'node:test'; import assert from 'node:assert/strict';
+import { resolveUnit } from '../../scripts/atlas/unit.mjs';
+test('기본은 u2 — 지금 명령이 그대로', () => {
+  const u = resolveUnit([], {});
+  assert.equal(u.id, 'u2'); assert.equal(u.sim, 'atlas-u2-asia');
+  assert.match(u.configPath.replace(/\\/g, '/'), /scripts\/atlas\/config\/u2\.json$/);
+  assert.match(u.mapsPath.replace(/\\/g, '/'), /scripts\/atlas\/maps_u2\.json$/);
+  assert.equal(u.dataDir.replace(/\\/g, '/').split('/').slice(-3).join('/'), 'sims/atlas-u2-asia/data');
+});
+test('--unit 이 env 보다 앞섬, ATLAS_UNIT_CONFIG(옛 방식)도 받음', () => {
+  assert.equal(resolveUnit(['--unit', 'u3'], { ATLAS_UNIT: 'u2' }).id, 'u3');
+  assert.equal(resolveUnit([], { ATLAS_UNIT: 'u3' }).id, 'u3');
+  assert.equal(resolveUnit([], { ATLAS_UNIT_CONFIG: 'scripts/atlas/config/u2.json' }).id, 'u2');
+});
+test('모르는 단원은 오류', () => assert.throws(() => resolveUnit(['--unit', 'u9'], {}), /u9/));
+test('단원 작업 폴더: u2 는 옛 경로 그대로(설정에 없으면), 새 단원은 units/uN', () => {
+  const w = (id) => resolveUnit(['--unit', id], { ATLAS_WORK: 'C:/W' }).workFile('text/topics-check.json').replace(/\\/g, '/');
+  assert.equal(w('u2'), 'C:/W/text/topics-check.json');
+  assert.equal(w('u3'), 'C:/W/units/u3/text/topics-check.json');
+});
+```
+  `u3` 테스트는 `config/u3.json`이 아직 없어도 돌아야 하므로 `resolveUnit`은 설정 파일을 늦게(`unit.config` getter) 읽는다.
+- [ ] **Step 3: 실패하는 테스트 (Python)** — `scripts/atlas/tests/test_unit.py`: `atlas_common.unit()`이 env 없으면 u2, `ATLAS_UNIT=u3`이면 u3(서브프로세스로 env 바꿔 실행), `UNIT_CONFIG` 값이 지금과 같은 경로(`config/u2.json`)인지.
+- [ ] **Step 4:** `npm test`로 실패 확인.
+- [ ] **Step 5: 구현** — `unit.mjs`: `resolveUnit(argv = process.argv.slice(2), env = process.env)` → `{id, sim, title, pages, configPath, config(getter), mapsPath(설정 maps 기준, 없으면 maps_<id>.json), dataDir(설정 out 또는 sims/<sim>/data), contentDir(content/atlas/<id>), assetDir(docs/assets/atlas/<id>), work, workFile(rel)}`. `workFile`은 u2 면 `WORK/rel`, 그 밖은 `WORK/units/<id>/rel`(설정 `unitWork`가 있으면 그것). `atlas_common.py`: 맨 위 `UNIT_CONFIG` 결정을 `unit()`으로 바꾸되 **u2 일 때 값은 바이트까지 같은 문자열**(`os.path.join(HERE, 'config', 'u2.json')`). `ATLAS_UNIT_CONFIG`가 있으면 그것이 이긴다(옛 방식).
+- [ ] **Step 6:** 기존 Node 스크립트 6개(`build_basemap`·`build_content`·`build_layers`·`build_places`·`city_controls`·`coloring_quiz`)의 `const CONFIG = process.env.ATLAS_UNIT_CONFIG || path.join(…, 'u2.json')`를 `resolveUnit().configPath`로 바꾼다. 명령줄 해석은 각 스크립트의 기존 옵션과 부딪치지 않게 `--unit <id>` 두 칸만 먼저 빼낸다(`unit.mjs stripUnitArgs`).
+- [ ] **Step 7:** `npm test` 통과(Python 184+, Node 350+). 커밋(`scripts/atlas/units.json scripts/atlas/unit.mjs scripts/atlas/atlas_common.py scripts/atlas/build_basemap.mjs scripts/atlas/build_content.mjs scripts/atlas/build_layers.mjs scripts/atlas/build_places.mjs scripts/atlas/city_controls.mjs scripts/atlas/coloring_quiz.mjs tests/atlas/unit.test.mjs scripts/atlas/tests/test_unit.py`).
+
+### Task G2: 박힌 경로 없애기 + 도법 후보 고정
+
+**Files:** Modify `scripts/atlas/georef-cli.mjs`, `scripts/atlas/build_places.mjs`, `scripts/atlas/build_content.mjs`, `scripts/atlas/extract_text.py`, `scripts/atlas/extract_tables.py`, `scripts/atlas/city_controls.mjs`, `scripts/atlas/georef.mjs`; Test `tests/atlas/georef.test.mjs`
+
+- [ ] **Step 1:** `georef-cli.mjs`: `maps_u2.json` 직접 읽기 → `resolveUnit().mapsPath`. 낡은 산출물 검사(`controls.json`이 maps·extract_vectors.py 보다 오래됨)도 같은 경로. 다시 뽑기 호출(`python -I extract_vectors.py --controls all`)에 env `ATLAS_UNIT` 전달.
+- [ ] **Step 2:** 단원 작업 파일: `text/topics-check.json`(extract_text·build_content), `geo/city-holdout.json`(city_controls·places 테스트) → `unit.workFile(...)`/Python `unit_work(...)`. u2 는 옛 경로 그대로(G1 규칙)라 u2 산출물은 바뀌지 않는다. 설정 `content.stamps`의 `@work/…` 표기는 u2 설정 그대로 두고, 새 단원 설정은 `@unit/…`(= 단원 작업 폴더) 표기를 쓴다 — `atlas_common`·`geo_util`의 `@work` 풀이 옆에 `@unit`을 더한다.
+- [ ] **Step 3:** `build_content.mjs`가 만드는 `layers.js` 머리 주석의 `sims/atlas-u2-asia` 글자를 `unit.dataDir` 상대 경로로 만든다(u2 결과 글자가 같아야 함 — 비교).
+- [ ] **Step 4: 도법 후보 고정 (실패하는 테스트 먼저)**
+```js
+// tests/atlas/georef.test.mjs 에 더함
+import { FAMILY_NAMES, familiesFor } from '../../scripts/atlas/georef.mjs';
+test('u2 지도의 도법 후보는 1단계 8개 그대로(후보를 더해도 아시아 fit 이 바뀌지 않게)', () => {
+  const OLD = ['azimuthalEqualArea', 'azimuthalEquidistant', 'conicEqualArea', 'conicConformal', 'miller', 'robinson', 'equirectangular', 'mercator'];
+  assert.deepEqual(familiesFor({ id: 'p16-asia' }, { georef: {} }), OLD);
+  assert.deepEqual(familiesFor({ id: 'x', families: ['miller'] }, { georef: { families: OLD } }), ['miller']);
+});
+```
+  구현: `familiesFor(mapEntry, unitConfig)` = 지도 항목 `families` → 단원 설정 `georef.families` → 1단계 8개(상수 `PHASE1_FAMILIES`). `georef-cli --all`이 `fitWithTps(cps, { families: familiesFor(m, cfg) })`로 부른다. (새 후보 `stereographic`·`orthographic`은 Ⅴ 단원에서 `fitCore.FAMILIES`에 더한다 — 이 작업에서는 더하지 않는다.)
+- [ ] **Step 5:** `npm test` 통과. `node scripts/atlas/georef-cli.mjs --all` 다시 돌려 `geo/*.fit.json`이 G0 기준선과 바이트까지 같은지 `regress_u2.mjs --check`(fit 항목만 봐도 됨)로 확인.
+- [ ] **Step 6:** 커밋(바꾼 파일만).
+
+### Task G3: 대조표 일반화 `compare_shots.mjs` · `compare.mjs`
+
+**Files:** Modify `scripts/atlas/compare_shots.mjs`, `scripts/atlas/compare.mjs`, `scripts/atlas/config/u2.json`은 **바꾸지 않음** → 아시아 전용 값은 새 파일 `scripts/atlas/config/u2.compare.json`
+
+- [ ] **Step 1:** `compare_shots.mjs --unit uN`: topics 경로 = `unit.dataDir/topics.json`, 개발 주소 = `/sims/<sim>/?topic=&proj=`, 출력 = `unit.workFile('shots/compare')`(u2 는 옛 `shots/e2` — 기준선과 같은 자리). 장면 = 주제마다 기본 도법 1장 + 묶음마다 1장 + `compare.extraScenes`(아시아의 싱가포르 확대 창·100% 막대·세계 인구·색칠하기 활동·세계유산 퀴즈·고도 색 켬/끔·지형 바탕 3종·핀 숨김 3장 → `u2.compare.json`으로 옮김). 장면 정의 꼴: `{name, topic, group?, proj?, actions:[{call:'showGroup', args:[i]} | {click:'<선택자>'} | {eval:'<root.atlas… 식>'}]}` — 지금 코드의 장면 함수를 이 자료로 옮긴다. `eval`은 이 캡처 스크립트(개발 도구) 안에서만, CDP `Runtime.evaluate`로.
+- [ ] **Step 2:** `compare.mjs --unit uN`: 입력 경로를 `resolveUnit`에서. 아시아 전용 분기(`p17-labels`, `layer-p22-singapore` 확대 창 기호, `layer-p23-density-cities` 화면 기호 없음, `layer-p24-trade` 도법·중심, `MAIN_MAP`)를 설정 `compare.checks`(`coloringLabels`·`insetLayers`·`noScreenSymbols`·`centerChecks`·`mainMap`)로 바꾸고 아시아 값은 `u2.compare.json`. 출력 `unit.workFile('compare.html')`(u2 는 옛 `compare-u2.html`).
+- [ ] **Step 3:** `regress_u2.mjs --check`의 대조표 부분: 장면 41장 이름·화소 같음, 대조표 수(다름 0 · 알려진 차이 9 · 같음 134 · 참고 24) 같음.
+- [ ] **Step 4:** 커밋(`scripts/atlas/compare_shots.mjs scripts/atlas/compare.mjs scripts/atlas/config/u2.compare.json`).
+
+### Task G4: 조립 공유 `src/atlas/mountAtlas.js`
+
+**Files:** Create `src/atlas/mountAtlas.js`, `tests/atlas/mountAtlas.test.mjs`; Modify `sims/atlas-u2-asia/main.js`
+
+- [ ] **Step 1: 실패하는 테스트** — 가짜 DOM(`tests/atlas/helpers/fakeDom.mjs`)·CSS 훅으로 `mountAtlas(root, {simId:'atlas-u2-asia', basemap, places, topics, charts, layers, …아시아 선택값})`를 불러 ① `root.atlasShowTopic`이 8개 주제를 모두 오류 없이 펼치고 ② `destroy()` 뒤 rAF·구독 0, ③ 선택값 없이(`insets`·`boundsOf`·`locators` 빠짐)도 동작하는지 본다.
+- [ ] **Step 2: 구현** — 지금 `sims/atlas-u2-asia/main.js`의 `mount` 본문을 그대로 옮긴다(createShell → createMap → attachRelief·attachTint → mapTools → lazyNatural → legendPanel·tooltip·pageViewer·topicNav·주제 칸·creditBlock → show → 개발 매개변수 → `root.atlas*` → destroy). 아시아 상수는 인자로: `{ insets = {}, boundsOf = {}, centerLonOf = {}, baseColor = {}, locators = {}, unitBoxes = basemap.meta.unitBoxes }`.
+- [ ] **Step 3:** `sims/atlas-u2-asia/main.js` = 정적 import(자료 7개) + 아시아 상수 + `export default (root) => mountAtlas(root, {...})`. 머리 주석은 유지·갱신.
+- [ ] **Step 4:** `npm run embed -- atlas-u2-asia` → 크기가 기준선 ±1% 안, `check:embed` 통과. `npm test` 통과.
+- [ ] **Step 5:** 커밋(`src/atlas/mountAtlas.js sims/atlas-u2-asia/main.js tests/atlas/mountAtlas.test.mjs`).
+
+### Task G5: 단원 공통 계약 테스트 + 회귀 증명
+
+**Files:** Create `tests/atlas/unitContract.test.mjs`
+
+- [ ] **Step 1:** `unitContract.test.mjs`: `units.json`의 단원 중 `sims/<sim>/data/topics.json`이 있는 것마다 — 주제 쪽이 `pages` 범위를 모두 덮음, 레이어 ref → `data/<ref>.json` 존재, 사진 → `docs/assets/atlas/<id>/photo/<id>.jpg|webp` 존재, 그래프 ref → charts.json, 빈 글(마커·블록) 없음(설정 `schema.markerTextOptionalWith` 예외), 설정 `content.expect`의 수(핀·그래프·사진), 조각 크기(`embed/<sim>.html` 있으면 ≤ 3MB). 단원 고유 기대값은 설정에서만 읽는다.
+- [ ] **Step 2:** u2 로 통과 확인(지금 u2 테스트와 겹치는 검사는 그대로 둠 — 회귀 보호).
+- [ ] **Step 3: 회귀 증명** — u2 파이프라인을 처음부터 다시 돈다(아래 순서, 모두 `--unit` 없이 = u2): `python -I scripts/atlas/extract_vectors.py --controls all` → `node scripts/atlas/georef-cli.mjs --all` → `python -I scripts/atlas/extract_vectors.py --features all` → `node scripts/atlas/build_layers.mjs` → `python -I scripts/atlas/places.py` → `node scripts/atlas/build_places.mjs` → `python -I scripts/atlas/extract_images.py` → `python -I scripts/atlas/extract_tables.py` → `python -I scripts/atlas/extract_text.py --labels --check` → `node scripts/atlas/coloring_quiz.mjs --write` → `node scripts/atlas/build_basemap.mjs` → `node scripts/atlas/build_content.mjs` → `npm run embed -- atlas-u2-asia` → `node scripts/atlas/compare_shots.mjs` → `node scripts/atlas/compare.mjs` → `node scripts/atlas/regress_u2.mjs --check`.
+  - 통과 조건: 저장소·작업 폴더 산출물 해시 **모두 같음**(embed 제외), 캡처 41장 화소 차 0, 대조표 수 같음, 조각 크기 ±1%, `npm test` 통과.
+  - 다른 파일이 있으면 그 차이를 이 계획 「실행 중 결정」에 까닭과 함께 적고(정당한 차이만 허용 — 예: 머리 주석 글자), 고칠 수 있으면 고친다.
+- [ ] **Step 4:** 커밋(`tests/atlas/unitContract.test.mjs`). 이 시점에 G 완료 — **리뷰 관문**: 전체 diff 코드 리뷰(서브에이전트) + 회귀 표를 「실행 중 결정」에 붙임.
+
+---
+
+## U3. Ⅲ 유럽 (26~33쪽) — 조각 `atlas-u3-europe`
+
+유럽 주제 8개(사이드바 목차): 일반도(26) · 색칠하기(27) · 지형(28) · 기후(29) · 도시의 기능(30) · 지속가능한 도시(31) · 통합과 분리(32) · 특집: 주민 생활(33). 내용 목록은 설계 §5.1.
+
+### Task U3-1: 단원 설정 뼈대와 지도 목록 `config/u3.json` · `maps_u3.json` (1단계 A3)
+
+**Files:** Create `scripts/atlas/config/u3.json`, `scripts/atlas/maps_u3.json`; Modify `scripts/atlas/units.json`(u3 이미 있음 — 확인만)
+
+- [ ] **Step 1:** `config/u3.json`을 u2 설정의 **키 구조만** 복사해 만든다(값은 비우거나 유럽 값): `maps: "../maps_u3.json"`, `out: "sims/atlas-u3-europe/data"`, `photos.outJson: content/atlas/u3/photos.json`, `photos.assetDir: docs/assets/atlas/u3`, `photos.assetPrefix: "u3/"`, `charts.out: @unit/tables/charts-u3.json`, `content.*` 경로 u3, `content.stamps` 경로 `@unit/…`. `tint`·`natural` 절은 **넣지 않는다**(공용 화상은 u2 설정으로 만듦). `basemap.unitBoxes`: 유럽 일반도 범위 + 여유 `[[-32, 27, 70, 82]]`(26쪽 틀을 fit 으로 되돌린 범위를 U3-2 뒤 다시 맞춤). `georef.families`: 1단계 8개.
+- [ ] **Step 2:** `python -I scripts/atlas/find_maps.py 26 33`으로 후보 bbox 를 보고, 쪽 렌더(`atlas-work/phase2/pages/p026.png`~`p033.png`)를 보며 `maps_u3.json`을 쓴다. id 는 `p<쪽>-<이름>`, kind 는 1단계 목록 + 유럽용 `urban|green-capital|ev-chargers|eu|separatism|belgium|italy|locator`.
+  - 지도 15개: `p26-europe`(general, 경위선 눈금), `p27-coloring`(coloring), `p28-relief`(relief), `p29-climate`(climate, 눈금), `p29-climate-iceland`(climate 삽입 — 자체 경위선 20°W), `p29-jan`, `p29-jul`(temp-precip), `p30-urban`(urban), `p31-green-capital`, `p31-lisbon`(ev-chargers, 손 기준점), `p32-eu`, `p32-separatism`, `p32-belgium`(손 기준점 — 벨기에 국경 꺾인 점), `p32-italy`(손 기준점), `p33-locator`(locator, 손 기준점).
+  - 지도로 넣지 않는 것: 30쪽 소피아 앙티폴리스 위치도(프랑스 작은 그림)·베네치아 위성 사진 → 사진 카드. 32쪽 지도 위 「활동하기」 말풍선은 활동 블록.
+- [ ] **Step 3: 개수 대조** — `python -I -c "import json;print(len(json.load(open('scripts/atlas/maps_u3.json',encoding='utf-8'))))"`가 Step 2 목록 수와 같아야 한다. 설계 §5.1 표와 다르면 표를 고친다.
+- [ ] **Step 4:** 테스트 `scripts/atlas/tests/test_maps_u3.py`(test_maps_u2.py 꼴): id 유일·쪽 26~33·bbox 가 쪽 안·kind 가 정해진 목록·`georef:false` 아닌 지도는 `graticuleLabels` 또는 `controls` ≥ 4.
+- [ ] **Step 5:** 커밋(`scripts/atlas/config/u3.json scripts/atlas/maps_u3.json scripts/atlas/tests/test_maps_u3.py`).
+
+### Task U3-2: 기준점과 경위도 맞추기 (1단계 B1·B2)
+
+**Files:** Modify `scripts/atlas/maps_u3.json`(손 기준점·city controls), `scripts/atlas/config/u3.json`(`cityControls`); Test `scripts/atlas/tests/test_controls.py`에 u3 경우 더함
+
+- [ ] **Step 1:** `python -I scripts/atlas/extract_vectors.py --unit u3 --controls all`. 경위선 눈금이 있는 지도(26쪽 24개, 29쪽 13개)는 교차점, 나머지는 손 기준점(해안 특징점·섬 중심·반도 끝, 지도마다 ≥ 6, 넓게 흩어지게). 경위도 기호 `°`·`˚` 둘 다(1단계 결정).
+- [ ] **Step 2:** 일반도 26쪽은 도시 기호 기준점(`city_controls.mjs --unit u3 --write`, 설정 `cityControls` = u2 값 복사 + `neBox` 유럽 `[-32, 27, 70, 82]`)으로 가장자리 보강.
+- [ ] **Step 3:** `node scripts/atlas/georef-cli.mjs --unit u3 --all` → 표(`id family rmsPt rmsMm`). 기대: 26·27쪽 `conicConformal`(지면 「람베르트 정각 원뿔」), 그 밖 주제도는 가장 잘 맞는 것. 1단계 기준 **평균 잔차 ≤ 0.5mm**. 넘으면 기준점 보강 → 그래도 넘으면 `approx: true`.
+- [ ] **Step 4:** `node scripts/atlas/georef-cli.mjs --unit u3 --verify all` → `atlas-work/geo/<id>.verify.png`(Natural Earth 50m 해안선 겹침)을 눈으로 확인. 모식도에 가까운 지도(벨기에·리스본 작은 지도·33쪽 위치도)는 `approx` 여부를 결정하고 「실행 중 결정」에 기록.
+- [ ] **Step 5:** 테스트 — `test_controls.py`에 `p26-europe` 기준점 ≥ 12·모두 경위도 범위 안, Node `tests/atlas/georef.test.mjs`에 u3 fit 파일이 있으면 rmsMm ≤ 0.5(approx 제외) 검사.
+- [ ] **Step 6:** `unitBoxes`를 26쪽 틀 범위로 맞추고 커밋.
+
+### Task U3-3: 엔진·파이프라인 유럽 기능 (설계 §6 — 유럽에서 처음 쓰는 것)
+
+**Files:** Modify `scripts/atlas/features.py`·`zones.py`·`legend.py`·`symbols.py`(필요한 곳), `scripts/atlas/build_layers.mjs`, `src/atlas/layers.js`, `src/atlas/layerStyle.js`, `src/atlas/ui.js`(범례 견본), `src/atlas/chartCore.js`, `src/atlas/charts.js`; Create `scripts/atlas/country_class.py`; Test `tests/atlas/layerStyle.test.mjs`·`layers.test.mjs`·`chartCore.test.mjs`·`scripts/atlas/tests/test_country_class.py`
+
+각 하위 기능은 실패하는 테스트 → 구현 → 통과 → 커밋으로 따로 한다.
+
+- [ ] **3a 나라 단위 단계구분도 `countryClass`** (설계 §6.2-8): `country_class.py <layer>` — 바탕 지도 50m 나라(`basemap.json`과 같은 Natural Earth 원본·같은 iso)마다 안쪽 표본점 9개(`representative_point` + 나라 상자 3×3 격자 중 나라 안)를 fit 정변환으로 지면에 찍고, 그 자리 채움 도형 색(벡터 `features.json` 면 — 점 포함 판정, 위에 그린 것 우선)을 범례색(Lab ΔE, `defaults.matchDE`)과 대조해 다수결. 표본이 지도 틀 밖이면 그 나라 없음. 출력 `layer-<id>.json` = `{type:'countryClass', legend:[…], classes:{iso: cls}, overrides:[…]}`. 설정 `countryOverrides`{iso: {cls, why}}.
+  - 테스트(Python): 합성 쪽(사각형 두 나라 + 범례)에서 분류가 맞는지, 표본 반이 갈리면 경고, overrides 적용.
+  - 앱: `layerFromRef`가 `countryClass`면 `areaLayer`에 바탕 지도 나라 도형(지금 상세도 — 50m/10a, 렌더러 `countryFeatures` 재사용)을 넘겨 칠함. 범례 고름·윤곽·hit·말풍선(나라 이름 + 분류)은 면 레이어 그대로. 테스트(Node): 분류 없는 나라는 안 칠함, 상세도가 바뀌어도 같은 iso 색.
+- [ ] **3b 윤곽만 분류** (`style:'outline'`): 범례 항목 `style`(설정 `legendStyles`{범례 이름: 'outline'}) → areaLayer 가 그 분류는 채우지 않고 테두리(교과서 색, 1.6px)만. 32쪽 유로 사용국. 테스트: 그리기 순서(채움 분류 다음 윤곽), 범례 견본이 테두리 상자, 고르면 윤곽 굵게(2.4px).
+- [ ] **3c 크기 단계 기호 + 겹친 원 범례**: 기호 레이어 `sizeBy:'class'`(설정 `symbolSizes`{범례 이름: pt}) — 30쪽 도시 인구 5단계(1,000만 이상 ~ 30~50만). 범례 견본 `legendStyle:'nested-circles'`(큰 원부터 아래를 맞춰 겹침, 값 글자 오른쪽). 테스트: 견본 원 반지름 순서, 확대 단계별 지름(`symbolPx`) 비율 유지.
+- [ ] **3d 값 붙은 기호**: 31쪽 리스본 작은 지도(도시 9곳 × 「1km²당 충전소 / 인구 100명당 충전소」 두 수) — 기호 properties `values:[{icon, text}]`, 지명 배치기(`labelObstacles`·우선순위)로 기호 옆 상자 글자. 테스트: 값 상자가 기호와 안 겹침, 범례 = 아이콘 두 개와 설명.
+- [ ] **3e 여러 지도 한 레이어**: 레이어 설정 `maps:[본 지도, 삽입]`(29쪽 기후 구분 + 아이슬란드 삽입) — 각자 fit 으로 되돌려 합치고 겹치면 삽입 우선, 출처 `src` 속성에 지도 id. 테스트(Python/Node): 합친 GeoJSON 의 아이슬란드(−25~−13°E, 63~67°N) 면 분류가 삽입 것.
+- [ ] **3f 그래프 형식**: `chartPlan`에 `groupedBar`(31쪽 탈린 2계열·코펜하겐 3계열) — 먼저 `node_modules/csat-chart.js`의 `renderAbsBarGraph` 다계열 지원을 코드로 확인해 되면 csat, 안 되면 시험지 양식 SVG(검은 선 #231f20·점선 격자·명조 대체 글꼴 목록). `bar`에 막대별 색(`colors`, 30쪽 런던·로테르담 강조)과 축 생략 물결(`axisBreak:[0, 680]`). 테스트(`chartCore.test.mjs`): 묶음 막대 자료 변환(계열 순서·색·범례), 강조 색이 그 막대에만, 축 생략 값 → 화면 높이 변환.
+- [ ] 각 하위 기능마다 커밋. 끝나면 **리뷰 관문**(엔진 바뀐 것 코드 리뷰) + 아시아 회귀: `regress_u2.mjs --check`(엔진만 바뀌었으므로 data 해시 같음, 캡처 41장 화소 차 0이어야 함 — 다르면 까닭 기록).
+
+### Task U3-4: 주제 레이어 (1단계 C1)
+
+**Files:** Modify `scripts/atlas/config/u3.json`(`layers`), Output `sims/atlas-u3-europe/data/layer-*.json`; Test `tests/atlas/units/u3.layers.test.mjs`
+
+- [ ] **Step 1:** `python -I scripts/atlas/extract_vectors.py --unit u3 --features all` → `vec/<id>.features.json`. 레이어 설정(u2 꼴: map·mode·tol·minArea·expectLegend·색 대응):
+  - `p29-climate`(+`p29-climate-iceland`, 3e): 래스터면 1단계 21쪽처럼 화소 Lab 분류(`mode:'raster'`), `legendGroups`(건조 2·온대 4·냉대 2·한대 2 — 지면 범례 묶음 그대로), 기대 범례 수 = 지면 범례 수.
+  - `p29-jan`·`p29-jul`: 강수 5단계 면(래스터) + 등온선(`type:'isotherm'`, 값 붙은 선).
+  - `p30-urban`: 도시화율 5단계 `countryClass`(3a) + 도시 인구 5단계 기호(3c) + 사례 도시 6곳 이름 기호. 러시아처럼 지도 틀에 일부만 든 나라는 표본 규칙으로 처리되는지 확인.
+  - `p31-green-capital`: 도시 점 15 + 연도 글자(`label` = 「스톡홀름(2010)」 지면 그대로).
+  - `p31-lisbon`: 값 붙은 기호 9(3d).
+  - `p32-eu`: `countryClass` 4분류 중 「유로 사용 국가」는 `style:'outline'`(3b) — 유로 사용국은 가입국 채움 + 노란 윤곽이 겹침(두 분류를 함께 가짐 → `classes:{iso: ['가입', '유로']}` 다중 분류 허용, 테스트로 고정).
+  - `p32-separatism`: 한 분류 면(지역 도형, 교과서 채움 되돌림) + 지역 이름 15.
+  - `p32-belgium`(3분류)·`p32-italy`(5분류 + 「파다니아 지역」 글자): 하위 행정 구역 — 교과서 채움 도형 되돌림(바탕 지도에 admin-1 없음).
+  - `p33-locator`: 레이어 없음(핀만, U3-6).
+- [ ] **Step 2:** `node scripts/atlas/build_layers.mjs --unit u3` → `layer-*.json`. 용량 예산: 레이어 합계 ≤ 650KB(아시아 상한과 같음), `countryClass`는 수 KB.
+- [ ] **Step 3: 실패하는 테스트 → 통과** (`tests/atlas/units/u3.layers.test.mjs`)
+```js
+import test from 'node:test'; import assert from 'node:assert/strict'; import { readFileSync } from 'node:fs';
+const D = 'sims/atlas-u3-europe/data';
+const read = (id) => JSON.parse(readFileSync(`${D}/layer-${id}.json`, 'utf8'));
+test('p29 기후 구분: 범례 분류마다 도형, 경위도가 유럽', () => {
+  const gj = read('p29-climate'); const cls = new Set(gj.features.map((f) => f.properties.cls));
+  assert.ok(cls.size >= 10, `분류 ${cls.size}`);
+  for (const f of gj.features) { const [lon, lat] = f.properties.centroid; assert.ok(lon > -30 && lon < 70 && lat > 30 && lat < 82, f.properties.cls); }
+});
+test('p32 EU: 영국 = 탈퇴, 튀르키예 = 가입 희망, 독일 = 가입 + 유로', () => {
+  const L = read('p32-eu'); const c = (iso) => [].concat(L.classes[iso]);
+  assert.ok(c('GBR').some((x) => /탈퇴/.test(x))); assert.ok(c('TUR').some((x) => /희망/.test(x)));
+  assert.ok(c('DEU').some((x) => /가입 국가/.test(x)) && c('DEU').some((x) => /유로/.test(x)));
+});
+test('p30 도시화율: 나라 분류 수 ≥ 35, 도시 인구 기호 5단계 모두 있음', () => {
+  const L = read('p30-urban');
+  assert.ok(Object.keys(L.classes).length >= 35);
+  assert.equal(new Set(L.symbols.features.map((f) => f.properties.cls)).size, 5);
+});
+```
+  (나라 이름·분류 이름은 범례 글자 그대로 — 테스트의 정규식은 지면 글자를 보고 맞춘다.)
+- [ ] **Step 4:** 지도마다 범례 분류 수 = 교과서 범례 수 출력, 화면용 색 보정이 필요한 분류(웹 육지 #f2efe9 위에서 묻히는 옅은 색)는 `legendColors` + `printColor`(1단계 토속 종교 결정)로 — 결정은 「실행 중 결정」에.
+- [ ] **Step 5:** 커밋.
+
+### Task U3-5: 지명 (1단계 C2)
+
+**Files:** Modify `scripts/atlas/config/u3.json`(`places`); Output `sims/atlas-u3-europe/data/places.json`; Test `tests/atlas/units/u3.places.test.mjs`
+
+- [ ] **Step 1:** 26쪽 렌더를 보며 `places.styles` 표를 만든다(u2 표 복사 → 수정): 나라 = 굵은 고딕 자홍 + **영문 대문자(Helvetica)** `en`, 수도 = 붉은 사각 + 영문 병기(검정 Helvetica 작은 글자) `en`, 바다·하천 = 파란 명조, 산맥·평원 = 상자 글자(자간 벌림), 세계유산 = 붉은 글자(지명 아님 → `exclude`), 대양 영문(ATLANTIC OCEAN — Times) `en`.
+- [ ] **Step 2:** `python -I scripts/atlas/places.py --unit u3` → `node scripts/atlas/build_places.mjs --unit u3 --verify`. 찾아보기(105~111쪽) 중 26쪽 참조 지명이 모두 places 에 있는지(누락 0 목표, 뺀 것은 `indexExclude`에 까닭).
+- [ ] **Step 3:** Natural Earth 인구 지점 대조(설정 `neBox` 유럽) — 옮겨 그린 기호 바로잡기(`snapKm` 30)와 결과(중앙값·90%·최대 km)를 「실행 중 결정」에.
+- [ ] **Step 4: 테스트**
+```js
+const places = JSON.parse(readFileSync('sims/atlas-u3-europe/data/places.json', 'utf8'));
+const near = (p, lon, lat, tol) => Math.abs(p.lon - lon) < tol && Math.abs(p.lat - lat) < tol;
+test('대표 지명 위치가 실제와 1° 안', () => {
+  const want = { 파리: [2.35, 48.86], 런던: [-0.13, 51.51], 베를린: [13.4, 52.52], 로마: [12.5, 41.9], 모스크바: [37.6, 55.75], 마드리드: [-3.7, 40.42] };
+  for (const [name, [lon, lat]] of Object.entries(want)) { const p = places.find((x) => x.name === name); assert.ok(p, name); assert.ok(near(p, lon, lat, 1), `${name} ${p.lon},${p.lat}`); }
+});
+test('나라·수도에 영문 병기(en)가 있음', () => {
+  for (const n of ['프랑스', '독일', '파리']) assert.ok(places.find((p) => p.name === n)?.en, n);
+});
+test('rank 1~6, kind 목록 안', () => { for (const p of places) { assert.ok(p.rank >= 1 && p.rank <= 6); assert.match(p.kind, /^(country|capital|city|mountain|river|sea|region|island|desert|plain|other)$/); } });
+```
+- [ ] **Step 5:** 용량 ≤ 150KB. 커밋.
+
+### Task U3-6: 사진·원본 쪽·핀 (1단계 C3)
+
+**Files:** Modify `scripts/atlas/config/u3.json`(`photos`); Output `content/atlas/u3/photos.json`, `docs/assets/atlas/u3/photo/*`, `docs/assets/atlas/u3/page/p026~p033.jpg`
+
+- [ ] **Step 1:** `python -I scripts/atlas/extract_images.py --unit u3 --candidates` → 후보 목록. 쪽 렌더를 보며 `photos.items`(bbox·topic·mask)·`exclude`를 확정한다. 33쪽 폴라로이드는 사진 영역만(틀·핀 그림·이웃 카드 글자 잘라 냄 — 까닭은 `_bbox`), 07 동전 2장은 따로 항목.
+- [ ] **Step 2:** 핀(`photos.pins`): 28쪽 빈 핀 7(보라 물방울 #7251a1 아래 끝)·29쪽 핀 4·33쪽 번호 원 01~11(번호 글자를 담은 가장 작은 원의 가운데) → `pt2lonlat.mjs`(fit 역변환)로 경위도. 번호 없는 핀은 `pinNearMaxKm`로 사진 설명 지명과 짝.
+- [ ] **Step 3:** `--photos --pages` → JPEG q82·WebP q80, 원본 쪽 110dpi 200KB 이하. 사진 합계 목표 ≤ 4MB.
+- [ ] **Step 4: 개수 대조** — `expect`: 지형 7·기후 4·도시 약 10·지속가능 약 9·통합 6·특집 12(어림 — 실측으로 고쳐 기록). `--sheets` 대조표 `units/u3/shots/c3/photos-<쪽>.jpg`를 눈으로 확인.
+- [ ] **Step 5:** 커밋(`content/atlas/u3/photos.json docs/assets/atlas/u3 scripts/atlas/config/u3.json`).
+
+### Task U3-7: 그래프 숫자 (1단계 C4)
+
+**Files:** Modify `scripts/atlas/config/u3.json`(`charts`); Output `$ATLAS_WORK/units/u3/tables/charts-u3.json`; Test `scripts/atlas/tests/test_tables.py`에 u3 경우
+
+- [ ] **Step 1:** 기후 그래프 4: 파리·리스본·모스크바 = 97쪽 표(`tables/climate-world.json` 공유), 그레니비크 = 표에 없음 → 그래프 도형 측정(`measured`, 축 a·b·눈금 수). 지면 그래프 제목의 기후 이름(서안 해양성·지중해성·냉대 습윤·툰드라)을 `climate`로.
+- [ ] **Step 2:** 30쪽 막대 2(금융 센터 지수 10 — 인쇄 숫자 없으면 측정, 축 생략 0~680 / 컨테이너 물동량 10), 31쪽 탈린 묶음 막대(인쇄 숫자 55·63·31·28·12·7·1·1·1·1 우선), 코펜하겐 묶음 막대 3계열 6해 + 2021 고리(인쇄 %), 류블랴나 막대 10, 프라이부르크 수치 4(1992 100% · 2018 −37% · 2030 −60% · 2035 −100% → `table`), 소피아 앙티폴리스 수치 8(`table`).
+- [ ] **Step 3: 테스트** — 기후 그래프 4개 × 기온 12·강수 12 숫자, 탈린 계열 2개 × 범주 5, 코펜하겐 고리 합 100(±0.5), 측정 그래프에 `precision` 있음.
+- [ ] **Step 4:** 경고 0으로 `charts-u3.json` + 도장. 교과서 원문 문제는 `content/atlas/u3/issues.md`. 커밋.
+
+### Task U3-8: 주제 내용 (1단계 C5)
+
+**Files:** Create `content/atlas/u3/topics.json`, `content/atlas/u3/overrides.json`, `content/atlas/u3/issues.md`; Output `content/atlas/u3/coloring.json`, `sims/atlas-u3-europe/data/{topics,charts}.json`, `layers.js`
+
+- [ ] **Step 1:** `topics.json` — 주제 8개(id: `general`·`coloring`·`relief`·`climate`·`cities`·`sustainable`·`integration`·`feature`), 글은 손으로 쓰지 않고 출처 상자(`src`{page,bbox}, `titleSrc` 등)만 적는다(1단계 C5 규칙). 묶음(지도 고르기): 기후 = 구분·1월·7월, 통합과 분리 = EU·분리 독립·벨기에·이탈리아, 도시 = 도시화율과 도시 분포, 지속가능 = 녹색 수도·리스본.
+  - 지형 `pinNumbers:"hidden"`(활동하기 1), 기후 핀 4도 활동하기 2 가 「위치를 지도에 표시」라 `hidden`.
+  - 특집 = 번호 핀 11 + 사진 카드(퀴즈 없음, 마커 제목 = 사진 굵은 제목).
+  - 바탕 기본값: 일반도 `tint`, 지형 `natural`, 나머지 없음(main.js `BASE_COLOR`).
+- [ ] **Step 2:** 색칠하기: `extract_text.py --unit u3 --labels`(27쪽 나라 글자·초성·수도 ★) → `node scripts/atlas/coloring_quiz.mjs --unit u3 --write` → `content/atlas/u3/coloring.json`(초성 → Natural Earth NAME_KO 초성 일치 나라). 나라 수 = 27쪽 나라 글자 수.
+- [ ] **Step 3:** `python -I scripts/atlas/extract_text.py --unit u3 --fill --check` → `node scripts/atlas/build_content.mjs --unit u3`.
+- [ ] **Step 4: 테스트** (`tests/atlas/units/u3.content.test.mjs` + G5 계약 테스트)
+```js
+const T = JSON.parse(readFileSync('sims/atlas-u3-europe/data/topics.json', 'utf8'));
+test('주제 8개, 26~33쪽 모두 덮음', () => {
+  assert.deepEqual(T.map((t) => t.id), ['general', 'coloring', 'relief', 'climate', 'cities', 'sustainable', 'integration', 'feature']);
+  const pages = new Set(T.flatMap((t) => t.pages)); for (let p = 26; p <= 33; p++) assert.ok(pages.has(p), `${p}쪽`);
+});
+test('개수: 지형 핀 7(번호 숨김), 기후 그래프 마커 4, 특집 핀 11', () => {
+  const by = Object.fromEntries(T.map((t) => [t.id, t]));
+  assert.equal(by.relief.markers.length, 7); assert.equal(by.relief.pinNumbers, 'hidden');
+  assert.equal(by.climate.markers.filter((m) => m.chart).length, 4); assert.equal(by.feature.markers.length, 11);
+});
+```
+  (U3-6·U3-7 실측이 다르면 테스트를 실측에 맞추고 까닭을 「실행 중 결정」에.)
+- [ ] **Step 5:** 검토 덤프 `units/u3/shots/c5/topics.md`를 쪽 렌더와 대조(빠진 글·깨진 글 — `pdfkit.dec` 알려진 오류 `·`→`h`, `℃`, `㎢`, 『』). 커밋.
+
+### Task U3-9: 바탕 지도와 조각 조립 (1단계 D2·E1)
+
+**Files:** Create `sims/atlas-u3-europe/index.html`(템플릿 복사), `sims/atlas-u3-europe/main.js`; Output `sims/atlas-u3-europe/data/basemap.json`; Modify `src/registry.js`
+
+- [ ] **Step 1:** `node scripts/atlas/build_basemap.mjs --unit u3` → 110m·50m 전 지구 + 10a 유럽 상자, ≤ 900KB(`basemap.maxBytes`). `simplifyByIso`는 KOR·PRK 100%(공통 기본값 — 유럽 지도에는 안 보이지만 같은 규칙).
+- [ ] **Step 2:** registry `SIMS`에 `{ id: 'atlas-u3-europe', book: 'atlas', unit: 'Ⅲ. 유럽', page: 26, title: '사회과부도 유럽', kind: '지도' }`.
+- [ ] **Step 3:** `main.js` = 자료 정적 import(basemap·places·topics·charts·layers.js) + 선택값 + `mountAtlas`. 선택값: `baseColor: {general:'tint', relief:'natural'}`; 작은 지역 확대 창이 필요한지(소피아 앙티폴리스·베네치아는 사진 카드라 불필요, 룩셈부르크·몰타 등 색칠하기는 50m/10a 로 확인) 캡처로 보고 결정.
+- [ ] **Step 4:** `npm run embed -- atlas-u3-europe` → `check:embed` 통과, 크기 ≤ 3MB(목표 1~2MB). 금지 패턴 0.
+- [ ] **Step 5:** 미리보기 캡처(1440×900·1024×768, `--disable-gpu`)로 8개 주제 × 묶음을 모두 본다. 페이지 콘솔 오류 0. 커밋.
+
+### Task U3-10: 교과서 대조표 (1단계 E2) ⓣ
+
+**Files:** Create `scripts/atlas/config/u3.compare.json`; Output `$ATLAS_WORK/units/u3/compare.html`
+
+- [ ] **Step 1:** `u3.compare.json`: `mainMap`{general:'p26-europe', coloring:'p27-coloring', relief:'p28-relief', feature:'p33-locator'}, `coloringLabels`(27쪽 글자 파일), `extraScenes`(고도 색 켬/끔, 지형 바탕 3종, 핀 숨김/하나/모두, 색칠하기 활동, 묶음 막대 크게 보기, EU 범례 「유로 사용 국가」 고름, 도시 인구 범례 고름), 둘째 도법(일반도 = 이퀄어스).
+- [ ] **Step 2:** `node scripts/atlas/compare_shots.mjs --unit u3` → `node scripts/atlas/compare.mjs --unit u3`. 결과 수(같음·알려진 차이·참고·다름)를 「실행 중 결정」에. **다름 0**이 목표 — 다름은 고치거나 까닭을 「알려진 차이」로.
+- [ ] **Step 3:** 교사에게 대조표 경로와 확인 요청 항목(화면용 색 보정, approx 지도, 나라 단위 분류가 교과서와 다른 나라, 하위 행정 구역 근사)을 알리고 **승인을 기다린다**(공개하지 않음). 교사 요청 고침은 「실행 중 결정」에 기록 → 다시 대조.
+
+### Task U3-11: 성능·이미지 경로·공개 (1단계 E3) ⓣ
+
+- [ ] **Step 1:** 1024×768 swiftshader 성능(도법 전환, settle 다시 그리기 — 일반도 고도 색 켬, 지형 자연색, 기후·EU 묶음; 1단계와 같은 측정 꼴 9번 중 뒤 7번 중앙값/최대). 기준: 200ms 안. 결과를 「실행 중 결정」에(따로 문서 만들지 않음).
+- [ ] **Step 2:** 이미지 먼저 공개: `git add docs/assets/atlas/u3 && git commit && git push` 뒤 모든 사진·쪽 주소 200(`curl -sI`).
+- [ ] **Step 3:** 교사 승인 뒤 `npm run release -- atlas-u3-europe --note "사회과부도 유럽 첫 공개"` → 커밋·푸시 → `https://yhk1m.github.io/donga-social-sims/atlas-u3-europe/1/` 200, 공개 페이지에서 음영·고도 색·자연색 화상이 그려지는지(교차 출처) 확인.
+- [ ] **Step 4:** 아시아 회귀 마지막 확인(`regress_u2.mjs --check` — 엔진이 바뀌었으면 atlas-u2-asia 도 새 버전을 낼지 교사에게 물음: 「엔진 개선이 아시아에도 반영됨, 아시아 v4 공개할까?」).
+
+---
+
+## 실행 순서와 병렬화
+
+- G0 → G1 → G2 → G3 → G4 → G5 (G 는 차례대로 — 모두 같은 파일을 만짐)
+- U3-1 → U3-2 → (U3-3 은 U3-2 와 병렬 가능 — 엔진·파이프라인 코드만) → U3-4 → U3-5·U3-6·U3-7(병렬) → U3-8 → U3-9 → U3-10 ⓣ → U3-11 ⓣ
+- U3-10 승인 대기 동안 다음 단원(Ⅳ)의 U4-1·U4-2 를 시작해도 된다(파일이 겹치지 않음). 엔진을 바꾸면 앞 단원들의 대조표 캡처를 다시 찍어 화소 비교.
+
+## 다음 단원 개요 (같은 틀 — 단원마다 이 문서를 본떠 계획을 새로 쓴다)
+
+각 단원 = `-1 설정·지도 목록` → `-2 기준점·fit` → `-3 새 엔진 기능` → `-4 레이어` → `-5 지명` → `-6 사진·핀` → `-7 그래프` → `-8 내용` → `-9 바탕 지도·조립` → `-10 대조표 ⓣ` → `-11 공개 ⓣ`.
+
+- **U4 Ⅳ 아프리카(34~39, `atlas-u4-africa`, 11 작업 + 엔진 하위 약 4)**: 지도 13(일반도 정거 방위, 색칠, 지형, 기후 3, 언어·종교·자원·태양광, AfCFTA·사막화). 새 기능: 두 색 줄무늬·점무늬 채움(`pattern.stripes|dots` — 줄무늬 나라는 두 분류에 속함), 지도 위 고리 그래프 기호(`chartSymbolLayer` 7개 + 생산국 칠함), 원 크기 그래프(그레이트 그린 월), 세계 래스터 분류(태양광). 기후 그래프 측정 2(키상가니·도도마). 주제도 활동 = 교사 Q4 답대로.
+- **U5 Ⅴ 아메리카(40~47, `atlas-u5-americas`, 11 작업 + 엔진 하위 약 6)**: 지도 약 22. 새 기능: `fitCore.FAMILIES`에 `stereographic`·`orthographic`(u2·u3 는 `families` 고정이라 영향 없음 — 회귀 확인), 중앙아메리카 삽입(여러 지도 한 레이어 재사용), 지구본 보기(46쪽 — 교사 Q2), 미국 주 4장 알래스카·하와이 삽입 `fitFrom` 공유(웹은 실제 위치), 캐나다 센서스 구역·멕시코 주 하위 행정 구역, 크기 비례 원(본사 100곳 + 실리콘 밸리 확대 창), 네모 단위 기호(마킬라도라), 지도 위 고리 5(재사용), 100% 띠 2줄. 같은 축척 우리나라 = 교사 Q3. 기후 그래프 측정 1(이키토스).
+- **U6 Ⅵ 오세아니아·극지방(48~55, `atlas-u6-oceania-polar`, 11 작업 + 엔진 하위 약 6)**: 지도 약 19. 새 기능: 극 중심 보기 `polarN|polarS`(교사 Q1 — 렌더러·투영·축척 막대·역투영 격자 테스트 먼저), 날짜변경선 단원 상자 2개, 하와이·타히티·뉴질랜드 삽입, 극 부채꼴 영유권 면(극점 포함 면 감김·자르기 테스트), 지구본 항로(55쪽 — Q2), 두 축 선·반원 비교 그래프, 대권 흐름선. 50쪽 래스터 조각 10만 개 — 렌더 캐시. 기후 그래프 측정 1(앨리스스프링스).
+- **U1 Ⅰ 세계화(8~15, `atlas-u1-world`, 11 작업 + 엔진 하위 약 5)**: 지도 약 14 + 지구본 10. 새 기능: 두 쪽 걸친 지도(8~9·10~11쪽 쪽마다 fit + 지명 합치기 `spreadOf`), 8쪽 유럽 삽입, 대륙·대양 맞히기 퀴즈(`continentOcean`), 지구본 바로가기 단추(Q2), 세계 단계구분도 다수(`countryClass` 재사용 — 인터넷·이동 전화·햄버거·코로나), 인천 항공망 흐름선 약 80+(대권, 성능 측정), 한국 문화 기관 점 약 200(3종). 바탕 지도는 10a 없이 110m·50m(세계 단원). 15쪽 주제도 활동 = Q4.
+
+## 실행 중 결정
