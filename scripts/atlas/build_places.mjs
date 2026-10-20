@@ -101,11 +101,11 @@ function extract(force) {
   if (force || stale(extractInputs(), extractOutputs())) process.stdout.write(run([path.join(here, 'places.py')]));
 }
 
-/** fit 이 기준점(controls.json)이나 maps_u2.json 보다 오래됐으면 멈춘다. */
+/** fit 이 기준점(controls.json)이나 단원 지도 목록(u2 = maps_u2.json)보다 오래됐으면 멈춘다. */
 function checkFit(id) {
   const fit = fitPath(id);
   if (stale([`${WORK}/vec/${id}.controls.json`, MAPS_FILE], [fit]))
-    throw new Error(`${id}: ${fit} 이 기준점(vec/${id}.controls.json)·maps_u2.json 보다 오래됨 — node scripts/atlas/georef-cli.mjs --all 먼저`);
+    throw new Error(`${id}: ${fit} 이 기준점(vec/${id}.controls.json)·${path.basename(MAPS_FILE)} 보다 오래됨 — node scripts/atlas/georef-cli.mjs --all${UNIT.id === 'u2' ? '' : ` --unit ${UNIT.id}`} 먼저`);
 }
 
 function main(argv) {

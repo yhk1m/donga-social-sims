@@ -16,6 +16,15 @@ import { FAMILIES, applySim, invertSim, tpsKernel as U, inHull, nearestOnHull, t
 // 후보 도법(FAMILIES)·닮음 변환·TPS 계산은 앱과 같은 공통 모듈(src/atlas/fitCore.js)에서 — 앱(fitProject.js)과 구성상 같은 값.
 const INIT = { azimuthalEqualArea: [100, 40], azimuthalEquidistant: [100, 40], conicEqualArea: [100, 25, 50], conicConformal: [100, 25, 50], miller: [100], robinson: [100], equirectangular: [100], mercator: [100] };
 export const FAMILY_NAMES = Object.keys(FAMILIES);
+/** 1단계(아시아) 도법 후보 8개 — 차례도 그대로(같은 rms 일 때 고르는 차례가 차례에 기댐). fitCore.FAMILIES 에 후보를 더해도
+ *  u2 지도의 fit 이 바뀌지 않게 단원·지도가 후보를 따로 정하지 않으면 이것을 쓴다(2단계 설계 §7). */
+export const PHASE1_FAMILIES = Object.freeze(['azimuthalEqualArea', 'azimuthalEquidistant', 'conicEqualArea', 'conicConformal', 'miller', 'robinson', 'equirectangular', 'mercator']);
+/** 지도 하나의 도법 후보: 지도 항목 families → 단원 설정 georef.families → 1단계 8개. */
+export function familiesFor(mapEntry, unitConfig) {
+  const fams = mapEntry?.families ?? unitConfig?.georef?.families ?? PHASE1_FAMILIES;
+  for (const f of fams) if (!FAMILIES[f]) throw new Error(`${mapEntry?.id ?? '?'}: 모르는 도법 후보 ${f} (fitCore.FAMILIES: ${FAMILY_NAMES.join(', ')})`);
+  return [...fams];
+}
 export const PT_MM = 0.3528;
 // 모양을 정하는 실제 매개변수 수(중심 경도처럼 닮음 변환이 흡수하는 것은 빼고) — 비슷하면 적은 쪽을 고른다
 const PARAMS = { azimuthalEqualArea: 2, azimuthalEquidistant: 2, conicEqualArea: 2, conicConformal: 1, miller: 0, robinson: 1, equirectangular: 0, mercator: 0 };

@@ -2,21 +2,27 @@
 // scripts/atlas/georef-cli.mjs — georef.mjs 를 단원 지도들에 돌리는 명령줄 도구
 //   node scripts/atlas/georef-cli.mjs --all             지도마다 $ATLAS_WORK/geo/<id>.fit.json + 표
 //   node scripts/atlas/georef-cli.mjs --verify <id|all> Natural Earth 해안선을 지도 렌더(150dpi) 위에 겹친 <id>.verify.png
+//   단원: --unit uN(또는 env ATLAS_UNIT, 기본 u2) — 지도 목록은 단원 설정 maps(u2 = maps_u2.json, scripts/atlas/unit.mjs)
 // 기준점: python -I scripts/atlas/extract_vectors.py --controls all 이 쓴 $ATLAS_WORK/vec/<id>.controls.json
-//   (--all 은 controls.json 이 없거나 maps_u2.json·extract_vectors.py 보다 오래됐으면 먼저 다시 뽑는다)
-// ATLAS_WORK 기본값 C:/Users/Public/atlas-work. maps_u2.json 의 "georef": false 지도는 건너뛴다.
+//   (--all 은 controls.json 이 없거나 지도 목록·extract_vectors.py 보다 오래됐으면 먼저 다시 뽑는다)
+// 도법 후보: 지도 항목 families → 단원 설정 georef.families → 1단계 8개(georef.familiesFor).
+// ATLAS_WORK 기본값 C:/Users/Public/atlas-work. 지도 목록의 "georef": false 지도는 건너뛴다.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { geoPath } from 'd3-geo';
 import { feature } from 'topojson-client';
-import { fitWithTps, robustFit, applyFit, fitProjection, PT_MM } from './georef.mjs';
+import { fitWithTps, robustFit, applyFit, fitProjection, familiesFor, PT_MM } from './georef.mjs';
 import { stale, WORK, fitPath, loadFit } from './geo_util.mjs';
+import { resolveUnit, stripUnitArgs } from './unit.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ACCEPT_MM = 0.5;
-const maps = JSON.parse(fs.readFileSync(path.join(here, 'maps_u2.json'), 'utf8'));
+const UNIT = resolveUnit();
+const MAPS_FILE = UNIT.mapsPath;
+const unitConfig = UNIT.config;
+const maps = JSON.parse(fs.readFileSync(MAPS_FILE, 'utf8'));
 const georefOn = (m) => m.georef !== false;
 const r2 = (v) => Math.round(v * 100) / 100;
 const r6 = (v) => +v.toFixed(6);
@@ -28,13 +34,14 @@ function loadCps(id) {
 }
 const cpName = (c) => c.name || `${c.lon},${c.lat}`;
 
-/** 기준점 파일이 maps_u2.json·extract_vectors.py 보다 오래됐으면 다시 뽑는다(maps_u2.json 의 손·도시 기준점을 고친 뒤 잊지 않도록). */
+/** 기준점 파일이 지도 목록·extract_vectors.py 보다 오래됐으면 다시 뽑는다(지도 목록의 손·도시 기준점을 고친 뒤 잊지 않도록). */
 function refreshControls() {
-  const inputs = [path.join(here, 'maps_u2.json'), path.join(here, 'extract_vectors.py')];
+  const inputs = [MAPS_FILE, path.join(here, 'extract_vectors.py')];
   const outs = maps.filter(georefOn).map((m) => `${WORK}/vec/${m.id}.controls.json`);
   if (!stale(inputs, outs)) return;
-  console.log('기준점 파일이 maps_u2.json 보다 오래됨 → python -I scripts/atlas/extract_vectors.py --controls all');
-  const r = spawnSync(process.env.PYTHON || 'python', ['-I', path.join(here, 'extract_vectors.py'), '--controls', 'all'], { encoding: 'utf8' });
+  console.log(`기준점 파일이 ${path.basename(MAPS_FILE)} 보다 오래됨 → python -I scripts/atlas/extract_vectors.py --controls all (단원 ${UNIT.id})`);
+  const r = spawnSync(process.env.PYTHON || 'python', ['-I', path.join(here, 'extract_vectors.py'), '--controls', 'all'],
+    { encoding: 'utf8', env: { ...process.env, ATLAS_UNIT: UNIT.id } });
   if (r.status !== 0) throw new Error(`extract_vectors.py --controls all 실패
 ${r.stdout}
 ${r.stderr}`);
@@ -46,8 +53,9 @@ function fitAll() {
   const rows = [];
   for (const m of maps) {
     if (!georefOn(m)) { rows.push([m.id, '(georef: false — 맞추기 없음)']); continue; }
-    const { cps, dropped } = robustFit(loadCps(m.id));
-    const fit = fitWithTps(cps);
+    const families = familiesFor(m, unitConfig);
+    const { cps, dropped } = robustFit(loadCps(m.id), { families });
+    const fit = fitWithTps(cps, { families });
     const meanMm = fit.meanPt * PT_MM;
     const out = {
       id: m.id, family: fit.family, params: fit.params.map(r6),
@@ -112,7 +120,7 @@ function verify(target) {
   return 0;
 }
 
-const argv = process.argv.slice(2);
+const argv = stripUnitArgs(process.argv.slice(2)).rest;
 let code;
 if (argv[0] === '--all') code = fitAll();
 else if (argv[0] === '--verify' && argv[1]) code = verify(argv[1]);

@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, statSync, existsSync } from 'node:fs';
 import { neCheck, neIndex, relocate } from '../../scripts/atlas/build_places.mjs';
 import { key, km } from '../../scripts/atlas/geo_util.mjs';
+import { resolveUnit } from '../../scripts/atlas/unit.mjs';
 
 const FILE = 'sims/atlas-u2-asia/data/places.json';
 const places = JSON.parse(readFileSync(FILE, 'utf8'));
@@ -120,7 +121,7 @@ test('Natural Earth 짝이 하나뿐인 도시·수도는 30km 안(아니면 kee
   assert.ok(!places.some((p) => p.snapped && p.path), '면·선 지명은 옮기지 않음');
 });
 
-const HOLD = `${WORK}/geo/city-holdout.json`;
+const HOLD = resolveUnit([], process.env).workFile('geo/city-holdout.json');   // 단원 작업 파일(u2 = $ATLAS_WORK/geo/)
 test('겹 나누기(독립 검사): 빠진 도시를 도시 기준점 fit 이 교차점만의 fit 보다 나쁘지 않게 맞힌다', { skip: !existsSync(HOLD) && 'city_controls.mjs --holdout 결과 없음' }, () => {
   const h = JSON.parse(readFileSync(HOLD, 'utf8'));
   assert.deepEqual(Object.keys(h.maps).sort(), [...unit.cityControls.maps].sort());

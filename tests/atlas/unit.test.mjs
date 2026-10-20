@@ -48,3 +48,14 @@ test('stripUnitArgs: --unit 두 칸만 빼고 나머지 옵션은 차례 그대�
   assert.throws(() => stripUnitArgs(['--unit']), /단원/);
   assert.throws(() => stripUnitArgs(['--unit', '--write']), /단원/);
 });
+test('도장 경로 @unit/: u2 는 작업 폴더 그대로(= @work/)', async () => {
+  const { stampPath, WORK } = await import('../../scripts/atlas/geo_util.mjs');
+  assert.equal(stampPath('@unit/text/topics-check.json'), `${WORK}/text/topics-check.json`);
+  assert.equal(stampPath('@unit/text/topics-check.json'), stampPath('@work/text/topics-check.json'));
+});
+test('layers.js 머리 주석 경로 = 생성물 폴더(u2 는 옛 글자 그대로)', async () => {
+  const { layersModule } = await import('../../scripts/atlas/build_content.mjs');
+  const root = path.resolve(HERE, '..', '..');
+  assert.match(layersModule(['a']).split('\n')[1], /^\/\/ sims\/atlas-u2-asia\/data\/layers\.js — 생성물/);
+  assert.match(layersModule(['a'], path.join(root, 'sims', 'atlas-u3-europe', 'data')).split('\n')[1], /^\/\/ sims\/atlas-u3-europe\/data\/layers\.js — 생성물/);
+});

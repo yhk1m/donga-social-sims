@@ -321,11 +321,12 @@ export function buildContent(inp) {
   return { topics: out, charts: chartsOut, layerRefs, warnings: [...new Set(ctx.W)] };
 }
 
-/** 참조 레이어를 정적 import 로 묶는 모듈 글. refs 는 정렬된 id 목록(영숫자·_·- 만). */
-export function layersModule(refs) {
+/** 참조 레이어를 정적 import 로 묶는 모듈 글. refs 는 정렬된 id 목록(영숫자·_·- 만). outDir = 생성물 폴더(머리 주석 경로, 기본 단원 dataDir). */
+export function layersModule(refs, outDir = UNIT.dataDir) {
   for (const r of refs) if (!/^[\w-]+$/.test(r)) throw new Error(`레이어 ref 에 쓸 수 없는 글자: ${JSON.stringify(r)}`);
+  const rel = path.relative(REPO, path.join(outDir, 'layers.js')).split(path.sep).join('/');
   return ['// © 2026 김용현',
-    '// sims/atlas-u2-asia/data/layers.js — 생성물(scripts/atlas/build_content.mjs, 직접 고치지 않음): 주제가 참조하는 레이어를 정적 import 로 묶는다(fetch 금지).',
+    `// ${rel} — 생성물(scripts/atlas/build_content.mjs, 직접 고치지 않음): 주제가 참조하는 레이어를 정적 import 로 묶는다(fetch 금지).`,
     ...refs.map((r, i) => `import L${i} from './${r}.json';`),
     'export default {',
     ...refs.map((r, i) => `  '${r}': L${i},`),
@@ -379,7 +380,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     const r = buildContent(inp);
     console.log(`주제 ${r.topics.length}개, 그래프 ${Object.keys(r.charts).length}개, 레이어 ${r.layerRefs.length}개`);
     if (!r.warnings.length || force) {
-      const files = [['topics.json', JSON.stringify(r.topics) + '\n'], ['charts.json', JSON.stringify(r.charts) + '\n'], ['layers.js', layersModule(r.layerRefs)]];
+      const files = [['topics.json', JSON.stringify(r.topics) + '\n'], ['charts.json', JSON.stringify(r.charts) + '\n'], ['layers.js', layersModule(r.layerRefs, inp.outDir)]];
       for (const [name, text] of files) {   // layers.js 맨 나중(앞 단계가 실패하면 import 목록이 바뀌지 않게)
         const f = path.join(inp.outDir, name);
         console.log(`  ${path.relative(REPO, f)} (${writeIfChanged(f, text) ? `${Buffer.byteLength(text).toLocaleString()} B 씀` : '같음, 그대로'})`);

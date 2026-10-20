@@ -18,7 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { fitControls, robustFit, fitWithTps, applyFit, makeConverter } from './georef.mjs';
+import { fitControls, robustFit, fitWithTps, applyFit, makeConverter, familiesFor } from './georef.mjs';
 import { key, km, median, neIndex as neIndexAt, WORK } from './geo_util.mjs';
 import { resolveUnit, stripUnitArgs } from './unit.mjs';
 
@@ -30,6 +30,7 @@ const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
 const CC = config.cityControls;
 const PC = config.places;                                     // neFile·neBox 는 places 와 함께 쓴다
 const MAPS_FILE = path.resolve(path.dirname(CONFIG_FILE), config.maps);
+const mapEntry = (id) => JSON.parse(fs.readFileSync(MAPS_FILE, 'utf8')).find((m) => m.id === id);
 const PY = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
 const r2 = (v) => Math.round(v * 100) / 100, r4 = (v) => Math.round(v * 1e4) / 1e4;
 
@@ -78,9 +79,10 @@ export function selectCities(id, ne = neIndex()) {
     cand.push({ name: L.name, xy: L.symbol.xy, lon: m[0].lon, lat: m[0].lat, ne: m[0].ne, src: 'city' });
   }
   report.matched = cand.length;
+  const fams = familiesFor(mapEntry(id), config);   // georef-cli 와 같은 도법 후보
   // 1. 투영식 잔차의 MAD 거르기(반복)
   for (;;) {
-    const fit = fitControls([...base, ...cand]);
+    const fit = fitControls([...base, ...cand], fams);
     const res = cand.map((c) => { const p = applyFit(fit, [c.lon, c.lat]); return p ? Math.hypot(p[0] - c.xy[0], p[1] - c.xy[1]) : Infinity; });
     const med = median(res), mad = median(res.map((r) => Math.abs(r - med)));
     const lim = med + CC.madK * 1.4826 * Math.max(mad, CC.madFloorPt);
@@ -91,7 +93,7 @@ export function selectCities(id, ne = neIndex()) {
     cand = cand.filter((_, k) => k !== i);
   }
   // 2. 이웃 일치(투영식 잔차 벡터)
-  const fit = fitControls([...base, ...cand]);
+  const fit = fitControls([...base, ...cand], fams);
   const vec = (c) => { const p = applyFit(fit, [c.lon, c.lat]); return [c.xy[0] - p[0], c.xy[1] - p[1]]; };
   const pts = [...base, ...cand].map((c) => ({ c, v: vec(c) }));
   const keep = [];
@@ -117,8 +119,8 @@ export function selectCities(id, ne = neIndex()) {
   return { base, chosen, kept: keep, report };
 }
 
-/** 기준점 → georef-cli 와 같은 fit(robustFit 뒤 fitWithTps). */
-function fitLikeCli(cps) { return fitWithTps(robustFit(cps).cps); }
+/** 기준점 → georef-cli 와 같은 fit(robustFit 뒤 fitWithTps, 같은 도법 후보 familiesFor). */
+function fitLikeCli(cps, families) { return fitWithTps(robustFit(cps, { families }).cps, { families }); }
 
 /** fit 으로 기호 지면 위치를 경위도로 되돌려 Natural Earth 와 견준 거리(km). */
 function errKm(fit, c) { const ll = makeConverter(fit).invert(c.xy); return ll ? km(ll, [c.lon, c.lat]) : Infinity; }
@@ -133,15 +135,16 @@ export function holdout(id, base, chosen, kept) {
   let seed = CC.seed;
   const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
   const order = chosen.map((c) => [rand(), c]).sort((a, b) => a[0] - b[0]).map((t) => t[1]);
-  const gridOnly = fitLikeCli(base);
+  const fams = familiesFor(mapEntry(id), config);   // georef-cli 와 같은 도법 후보
+  const gridOnly = fitLikeCli(base, fams);
   const out = [], ref = [];
   for (let f = 0; f < CC.folds; f++) {
     const test = order.filter((_, i) => i % CC.folds === f), train = order.filter((_, i) => i % CC.folds !== f);
-    const fit = fitLikeCli([...base, ...train]);
+    const fit = fitLikeCli([...base, ...train], fams);
     for (const c of test) { out.push(errKm(fit, c)); ref.push(errKm(gridOnly, c)); }
   }
   // 고르기에서 성기게 하느라 뺀(기준점이 아닌) 도시: 모든 도시 기준점으로 맞춘 fit 의 독립 검사
-  const full = fitLikeCli([...base, ...chosen]);
+  const full = fitLikeCli([...base, ...chosen], fams);
   const unused = kept.filter((c) => !chosen.includes(c));
   return { id, holdout: stats(out), gridOnlySame: stats(ref), unusedCities: unused.length ? stats(unused.map((c) => errKm(full, c))) : null,
     unusedGridOnly: unused.length ? stats(unused.map((c) => errKm(gridOnly, c))) : null };
@@ -182,8 +185,9 @@ function main(argv) {
     }
   }
   if (argv.includes('--holdout')) {                          // 테스트가 읽는 독립 검사 결과(도시 기준점 짝이 Natural Earth 라 places 대조는 표본 안)
-    fs.writeFileSync(`${WORK}/geo/city-holdout.json`, JSON.stringify({ folds: CC.folds, seed: CC.seed, maps: hold }, null, 1));
-    console.log(`겹 나누기 결과 → ${WORK}/geo/city-holdout.json`);
+    const holdFile = UNIT.workFile('geo/city-holdout.json');   // 단원 작업 파일(u2 는 옛 자리 $ATLAS_WORK/geo/)
+    fs.writeFileSync(holdFile, JSON.stringify({ folds: CC.folds, seed: CC.seed, maps: hold }, null, 1));
+    console.log(`겹 나누기 결과 → ${holdFile}`);
   }
   if (argv.includes('--write')) { writeMaps(sel); console.log(`maps_u2.json controls 에 src:'city' 기준점을 씀`); }
 }

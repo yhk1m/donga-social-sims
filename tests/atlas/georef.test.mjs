@@ -178,3 +178,15 @@ test('작은 지역의 중심 경도는 원형 평균(날짜 변경선 걸침)',
   assert.equal(fit.family, 'equirectangular');
   assert.ok(Math.abs(Math.abs(fit.params[0]) - 180) < 1e-6, `${fit.params}`);
 });
+
+// ── 도법 후보 고정(2단계 G2): fitCore.FAMILIES 에 후보를 더해도 아시아 fit 이 바뀌지 않게 ─────────────
+import { FAMILY_NAMES, familiesFor, PHASE1_FAMILIES } from '../../scripts/atlas/georef.mjs';
+test('u2 지도의 도법 후보는 1단계 8개 그대로(후보를 더해도 아시아 fit 이 바뀌지 않게)', () => {
+  const OLD = ['azimuthalEqualArea', 'azimuthalEquidistant', 'conicEqualArea', 'conicConformal', 'miller', 'robinson', 'equirectangular', 'mercator'];
+  assert.deepEqual(familiesFor({ id: 'p16-asia' }, { georef: {} }), OLD);
+  assert.deepEqual(familiesFor({ id: 'x', families: ['miller'] }, { georef: { families: OLD } }), ['miller']);
+  assert.deepEqual(familiesFor({ id: 'x' }, { georef: { families: ['robinson', 'miller'] } }), ['robinson', 'miller']);
+  assert.deepEqual([...PHASE1_FAMILIES], OLD);
+  for (const f of OLD) assert.ok(FAMILY_NAMES.includes(f), f);
+  assert.throws(() => familiesFor({ id: 'x', families: ['nope'] }, {}), /nope/);
+});

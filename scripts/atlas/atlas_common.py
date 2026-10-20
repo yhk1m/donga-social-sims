@@ -322,13 +322,16 @@ def regex(s): return re.compile(s)
 
 
 # ── 낡은 산출물 검사: 입력 내용 해시(도장) ─────────────────────────────────────
-# 설정 content.stamps[이름] = {files: [경로…], sections: ['content.coloring', …]}. 경로가 '@work/' 로 시작하면 작업 폴더 기준, 아니면 저장소 기준.
+# 설정 content.stamps[이름] = {files: [경로…], sections: ['content.coloring', …]}. 경로가 '@work/' 로 시작하면 작업 폴더 기준,
+# '@unit/' 이면 단원 작업 폴더 기준(unit_work — u2 는 작업 폴더 그대로), 아니면 저장소 기준.
 # 해시 = sha256( 줄마다 「이름\t내용 sha256」 ) — 파일은 바이트, 설정 부분은 정렬 JSON(canon_json). Node(geo_util.stampHash)와 같은 값이어야 한다.
 REPO = os.path.normpath(os.path.join(HERE, '..', '..'))
 
 
 def stamp_path(p):
-    return os.path.join(WORK, p[len('@work/'):]) if p.startswith('@work/') else os.path.join(REPO, p)
+    if p.startswith('@work/'): return os.path.join(WORK, p[len('@work/'):])
+    if p.startswith('@unit/'): return unit_work(p[len('@unit/'):])
+    return os.path.join(REPO, p)
 
 
 def canon_json(o):

@@ -102,6 +102,9 @@ def encode_png(idx, t, path):
 def main(argv):
     if hasattr(sys.stdout, 'reconfigure'): sys.stdout.reconfigure(encoding='utf-8')
     from PIL import Image
+    if 'tint' not in unit_config():   # 공용 화상(docs/assets/atlas/common)은 모든 단원이 함께 씀 — 만드는 설정은 u2 에만(2단계 설계 §4.2)
+        print('공용 고도 색 화상은 u2 설정으로 만든다: python -I scripts/atlas/build_tint.py (--unit 없이) — 이 단원 설정에는 tint 절이 없음')
+        return 2
     t = unit_config()['tint']
     cls = classes(t)
     bad = validate(t, Image.open(os.path.join(REPO, RELIEF)).size)

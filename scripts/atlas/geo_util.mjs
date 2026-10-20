@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { resolveUnit } from './unit.mjs';
 
 /** 작업 폴더(ASCII). env ATLAS_WORK, 기본 C:/Users/Public/atlas-work (슬래시로). */
 export const WORK = (process.env.ATLAS_WORK || 'C:/Users/Public/atlas-work').replace(/\\/g, '/');
@@ -117,8 +118,9 @@ export function canonJson(o) {
   }
   return JSON.stringify(o);
 }
-/** '@work/…' = 작업 폴더, 나머지 = 저장소 기준. */
-export const stampPath = (p) => (p.startsWith('@work/') ? `${WORK}/${p.slice(6)}` : path.join(REPO, p));
+/** '@work/…' = 작업 폴더, '@unit/…' = 단원 작업 폴더(u2 는 작업 폴더 그대로, 새 단원은 units/<id> — unit.mjs workFile), 나머지 = 저장소 기준. */
+export const stampPath = (p) => (p.startsWith('@work/') ? `${WORK}/${p.slice(6)}`
+  : p.startsWith('@unit/') ? resolveUnit().workFile(p.slice(6)) : path.join(REPO, p));
 /** 도장 이름 → 입력 해시. unit = 단원 설정 전체(sections 를 찾을 곳). */
 export function stampHash(unit, name) {
   const spec = unit.content.stamps[name];

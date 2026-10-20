@@ -5,7 +5,7 @@ import json, os, subprocess, sys, unittest
 HERE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 PROBE = ('import sys, json; sys.path.insert(0, sys.argv[1]); import atlas_common as a; u = a.unit(); '
          'sys.stdout.buffer.write(json.dumps({"id": u["id"], "sim": u["sim"], "config": a.UNIT_CONFIG, "maps": u["maps_path"], '
-         '"work": a.unit_work("text/topics-check.json"), "argv": sys.argv[2:]}, ensure_ascii=False).encode("utf-8"))')
+         '"work": a.unit_work("text/topics-check.json"), "stamp": a.stamp_path("@unit/text/topics-check.json"), "argv": sys.argv[2:]}, ensure_ascii=False).encode("utf-8"))')
 
 
 def probe(env_extra=None, args=()):
@@ -42,6 +42,10 @@ class Unit(unittest.TestCase):
     def test_unit_work(self):
         self.assertEqual(probe({'ATLAS_WORK': 'C:/W'})['work'], 'C:/W/text/topics-check.json')
         self.assertEqual(probe({'ATLAS_WORK': 'C:/W', 'ATLAS_UNIT': 'u3'})['work'], 'C:/W/units/u3/text/topics-check.json')
+
+    def test_stamp_path_unit(self):
+        self.assertEqual(probe({'ATLAS_WORK': 'C:/W'})['stamp'], 'C:/W/text/topics-check.json')
+        self.assertEqual(probe({'ATLAS_WORK': 'C:/W', 'ATLAS_UNIT': 'u3'})['stamp'], 'C:/W/units/u3/text/topics-check.json')
 
     def test_unknown_unit(self):
         with self.assertRaises(AssertionError) as cm: probe({'ATLAS_UNIT': 'u9'})
