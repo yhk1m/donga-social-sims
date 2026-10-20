@@ -222,13 +222,17 @@ test('고정 도법 후보 {family, params}: 매개변수는 그대로, 닮음 �
   assert.equal(fitControls(cps, ['conicConformal', fixed]).fixed, true);
 });
 
-test('projectionFromStale: 본 지도 매개변수·도법이 바뀌었거나 본 지도 fit 이 더 새것이면 낡음', async () => {
-  const { projectionFromStale } = await import('../../scripts/atlas/projection_from.mjs');
+test('projectionFromStale: 본 지도 도법·매개변수가 바뀌었으면 낡음(내용 기준만)', async () => {
+  const { projectionFromStale, projectionFromOlder } = await import('../../scripts/atlas/projection_from.mjs');
   const parent = { id: 'p29-climate', family: 'conicConformal', params: [14.971362, 52.605727, 52.605727] };
   const inset = { id: 'p29-climate-iceland', fixed: true, family: 'conicConformal', params: [14.971362, 52.605727, 52.605727] };
-  assert.equal(projectionFromStale(inset, parent, { insetMtime: 2, parentMtime: 1 }), null);
-  assert.match(projectionFromStale(inset, parent, { insetMtime: 1, parentMtime: 2 }), /더 새것/);
+  assert.equal(projectionFromStale(inset, parent), null);
   assert.match(projectionFromStale(inset, { ...parent, params: [15, 52.7, 52.7] }), /매개변수/);
   assert.match(projectionFromStale(inset, { ...parent, family: 'mercator' }), /도법/);
   assert.match(projectionFromStale({ ...inset, fixed: undefined }, parent), /fixed/);
+  // 파일 시각은 내용 낡음이 아니다(새로 clone 하면 시각이 뒤섞임) — 따로 경고만
+  assert.equal(projectionFromStale(inset, parent, { insetMtime: 1, parentMtime: 2 }), null);
+  assert.equal(projectionFromOlder(inset, parent, { insetMtime: 2, parentMtime: 1 }), null);
+  assert.match(projectionFromOlder(inset, parent, { insetMtime: 1, parentMtime: 2 }), /더 새것/);
+  assert.equal(projectionFromOlder(inset, parent, {}), null);
 });

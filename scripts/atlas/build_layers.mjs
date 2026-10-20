@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { makeConverter } from './georef.mjs';
 import { WORK, loadFit as loadFitRaw, fitPath, neIndex, key, km } from './geo_util.mjs';
-import { projectionFromStale } from './projection_from.mjs';
+import { projectionFromStale, projectionFromOlder } from './projection_from.mjs';
 import { resolveUnit, stripUnitArgs } from './unit.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -35,12 +35,15 @@ const VERIFY_TARGET_PX = 900;  // 검증 그림 긴 변 목표(화소)
 const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
 const maps = Object.fromEntries(JSON.parse(fs.readFileSync(UNIT.mapsPath, 'utf8')).map((m) => [m.id, m]));   // 설정 maps(없으면 maps_<id>.json)
 const OUT = UNIT.dataDir;                                                                                // 설정 out(없으면 sims/<sim>/data)
-/** fit 읽기 + projectionFrom 낡음 검사(본 지도를 다시 맞춘 뒤 삽입을 안 맞췄으면 멈춤 — georef-cli --all 먼저). */
+/** fit 읽기 + projectionFrom 낡음 검사: 도법·매개변수가 본 지도와 다르면 멈춤(georef-cli --all 먼저), 본 지도 fit 파일이 더 새것이면 경고만(clone 하면 시각이 뒤섞임). */
 function loadFit(id) {
   const fit = loadFitRaw(id), pf = maps[id]?.projectionFrom;
   if (pf) {
-    const why = projectionFromStale(fit, loadFitRaw(pf), { insetMtime: fs.statSync(fitPath(id)).mtimeMs, parentMtime: fs.statSync(fitPath(pf)).mtimeMs });
+    const parent = loadFitRaw(pf);
+    const why = projectionFromStale(fit, parent);
     if (why) throw new Error(`projectionFrom 낡음(${why}) — node scripts/atlas/georef-cli.mjs --unit ${UNIT.id} --all 먼저`);
+    const older = projectionFromOlder(fit, parent, { insetMtime: fs.statSync(fitPath(id)).mtimeMs, parentMtime: fs.statSync(fitPath(pf)).mtimeMs });
+    if (older) console.warn(`경고: projectionFrom 시각(${older}) — 매개변수는 같음, 닮음 변환이 낡았을 수 있으니 필요하면 georef-cli --unit ${UNIT.id} --all`);
   }
   return fit;
 }
