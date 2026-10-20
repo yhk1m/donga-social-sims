@@ -9,6 +9,9 @@
 # 부가: hatch(빗금 분류), isotherm(lines.isotherms), flows(lines.flows).
 # domain: build_layers.mjs 가 쓰는 $ATLAS_WORK/geo/<map>.domain.json(경위도로 되돌릴 수 있는 지면 범위, 원통 도법 세계 지도)이
 #   있으면 면을 그 안으로 자른다(지도 가장자리 너머 꼭짓점이 역변환에 실패하지 않도록).
+# 여러 지도 한 레이어(설정 maps: [본 지도, 삽입 …] — 29쪽 기후 구분 + 아이슬란드 삽입, 면 모드만): 범례는 본 지도(map)에서 한 번 읽고,
+#   지도마다 같은 범례로 면을 뽑아 parts [{map, polys}] 로 둔다(맨 위 polys 는 비움). build_layers.mjs 가 지도마다 자기 fit 으로 되돌려
+#   합치고(properties.src = 지도 id), 삽입 지도 틀이 덮는 곳은 본 지도 면에서 뺀다(clip_land.apply_covers — 겹치면 큰 축척 삽입 우선).
 import json, os
 from shapely.geometry import shape
 import legend as LG, zones as Z, symbols as S, lines as LN
@@ -27,6 +30,28 @@ def _domain(map_id):
         return polygonal(shape(json.load(f)))
 
 
+def area_polys(m, leg, cfg, warnings, report):
+    """지도 하나(m)의 분류 면 → polys [{cls, color, label, pattern?, polygons}] (범례 leg 는 이미 읽은 것 — 빗금은 leg 끝 항목)."""
+    fills = [e for e in leg if not e.get('pattern')]
+    zones, rep = (Z.vector_zones if cfg['mode'] == 'vector' else Z.raster_zones)(m, fills, cfg, warnings)
+    report.update(rep)
+    domain = _domain(m['id'])
+    report['domainClip'] = domain is not None
+    zones = Z.finish_zones(m, zones, [e['cls'] for e in fills], cfg, domain)
+    if cfg.get('hatch'):
+        hz = Z.hatch_zone(m, cfg['hatch'])
+        if hz is None: warnings.append(f"{m['id']}: 빗금 분류 윤곽이 없음" if m['id'] != cfg['map'] else '빗금 분류 윤곽이 없음')
+        else: zones[leg[-1]['cls']] = hz.segmentize(cfg['densifyPt'])
+    polys = []
+    for e in leg:
+        g = zones.get(e['cls'])
+        if g is None: continue
+        p = {'cls': e['cls'], 'color': e['color'], 'label': e['label'], 'polygons': poly_coords(g)}
+        if e.get('pattern'): p['pattern'] = e['pattern']
+        polys.append(p)
+    return polys
+
+
 def features(layer_id):
     cfg = layer_config(layer_id)
     m = maps()[cfg['map']]
@@ -34,26 +59,21 @@ def features(layer_id):
     warnings = []
     out = {'id': layer_id, 'map': cfg['map'], 'page': m['page'], 'bbox': m['bbox'], 'legend': [], 'polys': [],
            'symbols': [], 'lines': [], 'report': {}}
+    multi = cfg.get('maps')
+    if multi and (mode not in ('vector', 'raster') or multi[0] != cfg['map'] or cfg.get('isotherm') or cfg.get('flows')):
+        raise ValueError(f'{layer_id}: maps(여러 지도 한 레이어)는 면 모드(vector·raster)만, 첫째 = map(본 지도), 등온선·흐름선 없이')
     if mode in ('vector', 'raster'):
         leg = LG.legend(m, cfg)
         if cfg.get('hatch'):
             h = LG.hatch_legend(m, cfg['hatch']); h['cls'] = f'c{len(leg) + 1}'; leg.append(h)
-        fills = [e for e in leg if not e.get('pattern')]
-        zones, rep = (Z.vector_zones if mode == 'vector' else Z.raster_zones)(m, fills, cfg, warnings)
-        out['report'].update(rep)
-        domain = _domain(cfg['map'])
-        out['report']['domainClip'] = domain is not None
-        zones = Z.finish_zones(m, zones, [e['cls'] for e in fills], cfg, domain)
-        if cfg.get('hatch'):
-            hz = Z.hatch_zone(m, cfg['hatch'])
-            if hz is None: warnings.append('빗금 분류 윤곽이 없음')
-            else: zones[leg[-1]['cls']] = hz.segmentize(cfg['densifyPt'])
-        for e in leg:
-            g = zones.get(e['cls'])
-            if g is None: continue
-            p = {'cls': e['cls'], 'color': e['color'], 'label': e['label'], 'polygons': poly_coords(g)}
-            if e.get('pattern'): p['pattern'] = e['pattern']
-            out['polys'].append(p)
+        if multi:
+            out['parts'] = []
+            for mid in multi:
+                rep = {}
+                out['parts'].append({'map': mid, 'bbox': maps()[mid]['bbox'], 'polys': area_polys(maps()[mid], leg, cfg, warnings, rep), 'report': rep})
+            out['report']['parts'] = [p['map'] for p in out['parts']]
+        else:
+            out['polys'] = area_polys(m, leg, cfg, warnings, out['report'])
         out['legend'] = leg
         if cfg.get('isotherm'):
             ic = cfg['isotherm']
@@ -83,7 +103,8 @@ def features(layer_id):
     else:
         raise ValueError(f'{layer_id}: 모르는 mode {mode}')
     for e in out['legend']: e.pop('box', None)
-    present = {p['cls'] for p in out['polys']} | {s['cls'] for s in out['symbols']} | {l['cls'] for l in out['lines']}
+    present = ({p['cls'] for p in out['polys']} | {p['cls'] for part in out.get('parts', []) for p in part['polys']}
+               | {s['cls'] for s in out['symbols']} | {l['cls'] for l in out['lines']})
     absent = [e['label'] for e in out['legend'] if e['cls'] not in present]
     if absent: warnings.append(f'도형 없는 범례 분류: {absent}')
     exp = cfg.get('expectLegend')

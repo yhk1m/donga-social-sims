@@ -225,3 +225,14 @@ test('applySymbolValues: symbolValues {이름: [값…]} + valueIcons → 기호
   assert.throws(() => applySymbolValues({ id: 'lis', valueIcons: ['charger'], symbolValues: { 없음: ['1'] } }, feats), /기호에 없는 이름/);
   assert.throws(() => applySymbolValues({ id: 'lis', valueIcons: ['charger', 'person'], symbolValues: { 리스본: ['1'] } }, feats), /값 수/);
 });
+
+test('boxRingLonLat: 삽입 지도 틀 둘레를 fit 으로 되돌린 닫힌 경위도 고리(여러 지도 한 레이어의 덮개), 되돌릴 수 없으면 멈춤', async () => {
+  const { boxRingLonLat } = await import('../../scripts/atlas/build_layers.mjs');
+  const cv = { invert: ([x, y]) => [x / 10 - 30, 70 - y / 10] };
+  const ring = boxRingLonLat(cv, [50, 30, 170, 70], 4);
+  assert.equal(ring.length, 17);
+  assert.deepEqual(ring[0], ring[16]);
+  assert.deepEqual(ring[0], [-25, 67]);
+  assert.deepEqual(ring[8], [-13, 63]);
+  assert.throws(() => boxRingLonLat({ invert: () => null }, [0, 0, 1, 1], 2), /되돌릴 수 없음/);
+});

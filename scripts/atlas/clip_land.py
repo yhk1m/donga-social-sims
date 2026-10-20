@@ -81,6 +81,18 @@ def snap(g):
     return polygonal(shapely.set_precision(g, GRID_DEG)) if g is not None else None
 
 
+def apply_covers(feats, covers):
+    """여러 지도 한 레이어(raw properties.covers [{src, ring}] — 삽입 지도 틀을 되돌린 경위도 고리): 면 Feature 중 src 가 덮개 지도가 아닌 것
+    (본 지도)에서 덮개 자리를 뺀다 → 같은 차례의 새 면 목록(None = 다 빠짐). 겹친 곳은 큰 축척 삽입 우선(29쪽 아이슬란드)."""
+    out = [polygonal(shape(ft['geometry'])) for ft in feats]
+    if not covers: return out
+    srcs = {c['src'] for c in covers}
+    cover = unary_union([polygonal(Polygon(c['ring'])) for c in covers])
+    for i, ft in enumerate(feats):
+        if out[i] is not None and ft['properties'].get('src') not in srcs: out[i] = polygonal(out[i].difference(cover))
+    return out
+
+
 def coverage(geoms, tol, min_area, clip_land):
     """분류 면 목록(범례 순서) → 겹치지 않는 유효한 덮개(같은 순서, 빈 것은 None)."""
     gs = [fold(g) for g in geoms]
@@ -168,10 +180,11 @@ def process(lid):
     cov_idx = [i for i in area_idx if not feats[i]['properties'].get('pattern') and feats[i]['properties'].get('type') != 'locator']  # 위치도 강조 면은 덮개 밖(종교 면과 겹침)
     geoms = {}
     cov_tol = tol * cfg['coverageTolFactor']
-    for i, g in zip(cov_idx, coverage([polygonal(shape(feats[i]['geometry'])) for i in cov_idx], cov_tol, min_area, clip)):
+    covered = apply_covers(feats, gj['properties'].get('covers'))   # 여러 지도 한 레이어: 본 지도 면에서 삽입 틀 자리 빼기(없으면 그대로)
+    for i, g in zip(cov_idx, coverage([covered[i] for i in cov_idx], cov_tol, min_area, clip)):
         geoms[i] = g
     for i in area_idx:
-        if i not in geoms: geoms[i] = single(polygonal(shape(feats[i]['geometry'])), tol, min_area, clip)
+        if i not in geoms: geoms[i] = single(covered[i], tol, min_area, clip)
     out, dropped, invalid = [], [], []
     for i, ft in enumerate(feats):
         t = ft['geometry']['type']

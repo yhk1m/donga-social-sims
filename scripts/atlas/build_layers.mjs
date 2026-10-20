@@ -11,6 +11,8 @@
 //      기호 properties 에는 value·anchor, 지시선 막대면 barAt(막대 밑 가운데 경위도)도.
 //   --verify: 레이어를 같은 fit 으로 지면에 되돌려 교과서 렌더와 겹친 그림 $ATLAS_WORK/shots/c1/<id>.png
 //   source:'ne'(p22-kashmir)는 PDF 도형 대신 python -I scripts/atlas/kashmir.py 가 Natural Earth 로 만든다.
+//   여러 지도 한 레이어(설정 maps: [본 지도, 삽입 …] — 29쪽 기후 구분 + 아이슬란드 삽입): features.json parts 를 지도마다 자기 fit 으로 되돌려
+//   합치고(properties.src = 지도 id), 삽입 지도 틀을 되돌린 경위도 고리를 raw properties.covers 로 넘겨 clip_land.py 가 본 지도 면에서 뺀다.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -137,13 +139,44 @@ function convert(layer, feat, fit) {
   return { features, dropped, total };
 }
 
+/** 지면 상자 [x0, y0, x1, y1] 둘레를 n 등분해 fit 으로 되돌린 경위도 고리(닫힘). 되돌릴 수 없는 점이 있으면 멈춘다. */
+export function boxRingLonLat(cv, [x0, y0, x1, y1], n = 24) {
+  const pts = [];
+  for (let i = 0; i < n; i++) pts.push([x0 + ((x1 - x0) * i) / n, y0]);
+  for (let i = 0; i < n; i++) pts.push([x1, y0 + ((y1 - y0) * i) / n]);
+  for (let i = 0; i < n; i++) pts.push([x1 - ((x1 - x0) * i) / n, y1]);
+  for (let i = 0; i < n; i++) pts.push([x0, y1 - ((y1 - y0) * i) / n]);
+  const [ring, dropped] = convertPath(cv, pts);
+  if (dropped) throw new Error(`지도 틀 ${[x0, y0, x1, y1]} 을 경위도로 되돌릴 수 없음(${dropped}점)`);
+  ring.push(ring[0]);
+  return ring.map(([x, y]) => [r3(x), r3(y)]);
+}
+
+/**
+ * 여러 지도 한 레이어: parts [{map, bbox, polys}] 를 지도마다 자기 fit 으로 되돌려 합친다(properties.src = 지도 id).
+ * 본 지도(첫째) 밖의 지도 틀은 covers [{src, ring}] — clip_land.py 가 본 지도 면에서 그 자리를 뺀다(큰 축척 삽입 우선).
+ */
+function convertParts(layer, feat) {
+  const out = { features: [], dropped: 0, total: 0, covers: [] };
+  feat.parts.forEach((part, i) => {
+    const fit = loadFit(part.map);
+    const r = convert({ ...layer, map: part.map }, { polys: part.polys, symbols: [], lines: [] }, fit);
+    for (const f of r.features) f.properties = { ...f.properties, src: part.map };
+    out.features.push(...r.features); out.dropped += r.dropped; out.total += r.total;
+    if (i > 0) out.covers.push({ src: part.map, ring: boxRingLonLat(converter(layer, fit), part.bbox) });
+  });
+  return out;
+}
+
 function prepare(layers, { extract }) {
-  // 0. 도메인
+  // 0. 도메인(여러 지도 한 레이어는 지도마다)
   for (const l of layers) {
     if (l.source === 'ne') continue;
-    const dom = domainPolygon(loadFit(l.map));
-    const f = `${WORK}/geo/${l.map}.domain.json`;
-    if (dom) fs.writeFileSync(f, JSON.stringify(dom)); else if (fs.existsSync(f)) fs.unlinkSync(f);
+    for (const mid of l.maps || [l.map]) {
+      const dom = domainPolygon(loadFit(mid));
+      const f = `${WORK}/geo/${mid}.domain.json`;
+      if (dom) fs.writeFileSync(f, JSON.stringify(dom)); else if (fs.existsSync(f)) fs.unlinkSync(f);
+    }
   }
   // 1. 뽑기(한 프로세스)
   const need = layers.filter((l) => l.source !== 'ne' && (extract || !fs.existsSync(`${WORK}/vec/${l.id}.features.json`))).map((l) => l.id);
@@ -159,11 +192,12 @@ function toRaw(layer) {
   }
   const feat = JSON.parse(fs.readFileSync(`${WORK}/vec/${layer.id}.features.json`, 'utf8'));
   const fit = loadFit(layer.map);
-  const { features, dropped, total } = convert(layer, feat, fit);
+  const { features, dropped, total, covers } = feat.parts ? convertParts(layer, feat) : { ...convert(layer, feat, fit), covers: null };
   const meta = {
     id: layer.id, source: `교과서 22개정 중학 사회과 부도 ${m.page}쪽 (경위도 맞추기: ${fit.family})`,
     approx: !!fit.approx, ...(fit.approx ? { approxReason: fit.approxReason } : {}),
     legend: feat.legend, convert: { points: total, dropped }, warnings: feat.report.warnings || [],
+    ...(covers ? { covers } : {}),
   };
   fs.writeFileSync(`${WORK}/geo/${layer.id}.raw.geojson`, JSON.stringify({ type: 'FeatureCollection', properties: meta, features }));
   return { meta };
@@ -327,6 +361,7 @@ function verify(layer) {
   const areas = [], points = [], paths = [];
   for (const f of gj.features) {
     const p = f.properties, g = f.geometry;
+    if (p.src && p.src !== layer.map) continue; // 여러 지도 한 레이어: 검증 그림은 본 지도만(삽입은 따로 fit)
     if (g.type === 'MultiPolygon') areas.push({ color: p.color, pattern: p.pattern, polygons: g.coordinates.map((poly) => poly.map(back)) });
     else if (g.type === 'Point') { const xy = cv.apply(g.coordinates); if (xy) points.push({ xy, color: p.color }); }
     else {
