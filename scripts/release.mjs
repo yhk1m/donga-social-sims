@@ -3,6 +3,7 @@
 //   docs/<id>/<n>/fragment.html  그 버전의 붙여 넣기용 HTML 조각
 //   docs/<id>/index.html         최신 버전과 같은 내용 (/<id> 로 들어오면 최신)
 //   docs/versions.json           버전 기록, docs/index.html 전체 목록
+//   docs/atlas/index.html        사회과부도 모음 보기 페이지(scripts/atlas/hub_page.mjs — 목록과 함께 매번 다시 씀)
 // 사용:
 //   node scripts/release.mjs <id> [<id> ...] [--note "바뀐 점"]   지정한 자료만 새 버전
 //   node scripts/release.mjs --all [--note "..."]                   바뀐 자료 전부
@@ -12,6 +13,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { BOOKS, SIMS } from '../src/registry.js';
+import { writeHubPage } from './atlas/hub_page.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const DOCS = join(ROOT, 'docs');
@@ -96,7 +98,9 @@ if (existsSync(favicon)) writeFileSync(join(DOCS, 'favicon.ico'), readFileSync(f
 const rows = BOOKS.map((book) => {
   const sims = SIMS.filter((s) => s.book === book.id && manifest[s.id]?.length);
   if (!sims.length) return '';
-  return `<section class="hub-book"><h2 class="hub-h2">${esc(book.title)}</h2>${sims.map((s) => {
+  // 사회과부도: 단원을 한 페이지에서 바꿔 보는 모음 페이지(docs/atlas/) 링크
+  const atlasLink = book.id === 'atlas' ? `<a class="hub-atlas" href="./atlas/"><b>사회과부도 모음</b> — 공개한 단원을 한 페이지에서 골라 보기</a>` : '';
+  return `<section class="hub-book"><h2 class="hub-h2">${esc(book.title)}</h2>${atlasLink}${sims.map((s) => {
     const vers = manifest[s.id];
     const latest = vers.at(-1);
     return `<div class="hub-item">
@@ -128,6 +132,8 @@ writeFileSync(join(DOCS, 'index.html'), `<!doctype html>
 .hub-ver{font-size:13px;padding:2px 9px;border-radius:6px 0 0 6px;background:#e6efff;color:#1f6feb;text-decoration:none;font-weight:600}
 .hub-frag{font-size:12px;padding:2px 8px;border-radius:0 6px 6px 0;border:1px solid #e6efff;color:#5b636d;text-decoration:none;margin-right:6px}
 .hub-ver:hover,.hub-frag:hover{filter:brightness(.95)}
+.hub-atlas{display:block;margin-top:10px;padding:12px 16px;border-radius:12px;background:#e6efff;color:#1f6feb;text-decoration:none;font-size:14px}
+.hub-atlas:hover{filter:brightness(.97)}
 </style>
 </head>
 <body class="hub-body">
@@ -140,3 +146,5 @@ ${rows}
 </html>
 `);
 console.log('docs/index.html 목록 갱신');
+writeHubPage(manifest);
+console.log('docs/atlas/index.html 사회과부도 모음 갱신');

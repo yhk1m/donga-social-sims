@@ -8,6 +8,7 @@ import { build } from 'vite';
 import { readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { checkFragment } from './check-embed.mjs';
+import { topicTitlesPlugin } from './vite-topic-titles.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const SIMS = join(ROOT, 'sims');
@@ -41,7 +42,7 @@ for (const id of ids) {
     configFile: false,
     logLevel: 'warn',
     root: ROOT,
-    plugins: [stripThreeDataUrl],
+    plugins: [stripThreeDataUrl, topicTitlesPlugin()],
     define: { 'process.env.NODE_ENV': '"production"' },
     build: {
       write: false,

@@ -19,6 +19,12 @@ git add docs sims src scripts && git commit && git push   # GitHub Pages(main /d
 
 새 자료: `src/registry.js`에 한 줄을 추가하고 `sims/_template/`를 `sims/<id>/`로 복사합니다.
 
+### 사회과부도 모음
+
+- 보기 페이지 `/atlas/`(`docs/atlas/index.html`): 공개한 사회과부도 단원 카드 + 페이지 안 iframe 보기(`#<id>`). `release` 가 목록을 갱신할 때마다 `scripts/atlas/hub_page.mjs` 로 함께 다시 만들어지므로 손댈 것이 없습니다.
+- 조각 `atlas-hub`: 같은 카드를 붙여 넣기용으로. 빌드 때의 registry·versions.json 이 들어가므로 새 단원을 공개한 뒤 `npm run release -- atlas-hub` 로 한 번 더 공개합니다.
+- 새 단원 공개 뒤 썸네일: `node scripts/atlas/hub_thumbs.mjs <id>`(공개 Pages 를 찍음, 공개 전이면 `--local`) → `docs/assets/atlas/hub/<id>.webp`.
+
 ## 자료 출처
 
 - 소멸위험지수: 행정안전부 주민등록 인구통계(2026년 9월 말), 경계 vuski/admdongkor(통계청 SGIS, CC BY 4.0)
