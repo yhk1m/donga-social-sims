@@ -69,15 +69,15 @@ test('레이어 글: 교과서 범례 제목·출처(원문 상자에서)', () =
     assert.ok(L[r].credit, `${r} 출처`);
 });
 
-test('마커 위치: 기후 그래프 3곳·특집 04·06·07·09·베수비오산은 지명 위치(교과서 핀은 textbookLonlat), 나머지는 교과서 핀', () => {
+test('마커 위치: 기후 그래프 3곳·특집 04·07·09·베수비오산은 지명 위치(06 은 교과서 핀)(교과서 핀은 textbookLonlat), 나머지는 교과서 핀', () => {
   const all = T.flatMap((t) => t.markers);
   const moved = all.filter((m) => m.lonlatFrom === 'place').map((m) => m.id).sort();
-  assert.deepEqual(moved, ['c-lisbon', 'c-moscow', 'c-paris', 'f04', 'f06', 'f07a', 'f07b', 'f09', 'r-vesuvius']);
+  assert.deepEqual(moved, ['c-lisbon', 'c-moscow', 'c-paris', 'f04', 'f07a', 'f07b', 'f09', 'r-vesuvius']);
   for (const m of all) {
     if (m.lonlatFrom === 'place') assert.ok(m.textbookLonlat, m.id);
     else { assert.equal(m.lonlatFrom, 'pin', m.id); assert.deepEqual(m.lonlat, PHOTOS[m.photo.id].lonlat, m.id); }
   }
-  const want = { 'c-paris': [2.35, 48.86], 'c-moscow': [37.62, 55.75], f04: [4.35, 50.85], f06: [7.47, 46.92], f07a: [13.4, 52.52], f07b: [12.5, 41.9], f09: [14.42, 50.09], 'r-vesuvius': [14.43, 40.82] };
+  const want = { 'c-paris': [2.35, 48.86], 'c-moscow': [37.62, 55.75], f04: [4.35, 50.85], f06: [10.43, 45.84], f07a: [13.4, 52.52], f07b: [12.5, 41.9], f09: [14.42, 50.09], 'r-vesuvius': [14.43, 40.82] };
   for (const [id, ll] of Object.entries(want)) { const m = all.find((x) => x.id === id); assert.ok(km(m.lonlat, ll) < 20, `${id} ${m.lonlat}`); }
   // 그레니비크(아이슬란드 삽입 핀)는 아이슬란드 북부
   const g = by.climate.markers.find((m) => m.id === 'c-grenivik').lonlat;
