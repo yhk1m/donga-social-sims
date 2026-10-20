@@ -22,8 +22,9 @@ from atlas_common import WORK, maps, layer_config, layer_ids, poly_coords, polyg
 
 
 def pdf_layer_ids():
-    """PDF 에서 도형을 뽑는 레이어(source 가 ne 가 아니고 나라 단위 단계구분도 type countryClass 도 아닌 것 — 그건 country_class.py)."""
-    return [i for i in layer_ids() if layer_config(i).get('source') != 'ne' and layer_config(i).get('type') != 'countryClass']
+    """PDF 에서 도형을 뽑는 레이어(source 가 ne 가 아니고 나라 단위 단계구분도 type countryClass 도 아닌 것 — 그건 country_class.py,
+    고리 기호 type chartSymbols·미확정 국경 source ne-disputed 도 아닌 것 — 그건 build_layers.mjs 가 바로 만듦, U4-3c·f)."""
+    return [i for i in layer_ids() if layer_config(i).get('source') not in ('ne', 'ne-disputed') and layer_config(i).get('type') not in ('countryClass', 'chartSymbols')]
 
 
 def _domain(map_id):
@@ -90,6 +91,11 @@ def area_polys(m, leg, cfg, warnings, report):
     domain = _domain(m['id'])
     report['domainClip'] = domain is not None
     zones = Z.finish_zones(m, zones, [e['cls'] for e in fills], cfg, domain)
+    if cfg.get('dots'):   # 점무늬 면(U4-3b) — 빗금 앞 범례 항목
+        dz = Z.dots_zone(m, cfg['dots'])
+        dc = next(e['cls'] for e in leg if e.get('pattern') == 'dots')
+        if dz is None: warnings.append(f"{m['id']}: 점무늬 점이 없음")
+        else: zones[dc] = dz.segmentize(cfg['densifyPt'])
     if cfg.get('hatch'):
         hz = Z.hatch_zone(m, cfg['hatch'])
         if hz is None: warnings.append(f"{m['id']}: 빗금 분류 윤곽이 없음" if m['id'] != cfg['map'] else '빗금 분류 윤곽이 없음')
@@ -116,6 +122,8 @@ def features(layer_id):
         raise ValueError(f'{layer_id}: maps(여러 지도 한 레이어)는 면 모드(vector·raster)만, 첫째 = map(본 지도), 등온선·흐름선 없이')
     if mode in ('vector', 'raster'):
         leg = LG.legend(m, cfg)
+        if cfg.get('dots'):   # 점무늬(설정 dots {color, swatch, spacingPt} — U4-3b): 빗금보다 앞(빗금은 leg 끝이어야 함), 그리는 차례 채움 → 점무늬 → 빗금
+            d = LG.hatch_legend(m, cfg['dots'], 'dots'); d['cls'] = f'c{len(leg) + 1}'; leg.append(d)
         if cfg.get('hatch'):
             h = LG.hatch_legend(m, cfg['hatch']); h['cls'] = f'c{len(leg) + 1}'; leg.append(h)
         if cfg.get('extraLegend'): extra_legend(leg, cfg['extraLegend'])

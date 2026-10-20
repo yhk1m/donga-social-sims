@@ -22,8 +22,12 @@
   윤곽만 분류(설정 legendStyles {범례 이름: 'outline'} — 32쪽 유로 사용국 노란 띠)는 다수결에서 빼고(띠가 가린 표본은 표 없음),
   나라 경계를 안쪽으로 0.8pt 줄인 테두리 점의 반 이상이 그 색 띠 안이면 그 분류를 더한다(outline_members) → classes[iso] = [채움, 윤곽].
 
+  다중 채움 줄무늬(설정 multi {samples: 7, minShare: 0.25, max: 3} — U4-3a, 38쪽 공용어 둘 이상인 나라): 줄무늬는 나라 안을 자른 가는 띠
+  도형들이라 표본 9개 다수결은 우연에 맡겨진다 → 표본 격자를 samples×samples 로 늘리고, 채움 분류가 둘 이상 각각 받은 표의 minShare 를
+  넘으면 classes[iso] = [가장 많은 것, 다음 …](최대 max 개, 같은 표면 범례 차례), 출력에 multiFill 'stripes'. 키가 없으면 다수결 그대로.
+
 설정(단원 설정 layers[id]): {"map", "type": "countryClass", "mode": "vector"|"raster"(기본 vector), "expectLegend"?,
-  "countryOverrides"?, "legendStyles"?, "samplesGrid"?(기본 3), "smallPt2"?(기본 8)} + defaults(matchDE·legendSwatchArea 등 — 면 레이어와 같음).
+  "countryOverrides"?, "legendStyles"?, "samplesGrid"?(기본 3), "smallPt2"?(기본 8), "multi"?} + defaults(matchDE·legendSwatchArea 등 — 면 레이어와 같음).
 
 출력: $ATLAS_WORK/geo/<id>.cc.json = {id, map, legend:[{cls,color,label,kind}], classes:{iso: cls}, overrides:[…], report:{…, warnings}}
   build_layers.mjs 가 범례 꾸밈(legendColors·legendStyles 등)을 붙여 <config.out>/layer-<id>.json
@@ -70,9 +74,10 @@ def zone_at(xy, zones, order):
     return None
 
 
-def classify(samples, zones, order, fr):
+def classify(samples, zones, order, fr, multi=None):
     """samples {iso: [지면 xy | None, …](첫째 = representative_point)} → ({iso: cls}, 보고서).
-    틀(fr) 밖 표본은 버림 — 모두 밖이면 그 나라 없음. 다수결, 같은 표면 첫 표본의 분류 → 범례 차례."""
+    틀(fr) 밖 표본은 버림 — 모두 밖이면 그 나라 없음. 다수결, 같은 표면 첫 표본의 분류 → 범례 차례.
+    multi {minShare, max} 이면 받은 표의 minShare 를 넘는 분류가 둘 이상인 나라는 [많은 차례 …](최대 max) — 보고서 multi 에 남김."""
     zs = {c: g for c, g in zones.items() if g is not None}
     fp = prep(fr)
     classes, rep = {}, {'absent': [], 'unclassified': [], 'split': [], 'votes': {}}
@@ -83,6 +88,14 @@ def classify(samples, zones, order, fr):
         first = votes[0] if pts and pts[0] is not None and inside and inside[0] == pts[0] else None
         cnt = Counter(v for v in votes if v is not None)
         if not cnt: rep['unclassified'].append(iso); continue
+        if multi:
+            tot = sum(cnt.values())
+            keep = [c for c in sorted(cnt, key=lambda c: (-cnt[c], order.index(c))) if cnt[c] > multi.get('minShare', 0.25) * tot][:multi.get('max', 3)]
+            if len(keep) >= 2:
+                classes[iso] = keep
+                rep['votes'][iso] = dict(cnt)
+                rep.setdefault('multi', []).append(iso)
+                continue
         top = max(cnt.values())
         tied = [c for c in order if cnt.get(c) == top]
         cls = first if first in tied else tied[0]
@@ -121,7 +134,7 @@ def merge_classes(fill, outline):
     """채움 분류 {iso: cls} + 윤곽만 분류 {iso: [cls]} → {iso: cls | [cls, …]} (둘 이상이면 배열 — 채움 먼저)."""
     out = dict(fill)
     for iso, cl in outline.items():
-        lst = ([out[iso]] if iso in out else []) + list(cl)
+        lst = (list(out[iso]) if isinstance(out.get(iso), list) else [out[iso]] if iso in out else []) + list(cl)
         out[iso] = lst[0] if len(lst) == 1 else lst
     return out
 
@@ -153,7 +166,7 @@ def apply_overrides(classes, overrides, legend):
     return out, log
 
 
-def classify_countries(countries, project, zones, order, fr, grid=3, window=None):
+def classify_countries(countries, project, zones, order, fr, grid=3, window=None, multi=None):
     """countries [(iso, 경위도 면)], project({iso: [(lon, lat)]}) → {iso: [xy | None]} → classify 결과. 표본점이 없는 나라는 뺀다.
     window(지도 틀을 경위도로 되돌린 면)가 있으면 나라 ∩ window 에서 표본을 찍는다 — 틀에 일부만 든 큰 나라(러시아·카자흐스탄)도
     틀 안쪽 표본으로 분류되게. window 와 안 겹치는 나라는 지도 밖."""
@@ -165,7 +178,7 @@ def classify_countries(countries, project, zones, order, fr, grid=3, window=None
             if g is None: continue
         pts = sample_points(g, grid)
         if pts: by_iso[iso] = pts
-    classes, rep = classify(project(by_iso), zones, order, fr)
+    classes, rep = classify(project(by_iso), zones, order, fr, multi)
     rep['absent'] = sorted(set(rep['absent']) | {iso for iso, _ in countries if iso not in by_iso})
     return classes, rep
 
@@ -324,8 +337,10 @@ def build(layer_id):
     c10 = ne_countries(NE_COUNTRIES_10M)
     extras = extra_10a(c50, c10, boxes)
     countries = c50 + extras
-    classes, rep = classify_countries(countries, lambda by: project_samples(fit, by), fill_zones, order, frame(m), cfg.get('samplesGrid', 3), window)
-    fill = dict(classes)
+    multi = cfg.get('multi')   # 다중 채움 줄무늬(U4-3a) — 있을 때만 표본 격자를 늘리고 분류 배열
+    grid = multi.get('samples', 7) if multi else cfg.get('samplesGrid', 3)
+    classes, rep = classify_countries(countries, lambda by: project_samples(fit, by), fill_zones, order, frame(m), grid, window, multi)
+    fill = {iso: (v[0] if isinstance(v, list) else v) for iso, v in classes.items()}   # 작은 나라 검사는 첫(가장 많은) 분류로
     near = [(iso, polygonal(g.intersection(window)) if window is not None else g) for iso, g in countries if window is None or g.intersects(window)]
     page = project_countries(fit, [(i, g) for i, g in near if g is not None])
     if outline:   # 윤곽만 분류는 표본 다수결이 아니라 나라 안쪽 테두리가 그 색 띠에 덮였는지로
@@ -350,6 +365,8 @@ def build(layer_id):
     for iso, why in small:
         if iso not in over: warnings.append(f'{iso}: 작은 나라 — {why} → countryOverrides 로 확인 필요')
     classes, ov = apply_overrides(classes, cfg.get('countryOverrides'), leg)
+    for iso in rep.get('multi', []):   # 줄무늬(분류 배열)가 된 나라: 경계 어긋남으로 이웃 분류가 25% 넘게 섞인 작은·가는 나라일 수 있음 → 확인
+        if not any(o['iso'] == iso for o in ov): warnings.append(f'{iso}: 줄무늬(분류 {rep["votes"][iso]}) — 교과서 줄무늬 나라인지 확인하고 countryOverrides 에 적음')
     for iso in rep['split']:
         if not any(o['iso'] == iso for o in ov): warnings.append(f'{iso}: 표본 분류가 반으로 갈림 {rep["votes"][iso]}')
     # 두 상세도 대조(U3-3 리뷰 중요 1): 분류·고침 iso 가 countries50·countries10a 둘 다에 있는지
@@ -365,7 +382,9 @@ def build(layer_id):
     legend = [{k: e[k] for k in ('cls', 'color', 'label', 'kind') if k in e} for e in leg]
     rep.update(zrep, countries=len(classes), warnings=warnings, fitFamily=fit['family'], approx=bool(fit.get('approx')),
                extra10a=[i for i, _ in extras])
-    return {'id': layer_id, 'map': cfg['map'], 'legend': legend, 'classes': dict(sorted(classes.items())), 'overrides': ov, 'report': rep}
+    out = {'id': layer_id, 'map': cfg['map'], 'legend': legend, 'classes': dict(sorted(classes.items())), 'overrides': ov, 'report': rep}
+    if multi: out['multiFill'] = 'stripes'
+    return out
 
 
 def verify(layer_id, out_dir, dpi=200):
@@ -389,7 +408,12 @@ def verify(layer_id, out_dir, dpi=200):
         page = project_countries(fit, [(i, g) for i, g in cs if g is not None])
         fills, bands = [], []
         for iso, P in page.items():
+            nfill = 0
             for c in ([cc['classes'][iso]] if isinstance(cc['classes'][iso], str) else cc['classes'][iso]):
+                if c not in outline and nfill and cc.get('multiFill'):   # 줄무늬 나라의 둘째 채움부터는 빗금으로 덧그림(검증 그림만)
+                    fills.append({'color': color[c], 'pattern': 'hatch', 'polygons': [[list(p.exterior.coords), *[list(r.coords) for r in p.interiors]] for p in flat_polygons(P)]})
+                    continue
+                if c not in outline: nfill += 1
                 if c in outline:
                     g = polygonal(P.difference(P.buffer(-0.8)))
                     if g is not None: bands.append({'color': color[c], 'polygons': [[list(p.exterior.coords), *[list(r.coords) for r in p.interiors]] for p in flat_polygons(g)]})

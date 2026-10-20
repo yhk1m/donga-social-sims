@@ -8,7 +8,7 @@
 //     topic    topics.json 항목              charts  charts.json(id → spec)   layers layers.js 묶음(ref → 자료)
 //     countryFeatures  색칠하기 나라 도형({ '50': [...], '10a': [...] })
 //     insets   { 레이어 ref: 바탕 윤곽 GeoJSON } — 그 레이어는 큰 지도 대신 무대 위 확대 창(symbolInset)에 그리고, 큰 지도에는 위치 상자만
-//     coloring { smallPx } — 색칠하기 작은 나라 동그라미(quiz.js coloringLayer smallPx, 없으면 그리지 않음)
+//     coloring { smallPx, smallMetric? } — 색칠하기 작은 나라 동그라미(quiz.js coloringLayer smallPx, 없으면 그리지 않음; smallMetric 'area' = 넓이 기준, U4-3e)
 //     boundsOf { 레이어 ref: [w, s, e, n] } — 그 레이어를 고를 때 맞출 범위(교역 흐름선처럼 주제 view 밖까지 가는 것)
 //     baseColor 이 주제의 바탕 색 기본값 'none' | 'tint' | 'natural'(일반도 = 고도 색 — 교과서 16쪽처럼 높이·깊이 색, 지형 = 자연색 — 교과서 20쪽
 //              Natural Earth 자연색 화상, 주제도 = 없음 — 주제 색이 잘 보이게). 옛 이름 tint(true = 'tint')도 받는다. 주제를 펼칠 때
@@ -137,7 +137,7 @@ export function buildTopic({
       // 확대 창 레이어는 큰 지도에 올리지 않으므로 map 구독도 하지 않는다(범례는 창이 구독)
       const L = layerFromRef(ref, layerData, {
         map: outline ? null : map, countryFeatures,
-        onPick: (f) => card.show({ title: f.properties.label || f.properties.name, text: ref.label }),
+        onPick: (f) => card.show({ title: f.properties.label || f.properties.name, text: ref.label, chart: f.properties.chart ? charts[f.properties.chart] : null }), // 고리 기호(chartSymbols)는 그 그래프도
       });
       made.push(L);
       if (outline) {
@@ -206,7 +206,7 @@ export function buildTopic({
   // ---- 6 퀴즈(사이드바에서 블록보다 위 — 활동이 먼저 보이게) ----
   if (topic.quiz?.type === 'coloring' && countryFeatures) {
     // coloring.smallPx(단원 선택값, u3 = 유럽 작은 나라): 화면에서 그보다 작은 17·27쪽 나라를 동그라미로 — 없으면 1단계 그대로
-    const layer = coloringLayer(countryFeatures, coloring.smallPx ? { smallPx: coloring.smallPx, smallIsos: topic.quiz.countries.map((c) => c.iso) } : undefined);
+    const layer = coloringLayer(countryFeatures, coloring.smallPx ? { smallPx: coloring.smallPx, smallIsos: topic.quiz.countries.map((c) => c.iso), ...(coloring.smallMetric ? { smallMetric: coloring.smallMetric } : {}) } : undefined);
     map.addLayer(layer);
     quiz = keep(coloringQuiz(map, layer, topic.quiz.countries, seed !== undefined ? { seed } : {}));
     body.append(quiz.el);

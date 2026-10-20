@@ -7,7 +7,7 @@
 //
 // 색칠하기: 팔레트 색을 고르고 지도에서 나라를 누르면 그 색으로 칠한다(같은 색으로 다시 누르면 지움, 지우개). 17쪽 나라(46개)만 칠한다.
 // 이름 맞히기: 무작위 나라 하나를 칠해 강조하고 그 둘레로 화면을 옮긴 뒤 보기 4개. 맞힌 수/푼 수.
-import { geoBounds, geoCentroid } from 'd3-geo';
+import { geoArea, geoBounds, geoCentroid } from 'd3-geo';
 import { h, icon } from '../shared/dom.js';
 import { indexGeometry, clipIndexed } from './geoClip.js';
 import { mulberry32, quizOptions, pickNext, shuffle, photoCropStyle } from './uiCore.js';
@@ -25,8 +25,12 @@ const TARGET = { fill: '#ff922b', stroke: '#c2410c' };
  * 않음), 그 동그라미를 누르면(반지름 + 3px) 그 나라로 맞힌다(layer.hit). 크기는 화면에 잘린 도형이 아니라 나라 전체의 경위도 상자를 투영해
  * 잰다(가장자리에 조금만 걸친 큰 나라에 동그라미가 생기지 않게). 경위도 상자·중심은 나라마다 한 번만 계산하고, 화면 크기가 작은 나라만 그린다.
  * 0(기본)이면 동그라미·hit 없음 — 아시아(u2) 그림·동작 그대로.
+ * smallMetric 'area'(U4-3e, 아프리카 35쪽 — 단원 선택값): 상자 대신 「가장 큰 조각의 화면 넓이의 제곱근」으로 견준다. 감비아(가늘고 김)·
+ * 세이셸·카보베르데·코모로(흩어진 섬)는 상자가 커서 상자 기준으로는 동그라미가 안 생기지만 손으로 칠할 수 없다. 조각 경위도 넓이·중심은
+ * 한 번만 재고, 화면 넓이는 그 중심의 투영 국소 배율(경위도 0.1° 칸의 화면 넓이)로 어림. 동그라미 자리 = 가장 큰 조각 중심.
+ * 없으면('box') 유럽(u3) 그대로.
  */
-export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85, smallPx = 0, smallIsos = null } = {}) {
+export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85, smallPx = 0, smallIsos = null, smallMetric = 'box' } = {}) {
   const sets = Array.isArray(features) ? { 50: features } : features;
   const byIso = {};
   for (const [lv, list] of Object.entries(sets)) {
@@ -98,6 +102,7 @@ export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85,
       let c = geoCentroid(f);
       if (!Number.isFinite(c[0]) || !Number.isFinite(c[1])) c = [(b[0][0] + b[1][0]) / 2, (b[0][1] + b[1][1]) / 2];
       v = { b, c };
+      if (smallMetric === 'area') v.big = largestPart(f.geometry);
     }
     lonlatInfo.set(key, v);
     return v;
@@ -113,6 +118,12 @@ export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85,
       if (!inf) continue;
       const [[w, s0], [e, n]] = inf.b;
       if (e < w) continue; // 날짜변경선을 넘는 나라(러시아 등)는 작은 나라가 아님
+      if (smallMetric === 'area') {
+        const big = inf.big, px = big && areaPx(proj, big);
+        if (px == null || px >= smallPx) continue;
+        drawMark(ctx, iso, proj(big.c), W, H);
+        continue;
+      }
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, ok = true;
       for (const ll of [[w, s0], [e, s0], [e, n], [w, n], [(w + e) / 2, s0], [(w + e) / 2, n]]) {
         const q = proj(ll);
@@ -120,18 +131,43 @@ export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85,
         x0 = Math.min(x0, q[0]); y0 = Math.min(y0, q[1]); x1 = Math.max(x1, q[0]); y1 = Math.max(y1, q[1]);
       }
       if (!ok || Math.max(x1 - x0, y1 - y0) >= smallPx) continue;
-      const q = proj(inf.c);
-      if (!q || !Number.isFinite(q[0]) || !Number.isFinite(q[1])) continue;
-      const [x, y] = q;
-      if (x < -markR || y < -markR || x > W + markR || y > H + markR) continue; // 화면 밖
-      marks.push({ iso, x, y });
-      const isTarget = iso === target, c = colors.get(iso);
-      ctx.globalAlpha = 1;
-      ctx.beginPath(); ctx.arc(x, y, markR, 0, 2 * Math.PI);
-      ctx.fillStyle = isTarget ? TARGET.fill : c || 'rgba(255,255,255,0.85)'; ctx.fill();
-      ctx.lineWidth = isTarget ? 2.5 : 2; ctx.strokeStyle = isTarget ? TARGET.stroke : '#4d4d4d'; ctx.stroke();
+      drawMark(ctx, iso, proj(inf.c), W, H);
     }
   }
+  /** 동그라미 하나(화면 자리 q) — 화면 밖·투영 못 함이면 그리지 않음 */
+  function drawMark(ctx, iso, q, W, H) {
+    if (!q || !Number.isFinite(q[0]) || !Number.isFinite(q[1])) return false;
+    const [x, y] = q;
+    if (x < -markR || y < -markR || x > W + markR || y > H + markR) return false; // 화면 밖
+    marks.push({ iso, x, y });
+    const isTarget = iso === target, c = colors.get(iso);
+    ctx.globalAlpha = 1;
+    ctx.beginPath(); ctx.arc(x, y, markR, 0, 2 * Math.PI);
+    ctx.fillStyle = isTarget ? TARGET.fill : c || 'rgba(255,255,255,0.85)'; ctx.fill();
+    ctx.lineWidth = isTarget ? 2.5 : 2; ctx.strokeStyle = isTarget ? TARGET.stroke : '#4d4d4d'; ctx.stroke();
+    return true;
+  }
+}
+
+/** 나라 도형에서 가장 큰 조각(구면 넓이): {a(스테라디안), c(중심 경위도)} | null — smallMetric 'area' 가 한 번만 잰다 */
+export function largestPart(geom) {
+  const polys = geom?.type === 'Polygon' ? [geom.coordinates] : geom?.type === 'MultiPolygon' ? geom.coordinates : [];
+  let best = null;
+  for (const P of polys) {
+    const g = { type: 'Polygon', coordinates: P }, a = geoArea(g);
+    if (a > 2 * Math.PI) continue; // 감김이 뒤집힌 조각(지구 거의 전체)
+    if (!best || a > best.a) best = { a, c: geoCentroid(g) };
+  }
+  return best && Number.isFinite(best.c[0]) ? best : null;
+}
+
+/** 조각 {a, c} 의 화면 넓이 제곱근(px): 중심에서 경위도 0.1° 칸을 투영한 넓이로 국소 배율을 재 a 를 화면 넓이로 바꿈. 투영 못 하면 null. */
+export function areaPx(proj, { a, c }) {
+  const d = 0.1, q0 = proj(c), q1 = proj([c[0] + d, c[1]]), q2 = proj([c[0], c[1] + d]);
+  if (![q0, q1, q2].every((q) => q && Number.isFinite(q[0]) && Number.isFinite(q[1]))) return null;
+  const cell = Math.abs((q1[0] - q0[0]) * (q2[1] - q0[1]) - (q1[1] - q0[1]) * (q2[0] - q0[0]));   // 화면 px²
+  const sr = (d * Math.PI / 180) ** 2 * Math.cos((c[1] * Math.PI) / 180);                     // 같은 칸의 구면 넓이
+  return Math.sqrt((a / sr) * cell);
 }
 
 /** 경위도 상자를 넓힌다(작은 나라도 둘레가 보이게) */

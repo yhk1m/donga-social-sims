@@ -34,6 +34,7 @@ class Config(unittest.TestCase):
     def test_every_layer_has_map_and_mode(self):
         for lid in C.layer_ids():
             cfg = C.layer_config(lid)
+            if cfg.get('source') == 'ne-disputed' or cfg.get('type') == 'chartSymbols': continue   # PDF 도형을 뽑지 않는 레이어(U4-3c·f)
             self.assertIn(cfg['map'], C.maps(), lid)
             self.assertTrue(cfg.get('mode') or cfg.get('source') == 'ne', lid)
             self.assertIn('expectLegend', cfg, lid)

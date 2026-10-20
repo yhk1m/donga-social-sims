@@ -148,4 +148,49 @@ class Levels(unittest.TestCase):
         self.assertEqual(out, {})
 
 
+class MultiFill(unittest.TestCase):
+    """다중 채움 줄무늬(설정 multi — U4-3a): 표본을 늘리고 둘 이상 분류가 minShare 를 넘으면 배열."""
+    @staticmethod
+    def stripes():
+        from shapely.ops import unary_union
+        # 나라 SSS(경위도 0~8 × 0~8 → 지면 x 100~180) 안을 세로 띠 3pt 씩 c1·c2 번갈아(교과서 줄무늬 꼴), 나라 BBB(10~18) 자리는 c2 한 색
+        a = unary_union([box(100 + 6 * i, 120, 103 + 6 * i, 200) for i in range(14)])
+        b = unary_union([box(103 + 6 * i, 120, 106 + 6 * i, 200) for i in range(14)]).union(box(200, 120, 280, 200))
+        return {'c1': a, 'c2': b.difference(a)}
+
+    def countries(self):
+        return [('SSS', box(0, 0, 8, 8)), ('BBB', box(10, 0, 18, 8))]
+
+    def test_two_colour_stripes_become_list_one_colour_stays(self):
+        classes, rep = cc.classify_countries(self.countries(), project, self.stripes(), ORDER, FRAME, grid=7, multi={'minShare': 0.25})
+        self.assertIsInstance(classes['SSS'], list)
+        self.assertEqual(sorted(classes['SSS']), ['c1', 'c2'])
+        v = rep['votes']['SSS']
+        self.assertEqual(classes['SSS'][0], max(v, key=lambda c: (v[c], -ORDER.index(c))))   # 많은 표가 먼저
+        self.assertEqual(classes['BBB'], 'c2')
+        self.assertEqual(rep['multi'], ['SSS'])
+        self.assertNotIn('SSS', rep['split'])
+
+    def test_without_multi_majority_unchanged(self):
+        z = self.stripes()
+        a, ra = cc.classify_countries(self.countries(), project, z, ORDER, FRAME)
+        b, rb = cc.classify_countries(self.countries(), project, z, ORDER, FRAME, grid=3, multi=None)
+        self.assertEqual(a, b)
+        self.assertIsInstance(a['SSS'], str)
+        self.assertNotIn('multi', ra)
+        # 기존 합성 쪽(ZONES)도 multi 없이는 지금 결과 그대로
+        c = Classify().countries()
+        self.assertEqual(cc.classify_countries(c, project, ZONES, ORDER, FRAME), cc.classify_countries(c, project, ZONES, ORDER, FRAME, multi=None))
+
+    def test_minor_share_below_threshold_not_listed_and_max(self):
+        c, _ = cc.classify({'DDD': [[150, 80]] * 8 + [[120, 80]] * 2}, ZONES, ORDER, FRAME, multi={'minShare': 0.25})
+        self.assertEqual(c['DDD'], 'c3')                    # c1 은 20% — minShare 아래
+        three = [[150, 80]] * 4 + [[120, 80]] * 3 + [[220, 150]] * 3
+        c, _ = cc.classify({'EEE': three}, ZONES, ORDER, FRAME, multi={'minShare': 0.25, 'max': 2})
+        self.assertEqual(c['EEE'], ['c3', 'c1'])            # 4 : 3 : 3 → 많은 차례, 같은 표면 범례 차례, 최대 2
+
+    def test_merge_keeps_fill_list_then_outline(self):
+        self.assertEqual(cc.merge_classes({'MAR': ['c1', 'c2']}, {'MAR': ['c3']}), {'MAR': ['c1', 'c2', 'c3']})
+
+
 if __name__ == '__main__': unittest.main()

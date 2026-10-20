@@ -793,3 +793,150 @@ test('symbolLayer nameInBox(31쪽 리스본·녹색 수도, U3-9): 상자 맨 �
   assert.equal(mk(false).length, 0, 'nameInBox 없으면 값 없는 기호에 상자 없음(1단계 그대로)');
   assert.equal(cls(mk(false, [{ icon: 'charger', text: '1.16' }])[0], 'at-sym-vname').length, 0);
 });
+
+// ── U4-3a 다중 채움 줄무늬 · U4-3b 점무늬 · U4-3c 지도 위 고리 기호 ─────────────────
+const { countryFill, countryVisible } = await import('../../src/atlas/countryClass.js');
+/** 무늬 타일 크기를 남기는 그리기 기록(줄무늬 6px × 색 수 · 점무늬 6px · 빗금 8px) */
+const drawnP = (layer, v = viewOf()) => {
+  const ctx = recCtx();
+  ctx.createPattern = (tile) => ({ pattern: true, w: tile.width });
+  layer.draw(ctx, (g) => g && ctx.ops.push({ op: 'path', g }), v.view);
+  return ctx.ops;
+};
+const fillNames = (ops) => ops.filter((o) => o.op === 'fill').map((o) => (o.fillStyle?.pattern ? `무늬${o.fillStyle.w}` : o.fillStyle));
+
+test('countryClass 줄무늬: 채움 분류 둘이면 두 색 줄무늬, 하나만 골라도 남음', () => {
+  const L = { type: 'countryClass', multiFill: 'stripes',
+    legend: [{ cls: 'c2', label: '아랍어', color: '#3a9a48' }, { cls: 'c8', label: '기타', color: '#a7a9ac' }],
+    classes: { MAR: ['c2', 'c8'], EGY: 'c2' } };
+  assert.deepEqual(countryFill(L, 'MAR'), { pattern: 'stripes', colors: ['#3a9a48', '#a7a9ac'] });
+  assert.deepEqual(countryFill(L, 'EGY'), { color: '#3a9a48' });
+  assert.equal(countryFill(L, 'XXX'), null);
+  assert.equal(countryVisible(L, 'MAR', new Set(['c8'])), true);
+  assert.equal(countryVisible(L, 'EGY', new Set(['c8'])), false);
+  assert.equal(countryVisible(L, 'EGY', new Set()), true, '전체 보기');
+});
+
+test('multiFill 없으면 배열은 유럽 꼴(채움 + 윤곽) 그대로 — 줄무늬 아님', () => {
+  const EU = { type: 'countryClass', legend: [{ cls: 'a', label: '가입 국가', color: '#8dc63f' }, { cls: 'e', label: '유로 사용 국가', color: '#ffde17', style: 'outline' }], classes: { DEU: ['a', 'e'] } };
+  assert.deepEqual(countryFill(EU, 'DEU'), { color: '#8dc63f' });
+  // multiFill 이 있어도 윤곽만 분류는 줄무늬 색에 넣지 않음(채움 하나 → 단색 + 윤곽 면)
+  assert.deepEqual(countryFill({ ...EU, multiFill: 'stripes' }, 'DEU'), { color: '#8dc63f' });
+  const f = countryClassFeatures({ ...EU, multiFill: 'stripes' }, [country('DEU', '독일', 10)]);
+  assert.deepEqual(f.features.map((x) => [x.properties.cls, x.properties.pattern]), [['a', undefined], ['e', undefined]]);
+  assert.deepEqual(countryClassFeatures(EU, [country('DEU', '독일', 10)]), f, 'multiFill 키가 없으면 같은 결과');
+});
+
+test('countryClassLayer 줄무늬 나라: 면 하나를 사선 줄무늬로(색 차례 = 분류 차례), 말풍선 「나라 · 분류1 · 분류2」, 범례 고름은 하나만 맞아도 남음', () => {
+  const data = { ...ccData(), multiFill: 'stripes', legend: [...ccData().legend, { cls: 'c3', color: '#ffdd00', label: '유로', kind: 'fill', style: 'outline' }],
+    classes: { AAA: ['c1', 'c2', 'c3'], BBB: 'c2' } };
+  const fc1 = countryClassFeatures(data, ccCountries()['50']);
+  assert.deepEqual(fc1.features.map((x) => [x.properties.iso, x.properties.pattern ?? null, x.properties.label]),
+    [['AAA', 'stripes', '가나라 · 80~100 · 70~80'], ['AAA', null, '가나라 · 유로'], ['BBB', null, '나나라 · 70~80']]);
+  assert.deepEqual(fc1.features[0].properties.colors, ['#e8562a', '#f6b26b']);
+  assert.deepEqual(fc1.features[0].properties.clsList, ['c1', 'c2']);
+  const legend = createLegendState(['c1', 'c2', 'c3']);
+  const L = countryClassLayer('cc', data, { countryFeatures: ccCountries(), legend });
+  const v = viewOf(); v.view.detail = '50';
+  let ops = drawnP(L, v);
+  assert.deepEqual(fillNames(ops), ['#f6b26b', '무늬12'], '단색 면 다음 줄무늬(두 색 → 타일 12px)');
+  assert.equal(ops.filter((o) => o.op === 'fill')[1].alpha, 0.85);
+  legend.toggle('c2'); // AAA 의 둘째 분류만 골라도 흐려지지 않음 + 검은 선택 윤곽에 듦
+  ops = drawnP(L, v);
+  assert.equal(ops.filter((o) => o.op === 'fill')[1].alpha, 0.85);
+  assert.equal(ops.filter((o) => o.op === 'stroke' && o.strokeStyle === SELECT_OUTLINE.color).length, 1);
+  legend.toggle('c3'); // 윤곽만 분류를 고르면 줄무늬 면은 흐림
+  ops = drawnP(L, v);
+  assert.ok(ops.filter((o) => o.op === 'fill')[1].alpha < 0.5);
+  // 맞히기(윤곽만 분류 테두리가 없는 나라로 — 2° 나라 가운데는 테두리에서 4px 라 윤곽 맞히기 거리 안)
+  const L2 = countryClassLayer('cc2', { ...data, classes: { AAA: ['c1', 'c2'], BBB: 'c2' } }, { countryFeatures: ccCountries() });
+  drawnP(L2, v);
+  assert.equal(L2.hit(v.project([11, 11]), [11, 11])?.properties.pattern, 'stripes', '줄무늬 면도 맞힘');
+});
+
+test('areaLayer 점무늬(pattern dots): 채움 면 다음·빗금 앞에 점 무늬로, 고르지 않으면 흐림, 맞힘', () => {
+  const fcD = fc([
+    { type: 'Feature', properties: { type: 'area', cls: 'h', label: '사헬', color: '#2e3192', pattern: 'hatch' }, geometry: { type: 'MultiPolygon', coordinates: [sq(10, 10, 4)] } },
+    { type: 'Feature', properties: { type: 'area', cls: 'd', label: '사하라 사막', color: '#7a6a53', pattern: 'dots' }, geometry: { type: 'MultiPolygon', coordinates: [sq(10, 14, 4)] } },
+    { type: 'Feature', properties: { type: 'area', cls: 'a', label: '매우 높음', color: '#ed1c24' }, geometry: { type: 'MultiPolygon', coordinates: [sq(10, 10, 8)] } },
+  ], [{ cls: 'a', color: '#ed1c24', kind: 'fill', label: '매우 높음' }, { cls: 'd', color: '#7a6a53', kind: 'fill', pattern: 'dots', label: '사하라 사막' },
+    { cls: 'h', color: '#2e3192', kind: 'fill', pattern: 'hatch', label: '사헬' }]);
+  const legend = createLegendState(['a', 'd', 'h']);
+  const L = areaLayer('ds', fcD, { legend });
+  assert.deepEqual(fillNames(drawnP(L)), ['#ed1c24', '무늬6', '무늬8'], '채움 → 점무늬(6px 타일) → 빗금(8px)');
+  legend.toggle('a');
+  assert.ok(drawnP(L).filter((o) => o.op === 'fill')[1].alpha < 0.5);
+  legend.reset();
+  const v = viewOf(); drawnP(L, v);
+  assert.equal(L.hit(v.project([12, 16]), [12, 16])?.properties.cls, 'd');
+  // 점무늬·줄무늬 면이 없으면 무늬 채움은 빗금 하나뿐(1단계 그대로)
+  assert.deepEqual(fillNames(drawnP(areaLayer('t', areaFC()))), ['#ff0000', '#00ff00', '무늬8']);
+});
+
+const { chartSymbolLayer, RING_STYLE } = await import('../../src/atlas/chartSymbols.js');
+const ringData = () => ({
+  type: 'chartSymbols', properties: { id: 'rc', title: '자원' },
+  items: [
+    { id: 'bx', chart: 'p38-bauxite', lonlat: [-20, 10], title: '보크사이트', center: ['39,100', '(만 톤)', '2020년'], sizePt: 30, ring: 0.6,
+      series: [{ name: '기니', values: [22], color: '#f7941d' }, { name: '기타', values: [78], color: '#d1d3d4' }] },
+    { id: 'u', chart: 'p38-uranium', lonlat: [0, -20], title: '우라늄', center: ['4,8'], sizePt: 20, ring: 0.6,
+      series: [{ name: '니제르', values: [5], color: '#8dc63f' }, { name: '나미비아', values: [11], color: '#00a99d' }, { name: '기타', values: [84], color: '#d1d3d4' }] },
+  ],
+});
+
+test('chartSymbolLayer: 고리(조각 = 계열, 가운데 글자), 맞히기는 바깥 원 안(가운데 빈 곳 포함), 확대해도 지름 비 그대로, 지명 장애물 = 고리 상자, 누르면 onPick(chart)', () => {
+  const picked = [];
+  const L = chartSymbolLayer('rc', ringData(), { onPick: (f) => picked.push(f.properties.chart) });
+  assert.deepEqual(L.legendItems, []);
+  const g = document.createElementNS('svg', 'g');
+  const v = viewOf();
+  L.drawSvg(g, v.project, v.view);
+  const rings = g.childNodes[0].childNodes;
+  assert.equal(rings.length, 2);
+  const segs = (el) => el.childNodes.filter((c) => c.getAttribute?.('class') === 'at-ring-seg');
+  assert.equal(segs(rings[0]).length, 2);
+  assert.equal(segs(rings[1]).length, 3);
+  assert.deepEqual(rings[0].childNodes.filter((c) => c.tagName === 'text').map((c) => c.textContent), ['39,100', '(만 톤)', '2020년']);
+  const c0 = v.project([-20, 10]);
+  const obs = L.labelObstacles();
+  assert.equal(obs.length, 2, '지명 장애물 = 항목 수');
+  const r0 = (obs[0][2] - obs[0][0]) / 2, r1 = (obs[1][2] - obs[1][0]) / 2;
+  assert.ok(Math.abs(r0 / r1 - 1.5) < 1e-9, '지름 비 = sizePt 비 30:20');
+  assert.equal(L.hit(c0)?.properties.chart, 'p38-bauxite', '가운데(빈 곳)');
+  assert.equal(L.hit([c0[0] + r0 * 0.8, c0[1]])?.properties.chart, 'p38-bauxite', '고리 위');
+  assert.equal(L.hit([c0[0] + r0 + 4, c0[1]]), null, '고리 밖');
+  for (const k of [1, 4, 12]) { // 확대 단계마다 지름 비 그대로, [min, max] 안
+    const vk = viewOf({ k }); L.drawSvg(g, vk.project, vk.view);
+    const [a, b] = L.labelObstacles().map((o) => o[2] - o[0]);
+    assert.ok(Math.abs(a / b - 1.5) < 1e-9 && b >= RING_STYLE.min - 1e-9 && a <= RING_STYLE.max + 1e-9, `k=${k} ${a} ${b}`);
+  }
+  rings[1].dispatch('click');
+  assert.deepEqual(picked, ['p38-uranium']);
+  assert.deepEqual(idsIn(g), [], '문서 전역 id 없음');
+  // 화면 밖이면 숨기고 맞히기·장애물에서 빠짐
+  const far = viewOf({ lon0: 150 }); L.drawSvg(g, far.project, far.view);
+  assert.equal(L.labelObstacles().length, 0);
+});
+
+test('layerFromRef: type chartSymbols — 등록 전에는 모르는 종류(u2·u3 조각엔 코드 없음), registerLayerType 뒤 고리 기호 레이어(범례 없음), 누르면 onPick 에 그래프 id', async () => {
+  assert.throws(() => layerFromRef({ ref: 'rc', type: 'chartSymbols' }, { rc: ringData() }), /모르는 레이어 종류 chartSymbols/);
+  const { registerLayerType } = await import('../../src/atlas/layerRef.js');
+  registerLayerType('chartSymbols', (id, d, o) => chartSymbolLayer(id, d, o)); // chartsExtra.installExtraCharts 와 같은 등록(그 파일은 ui.css 를 가져와 여기선 직접)
+  const got = [];
+  const L = layerFromRef({ ref: 'rc', type: 'chartSymbols', label: '주요 자원' }, { rc: ringData() }, { onPick: (f) => got.push(f.properties.chart) });
+  assert.equal(L.legend, null);
+  assert.deepEqual(L.legendItems, []);
+  assert.equal(L.meta.title, '주요 자원');
+  const g = document.createElementNS('svg', 'g'); const v = viewOf();
+  L.drawSvg(g, v.project, v.view);
+  g.childNodes[0].childNodes[0].dispatch('click');
+  assert.deepEqual(got, ['p38-bauxite']);
+});
+
+test('chartSymbolLayer: lonlat·series 없는 항목은 건너뜀(그리기가 멈추지 않음)', () => {
+  const d = ringData(); d.items.push({ id: 'bad', title: 'x' }, { id: 'bad2', lonlat: [5, 5], title: 'y' });
+  const L = chartSymbolLayer('rc', d);
+  const g = document.createElementNS('svg', 'g'); const v = viewOf();
+  L.drawSvg(g, v.project, v.view);
+  assert.equal(g.childNodes[0].childNodes.length, 2);
+});

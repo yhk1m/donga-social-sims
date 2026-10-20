@@ -5,7 +5,10 @@
 //   countryClassLayer(id, data, { countryFeatures, legend, map, … })   지금 상세도(view.detail '10a' 면 10a, 아니면 50)의 나라로 만든
 //     areaLayer 에 맡긴다 — 범례 고름·검은 선택 윤곽·윤곽만 분류·맞히기·말풍선(「나라 이름 · 분류」)은 면 레이어 그대로.
 //   상세도마다 면 레이어 하나(처음 쓸 때 만듦), SVG(강조 윤곽)는 상세도마다 자기 <g>, 지금 상세도가 아닌 <g> 는 숨긴다.
-// data = layer-<id>.json {type:'countryClass', properties:{id, map, page, title, source, approx…}, legend:[{cls, color, label, …}], classes:{iso: cls}, overrides}
+// data = layer-<id>.json {type:'countryClass', properties:{id, map, page, title, source, approx…}, legend:[{cls, color, label, …}], classes:{iso: cls}, overrides, multiFill?}
+// 다중 채움 줄무늬(data.multiFill 'stripes' — U4-3a, 38쪽 공용어 둘 이상인 나라): classes[iso] 배열의 채움 분류(윤곽만 분류 빼고)가 둘 이상이면
+//   나라 하나 = 줄무늬 면 하나(pattern 'stripes', colors 차례 = 분류 차례, clsList) — 범례에서 그 분류 중 하나라도 고르면 남는다.
+//   multiFill 이 없으면 배열은 유럽 꼴(채움 + 윤곽만 분류 — 분류마다 면) 그대로.
 import { s } from '../shared/dom.js';
 import { areaLayer } from './layers.js';
 import { legendItems } from './layerStyle.js';
@@ -15,6 +18,26 @@ import { LAYER_Z, metaOf, setAttr, connect } from './layerCommon.js';
  * 분류 + 나라 도형 → 면 레이어 자료. 나라 Feature 마다 {type:'area', cls, iso, name(ko), label(「이름 · 분류」), color(범례 화면 색)}.
  * classes[iso] 가 배열이면 분류마다 Feature 하나(채움 분류 + 윤곽만 분류 — 유로 사용 가입국 = 가입국 채움 + 노란 테두리).
  */
+/** 나라 iso 의 채움 분류 범례 항목들(윤곽만 분류 빼고, 자료 차례) */
+function fillEntries(data, iso) {
+  const byCls = new Map(legendItems(data).map((e) => [e.cls, e]));
+  return [].concat(data?.classes?.[iso] ?? []).map((c) => byCls.get(c)).filter((e) => e && e.style !== 'outline');
+}
+const striped = (data, fills) => data?.multiFill === 'stripes' && fills.length > 1;
+
+/** 나라 칠하기: {color} | {pattern: 'stripes', colors}(줄무늬 나라) | null(분류 없음) */
+export function countryFill(data, iso) {
+  const fills = fillEntries(data, iso);
+  if (!fills.length) return null;
+  return striped(data, fills) ? { pattern: 'stripes', colors: fills.map((e) => e.color) } : { color: fills[0].color };
+}
+
+/** 범례에서 고른 분류 selected(Set — 비면 전체 보기) 아래 나라가 흐려지지 않는가: 그 나라 분류 중 하나라도 고름 */
+export function countryVisible(data, iso, selected) {
+  if (!selected || !selected.size) return true;
+  return [].concat(data?.classes?.[iso] ?? []).some((c) => selected.has(c));
+}
+
 export function countryClassFeatures(data, countries) {
   const legend = legendItems(data);
   const byCls = new Map(legend.map((e) => [e.cls, e]));
@@ -24,7 +47,14 @@ export function countryClassFeatures(data, countries) {
     const iso = c?.properties?.iso;
     if (!iso || !c.geometry) continue;
     const name = c.properties.ko || iso;
-    for (const cls of [].concat(classes[iso] ?? [])) {
+    const fills = data?.multiFill ? fillEntries(data, iso) : [];
+    let list = [].concat(classes[iso] ?? []);
+    if (striped(data, fills)) { // 줄무늬 면 하나 + (있으면) 윤곽만 분류
+      const f0 = fills[0];
+      features.push({ type: 'Feature', properties: { type: 'area', cls: f0.cls, clsList: fills.map((e) => e.cls), pattern: 'stripes', colors: fills.map((e) => e.color), iso, name, label: [name, ...fills.map((e) => e.label)].join(' · '), color: f0.color }, geometry: c.geometry });
+      list = list.filter((x) => !fills.some((e) => e.cls === x));
+    }
+    for (const cls of list) {
       const e = byCls.get(cls);
       if (e) features.push({ type: 'Feature', properties: { type: 'area', cls: e.cls, iso, name, label: `${name} · ${e.label}`, color: e.color }, geometry: c.geometry });
     }

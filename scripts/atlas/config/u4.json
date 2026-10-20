@@ -27,7 +27,20 @@
   "_coverageTolFactor": "coverage_simplify 의 허용치는 지우는 삼각형 넓이의 제곱근 기준이라 같은 tol 이면 Douglas–Peucker 보다 덜 지운다 → 면 덮개에는 tol × 이 값",
   "minArea": 0.15
  },
- "layers": {},
+ "layers": {
+  "ne-disputed": {
+   "_doc": "U4-3f 미확정 국경(교사 Q2 답 「점선」): 34쪽 붉은 점선 서사하라–모로코·할라이브(이집트–수단)·일레미(케냐–남수단). Natural Earth 10m 육지 국경선에서 FEATURECLA 가 분쟁 계열(원본 값: 'Disputed (please verify)' 39 · 'Line of control (please verify)' 10 · 'Indefinite (please verify)' 13 …)이고 양쪽 나라가 아래 짝인 선만 — 상자 안 분쟁 계열 선은 34개(팔레스타인–이스라엘·레바논·소말리아–에티오피아·탄자니아–말라위·모로코–알제리·올리벤사·키프로스 등)이지만 교과서는 세 곳만 점선. 서사하라–모로코는 NE 값이 Line of control. 일반도·색칠하기 주제 layers 에만(주제 항목 type 'area' — 선 레이어).",
+   "map": "p34-africa",
+   "type": "line",
+   "source": "ne-disputed",
+   "disputed": {
+    "featurecla": ["Disputed (please verify)", "Line of control (please verify)"],
+    "pairs": [["Western Sahara", "Morocco"], ["Egypt", "Sudan"], ["South Sudan", "Kenya"]]
+   },
+   "color": "#ed1c24",
+   "label": "미확정 국경"
+  }
+ },
  "_layers": "U4-4 에서 채움(u3 꼴: map·type·mode·tol·minArea·expectLegend·색 대응, 나라 단위 countryClass·countryOverrides).",
  "georef": {
   "families": [

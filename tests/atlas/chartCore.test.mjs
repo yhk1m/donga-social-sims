@@ -277,3 +277,43 @@ test('breakScale·barAxis: 축 생략 [0, 680] — 0 은 바닥, 680~780 은 위
   assert.throws(() => barAxis({ ...finance, axisBreak: [700, 680] }), /axisBreak/);
   assert.throws(() => barAxis({ ...finance, axisBreak: [0, 800], axes: undefined }), /axisBreak/, '값(최대 763)보다 높은 생략');
 });
+
+// ── U4-3c 고리 그래프(pie + ring) · U4-3d 원 크기 줄(bubbleRow) ─────────────────
+const { ringRatio, ringSlices, sectorPath, bubbleLayout } = await import('../../src/atlas/chartCore.js');
+const ringSpec = (extra = {}) => ({ id: 'p38-bauxite', type: 'pie', title: '보크사이트', unit: '%', categories: ['2020년'],
+  series: [{ name: '기니', values: [22], color: '#f7941d' }, { name: '오스트레일리아', values: [27.5], color: '#8dc63f' }, { name: '기타', values: [50.5], color: '#d1d3d4' }], ...extra });
+
+test('chartPlan 고리: pie + ring 은 시험지 양식 SVG, donut 만 있는 pie(유럽 코펜하겐)는 지금처럼 csat 원그래프', () => {
+  assert.deepEqual(chartPlan({ type: 'pie', ring: 0.6 }), { via: 'svg' });
+  assert.deepEqual(chartPlan({ type: 'pie', ring: true, donut: 0.595 }), { via: 'svg' });
+  assert.deepEqual(chartPlan({ type: 'pie', donut: 0.595 }), { via: 'csat', renderer: 'stacked', size: [800, 640] });
+  assert.deepEqual(chartPlan({ type: 'pie' }), { via: 'csat', renderer: 'stacked', size: [800, 640] });
+  assert.deepEqual(chartPlan({ type: 'bubbleRow' }), { via: 'svg' });
+  // 안쪽 반지름 비: ring 수 → 그 값, ring true → donut(유럽 v2 는 ring: true 만 더하면 donut 0.595 고리), 둘 다 없으면 0.6
+  assert.equal(ringRatio({ ring: 0.55 }), 0.55);
+  assert.equal(ringRatio({ ring: true, donut: 0.595 }), 0.595);
+  assert.equal(ringRatio({ ring: true }), 0.6);
+});
+
+test('ringSlices: 12시에서 시계 방향 계열 차례, 각 합 360°(값 합이 100 이 아니어도), sectorPath 는 고리 조각', () => {
+  const sl = ringSlices(ringSpec());
+  assert.deepEqual(sl.map((q) => q.name), ['기니', '오스트레일리아', '기타']);
+  assert.equal(sl[0].a0, 0);
+  assert.ok(Math.abs(sl.at(-1).a1 - 360) < 1e-9);
+  assert.ok(Math.abs(sl.reduce((a, q) => a + (q.a1 - q.a0), 0) - 360) < 1e-9);
+  assert.ok(Math.abs(sl[0].a1 - 22 * 3.6) < 1e-9);
+  const odd = ringSlices(ringSpec({ series: [{ name: 'a', values: [30] }, { name: 'b', values: [30] }, { name: 'c', values: [30] }] }));
+  assert.ok(Math.abs(odd[1].a1 - odd[1].a0 - 120) < 1e-9, '합 90 → 비율로');
+  const d = sectorPath(0, 0, 6, 10, 0, 90);
+  assert.match(d, /^M0,-10A10,10 0 0,1 10,0L6,0A6,6 0 0,0 0,-6Z$/);
+  assert.equal(sectorPath(0, 0, 6, 10, 0, 360), arcPath(0, 0, 6, 10, 100), '한 바퀴는 arcPath');
+});
+
+test('bubbleLayout: 원 넓이 ∝ 값(지름 비 = √값 비), 아주 작은 값도 최소 지름, 범주 차례 = 자료 차례', () => {
+  const spec = { type: 'bubbleRow', unit: '십 km²', categories: ['에티오피아', '니제르', '지부티'], series: [{ name: '복원 면적', values: [2006, 809, 0.13], color: '#8b6bb1' }] };
+  const b = bubbleLayout(spec, { maxD: 60, minD: 2 });
+  assert.deepEqual(b.map((x) => x.name), ['에티오피아', '니제르', '지부티']);
+  assert.equal(b[0].d, 60);
+  assert.ok(Math.abs(b[0].d / b[1].d - 1.575) < 0.01, `${b[0].d / b[1].d}`);
+  assert.equal(b[2].d, 2, '0.13 → √ 비로는 0.48px — 최소 2px');
+});

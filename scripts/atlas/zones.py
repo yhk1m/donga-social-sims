@@ -1,5 +1,5 @@
 # © 2026 김용현
-# scripts/atlas/zones.py — 분류 면(지면 pt): 벡터 채움(화가 알고리즘), 래스터 화소 분류, 빗금 윤곽, 틀 자르기·빈 곳 넓히기
+# scripts/atlas/zones.py — 분류 면(지면 pt): 벡터 채움(화가 알고리즘), 래스터 화소 분류, 빗금 윤곽, 점무늬 면, 틀 자르기·빈 곳 넓히기
 import os
 import numpy as np
 import shapely
@@ -250,6 +250,33 @@ def hatch_zone(m, hcfg):
         if not overlaps(r, m['bbox']) or any(inside(r, b) for b in ex): continue
         gs += [g for g in (polygonal(Polygon(R)) for R in rings(d)) if g is not None]
     return polygonal(unary_union(gs).intersection(box(*m['bbox']))) if gs else None
+
+
+def dots_area(centers, spacing, fr=None, min_area=None):
+    """점무늬 면(U4-3b, 39쪽 사하라 사막 — 교과서에 경계선이 없어 점 무리의 겉모양이 경계): 점 중심 [(x, y)] → 면.
+    중심마다 spacing × 0.75 로 넓혀 합치고(이웃 점끼리 이어짐) spacing × 0.25 만큼 되줄여(닫기 — 바깥 점 중심에서 반 칸 밖이 경계),
+    구멍은 메우고, min_area(기본 (3·spacing)²) 보다 작은 조각(동떨어진 점 몇 개)은 버린다. fr 이 있으면 그 틀로 자른다."""
+    from shapely.geometry import Point
+    if not centers: return None
+    g = unary_union([Point(c).buffer(spacing * 0.75, 8) for c in centers]).buffer(-spacing * 0.25, 8)
+    g = polygonal(g)
+    if g is None: return None
+    from atlas_common import flat_polygons
+    g = polygonal(unary_union([Polygon(p.exterior) for p in flat_polygons(g)]))
+    if g is not None and fr is not None: g = polygonal(g.intersection(fr))
+    return drop_small(g, (3 * spacing) ** 2 if min_area is None else min_area) if g is not None else None
+
+
+def dots_zone(m, dcfg):
+    """점무늬 분류: 작은 원 채움(색 dcfg.color, 넓이 ≤ dcfg.maxPt2 기본 4pt²) 중심들 → dots_area(spacingPt). 견본 상자·덮개 상자 안 점은 뺀다."""
+    ex = excluded_boxes(m) + [dcfg['swatch']]
+    cs, mx = [], dcfg.get('maxPt2', 4.0)
+    for d in drawings(m['page']):
+        if hexc(d.get('fill')) != dcfg['color']: continue
+        r = d['rect']
+        if (r[2] - r[0]) * (r[3] - r[1]) > mx or not overlaps(r, m['bbox']) or any(inside(r, b) for b in ex): continue
+        cs.append(((r[0] + r[2]) / 2, (r[1] + r[3]) / 2))
+    return dots_area(cs, dcfg['spacingPt'], frame(m), dcfg.get('minPt2'))
 
 
 def finish_zones(m, zones, order, cfg, domain=None):

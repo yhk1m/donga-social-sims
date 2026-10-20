@@ -53,12 +53,12 @@ def _chain(cand, x_start):
     return chain
 
 
-def hatch_legend(m, hcfg):
-    """빗금 견본(채움이 무늬라 get_drawings 에 안 잡힘 → 설정의 견본 상자) + 오른쪽 글자."""
+def hatch_legend(m, hcfg, pattern='hatch'):
+    """빗금 견본(채움이 무늬라 get_drawings 에 안 잡힘 → 설정의 견본 상자) + 오른쪽 글자. 점무늬(U4-3b)는 pattern 'dots' 로 같은 길."""
     b = hcfg['swatch']; y = yc(b)
     cand = sorted((t for t in spans(m['page']) if abs(yc(t['bbox']) - y) < ROW_TOL_PT and b[2] - 0.5 <= t['bbox'][0] < b[2] + HATCH_LABEL_SPAN_PT),
                   key=lambda t: t['bbox'][0])
-    return {'color': hcfg['color'], 'kind': 'fill', 'pattern': 'hatch', 'box': b, 'label': ' '.join(t['text'] for t in _chain(cand, b[2]))}
+    return {'color': hcfg['color'], 'kind': 'fill', 'pattern': pattern, 'box': b, 'label': ' '.join(t['text'] for t in _chain(cand, b[2]))}
 
 
 def flow_legend(m, color):

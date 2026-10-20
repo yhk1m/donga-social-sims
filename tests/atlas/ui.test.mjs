@@ -641,3 +641,78 @@ test('renderChart 유럽 형식: 묶음 막대는 csat 캔버스, 강조·축 �
   assert.ok(!findAll(c.el, (n) => n.tagName === 'title').some((t) => /undefined|null|NaN/.test(t.textContent)));
   assert.equal(find(bars[1], (n) => n.tagName === 'title').textContent, '런던 자료 없음');
 });
+
+// ── U4-3c 고리 그래프 · U4-3d 원 크기 줄 · U4-3b 점무늬 범례 견본 · U4-3e 작은 나라 넓이 기준 ─────────────────
+test('renderChart 고리(pie + ring): 등록 전에는 「그리지 못함」(u2·u3 조각엔 코드 없음), installExtraCharts 뒤 시험지 양식 SVG — 조각 수 = 계열 수(검은 선), 가운데 글자, 아래 견본 목록; donut 만이면 csat 캔버스', async () => {
+  const box = div();
+  const spec = { id: 'p38-bauxite', type: 'pie', ring: 0.6, title: '보크사이트', unit: '%', categories: ['2020년'], center: ['39,100', '(만 톤)', '2020년'],
+    series: [{ name: '기니', values: [22], color: '#f7941d' }, { name: '오스트레일리아', values: [27.5], color: '#8dc63f' }, { name: '기타', values: [50.5], color: '#d1d3d4' }] };
+  const errs = []; const ce = console.error; console.error = (...a) => errs.push(a.join(' '));
+  try { assert.ok(find(renderChart(box, spec).el, byClass('ds-note')), '등록 전: 실패 글'); } finally { console.error = ce; }
+  assert.match(errs.join(), /등록되지 않음/);
+  const { installExtraCharts } = await import('../../src/atlas/chartsExtra.js');
+  installExtraCharts();
+  const r = renderChart(box, spec);
+  assert.ok(r.el.classList.contains('at-chart-svg'));
+  const segs = findAll(r.el, (n) => n.tagName === 'path' && n.parentNode?.classList?.contains('at-ct-cell'));
+  assert.equal(segs.length, 3);
+  assert.deepEqual(segs.map((p) => [p.getAttribute('fill'), p.getAttribute('stroke')]), [['#f7941d', '#231f20'], ['#8dc63f', '#231f20'], ['#d1d3d4', '#231f20']]);
+  const texts = findAll(r.el, (n) => n.tagName === 'text').map((t) => t.textContent);
+  for (const t of ['39,100', '(만 톤)', '2020년', '기니 22', '기타 50.5']) assert.ok(texts.includes(t), t);
+  assert.equal(find(r.el, byClass('ds-note')), null);
+  const c = renderChart(box, { ...spec, ring: undefined, donut: 0.595 });
+  assert.ok(find(c.el, (n) => n.tagName === 'CANVAS' || n.tagName === 'canvas'), 'donut 만 → csat 원그래프(유럽 31쪽 그대로)');
+});
+
+test('renderChart 원 크기 줄(bubbleRow): 원마다 이름·값, 지름 비 = √값 비, 자료 차례', () => {
+  const r = renderChart(div(), { id: 'p39-ggw', type: 'bubbleRow', title: '복원된 녹지 면적', unit: '십 km²', categories: ['에티오피아', '니제르', '지부티'],
+    series: [{ name: '면적', values: [2006, 809, 0.13], color: '#8b6bb1' }] });
+  const circles = findAll(r.el, (n) => n.tagName === 'circle');
+  assert.equal(circles.length, 3);
+  const d = circles.map((c) => 2 * Number(c.getAttribute('r')));
+  assert.ok(Math.abs(d[0] / d[1] - 1.575) < 0.01);
+  assert.ok(d[2] >= 2);
+  assert.deepEqual(findAll(r.el, (n) => n.tagName === 'text').map((t) => t.textContent).slice(0, 2), ['에티오피아', '2,006']);
+  assert.equal(find(r.el, byClass('ds-note')), null);
+});
+
+test('legendBlock 점무늬 견본(pattern dots): 점 무늬 배경, 빗금·단색 견본은 그대로', () => {
+  const items = [{ cls: 'a', label: '매우 높음', color: '#ed1c24', kind: 'fill' }, { cls: 'd', label: '사하라 사막', color: '#7a6a53', kind: 'fill', pattern: 'dots' },
+    { cls: 'h', label: '사헬 지역', color: '#2e3192', kind: 'fill', pattern: 'hatch' }];
+  const b = legendBlock(null, createLegendState(['a', 'd', 'h']), items, { title: '사막화' });
+  const sw = findAll(b.el, byClass('at-swatch-fill')).map((e) => e.style.background);
+  assert.equal(sw[0], '#ed1c24');
+  assert.match(sw[1], /radial-gradient\(circle, #7a6a53/);
+  assert.match(sw[2], /repeating-linear-gradient\(45deg, #2e3192/);
+});
+
+test('coloringLayer smallMetric area(U4-3e): 가늘고 긴 나라·흩어진 섬나라는 가장 큰 조각 넓이로 작음(상자 기준이면 아님), 확대하면 없어짐, 없으면 상자 기준 그대로', async () => {
+  const { geoEquirectangular, geoPath } = await import('d3-geo');
+  const { largestPart, areaPx } = await import('../../src/atlas/quiz.js');
+  const rect = (x, y, w, hh) => [[[x, y], [x, y + hh], [x + w, y + hh], [x + w, y], [x, y]]];
+  const feat = (iso, coordinates) => ({ type: 'Feature', properties: { iso, ko: iso }, geometry: { type: 'MultiPolygon', coordinates } });
+  // GMB 감비아 꼴 4.5° × 0.4°(1° = 10px → 45 × 4px), SYC 세이셸 꼴 10° 넓이에 0.1° 섬 셋(섬 1px, 상자 100px), BIG 10° 나라
+  const feats = [feat('GMB', [rect(0, 10, 4.5, 0.4)]), feat('SYC', [rect(20, 0, 0.1, 0.1), rect(25, 5, 0.1, 0.1), rect(29.9, 9.9, 0.1, 0.1)]), feat('BIG', [rect(40, 0, 10, 10)])];
+  const proj = geoEquirectangular().scale(10 * 180 / Math.PI).translate([100, 400]);
+  const arcs = [];
+  const ctx = { beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {}, stroke() {}, arc(x, y, r) { arcs.push({ x, y, r }); } };
+  const view = { width: 800, height: 600, geoRect: null };
+  const isos = ['GMB', 'SYC', 'BIG'];
+  const drawAt = (layer, p) => { arcs.length = 0; layer.draw(ctx, geoPath(p, ctx), view); return arcs.map((a) => [Math.round(a.x), Math.round(a.y)]); };
+  const at = (ll) => proj(ll).map(Math.round);
+  // 넓이 어림: 감비아 = √(45 × 4) ≈ 13.4px
+  const gmb = largestPart(feats[0].geometry);
+  assert.ok(Math.abs(areaPx(proj, gmb) - Math.sqrt(45 * 4)) < 0.3, `${areaPx(proj, gmb)}`);
+  const area = coloringLayer(feats, { smallPx: 16, smallIsos: isos, smallMetric: 'area' });
+  const box = coloringLayer(feats, { smallPx: 16, smallIsos: isos });
+  const near = (got, want) => got.length === want.length && got.every((p, i) => Math.hypot(p[0] - want[i][0], p[1] - want[i][1]) <= 1.5);
+  const got = drawAt(area, proj);
+  assert.ok(near(got, [at([2.25, 10.2]), at([20.05, 0.05])]), `넓이 기준: 감비아(13.4px)·세이셸(가장 큰 섬 1px — 적도 쪽 첫 섬 가운데) ${JSON.stringify(got)}`);
+  assert.deepEqual(drawAt(box, proj), [], '상자 기준: 감비아 45px·세이셸 100px 이라 작지 않음(유럽 u3 규칙 그대로)');
+  assert.deepEqual(drawAt(coloringLayer(feats, { smallPx: 16, smallIsos: isos, smallMetric: 'box' }), proj), drawAt(box, proj), "'box' = 기본");
+  assert.equal(area.hit(proj([2.25, 10.2]))?.properties.iso, 'GMB', '동그라미를 누르면 그 나라');
+  // 확대(1° = 100px): 감비아 134px → 없어짐, 세이셸 섬 10px → 남음
+  const zoom = geoEquirectangular().scale(100 * 180 / Math.PI).translate([100, 400]);
+  arcs.length = 0; area.draw(ctx, geoPath(zoom, ctx), { width: 4000, height: 2000, geoRect: null });
+  assert.deepEqual(arcs.map((a) => Math.round(zoom.invert([a.x, a.y])[0] * 100) / 100), [20.05]);
+});

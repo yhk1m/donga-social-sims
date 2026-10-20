@@ -367,6 +367,7 @@ function swatch(e) {
   if (e.style === 'outline') return h('span', { class: 'at-swatch at-swatch-outline', style: { borderColor: e.color || '#231f20' }, 'aria-hidden': 'true' });
   const st = { background: e.color || '#ccc' };
   if (e.pattern === 'hatch') st.background = `repeating-linear-gradient(45deg, ${e.color || '#ba703d'} 0 1.5px, transparent 1.5px 4px)`;
+  else if (e.pattern === 'dots') st.background = `radial-gradient(circle, ${e.color || '#231f20'} 0 0.9px, transparent 1.1px) 0 0 / 4px 4px`; // 점무늬(사하라 사막, U4-3b)
   return h('span', { class: 'at-swatch at-swatch-fill', style: st, 'aria-hidden': 'true' });
 }
 

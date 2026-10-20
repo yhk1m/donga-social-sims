@@ -10,7 +10,7 @@
 //   baseColor   {주제 id: 'tint'|'natural'|'none'} — 주제별 바탕 색 기본값(없으면 'none')
 //   locators    {레이어 ref: {bounds, names, title}} — 작은 위치도
 //   unitBoxes   10a 상세 상자(기본 basemap.meta.unitBoxes)
-//   coloring    {smallPx} — 색칠하기에서 화면 상자가 smallPx 보다 작은 나라를 동그라미로 그리고 누를 수 있게(quiz.js coloringLayer, 없으면 0)
+//   coloring    {smallPx, smallMetric?} — 색칠하기에서 화면 상자(smallMetric 'area' 면 가장 큰 조각 넓이의 제곱근)가 smallPx 보다 작은 나라를 동그라미로 그리고 누를 수 있게(quiz.js coloringLayer, 없으면 0)
 // 규칙(EMBED_RULES.md): DOM 은 h() 로만, 검색은 root 안에서만, 사진·쪽·음영은 공개 Pages 절대 주소.
 import { feature } from 'topojson-client';
 import { createShell, addBlock } from '../shared/shell.js';

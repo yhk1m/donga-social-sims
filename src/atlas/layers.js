@@ -63,10 +63,29 @@ function hatchPattern(ctx, color) {
   return ctx.createPattern(tile, 'repeat');
 }
 
+/** 무늬 타일(오프스크린 캔버스, 색별 캐시) — 줄무늬·점무늬(U4-3a·b). draw(c, size) 로 한 번 그린다. */
+const tiles = new Map();
+function tilePattern(ctx, key, size, draw) {
+  let tile = tiles.get(key);
+  if (!tile) { tile = h('canvas'); tile.width = tile.height = size; draw(tile.getContext('2d'), size); tiles.set(key, tile); }
+  return ctx.createPattern(tile, 'repeat');
+}
+/** 사선(45°) 줄무늬 — 색 차례대로 줄 폭 화면 약 4px(타일 6px × 색 수, x + y 방향 띠) */
+const stripePattern = (ctx, colors) => tilePattern(ctx, `s:${colors.join(',')}`, 6 * colors.length, (c, T) => {
+  for (let k = 0; k < 2 * colors.length; k++) {
+    const x = k * 6;
+    c.fillStyle = colors[k % colors.length];
+    c.beginPath(); c.moveTo(x, 0); c.lineTo(x + 6, 0); c.lineTo(x + 6 - T, T); c.lineTo(x - T, T); c.closePath(); c.fill();
+  }
+});
+/** 점무늬(사하라 사막) — 간격 6px, 지름 1.6px, 교과서 색 */
+const dotPattern = (ctx, color) => tilePattern(ctx, `d:${color}`, 6, (c) => { c.fillStyle = color; c.beginPath(); c.arc(3, 3, 0.8, 0, 2 * Math.PI); c.fill(); });
+
 // ---------- 면 ----------
 /**
  * 면 레이어(캔버스). 같은 자료의 선(등온선 type 'isotherm' — 값 글자 포함, 카슈미르 주장 국경·정전 라인 type 'line', dashed)은 흰 테두리 선으로,
  * pattern 'hatch' 면은 빗금으로 그린다. geometry:false 범례 항목은 그릴 것이 없다(범례에만).
+ * pattern 'stripes'(줄무늬 나라 — colors·clsList)·'dots'(점무늬 면) 는 채움 다음·빗금 앞에 무늬로(U4-3a·b — 그런 면이 없으면 그리는 길 그대로).
  * 범례 style 'outline' 분류의 면은 채우지 않고 테두리만(OUTLINE_STYLE) — 다른 분류 면과 겹쳐도 된다(유로 사용국 = 가입국 위 테두리).
  *   맞히기는 테두리 근처(화면 거리)만, 검은 선택 윤곽에는 넣지 않는다(고르면 자기 테두리가 굵어짐).
  */
@@ -79,11 +98,16 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
   const areas = feats.filter((f) => isPoly(f) && !f.properties.pattern && f.properties.type !== 'locator' && !outlineCls.has(f.properties.cls));
   const outlines = feats.filter((f) => isPoly(f) && outlineCls.has(f.properties.cls));
   const hatches = feats.filter((f) => isPoly(f) && f.properties.pattern === 'hatch');
+  // 줄무늬 나라(pattern 'stripes', properties.colors·clsList — countryClass multiFill)·점무늬 면(pattern 'dots'): 채움 다음, 빗금 앞
+  const stripes = feats.filter((f) => isPoly(f) && f.properties.pattern === 'stripes');
+  const dots = feats.filter((f) => isPoly(f) && f.properties.pattern === 'dots');
+  /** 범례 투명도 — 줄무늬 나라는 분류 중 하나라도 고르면 그대로(clsList) */
+  const aOf = (f, dim) => (f.properties.clsList ? Math.max(...f.properties.clsList.map((c) => alphaOf(legend, c, dim))) : alphaOf(legend, f.properties.cls, dim));
   const lines = feats.filter(isLine);
   // 지명(Point {type:'label', text, lines?, size(pt), color, role}) — 카슈미르 「카 슈 미 르」·관할 이름·나라 이름(교과서 글자 자리를 옮긴 것)
   const labels = feats.filter((f) => f.geometry?.type === 'Point' && f.properties.type === 'label');
   let labelBoxes = []; // 마지막 그림의 지명 상자(화면 px) — 바탕 지명이 피함
-  const polys = [...areas, ...hatches]; // 맞히기 순서(위에 그린 것부터 거꾸로)
+  const polys = [...areas, ...stripes, ...dots, ...hatches]; // 맞히기 순서(위에 그린 것부터 거꾸로)
   const own = new Set(feats);
   const cache = new Map(); // f → {idx, bounds}
   const info = (f) => { let c = cache.get(f); if (!c) { c = { idx: indexGeometry(f.geometry), bounds: null }; cache.set(f, c); } return c; };
@@ -174,7 +198,7 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
   /** 범례에서 고른 분류(한 분류 또는 묶음)가 있으면 그 면들의 바깥 윤곽(SELECT_OUTLINE). 전체 보기·선 분류만 고름이면 그리지 않는다. */
   function drawSelection(ctx, path, view) {
     if (!legend || legend.selected?.() == null) return;
-    const sel = polys.filter((f) => legend.isActive(f.properties.cls));
+    const sel = polys.filter((f) => aOf(f, 0) === 1);
     if (!sel.length) return;
     const geoms = sel.map((f) => clip(f, view.geoRect));
     ctx.save();
@@ -202,6 +226,16 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
       for (const f of areas) {
         ctx.globalAlpha = fillOpacity * alphaOf(legend, f.properties.cls, dimAlpha);
         ctx.fillStyle = colorOf(f);
+        ctx.beginPath(); path(clip(f, rect)); ctx.fill();
+      }
+      for (const f of stripes) {
+        ctx.globalAlpha = fillOpacity * aOf(f, dimAlpha);
+        ctx.fillStyle = stripePattern(ctx, f.properties.colors) || colorOf(f);
+        ctx.beginPath(); path(clip(f, rect)); ctx.fill();
+      }
+      for (const f of dots) {
+        ctx.globalAlpha = alphaOf(legend, f.properties.cls, dimAlpha);
+        ctx.fillStyle = dotPattern(ctx, colorOf(f)) || colorOf(f);
         ctx.beginPath(); path(clip(f, rect)); ctx.fill();
       }
       for (const f of hatches) {
@@ -241,7 +275,7 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
       }
       for (let i = polys.length - 1; i >= 0; i--) {
         const f = polys[i];
-        if (alphaOf(legend, f.properties.cls, 0) === 0) continue;
+        if (aOf(f, 0) === 0) continue;
         const c = info(f);
         if (!c.bounds) c.bounds = geoBounds(f);
         const [[w, s0], [e, n]] = c.bounds;
@@ -256,7 +290,7 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
   function paintHover(view) {
     if (!hoverEl) return;
     // 흐린 분류(범례에서 다른 분류를 고름)는 강조하지 않는다
-    if (!hovered || !view || view.moving || !view.projection || alphaOf(legend, hovered.properties.cls, 0) === 0) { setAttr(hoverEl, 'd', null); return; }
+    if (!hovered || !view || view.moving || !view.projection || aOf(hovered, 0) === 0) { setAttr(hoverEl, 'd', null); return; }
     const geom = clip(hovered, view.geoRect);
     hoverEl.setAttribute('class', `at-hover ${isLine(hovered) ? 'at-hover-line' : 'at-hover-area'}`);
     setAttr(hoverEl, 'd', geoPath(view.projection)(geom) || null);

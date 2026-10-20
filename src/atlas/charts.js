@@ -54,8 +54,14 @@ function csatCanvas(spec, plan, label) {
 }
 
 // ---------- 직접 그리는 SVG(시험지 양식) ----------
-const INK = '#231f20';
-const txt = (x, y, str, attrs = {}) => s('text', { class: 'at-ct', x, y, ...attrs }, str);
+export const INK = '#231f20';
+export const txt = (x, y, str, attrs = {}) => s('text', { class: 'at-ct', x, y, ...attrs }, str);
+/**
+ * 단원 전용 SVG 그래프(종류 → (spec, label) => <svg>): 고리 그래프(pie + ring)·원 크기 줄(bubbleRow)은 chartsExtra.js 의 installExtraCharts() 가
+ * 등록한다(U4-3c·d) — 부르는 단원 조각(아프리카)에만 그 코드가 들어가 u2·u3 조각 크기가 그대로. 등록 안 된 종류는 「그리지 못함」.
+ */
+const SVG_EXTRA = {};
+export const registerSvgChart = (type, fn) => { SVG_EXTRA[type] = fn; };
 /** 글자 폭 어림(viewBox 단위): 한글 1em, 그 밖 0.55em */
 const textW = (str, fs) => [...String(str)].reduce((a, ch) => a + (/[ㄱ-힣]/.test(ch) ? 1 : 0.56), 0) * fs;
 
@@ -201,7 +207,11 @@ export function renderChart(container, spec, { title = undefined, source = true 
   let body;
   try {
     if (plan.via === 'csat') body = csatCanvas(spec, plan, label);
-    else if (plan.via === 'svg') body = spec.type === 'radialBar' ? radialSvg(spec, label) : spec.type === 'bar' ? barSvg(spec, label) : stackedBarsSvg(spec, label);
+    else if (plan.via === 'svg') {
+      const fn = { radialBar: radialSvg, bar: barSvg, stackedBar: stackedBarsSvg }[spec.type] || SVG_EXTRA[spec.type];
+      if (!fn) throw new Error(`SVG 그래프 ${spec.type} 가 등록되지 않음(chartsExtra.installExtraCharts)`);
+      body = fn(spec, label);
+    }
     else if (plan.via === 'table') body = tableEl(spec);
     else body = h('p', { class: 'ds-note' }, `그릴 수 없는 그래프 종류: ${spec?.type}`);
   } catch (err) {

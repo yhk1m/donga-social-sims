@@ -368,7 +368,7 @@ function finish(layer, meta) {
 
 /**
  * 나라 단위 단계구분도(type 'countryClass'): country_class.py 결과($WORK/geo/<id>.cc.json) → layer-<id>.json
- * {type:'countryClass', properties:{id, map, page, title, kind, layerType, approx, source}, legend:[…, present], classes:{iso: cls}, overrides}.
+ * {type:'countryClass', properties:{id, map, page, title, kind, layerType, approx, source}, legend:[…, present], classes:{iso: cls}, overrides, multiFill?}.
  * 범례 꾸밈(legendColors·legendStyles 등)은 면 레이어와 같다. 웹은 바탕 지도 나라 도형(iso)을 칠한다(src/atlas/countryClass.js).
  */
 export function countryClassLayerJson(layer, cc, m, fit) {
@@ -387,7 +387,80 @@ export function countryClassLayerJson(layer, cc, m, fit) {
     legend: legend.map((e) => ({ ...e, present: present.has(e.cls) })),
     classes: cc.classes,
     overrides: cc.overrides || [],
+    ...(cc.multiFill ? { multiFill: cc.multiFill } : {}), // 다중 채움 줄무늬(country_class.py 설정 multi — U4-3a), 없으면 키도 없음
   };
+}
+
+/** 그래프 자료 목록(배열 또는 {id: spec}) → {id: spec} */
+const chartMap = (c) => (Array.isArray(c) ? Object.fromEntries(c.map((x) => [x.id, x])) : c?.charts ? chartMap(c.charts) : c || {});
+
+/**
+ * 지도 위 고리 기호(type 'chartSymbols', U4-3c — 38쪽 자원 7): 설정 items [{chart, centerPt(교과서 고리 가운데 지면 pt), sizePt?, title?, center?}]
+ * → {type:'chartSymbols', properties, items:[{id, chart, lonlat, title, center, sizePt, ring, series}]}. lonlat = centerPt 를 그 지도 fit 으로 되돌린 자리
+ * (고리가 지도 둘레 바다 위라 웹에서도 같은 자리), series·ring 은 그래프 자료(charts — id → spec)에서 옮김(앱 레이어가 그래프 자료 없이 그림).
+ */
+export function chartSymbolsLayerJson(layer, charts, cv, m, fit = {}) {
+  const C = chartMap(charts);
+  if (!layer.items?.length) throw new Error(`${layer.id}: chartSymbols 설정 items 가 없음`);
+  const items = layer.items.map((it) => {
+    const sp = C[it.chart];
+    if (!sp) throw new Error(`${layer.id}: 그래프 ${it.chart} 가 그래프 자료에 없음`);
+    const ll = cv.invert(it.centerPt);
+    if (!ll) throw new Error(`${layer.id}: ${it.chart} 고리 가운데 ${it.centerPt} 를 경위도로 되돌릴 수 없음`);
+    return {
+      id: it.id || it.chart, chart: it.chart, lonlat: [r3(ll[0]), r3(ll[1])], title: it.title || sp.title, center: it.center || sp.center || [],
+      // 안쪽 비는 수로 풀어 둠(ring true → donut), 색은 계열 color → colors[0] (앱 chartCore 와 같은 규칙)
+      sizePt: it.sizePt || 30, ring: typeof sp.ring === 'number' ? sp.ring : sp.donut ?? 0.6,
+      series: sp.series.map((q) => ({ name: q.name, values: [q.values[0]], color: q.color ?? q.colors?.[0] ?? '#cccccc' })),
+    };
+  });
+  return {
+    type: 'chartSymbols',
+    properties: { id: layer.id, map: layer.map, page: m.page, title: layer.title || m.title, kind: m.kind, layerType: 'chartSymbols', approx: !!fit.approx,
+      source: `교과서 22개정 중학 사회과 부도 ${m.page}쪽 (고리 그래프 자리 — 경위도 맞추기: ${fit.family})` },
+    items,
+  };
+}
+
+/**
+ * 미확정 국경(source 'ne-disputed', U4-3f — 34쪽 서사하라·할라이브·일레미 붉은 점선, 교사 Q2): Natural Earth 10m 육지 국경선
+ * (raw/ne/ne_10m_admin_0_boundary_lines_land) 중 FEATURECLA ∈ disputed.featurecla 이고, disputed.pairs([[나라, 나라]] — ADM0_LEFT·RIGHT
+ * 차례 상관없음)가 있으면 그 짝인 선을, 단원 상자(basemap.unitBoxes) 안 것만 → 점선 선 레이어(1단계 선 레이어 그대로 — 주제 항목 type 'area').
+ * 짝 하나라도 선이 없으면 멈춘다(원본 값이 바뀌었는지 확인).
+ */
+export function disputedLayerJson(layer, gj, boxes = []) {
+  const d = layer.disputed || {};
+  const cla = new Set(d.featurecla || []);
+  if (!cla.size) throw new Error(`${layer.id}: disputed.featurecla 가 없음`);
+  const key = (a, b) => [a, b].sort().join(' | ');
+  const pairs = new Map((d.pairs || []).map((p) => [key(...p), 0]));
+  const inBox = (c) => !boxes.length || boxes.some(([w, s0, e, n]) => c[0] >= w && c[0] <= e && c[1] >= s0 && c[1] <= n);
+  const lines = [];
+  for (const f of gj.features) {
+    const p = f.properties, k = key(p.ADM0_LEFT, p.ADM0_RIGHT);
+    if (!cla.has(p.FEATURECLA) || (pairs.size && !pairs.has(k))) continue;
+    for (const L of f.geometry.type === 'LineString' ? [f.geometry.coordinates] : f.geometry.coordinates) {
+      if (!L.every(inBox)) continue;
+      lines.push(L.map(([x, y]) => [r3(x), r3(y)]));
+      if (pairs.size) pairs.set(k, pairs.get(k) + 1);
+    }
+  }
+  const none = [...pairs].filter(([, n]) => !n).map(([k]) => k);
+  if (none.length || !lines.length) throw new Error(`${layer.id}: 선이 없는 짝 ${none.join(', ') || '(전체)'}`);
+  const color = layer.color || '#ed1c24', label = layer.label || '미확정 국경';
+  return {
+    type: 'FeatureCollection',
+    properties: { id: layer.id, title: label, kind: 'disputed', layerType: 'line', approx: false, winding: 'cw',
+      source: `Natural Earth 10m 육지 국경선(${[...cla].join(', ')})`, legend: [{ cls: 'c1', color, label, kind: 'line', dashed: true, present: true }] },
+    features: [{ type: 'Feature', properties: { type: 'line', cls: 'c1', label, color, dashed: true }, geometry: { type: 'MultiLineString', coordinates: lines } }],
+  };
+}
+
+function writeLayer(layer, out, extra = {}) {
+  fs.mkdirSync(OUT, { recursive: true });
+  const file = path.join(OUT, `layer-${layer.id}.json`);
+  fs.writeFileSync(file, JSON.stringify(out));
+  return { id: layer.id, type: layer.type, legend: 0, classes: 0, features: 0, kb: +(fs.statSync(file).size / 1024).toFixed(1), approx: !!out.properties?.approx, dropped: '-', warnings: [], ...extra };
 }
 
 function finishCountryClass(layer) {
@@ -445,10 +518,21 @@ function main(argv) {
     const l = LAYERS.find((x) => x.id === id); if (!l) throw new Error(`모르는 레이어 ${id}`); return l;
   });
   fs.mkdirSync(`${WORK}/geo`, { recursive: true });
-  // 나라 단위 단계구분도는 도형을 옮기지 않는다(country_class.py → 나라별 분류만)
+  // 나라 단위 단계구분도는 도형을 옮기지 않는다(country_class.py → 나라별 분류만). 고리 기호·미확정 국경도 PDF 도형을 뽑지 않음(U4-3c·f)
   const cc = todo.filter((l) => l.type === 'countryClass');
-  const geo = todo.filter((l) => l.type !== 'countryClass');
+  const special = (l) => l.type === 'chartSymbols' || l.source === 'ne-disputed';
+  const geo = todo.filter((l) => l.type !== 'countryClass' && !special(l));
   const byId = new Map();
+  for (const l of todo.filter(special)) {
+    if (l.type === 'chartSymbols') {
+      const charts = JSON.parse(fs.readFileSync(path.join(WORK, config.content.charts), 'utf8'));
+      const out = chartSymbolsLayerJson(l, charts, converter(l, loadFit(l.map)), maps[l.map], loadFit(l.map));
+      byId.set(l.id, writeLayer(l, out, { features: out.items.length }));
+    } else {
+      const out = disputedLayerJson(l, JSON.parse(fs.readFileSync(path.join(WORK, 'raw/ne/ne_10m_admin_0_boundary_lines_land.geojson'), 'utf8')), config.basemap?.unitBoxes || []);
+      byId.set(l.id, writeLayer(l, out, { legend: 1, classes: 1, features: out.features[0].geometry.coordinates.length }));
+    }
+  }
   if (geo.length) {
     prepare(geo, { extract: flags.has('--extract') });
     const metas = geo.map((l) => toRaw(l).meta);

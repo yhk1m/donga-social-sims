@@ -11,6 +11,9 @@
 //   직접(SVG)      막대마다 색(colors — 30쪽 런던·로테르담 강조)이나 축 생략 물결(axisBreak [0, 680])이 있는 bar — csat absbar 는 색이
 //                  계열 단위(seriesFills)뿐이고 축 생략이 없어서(barSvg, 시험지 양식) · 여러 막대 stackedBar(자원·수출 비율) — csat 가로 100% 막대는 칸 안 이름을 못 쓰고(값만), 칸마다 다른 색·막대 굵기(칸의 30%)도
 //                  교과서(칸마다 「나라 비율」 글자, 지시선)와 달라 읽을 수 없다 · radialBar(고리 막대) — csat 에 없는 종류
+//                  · 고리 그래프(pie + ring — U4-3c, 38쪽 자원 7: csat 2.2.2 원그래프에 안쪽 반지름이 없음). ring 이 있을 때만 — donut 만 있는
+//                  pie(유럽 31쪽 코펜하겐)는 csat 원그래프 그대로. 유럽 v2 는 그 자료에 ring: true 만 더하면 donut 값을 안쪽 반지름으로 고리가 됨
+//                  · 원 크기 줄(bubbleRow — U4-3d, 39쪽 복원 녹지 면적 11개국)
 //   표(HTML)       table(네옴시티) — 그래프가 아니라 글 표
 
 const MONTHS = 12;
@@ -22,7 +25,8 @@ export function chartPlan(spec) {
     case 'line': return { via: 'csat', renderer: 'line', size: [960, 620] };
     case 'stackedArea': return { via: 'csat', renderer: 'line', size: [1100, 820] };
     case 'pyramid': return { via: 'csat', renderer: 'pyramid', size: [800, 720] };
-    case 'pie': return { via: 'csat', renderer: 'stacked', size: [800, 640] };
+    case 'pie': return spec.ring ? { via: 'svg' } : { via: 'csat', renderer: 'stacked', size: [800, 640] };
+    case 'bubbleRow': return { via: 'svg' };
     case 'bar': return spec.colors || spec.axisBreak ? { via: 'svg' } : { via: 'csat', renderer: 'absbar', size: [1000, 600] };
     case 'groupedBar': return { via: 'csat', renderer: 'absbar', size: [1300, 700] }; // 1000 폭이면 「대중교통」 같은 범주 이름이 칸보다 넓어 csat 가 하나 걸러 씀
     case 'stackedBar':
@@ -364,6 +368,38 @@ export function arcPath(cx, cy, r0, r1, pct) {
     d += `L${f1(cx2)},${f1(cy2)}A${f1(r0)},${f1(r0)} 0 ${large},0 ${f1(dx)},${f1(dy)}Z`;
   } else d += `L${f1(cx)},${f1(cy)}Z`;
   return d;
+}
+
+/** 고리 안쪽 반지름 비: ring 이 수(0~1)면 그 값, true 면 donut(없으면 0.6) */
+export const ringRatio = (spec) => (typeof spec.ring === 'number' ? spec.ring : spec.donut ?? 0.6);
+
+/** 고리 그래프(pie + ring) 조각: 12시에서 시계 방향, 계열 차례, 각 = 값 / 합 × 360 → [{name, value, color, a0, a1}](도) */
+export function ringSlices(spec) {
+  const vals = spec.series.map((q) => Math.max(0, q.values[0] ?? 0));
+  const sum = vals.reduce((a, v) => a + v, 0) || 1;
+  let a = 0;
+  return spec.series.map((q, i) => { const a0 = a; a += (vals[i] / sum) * 360; return { name: q.name, value: q.values[0], color: colorOf(q) || '#ccc', a0, a1: a }; });
+}
+
+/** a0 → a1 도(12시 0, 시계 방향) 고리 조각(r0 = 0 이면 부채꼴) SVG 경로. 한 바퀴면 arcPath. */
+export function sectorPath(cx, cy, r0, r1, a0, a1) {
+  if (a1 - a0 >= 359.999) return arcPath(cx, cy, r0, r1, 100);
+  const large = a1 - a0 > 180 ? 1 : 0;
+  const [ax, ay] = pt(cx, cy, r1, a0), [bx, by] = pt(cx, cy, r1, a1);
+  let d = `M${f1(ax)},${f1(ay)}A${f1(r1)},${f1(r1)} 0 ${large},1 ${f1(bx)},${f1(by)}`;
+  if (r0 > 0) { const [c2x, c2y] = pt(cx, cy, r0, a1), [dx, dy] = pt(cx, cy, r0, a0); d += `L${f1(c2x)},${f1(c2y)}A${f1(r0)},${f1(r0)} 0 ${large},0 ${f1(dx)},${f1(dy)}Z`; }
+  else d += `L${f1(cx)},${f1(cy)}Z`;
+  return d;
+}
+
+/**
+ * 원 크기 줄(bubbleRow): 원 넓이 ∝ 값 — 지름 = maxD·√(v / 가장 큰 값), 아주 작은 값도 minD 이상(보이게). 범주 차례 = 자료 차례.
+ * → [{name, value, d}]
+ */
+export function bubbleLayout(spec, { maxD = 60, minD = 2 } = {}) {
+  const vals = spec.series[0].values;
+  const max = Math.max(...vals.map((v) => v || 0)) || 1;
+  return spec.categories.map((name, i) => ({ name, value: vals[i], d: Math.max(minD, maxD * Math.sqrt(Math.max(0, vals[i] || 0) / max)) }));
 }
 
 /** radialBar → 범주(중국·인도)마다 {category, rings: [{name, value, color}]}(바깥 고리부터 — 계열 차례) */

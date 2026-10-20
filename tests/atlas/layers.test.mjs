@@ -248,3 +248,62 @@ test('snapSymbols: 이름(끝 「(연도)」 뺌)이 Natural Earth 에 하나뿐
   assert.deepEqual(fs[1].geometry.coordinates, [-1.5, 39]);
   assert.equal(fs[2].properties.snapped, undefined);
 });
+
+// ── U4-3a·c·f 파이프라인: multiFill 넘김 · 고리 기호 레이어 · 미확정 국경 ─────────────────
+const { chartSymbolsLayerJson, disputedLayerJson } = await import('../../scripts/atlas/build_layers.mjs');
+
+test('countryClassLayerJson: multiFill(country_class 설정 multi) 은 그대로 넘기고, 없으면 키도 없음(u3 생성물 그대로)', () => {
+  const cc = { legend: [{ cls: 'c1', color: '#3a9a48', label: '아랍어', kind: 'fill' }, { cls: 'c2', color: '#a7a9ac', label: '기타', kind: 'fill' }], classes: { MAR: ['c1', 'c2'], EGY: 'c1' } };
+  const layer = { id: 'p38-language', map: 'p38-language', type: 'countryClass' };
+  const fit = { family: 'azimuthalEquidistant' };
+  assert.equal(countryClassLayerJson(layer, { ...cc, multiFill: 'stripes' }, { page: 38 }, fit).multiFill, 'stripes');
+  assert.ok(!('multiFill' in countryClassLayerJson(layer, cc, { page: 38 }, fit)));
+});
+
+test('chartSymbolsLayerJson: 설정 items 의 고리 가운데(지면 pt)를 fit 으로 되돌리고 그래프 자료의 계열·ring 을 옮김, 없는 그래프·되돌릴 수 없으면 멈춤', () => {
+  const cv = { invert: ([x, y]) => (x < 0 ? null : [x / 10 - 20, 40 - y / 10]) };
+  const charts = { 'p38-bauxite': { id: 'p38-bauxite', type: 'pie', ring: 0.6, title: '보크사이트', center: ['39,100', '(만 톤)', '2020년'],
+    series: [{ name: '기니', values: [22], color: '#f7941d', measured: [21.8] }, { name: '기타', values: [78], color: '#d1d3d4' }] } };
+  const layer = { id: 'p38-resource-charts', map: 'p38-resources', type: 'chartSymbols', items: [{ chart: 'p38-bauxite', centerPt: [150.123, 200.456], sizePt: 28 }] };
+  const out = chartSymbolsLayerJson(layer, charts, cv, { page: 38, title: '주요 자원', kind: 'resources' }, { family: 'azimuthalEquidistant' });
+  assert.equal(out.type, 'chartSymbols');
+  assert.deepEqual(out.items[0].lonlat, [-4.988, 19.954]);
+  assert.deepEqual(out.items[0].series, [{ name: '기니', values: [22], color: '#f7941d' }, { name: '기타', values: [78], color: '#d1d3d4' }]);
+  assert.deepEqual([out.items[0].title, out.items[0].sizePt, out.items[0].ring, out.items[0].center.length], ['보크사이트', 28, 0.6, 3]);
+  assert.equal(out.properties.page, 38);
+  assert.deepEqual(chartSymbolsLayerJson(layer, Object.values(charts), cv, { page: 38 }).items[0].chart, 'p38-bauxite', '그래프 자료 배열도 받음');
+  assert.throws(() => chartSymbolsLayerJson({ ...layer, items: [{ chart: 'p38-none', centerPt: [1, 1] }] }, charts, cv, { page: 38 }), /p38-none/);
+  assert.throws(() => chartSymbolsLayerJson({ ...layer, items: [{ chart: 'p38-bauxite', centerPt: [-1, 1] }] }, charts, cv, { page: 38 }), /되돌릴 수 없음/);
+  assert.throws(() => chartSymbolsLayerJson({ ...layer, items: [] }, charts, cv, { page: 38 }), /items/);
+});
+
+test('disputedLayerJson: FEATURECLA·나라 짝(차례 상관없음)·단원 상자로 고른 Natural Earth 선 → 점선 선 레이어(범례 「미확정 국경」), 짝에 선이 없으면 멈춤', () => {
+  const ln = (cla, l, r, coords) => ({ type: 'Feature', properties: { FEATURECLA: cla, ADM0_LEFT: l, ADM0_RIGHT: r }, geometry: { type: 'LineString', coordinates: coords } });
+  const gj = { type: 'FeatureCollection', features: [
+    ln('Disputed (please verify)', 'Egypt', 'Sudan', [[34.08, 22], [36.88, 22.0001]]),
+    ln('Line of control (please verify)', 'Western Sahara', 'Morocco', [[-8.8, 27.66], [-8.7, 27.66]]),
+    ln('International boundary (verify)', 'Egypt', 'Sudan', [[25, 22], [31.4, 22]]),          // 분쟁 계열 아님
+    ln('Disputed (please verify)', 'Palestine', 'Israel', [[34.2, 31.2], [34.6, 31.6]]),        // 짝 아님
+    ln('Disputed (please verify)', 'Kenya', 'South Sudan', [[34.38, 4.62], [35.61, 5.03]]),
+    ln('Disputed (please verify)', 'Kenya', 'South Sudan', [[100, 4.62], [101, 5.03]]),         // 상자 밖
+  ] };
+  const layer = { id: 'ne-disputed', source: 'ne-disputed', type: 'line', color: '#ed1c24', label: '미확정 국경',
+    disputed: { featurecla: ['Disputed (please verify)', 'Line of control (please verify)'], pairs: [['Western Sahara', 'Morocco'], ['Egypt', 'Sudan'], ['South Sudan', 'Kenya']] } };
+  const out = disputedLayerJson(layer, gj, [[-37, -39, 67, 42]]);
+  assert.equal(out.features.length, 1);
+  const f = out.features[0];
+  assert.deepEqual([f.properties.type, f.properties.dashed, f.properties.color, f.geometry.type], ['line', true, '#ed1c24', 'MultiLineString']);
+  assert.equal(f.geometry.coordinates.length, 3);
+  assert.deepEqual(f.geometry.coordinates[0], [[34.08, 22], [36.88, 22]], '소수 3자리');
+  assert.deepEqual(out.properties.legend, [{ cls: 'c1', color: '#ed1c24', label: '미확정 국경', kind: 'line', dashed: true, present: true }]);
+  assert.throws(() => disputedLayerJson({ ...layer, disputed: { ...layer.disputed, pairs: [...layer.disputed.pairs, ['Somalia', 'Ethiopia']] } }, gj, [[-37, -39, 67, 42]]), /Ethiopia \| Somalia/);
+  assert.throws(() => disputedLayerJson({ ...layer, disputed: {} }, gj), /featurecla/);
+});
+
+test('chartSymbolsLayerJson: ring true 는 donut 값을 수로, 계열 색이 colors 면 첫 색', () => {
+  const cv = { invert: () => [0, 0] };
+  const charts = { c: { id: 'c', type: 'pie', ring: true, donut: 0.55, title: 't', series: [{ name: 'a', values: [1], colors: ['#112233'] }] } };
+  const out = chartSymbolsLayerJson({ id: 'x', items: [{ chart: 'c', centerPt: [0, 0] }] }, charts, cv, { page: 38 });
+  assert.equal(out.items[0].ring, 0.55);
+  assert.equal(out.items[0].series[0].color, '#112233');
+});
