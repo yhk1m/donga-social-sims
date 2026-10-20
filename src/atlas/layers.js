@@ -22,7 +22,7 @@ import { h, s } from '../shared/dom.js';
 import { indexGeometry, clipIndexed } from './geoClip.js';
 import {
   alphaOf, symbolPx, classSymbolPx, flowWidthPx, lineWidthPx, barMetrics, quadPath, arrowSize, endTangent, arrowHead, trimRunEnd, joinParts, unwrapLine,
-  splitJumps, distToPolyline, lineLabelAt, shapePath, legendItems,
+  splitJumps, distToPolyline, lineLabelAt, shapePath, legendItems, valueBoxSize, placeValueBoxes, valueIconPath,
 } from './layerStyle.js';
 import { LAYER_Z, round1, round2, featuresOf, isPoly, isLine, metaOf, setAttr, connect, hoverClass } from './layerCommon.js';
 
@@ -280,6 +280,8 @@ function defaultIconOf(legendList) {
  * 인구 막대(shape 'bar')는 1억 명 칸을 쌓고 사람 아이콘·나라 이름을 얹는다(지시선 막대는 barAt 에 세우고 나라 자리까지 점선).
  * 누르면 onPick(feature). 크기 = symbolPx(properties.size pt, k) — 크기 단계 기호(properties.sizeBy 'class')는 classSymbolPx(단계 비 유지).
  * 같은 레이어 객체를 다른 <g> 에 다시 그리면(렌더러에 다시 올림) 요소와 캐시(칸 크기 등)를 모두 새로 만든다.
+ * 값 붙은 기호(properties.values [{icon, text}] — 31쪽 리스본 「충전소 아이콘 5.47 / 사람 아이콘 39.8」): 기호 옆 흰 상자에 줄마다 아이콘 + 값.
+ *   상자 자리는 placeValueBoxes(기호 원·앞 상자를 피해 오른쪽 → 왼쪽 → 대각선 → 위·아래), 상자도 맞히기·지명 피하기(labelObstacles)에 든다.
  */
 export function symbolLayer(id, points, { legend = null, map = null, layerId = id, legendRefresh = true, iconOf = null, sizeOf = (f) => f.properties.size, onPick = null, dimAlpha = 0.2, z = LAYER_Z.symbol } = {}) {
   const feats = featuresOf(points).filter((f) => f.geometry?.type === 'Point');
@@ -294,7 +296,21 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
   const diameter = (f, k) => (classSizes?.length ? classSymbolPx(sizeOf(f) || classSizes[0], k, classSizes, sizeOpts) : symbolPx(sizeOf(f) || 3, k, sizeOpts));
   const items = feats.map((f) => ({ f, shape: shapeOf(f) }));
   const byF = new Map(items.map((it) => [it.f, it]));
+  const VALUE_FS = 10;
+  for (const it of items) if (it.f.properties.values?.length) it.vsize = valueBoxSize(it.f.properties.values, { fs: VALUE_FS });
   let root = null;
+
+  /** 값 상자 요소(흰 바탕 + 줄마다 아이콘·값) — 자리는 drawSvg 가 translate 로 */
+  function valueBox(it) {
+    const { w, h: hh, rows } = it.vsize, pad = 3, sc = VALUE_FS / 10;
+    const kids = [s('rect', { class: 'at-sym-vbox', x: 0, y: 0, width: round1(w), height: round1(hh), rx: 1.5 })];
+    rows.forEach((r, i) => {
+      const y = pad + i * (VALUE_FS + 1);
+      kids.push(s('path', { class: `at-sym-vicon at-sym-vicon-${r.icon || 'x'}`, d: valueIconPath(r.icon), transform: `translate(${pad},${round1(y)}) scale(${sc})` }));
+      kids.push(s('text', { class: 'at-sym-vtext', x: round1(pad + VALUE_FS + 2), y: round1(y + VALUE_FS * 0.85) }, r.text));
+    });
+    return s('g', { class: 'at-sym-values', on: { click: (e) => { e.stopPropagation(); onPick?.(it.f, e); } } }, kids);
+  }
 
   function build(g) {
     root = s('g', { class: 'at-symbols' });
@@ -317,6 +333,8 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
       it.el = el;
       root.append(el);
     }
+    // 값 상자는 모든 기호 위에(기호 원에 가리지 않게)
+    for (const it of items) if (it.vsize) { it.vel = valueBox(it); it.vbox = null; root.append(it.vel); }
     g.append(root);
   }
   function drawBar(it, view, base, anchor) {
@@ -355,6 +373,22 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
     }
   }
   const onHover = hoverClass((f) => byF.get(f));
+  /** 값 상자 자리: 보이는 값 붙은 기호마다(자료 차례 = 우선순위) — 다른 기호 원도 피함 */
+  function placeValues() {
+    const withV = items.filter((it) => it.vel);
+    if (!withV.length) return;
+    const shown = withV.filter((it) => it.xy);
+    const others = items.filter((it) => it.xy && !it.vel && it.shape !== 'bar').map((it) => { const r = it.r || 3; return [it.xy[0] - r, it.xy[1] - r, it.xy[0] + r, it.xy[1] + r]; });
+    const boxes = placeValueBoxes(shown.map((it) => ({ xy: it.xy, r: it.r || 3, w: it.vsize.w, h: it.vsize.h })), { obstacles: others });
+    for (const it of withV) {
+      const k = shown.indexOf(it);
+      it.vbox = k >= 0 ? boxes[k] : null;
+      setAttr(it.vel, 'display', it.vbox ? null : 'none');
+      if (it.vbox) setAttr(it.vel, 'transform', `translate(${round1(it.vbox[0])},${round1(it.vbox[1])})`);
+      const a = alphaOf(legend, it.f.properties.cls, dimAlpha);
+      setAttr(it.vel, 'opacity', a === 1 ? null : a);
+    }
+  }
 
   const layer = {
     id, z, meta: metaOf(points), legendItems: legendList, features: feats,
@@ -382,8 +416,13 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
         setAttr(it.el, 'opacity', a === 1 ? null : a);
         it.el.classList.toggle('is-hover', it.f === onHover.current());
       }
+      placeValues();
     },
     hit(xy) {
+      for (let i = items.length - 1; i >= 0; i--) { // 값 상자(기호 위에 그림)
+        const b = items[i].vbox;
+        if (b && alphaOf(legend, items[i].f.properties.cls, 0) !== 0 && xy[0] >= b[0] && xy[0] <= b[2] && xy[1] >= b[1] && xy[1] <= b[3]) return items[i].f;
+      }
       for (let i = items.length - 1; i >= 0; i--) {
         const it = items[i];
         if (!it.xy || alphaOf(legend, it.f.properties.cls, 0) === 0) continue;
@@ -410,6 +449,7 @@ export function symbolLayer(id, points, { legend = null, map = null, layerId = i
           if (it.f.properties.barAt) out.push([it.xy[0] - 3, it.xy[1] - 3, it.xy[0] + 3, it.xy[1] + 3]); // 지시선 끝 점
         }
         else { const r = (it.r || 3) + 1; out.push([it.xy[0] - r, it.xy[1] - r, it.xy[0] + r, it.xy[1] + r]); }
+        if (it.vbox) out.push([...it.vbox]);
       }
       return out;
     },

@@ -225,3 +225,35 @@ test('nestedCircles: 큰 원부터, 반지름 = 단계 비, 아래 끝을 맞춤
   assert.ok(L.height >= L.items[4].labelY + 6);
   assert.equal(L.width, 40);
 });
+
+// ── 값 붙은 기호(U3-3d) ─────────────────────────────────────────────────
+import { valueBoxSize, placeValueBoxes, valueIconPath, VALUE_ICONS } from '../../src/atlas/layerStyle.js';
+
+const hitBox = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+test('valueBoxSize·valueIconPath: 줄마다 아이콘 + 값, 숫자는 좁게', () => {
+  const b = valueBoxSize([{ icon: 'charger', text: '5.47' }, { icon: 'person', text: '39.8' }], { fs: 10, pad: 3 });
+  assert.equal(b.rows.length, 2);
+  assert.equal(b.h, 3 * 2 + 2 * 10 + 1);
+  assert.ok(Math.abs(b.w - (6 + 10 + 2 + 4 * 6)) < 1e-9);
+  assert.equal(valueIconPath('charger'), VALUE_ICONS.charger);
+  assert.match(valueIconPath('모름'), /^M/);
+});
+
+test('placeValueBoxes: 값 상자는 어느 기호 원과도, 서로도 겹치지 않음(빽빽하면 오른쪽 → 왼쪽 → 대각선 → 위·아래), 장애물도 피함', () => {
+  // 리스본 작은 지도처럼 도시 9곳이 가까이: 지름 8px 기호, 상자 40×27
+  const pts = [[100, 100], [130, 104], [96, 140], [150, 90], [140, 140], [190, 120], [84, 180], [170, 175], [128, 200]];
+  const items = pts.map((xy) => ({ xy, r: 4, w: 40, h: 27 }));
+  const boxes = placeValueBoxes(items, { obstacles: [[60, 60, 200, 70]] });
+  const syms = items.map((it) => [it.xy[0] - it.r, it.xy[1] - it.r, it.xy[0] + it.r, it.xy[1] + it.r]);
+  for (const [i, b] of boxes.entries()) {
+    assert.ok(syms.every((s) => !hitBox(b, s)), `상자 ${i} 가 기호와 겹침`);
+    for (const [j, c] of boxes.entries()) if (j !== i) assert.ok(!hitBox(b, c), `상자 ${i}·${j} 겹침`);
+    assert.ok(!hitBox(b, [60, 60, 200, 70]), `상자 ${i} 가 장애물과 겹침`);
+  }
+  // 자리가 모자라면 겹친 넓이가 가장 작은 후보(멈추지 않음)
+  const tight = placeValueBoxes([[0, 0], [6, 0], [0, 6], [6, 6]].map((xy) => ({ xy, r: 4, w: 60, h: 40 })));
+  assert.equal(tight.length, 4);
+  // 여유가 있으면 첫 후보(오른쪽, 기호 가운데 높이)
+  const [b0] = placeValueBoxes([{ xy: [100, 100], r: 4, w: 40, h: 20 }], { gap: 3 });
+  assert.deepEqual(b0, [107, 90, 147, 110]);
+});

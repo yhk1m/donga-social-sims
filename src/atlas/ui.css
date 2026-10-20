@@ -73,6 +73,8 @@
 .ds-sim .at-legend-nest-item[aria-pressed=true] .at-legend-nest-circle { stroke: #111111; stroke-width: 1.6; }
 .ds-sim .at-legend-nest-item[aria-pressed=true] .at-legend-nest-label { font-weight: 700; fill: var(--accent); }
 .ds-sim .at-legend-nest-item:focus-visible .at-legend-nest-label { text-decoration: underline; }
+.ds-sim .at-legend-values { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; padding: 0 6px; font-size: 12px; }
+.ds-sim .at-legend-value { display: flex; align-items: center; gap: 6px; }
 .ds-sim .at-legend-item:disabled { cursor: default; color: var(--ink-2); }
 /* 범례 묶음(교과서 21쪽 기후 구분 상자처럼 묶음 이름 + 괄호) */
 .ds-sim .at-legend-list.has-groups { gap: 3px; }

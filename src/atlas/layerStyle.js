@@ -251,6 +251,46 @@ export function nearestColor(rgb, palette) {
   return best;
 }
 
+// ---------- 값 붙은 기호(31쪽 리스본 충전소 — 기호 옆 「아이콘 값」 상자) ----------
+/** 값 아이콘(0~10 상자, 선 없이 채움 경로). 모르는 이름은 작은 네모. */
+export const VALUE_ICONS = Object.freeze({
+  charger: 'M2,1H7V9.5H2Z M3,2.2V4.6H6V2.2Z M7,3.4H8.4V7.2Q8.4,8.4 9.4,8.4V9.4Q7.4,9.4 7.4,7.2V4.4H7Z M4.9,5.2L3.6,7.3H4.6L4.1,8.8L5.6,6.6H4.6Z',
+  person: 'M5,0.6A1.9,1.9 0 1,1 4.99,0.6Z M2.4,9.6V6.2Q2.4,4.4 5,4.4Q7.6,4.4 7.6,6.2V9.6Z',
+});
+export const valueIconPath = (name) => VALUE_ICONS[name] || 'M2,2H8V8H2Z';
+
+/** 값 상자 크기(px): 줄마다 아이콘(fs) + 틈 + 글자(숫자·점 0.6em, 그 밖 1em) → {w, h, rows:[{icon, text, tw}]} */
+export function valueBoxSize(values, { fs = 10, pad = 3, gap = 2, lineGap = 1 } = {}) {
+  const rows = (values || []).map((v) => ({ icon: v.icon, text: String(v.text ?? ''), tw: [...String(v.text ?? '')].reduce((a, ch) => a + (/[\d.,\-]/.test(ch) ? 0.6 : 1) * fs, 0) }));
+  const w = pad * 2 + fs + gap + Math.max(0, ...rows.map((r) => r.tw));
+  const h = pad * 2 + rows.length * fs + Math.max(0, rows.length - 1) * lineGap;
+  return { w, h, rows };
+}
+
+const boxHit = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+const boxOverlap = (a, b) => Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0])) * Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
+/**
+ * 값 상자 자리(지명 배치기와 같은 생각 — 장애물을 피해 후보 자리 중 첫째): items [{xy(기호 화면 자리), r(기호 반지름), w, h}](우선순위 차례) →
+ * 같은 차례로 [x0, y0, x1, y1]. 후보 = 오른쪽·왼쪽·오른쪽 위·오른쪽 아래·위·아래·왼쪽 위·왼쪽 아래(기호에서 r + gap 떨어짐).
+ * 피할 것 = 모든 기호 원 상자 + 앞서 놓은 값 상자 + obstacles(화면 px 상자). 다 겹치면 겹친 넓이가 가장 작은 후보.
+ */
+export function placeValueBoxes(items, { gap = 3, obstacles = [] } = {}) {
+  const syms = items.map((it) => [it.xy[0] - it.r, it.xy[1] - it.r, it.xy[0] + it.r, it.xy[1] + it.r]);
+  const placed = [];
+  return items.map((it) => {
+    const [x, y] = it.xy, d = it.r + gap, { w, h } = it;
+    const cands = [
+      [x + d, y - h / 2], [x - d - w, y - h / 2], [x + d * 0.7, y - d * 0.7 - h], [x + d * 0.7, y + d * 0.7],
+      [x - w / 2, y - d - h], [x - w / 2, y + d], [x - d * 0.7 - w, y - d * 0.7 - h], [x - d * 0.7 - w, y + d * 0.7],
+    ].map(([x0, y0]) => [x0, y0, x0 + w, y0 + h]);
+    const avoid = [...syms, ...placed, ...obstacles];
+    let best = cands.find((c) => !avoid.some((b) => boxHit(c, b)));
+    if (!best) best = cands.map((c) => [c, avoid.reduce((a, b) => a + boxOverlap(c, b), 0)]).sort((a, b) => a[1] - b[1])[0][0];
+    placed.push(best);
+    return best;
+  });
+}
+
 /** 기호 모양(반지름 1 상자 안, 가운데 원점). 모르는 이름은 원. */
 export const SHAPES = ['circle', 'square', 'diamond', 'triangle', 'triangle-down'];
 const SHAPE_D = {

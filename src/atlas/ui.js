@@ -19,7 +19,7 @@ import { PROJECTIONS } from './projections.js';
 import { renderChart } from './charts.js';
 import { segButtons } from './seg.js';
 import { tintLegend } from './tint.js';
-import { nestedCircles } from './layerStyle.js';
+import { nestedCircles, valueIconPath } from './layerStyle.js';
 import { BASE_MODES, baseModeOf, baseOptions, NATURAL_CREDIT } from './natural.js';
 import { scaleBarSpec, hoverLabel, pageCrop, pagesLabel, assetUrl, panTarget, ASSET_BASE } from './uiCore.js';
 import './ui.css';
@@ -397,7 +397,8 @@ function nestedLegend(items, legend, btns, label) {
 
 /**
  * 범례 블록. legend = legendState(없으면 누를 수 없는 목록), items = 화면 범례 항목(layer.legendItems).
- * opts: { title, lineTitle, credit, note, approx, approxNote, approxReason, ready(Promise<boolean>), legendStyle('nested-circles' = 겹친 원) }
+ * opts: { title, lineTitle, credit, note, approx, approxNote, approxReason, ready(Promise<boolean>), legendStyle('nested-circles' = 겹친 원),
+ *         valueLegend([{icon, label}] — 값 붙은 기호의 아이콘 설명) }
  */
 export function legendBlock(panel, legend, items, opts = {}) {
   const lineKinds = new Set(['line', 'flow', 'isotherm']);
@@ -454,6 +455,10 @@ export function legendBlock(panel, legend, items, opts = {}) {
     lines.length ? h('div', { class: 'at-legend-sub' }, opts.lineTitle || null) : null,
     lines.length ? h('div', { class: 'at-legend-list' }, lines.map(row)) : null,
     widthRow,
+    // 값 붙은 기호의 아이콘 설명(31쪽 리스본: 충전소 아이콘 = 1km²당 충전소, 사람 아이콘 = 인구 100명당 충전소)
+    opts.valueLegend?.length ? h('div', { class: 'at-legend-values', role: 'list', 'aria-label': '값 아이콘' }, opts.valueLegend.map((v) => h('div', { class: 'at-legend-value', role: 'listitem' },
+      s('svg', { class: 'at-swatch at-swatch-sym at-legend-vicon', viewBox: '0 0 10 10', 'aria-hidden': 'true' }, s('path', { d: valueIconPath(v.icon), fill: '#231f20' })),
+      h('span', { class: 'at-legend-label' }, v.label)))) : null,
     reset, notice,
     opts.note ? h('p', { class: 'at-legend-note' }, opts.note) : null,
     opts.credit ? h('p', { class: 'at-legend-credit' }, opts.credit) : null);

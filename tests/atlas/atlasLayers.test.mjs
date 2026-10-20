@@ -734,3 +734,38 @@ test('symbolLayer sizeBy class: 범례 size 단계 비를 확대 단계마다 �
   }
   assert.equal(L.meta.legendStyle, 'nested-circles');
 });
+
+// ── 값 붙은 기호(U3-3d) ─────────────────────────────────────────────────
+test('symbolLayer 값 붙은 기호: 기호 옆 흰 상자(아이콘 + 값 줄), 상자는 기호와 안 겹침, 맞히기·지명 피하기에 상자 포함', () => {
+  const v = viewOf();
+  const vals = (a, b) => [{ icon: 'charger', text: a }, { icon: 'person', text: b }];
+  const feats = [[10, 10, '리스본', vals('2.09', '7.1')], [12, 10, '세비야', vals('1.35', '1.8')], [11, 12, '마드리드', vals('2.24', '6.7')]].map(([lon, lat, name, values]) =>
+    ({ type: 'Feature', properties: { type: 'symbol', cls: 'c1', label: name, name, color: '#8dc63f', size: 2, values }, geometry: { type: 'Point', coordinates: [lon, lat] } }));
+  const data = fc(feats, [{ cls: 'c1', color: '#8dc63f', kind: 'fill', label: '도시' }]);
+  data.properties.valueLegend = [{ icon: 'charger', label: '1km²당 충전소' }, { icon: 'person', label: '인구 100명당 충전소' }];
+  const picked = [];
+  const L = symbolLayer('lis', data, { onPick: (f) => picked.push(f.properties.name) });
+  const g = document.createElementNS('svg', 'g');
+  L.drawSvg(g, v.project, v.view);
+  const root = g.childNodes[0];
+  const vboxes = root.childNodes.filter((e) => e.classList.contains('at-sym-values'));
+  assert.equal(vboxes.length, 3);
+  assert.equal(root.childNodes.indexOf(vboxes[0]), 3, '값 상자는 기호 다음(위)');
+  const texts = vboxes[0].childNodes.filter((e) => e.getAttribute('class') === 'at-sym-vtext').map((e) => e.textContent);
+  assert.deepEqual(texts, ['2.09', '7.1']);
+  assert.equal(vboxes[0].childNodes.filter((e) => /at-sym-vicon/.test(e.getAttribute('class') || '')).length, 2);
+  // 상자 자리: 기호 원과 안 겹침
+  const obs = L.labelObstacles();
+  const symBoxes = feats.map((f) => { const q = v.project(f.geometry.coordinates); return [q[0] - 3, q[1] - 3, q[0] + 3, q[1] + 3]; });
+  const boxes = vboxes.map((e) => { const [, x, y] = /translate\(([-\d.]+),([-\d.]+)\)/.exec(e.getAttribute('transform')); return [+x, +y]; });
+  const hitB = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+  const vb = obs.slice(-1)[0];
+  for (const b of obs.filter((o, i) => i % 2 === 1)) for (const sb of symBoxes) assert.ok(!hitB(b, sb), '값 상자가 기호와 겹침');
+  assert.equal(obs.length, 6, '기호 3 + 값 상자 3');
+  assert.deepEqual([vb[0], vb[1]].map((x) => Math.round(x * 10) / 10), boxes[2]);
+  // 상자를 누르면(맞히기) 그 기호
+  assert.equal(L.hit([vb[0] + 2, vb[1] + 2]).properties.name, '마드리드');
+  vboxes[1].dispatch('click');
+  assert.deepEqual(picked, ['세비야']);
+  assert.deepEqual(L.meta.valueLegend.map((x) => x.icon), ['charger', 'person']);
+});

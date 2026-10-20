@@ -215,3 +215,13 @@ test('applySymbolSizes: symbolSizes 단계 pt → 범례 size·기호 size, lege
   assert.throws(() => applySymbolSizes({ id: 'u', legendStyle: 'squares' }, legend, []), /legendStyle/);
   assert.deepEqual(applySymbolSizes({ id: 'u' }, legend, []), {});
 });
+
+test('applySymbolValues: symbolValues {이름: [값…]} + valueIcons → 기호 properties.values, 모르는 이름·값 수 다르면 멈춤', async () => {
+  const { applySymbolValues } = await import('../../scripts/atlas/build_layers.mjs');
+  const feats = [{ properties: { type: 'symbol', name: '리스본' } }, { properties: { type: 'symbol', name: '포르투' } }];
+  applySymbolValues({ id: 'lis', valueIcons: ['charger', 'person'], symbolValues: { 리스본: ['2.09', 7.1] } }, feats);
+  assert.deepEqual(feats[0].properties.values, [{ icon: 'charger', text: '2.09' }, { icon: 'person', text: '7.1' }]);
+  assert.equal(feats[1].properties.values, undefined);
+  assert.throws(() => applySymbolValues({ id: 'lis', valueIcons: ['charger'], symbolValues: { 없음: ['1'] } }, feats), /기호에 없는 이름/);
+  assert.throws(() => applySymbolValues({ id: 'lis', valueIcons: ['charger', 'person'], symbolValues: { 리스본: ['1'] } }, feats), /값 수/);
+});

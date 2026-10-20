@@ -226,6 +226,23 @@ export function applySymbolSizes(layer, legend, features) {
   return sizes;
 }
 
+/**
+ * 값 붙은 기호(31쪽 리스본 충전소): 설정 symbolValues {기호 이름: [값 글자, …]} + valueIcons [아이콘, …](줄 차례) → 그 이름 기호의
+ * properties.values [{icon, text}](제자리). 설정 valueLegend [{icon, label}] 은 자료 맨 위 properties 로(범례 아이콘 설명). 모르는 이름은 멈춤.
+ */
+export function applySymbolValues(layer, features) {
+  const vals = layer.symbolValues || {};
+  if (!Object.keys(vals).length) return;
+  const icons = layer.valueIcons || [];
+  const byName = new Map(features.filter((f) => f.properties.type === 'symbol' && f.properties.name).map((f) => [f.properties.name, f]));
+  for (const [name, texts] of Object.entries(vals)) {
+    const f = byName.get(name);
+    if (!f) throw new Error(`${layer.id}: symbolValues 에 기호에 없는 이름 ${name}`);
+    if (!Array.isArray(texts) || texts.length !== icons.length) throw new Error(`${layer.id}: symbolValues ${name} 값 수 ${texts?.length} ≠ valueIcons ${icons.length}`);
+    f.properties = { ...f.properties, values: texts.map((t, i) => ({ icon: icons[i], text: String(t) })) };
+  }
+}
+
 function finish(layer, meta) {
   const m = maps[layer.map];
   const clipped = JSON.parse(fs.readFileSync(`${WORK}/geo/${layer.id}.clipped.geojson`, 'utf8'));
@@ -233,6 +250,7 @@ function finish(layer, meta) {
   const { legend, colorOfCls } = decorateLegend(layer, meta.legend);
   for (const f of features) if (colorOfCls.has(f.properties.cls)) f.properties = { ...f.properties, color: colorOfCls.get(f.properties.cls) };
   const sizes = applySymbolSizes(layer, legend, features);
+  applySymbolValues(layer, features);
   const present = new Set(features.map((f) => f.properties.cls));
   const ne = layer.source === 'ne';
   const props = {
@@ -243,6 +261,7 @@ function finish(layer, meta) {
     ...(layer.symbolStyle ? { symbolStyle: layer.symbolStyle } : {}), // 기호 크기 배율·최소/최대 지름(px) — symbolLayer 가 읽음
     ...(Object.keys(sizes).length ? { sizeBy: 'class' } : {}),          // 크기 단계 기호(symbolLayer 가 단계 비를 지킴)
     ...(layer.legendStyle ? { legendStyle: layer.legendStyle } : {}),  // 범례 견본 모양('nested-circles' = 겹친 원 — ui.js legendBlock)
+    ...(layer.valueLegend ? { valueLegend: layer.valueLegend } : {}),  // 값 붙은 기호의 아이콘 설명 [{icon, label}]
     legend: legend.map((e) => ({ ...e, present: present.has(e.cls) })),
   };
   fs.mkdirSync(OUT, { recursive: true });

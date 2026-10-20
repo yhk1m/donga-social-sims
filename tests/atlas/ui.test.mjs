@@ -568,3 +568,12 @@ test('legendBlock 겹친 원(legendStyle nested-circles): 큰 원부터 겹친 �
   assert.equal(find(b2.el, byClass('at-legend-nested')), null);
   b.destroy(); b2.destroy();
 });
+
+test('legendBlock 값 아이콘 설명(valueLegend): 아이콘 두 개와 설명', () => {
+  const b = legendBlock(div(), null, [{ cls: 'c1', color: '#8dc63f', kind: 'fill', label: '도시' }],
+    { title: '리스본', valueLegend: [{ icon: 'charger', label: '1km²당 충전소' }, { icon: 'person', label: '인구 100명당 충전소' }] });
+  const rows = findAll(b.el, byClass('at-legend-value'));
+  assert.deepEqual(rows.map((r) => find(r, byClass('at-legend-label')).textContent), ['1km²당 충전소', '인구 100명당 충전소']);
+  assert.equal(rows.filter((r) => find(r, byClass('at-legend-vicon'))).length, 2);
+  b.destroy();
+});

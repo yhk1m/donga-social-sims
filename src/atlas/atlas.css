@@ -48,6 +48,11 @@
 .ds-sim .at-sym-shape { stroke: #fff; stroke-width: 1px; stroke-linejoin: round; }
 .ds-sim .at-sym-shape.has-stroke { stroke: var(--at-sym-stroke, #fff); stroke-width: 1.1px; }
 .ds-sim .at-sym-item.is-hover .at-sym-shape { stroke: #1f2a44; stroke-width: 2px; }
+/* 값 붙은 기호(31쪽 리스본 충전소): 기호 옆 흰 상자 + 아이콘·값 */
+.ds-sim .at-sym-values { cursor: pointer; }
+.ds-sim .at-sym-vbox { fill: rgba(255, 255, 255, .94); stroke: #6d6e71; stroke-width: 0.6px; }
+.ds-sim .at-sym-vicon { fill: #231f20; }
+.ds-sim .at-sym-vtext { font: 600 10px "Pretendard", "Malgun Gothic", sans-serif; fill: #231f20; }
 .ds-sim .at-bar-cell { stroke: #fff; stroke-width: .6px; }
 .ds-sim .at-bar-person { stroke: #fff; stroke-width: .8px; }
 .ds-sim .at-sym-item.is-hover .at-bar-cell, .ds-sim .at-sym-item.is-hover .at-bar-person { stroke: #1f2a44; stroke-width: 1.2px; }
