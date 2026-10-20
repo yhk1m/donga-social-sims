@@ -5,7 +5,8 @@
 #    polys:[{cls,color,label,pattern?,polygons:[[바깥 고리, 구멍...], ...]}],
 #    symbols:[{xy,cls,kind,color,size,label?,value?,anchor?,bar?}], lines:[{points,cls,kind,color,width?,value?,dir?,label?}],
 #    report:{..., warnings:[...]}}
-# mode: vector(zones.vector_zones) | raster(zones.raster_zones) | symbols(symbols.symbols) | density-markers(symbols.density_markers).
+# mode: vector(zones.vector_zones) | raster(zones.raster_zones) | symbols(symbols.symbols) | density-markers(symbols.density_markers)
+#   | raster-circles(symbols.raster_circles — 렌더 화소에서 찾는 크기 단계 원).
 # 부가: hatch(빗금 분류), isotherm(lines.isotherms), flows(lines.flows).
 # domain: build_layers.mjs 가 쓰는 $ATLAS_WORK/geo/<map>.domain.json(경위도로 되돌릴 수 있는 지면 범위, 원통 도법 세계 지도)이
 #   있으면 면을 그 안으로 자른다(지도 가장자리 너머 꼭짓점이 역변환에 실패하지 않도록).
@@ -108,6 +109,9 @@ def features(layer_id):
         leg = LG.legend(m, cfg, max_area=cfg.get('legendMaxArea'))
         out['legend'] = leg
         out['symbols'], rep = S.symbols(m, leg, cfg, warnings)
+        out['report'].update(rep)
+    elif mode == 'raster-circles':   # 30쪽 도시 인구 원(렌더 화소에서 찾음 — symbols.raster_circles) + 사례 도시
+        out['legend'], out['symbols'], rep = S.raster_circles(m, cfg, warnings)
         out['report'].update(rep)
     elif mode == 'density-markers':
         mc = cfg['marker']

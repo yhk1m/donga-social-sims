@@ -1,6 +1,6 @@
 # © 2026 김용현
 # scripts/atlas/symbols.py — 점 기호(지면 pt): 범례색 작은 도형, 지시선으로 붙인 이름, 인구 막대 기호
-import re
+import os, re
 import numpy as np
 from atlas_common import drawings, spans, hexc, rings, stroke_paths, match_color, overlaps, excluded_boxes, in_map, rect
 
@@ -141,3 +141,110 @@ def leader_end(chains, b, near):
             de = dist(e)
             if de < near and dist(o) > de + 5 and (best is None or de < best[0]): best = (de, o)
     return [round(best[1][0], 2), round(best[1][1], 2)] if best else None
+
+
+# ── 래스터 원 기호(30쪽 도시 인구) ─────────────────────────────────────────
+# 교과서 원은 투명 겹침을 펼친(flatten) 결과라 벡터 조각·작은 인라인 그림으로 쪼개져 있다(범례 원도 그림) → 지면을 렌더한 화소에서
+# 초록 원을 찾는다: 초록 가면 → 열림(얇은 선 지움) → 구멍 메움 → 거리 변환 최댓값 = 가장 큰 내접원을 하나씩 떼어 냄.
+def green_mask(im, gr, gb, max_r):
+    """RGB 화소 → 원 기호 가면(0/1): G − R > gr, G − B > gb, R ≤ max_r(하늘색 해안선과 노랑 땅이 섞인 밝은 연두 제외)."""
+    a = im.astype(int); R, G, B = a[..., 0], a[..., 1], a[..., 2]
+    return ((G - R > gr) & (G - B > gb) & (R <= max_r)).astype(np.uint8)
+
+
+def circles_from_mask(mask, rmin, open_px=5, grow=1.1, close_px=0):
+    """가면(0/1) → 원 [(x, y, r)](화소). 닫기(close_px — 원 테두리의 옅은 선·국경선이 원을 가르는 것 잇기) → 열기(open_px — 얇은 선 지움)
+    → 구멍 메우기(어두운 겹침 가운데가 색 조건을 못 넘은 고리) 뒤, 거리 변환이 가장 큰 점을 원 중심으로 떼어 내기(반지름 × grow + 1 화소 지움)를
+    반지름이 rmin 보다 작아질 때까지."""
+    import cv2
+    m = mask.astype(np.uint8)
+    if close_px: m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (close_px, close_px)))
+    if open_px: m = cv2.morphologyEx(m, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (open_px, open_px)))
+    inv = (1 - m).astype(np.uint8)
+    n, lbl = cv2.connectedComponents(inv, connectivity=4)
+    border = np.unique(np.concatenate([lbl[0], lbl[-1], lbl[:, 0], lbl[:, -1]]))
+    m = (m | (~np.isin(lbl, border) & (inv > 0))).astype(np.uint8)
+    dt0 = cv2.distanceTransform(m, cv2.DIST_L2, 5)   # 처음 가면의 거리 — 겹쳐 가린 원의 반지름을 되찾을 때
+    out = []
+    while True:
+        dt = cv2.distanceTransform(m, cv2.DIST_L2, 5)
+        if float(dt.max()) < rmin: break
+        # 남은 곳(지금 거리 ≥ rmin) 중 처음 가면 거리가 가장 큰 점: 따로 있는 원은 그 중심, 큰 원에 일부 가린 원은 남은 조각의 큰 원 쪽 끝
+        # (그 자리 처음 거리 ≈ 가린 원의 반지름 — 남은 조각만으로 재면 반지름을 작게 잼)
+        sel = np.where(dt >= rmin, dt0, 0)
+        y, x = np.unravel_index(int(np.argmax(sel)), sel.shape); r = float(dt0[y, x])
+        out.append((float(x), float(y), r))
+        cv2.circle(m, (int(x), int(y)), int(round(r * grow)) + 1, 0, -1)
+    return out
+
+
+def nearest_class(d, legend_d):
+    """지름 d → 범례 지름 목록에서 로그 거리가 가장 가까운 번호(렌더 화소로 잰 지름은 작은 원일수록 덜 잼 — 비율로 견줌)."""
+    return int(np.argmin([abs(np.log(d / x)) for x in legend_d]))
+
+
+def raster_circles(m, cfg, warnings):
+    """30쪽 도시 인구 원(크기 5단계) + 사례 도시(흰 원 + 이름) → (legend, symbols, report). 설정 cfg['circles']:
+    {dpi, green: {gr, gb, maxR}, rminPt, legendBox(범례 원이 있는 상자 — 원 오른쪽 글자 = 범례 이름), color(화면 색)}
+    + cfg['cases'] {fill, sizePt:[최소, 최대], label}(사례 도시 흰 원 — 가장 가까운 지명 낱말을 이름으로)."""
+    import pdfkit
+    from PIL import Image
+    from atlas_common import WORK
+    cc = cfg['circles']
+    os.makedirs(f'{WORK}/c1', exist_ok=True)
+    png = f"{WORK}/c1/{cfg['id']}-render.png"
+    _, _, dpi = pdfkit.render_clip(m['page'], m['bbox'], cc.get('dpi', 400), png)
+    s = dpi / 72; x0, y0 = m['bbox'][0], m['bbox'][1]
+    g = cc['green']
+    mask = green_mask(np.array(Image.open(png).convert('RGB')), g['gr'], g['gb'], g['maxR'])
+    found = [((x / s + x0, y / s + y0), 2 * r / s) for x, y, r in circles_from_mask(mask, cc.get('rminPt', 0.45) * s, close_px=int(cc.get('closePx', 0)))]
+    lb = cc['legendBox']
+    inbox = lambda p, b: b[0] <= p[0] <= b[2] and b[1] <= p[1] <= b[3]
+    leg_c = sorted([f for f in found if inbox(f[0], lb)], key=lambda f: -f[1])
+    texts = [t for t in spans(m['page']) if lb[0] - 2 <= t['bbox'][0] <= lb[2] + 40 and lb[1] - 2 <= (t['bbox'][1] + t['bbox'][3]) / 2 <= lb[3] + 2]
+    legend = []
+    for i, ((cx, cy), d) in enumerate(leg_c):
+        row = sorted((t for t in texts if abs((t['bbox'][1] + t['bbox'][3]) / 2 - cy) < 2.5 and t['bbox'][0] > cx), key=lambda t: t['bbox'][0])
+        legend.append({'cls': f'c{i + 1}', 'color': cc['color'], 'label': ' '.join(t['text'] for t in row).strip(), 'kind': 'symbol', 'measuredPt': round(d, 2)})
+    if any(not e['label'] for e in legend): raise ValueError(f"{cfg['id']}: 범례 원 이름을 못 읽음 {legend}")
+    exp = cc.get('expectClasses')
+    if exp is not None and len(legend) != exp: raise ValueError(f"{cfg['id']}: 범례 원 {len(legend)}개 ≠ {exp} — {[(e['label'], e['measuredPt']) for e in legend]}")
+    ex = excluded_boxes(m)
+    legend_d = [e['measuredPt'] for e in legend]
+    syms, by = [], {}
+    for (cx, cy), d in found:
+        if any(inbox((cx, cy), b) for b in ex): continue
+        k = nearest_class(d, legend_d); e = legend[k]
+        syms.append({'xy': [round(cx, 2), round(cy, 2)], 'cls': e['cls'], 'kind': e['label'], 'color': e['color'], 'size': round(d, 2)})
+        by[e['label']] = by.get(e['label'], 0) + 1
+    rep = {'circles': len(syms), 'byClass': by, 'legendMeasuredPt': legend_d}
+    if cfg.get('cases'):
+        ca = cfg['cases']; lo, hi = ca['sizePt']
+        names = list(ca.get('names') or [])
+        words = []   # (이름, 지면 자리) — 이름 목록이 있으면 글자 조각 안 그 이름(띄어 쓴 「소피아 앙티폴리스」, 한 조각에 붙은 「런던 로테르담」)의 가운데
+        for t in spans(m['page']):
+            if not overlaps(rect(t['bbox']), m['bbox']): continue
+            txt = t['text']; n = max(len(txt), 1); b = t['bbox']
+            at = lambda i, k: (b[0] + (b[2] - b[0]) * (i + k / 2) / n, (b[1] + b[3]) / 2)
+            if names:
+                for nm in names:
+                    i = txt.find(nm)
+                    if i >= 0: words.append((nm, at(i, len(nm))))
+            else:
+                pos = 0
+                for p in txt.split(' '):
+                    if p: words.append((p, at(pos, len(p))))
+                    pos += len(p) + 1
+        cls = f'c{len(legend) + 1}'
+        legend.append({'cls': cls, 'color': ca['fill'], 'label': ca['label'], 'kind': 'symbol'})
+        for d in drawings(m['page']):
+            r = d['rect']
+            if hexc(d.get('fill')) != ca['fill'] or not in_map(d, m) or not lo <= r.width <= hi or abs(r.width - r.height) > 0.3: continue
+            c = ((r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2)
+            w = min(words, key=lambda w: np.hypot(w[1][0] - c[0], w[1][1] - c[1])) if words else None
+            syms.append({'xy': [round(c[0], 2), round(c[1], 2)], 'cls': cls, 'kind': ca['label'], 'color': ca['fill'], 'size': round(r.width, 2),
+                         **({'label': w[0]} if w else {})})
+        got = [s_.get('label') for s_ in syms if s_['cls'] == cls]
+        rep['cases'] = got
+        if names and sorted(got) != sorted(names): warnings.append(f'사례 도시 이름 {got} ≠ 설정 {sorted(names)}')
+    return legend, syms, rep

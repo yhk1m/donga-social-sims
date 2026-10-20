@@ -248,6 +248,64 @@
    },
    "rasterForeignImages": true,
    "_rasterForeignImages": "왼쪽 가장자리 0.6pt 에 기후 구분 래스터(대부분 틀 밖인 그림)가 걸쳐 있어 그 자리는 바다로"
+  },
+  "p30-cities": {
+   "map": "p30-urban",
+   "type": "symbol",
+   "mode": "raster-circles",
+   "expectLegend": 6,
+   "circles": {
+    "dpi": 400,
+    "green": {
+     "gr": 22,
+     "gb": 3,
+     "maxR": 60
+    },
+    "rminPt": 0.45,
+    "legendBox": [
+     497,
+     470,
+     512,
+     518
+    ],
+    "color": "#056543",
+    "expectClasses": 5,
+    "_doc": "30쪽 도시 인구 원은 투명 겹침을 펼친 벡터 조각·인라인 그림이라(범례 원도 그림) 렌더 화소에서 찾음: 초록 가면(G−R>22, G−B>3, R≤60 — 해안 하늘색과 노랑 땅이 섞인 밝은 연두 제외) → 원 떼어 내기 → 범례 원 지름(같은 방법으로 잼)과 로그 거리로 단계",
+    "closePx": 3
+   },
+   "cases": {
+    "fill": "#ffffff",
+    "sizePt": [
+     2.5,
+     3.5
+    ],
+    "label": "사례 도시",
+    "names": [
+     "런던",
+     "로테르담",
+     "빌바오",
+     "슈투트가르트",
+     "소피아 앙티폴리스",
+     "베네치아"
+    ],
+    "_doc": "30쪽 사례 도시 6곳(흰 원 + 검은 테두리 + 이름). 교과서 범례에는 없음 — 화면 범례에 「사례 도시」로 더함"
+   },
+   "symbolSizes": {
+    "1,000 이상": 7.3,
+    "300~1,000": 5.9,
+    "100~300": 4.5,
+    "50~100": 3.0,
+    "30~50": 1.5,
+    "사례 도시": 2.9
+   },
+   "_symbolSizes": "범례 원 지름(렌더 화소로 잰 값 7.34·5.9·4.46·3.02·1.51pt, 사례 도시 흰 원 2.9pt)",
+   "legendStyle": "nested-circles",
+   "legendShapes": {
+    "사례 도시": "circle"
+   },
+   "legendStrokes": {
+    "사례 도시": "#231f20"
+   }
   }
  },
  "_layers": "U3-4 에서 채움(u2 꼴: map·type·mode·tol·minArea·expectLegend·색 대응).",

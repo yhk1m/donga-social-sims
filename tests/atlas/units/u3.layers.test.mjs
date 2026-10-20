@@ -69,3 +69,23 @@ test('p29 1월·7월: 강수 5단계 면 + 등온선(값 붙은 선), 7월 200 �
   assert.equal(jul.properties.legend.find((e) => e.label === '200 이상').geometry, false);
   for (const L of [jan, jul]) for (const f of L.features) if (f.properties.centroid) { const [lon, lat] = f.properties.centroid; assert.ok(lon > -30 && lon < 70 && lat > 30 && lat < 82); }
 });
+
+test('p30 도시 인구 원: 5단계(겹친 원 범례) + 사례 도시 6, 1,000만 이상 = 파리·모스크바', () => {
+  const L = read('p30-cities');
+  const syms = L.features.filter((f) => f.properties.type === 'symbol');
+  const by = (label) => syms.filter((f) => f.properties.kind === label);
+  assert.equal(L.properties.legendStyle, 'nested-circles'); assert.equal(L.properties.sizeBy, 'class');
+  assert.deepEqual(L.properties.legend.map((e) => e.label), ['1,000 이상', '300~1,000', '100~300', '50~100', '30~50', '사례 도시']);
+  const sizes = L.properties.legend.slice(0, 5).map((e) => e.size);
+  assert.deepEqual([...sizes].sort((a, b) => b - a), sizes);
+  for (const e of L.properties.legend.slice(0, 5)) assert.ok(by(e.label).length > 0, e.label);
+  const big = by('1,000 이상').map((f) => f.geometry.coordinates);
+  assert.equal(big.length, 2);
+  const near = ([lon, lat], [x, y], d) => Math.abs(lon - x) < d && Math.abs(lat - y) < d;
+  assert.ok(big.some((p) => near(p, [2.35, 48.86], 0.6)) && big.some((p) => near(p, [37.6, 55.75], 0.8)), JSON.stringify(big));
+  const cases = by('사례 도시');
+  assert.deepEqual(cases.map((f) => f.properties.name).sort(), ['런던', '로테르담', '베네치아', '빌바오', '소피아 앙티폴리스', '슈투트가르트']);
+  const ven = cases.find((f) => f.properties.name === '베네치아').geometry.coordinates;
+  assert.ok(near(ven, [12.33, 45.44], 0.5), `${ven}`);
+  assert.ok(syms.length > 150 && syms.length < 300, `${syms.length}`);
+});
