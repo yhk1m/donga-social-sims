@@ -662,3 +662,59 @@ test('layerFromRef: type countryClass → 나라 칠하기 레이어(범례 항�
   assert.ok(L.legend);
   assert.throws(() => layerFromRef({ ref: 'cc', type: 'countryClass' }, ccData()), /countryFeatures/);
 });
+
+// ── 윤곽만 분류(style outline, U3-3b) ───────────────────────────────────
+const { OUTLINE_STYLE } = await import('../../src/atlas/layers.js');
+const outlineFC = () => fc([
+  { type: 'Feature', properties: { type: 'area', cls: 'c1', label: '가입국', color: '#b9d989' }, geometry: { type: 'MultiPolygon', coordinates: [sq(10, 10, 4)] } },
+  { type: 'Feature', properties: { type: 'area', cls: 'c3', label: '유로', color: '#ffdd00' }, geometry: { type: 'MultiPolygon', coordinates: [sq(10, 10, 4)] } },
+  { type: 'Feature', properties: { type: 'area', cls: 'c2', label: '탈퇴국', color: '#f69896' }, geometry: { type: 'MultiPolygon', coordinates: [sq(20, 10, 4)] } },
+], [{ cls: 'c1', color: '#b9d989', kind: 'fill', label: '가입국' }, { cls: 'c3', color: '#ffdd00', kind: 'fill', label: '유로', style: 'outline' },
+  { cls: 'c2', color: '#f69896', kind: 'fill', label: '탈퇴국' }]);
+
+test('areaLayer 윤곽만 분류: 채우지 않고 테두리(교과서 색 1.6px) — 채움 분류·선택 윤곽 다음에, 고르면 2.4px, 맞히기는 테두리 근처만', () => {
+  const legend = createLegendState(['c1', 'c3', 'c2']);
+  const L = areaLayer('eu', outlineFC(), { legend });
+  let ops = drawn(L);
+  const fills = ops.filter((o) => o.op === 'fill').map((o) => o.fillStyle);
+  assert.deepEqual(fills, ['#b9d989', '#f69896'], '윤곽 분류는 채우지 않음');
+  const yi = ops.findIndex((o) => o.op === 'stroke' && o.strokeStyle === '#ffdd00');
+  assert.ok(yi > ops.map((o) => o.op).lastIndexOf('fill'), '채움 다음에 테두리');
+  assert.equal(ops[yi].width, OUTLINE_STYLE.px);
+  assert.equal(OUTLINE_STYLE.px, 1.6);
+  // 윤곽 분류를 고르면: 굵게, 다른 분류 흐림, 검은 선택 윤곽은 없음(자기 테두리가 굵어짐)
+  legend.toggle('c3');
+  ops = drawn(L);
+  const y = ops.find((o) => o.op === 'stroke' && o.strokeStyle === '#ffdd00');
+  assert.equal(y.width, OUTLINE_STYLE.selectedPx);
+  assert.equal(y.width, 2.4);
+  assert.equal(y.alpha, 1);
+  assert.equal(ops.filter((o) => o.op === 'stroke' && o.strokeStyle === SELECT_OUTLINE.color).length, 0);
+  assert.ok(ops.filter((o) => o.op === 'fill').every((o) => o.alpha < 0.5));
+  // 채움 분류를 고르면: 검은 윤곽은 채움 면만, 윤곽 분류는 흐린 기본 굵기이고 선택 윤곽보다 뒤에 그음
+  legend.toggle('c1');
+  ops = drawn(L);
+  const black = ops.findIndex((o) => o.op === 'stroke' && o.strokeStyle === SELECT_OUTLINE.color);
+  const yel = ops.findIndex((o) => o.op === 'stroke' && o.strokeStyle === '#ffdd00');
+  assert.ok(black >= 0 && yel > black);
+  assert.equal(ops[yel].width, OUTLINE_STYLE.px);
+  assert.ok(ops[yel].alpha < 0.5);
+  legend.reset();
+  // 맞히기: 테두리 근처면 윤곽 분류, 안쪽 깊숙이면 채움 분류(경도 1° = 4px — 10~14°, 화면 x 440~456)
+  const v = viewOf();
+  drawn(L, v);
+  const [x0, yy] = v.project([10, 12]);
+  assert.equal(L.hit([x0 + 1, yy], [10.25, 12]).properties.cls, 'c3');
+  assert.equal(L.hit(v.project([12, 12]), [12, 12]).properties.cls, 'c1');
+});
+
+test('countryClass: 나라 하나가 채움 + 윤곽만 분류 둘이면(classes 배열) 분류마다 면', () => {
+  const data = { ...ccData(), legend: [...ccData().legend, { cls: 'c3', color: '#ffdd00', label: '유로', kind: 'fill', style: 'outline' }], classes: { AAA: ['c1', 'c3'], BBB: 'c3' } };
+  const f = countryClassFeatures(data, ccCountries()['50']);
+  assert.deepEqual(f.features.map((x) => [x.properties.iso, x.properties.cls]), [['AAA', 'c1'], ['AAA', 'c3'], ['BBB', 'c3']]);
+  const L = countryClassLayer('cc', data, { countryFeatures: ccCountries() });
+  const v = viewOf(); v.view.detail = '50';
+  const ops = drawn(L, v);
+  assert.deepEqual(ops.filter((o) => o.op === 'fill').map((o) => o.fillStyle), ['#e8562a']);
+  assert.equal(ops.filter((o) => o.op === 'stroke' && o.strokeStyle === '#ffdd00').length, 2);
+});

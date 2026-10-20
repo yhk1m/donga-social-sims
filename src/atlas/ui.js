@@ -362,6 +362,8 @@ function swatch(e) {
     return s('svg', { class: 'at-swatch at-swatch-sym', viewBox: '0 0 12 12', 'aria-hidden': 'true' },
       d ? s('path', { d, fill: e.color, stroke: e.stroke || '#fff', 'stroke-width': e.stroke ? 1 : 0.8 }) : s('circle', { cx: 6, cy: 6, r: 4.5, fill: e.color, stroke: e.stroke || '#fff', 'stroke-width': e.stroke ? 1 : 0.8 }));
   }
+  // 윤곽만 분류(style 'outline' — 유로 사용국): 칠하지 않은 테두리 상자
+  if (e.style === 'outline') return h('span', { class: 'at-swatch at-swatch-outline', style: { borderColor: e.color || '#231f20' }, 'aria-hidden': 'true' });
   const st = { background: e.color || '#ccc' };
   if (e.pattern === 'hatch') st.background = `repeating-linear-gradient(45deg, ${e.color || '#ba703d'} 0 1.5px, transparent 1.5px 4px)`;
   return h('span', { class: 'at-swatch at-swatch-fill', style: st, 'aria-hidden': 'true' });

@@ -536,3 +536,14 @@ test('legendPanel 다시 맞춤: 숨었거나 크기 0 이면 옮긴 자리를 �
   assert.equal(P.el.style.left, '');
   P.destroy();
 });
+
+test('legendBlock: 윤곽만 분류(style outline — 유로 사용국)의 견본은 칠하지 않은 테두리 상자(교과서 색)', () => {
+  const items = [{ cls: 'c1', color: '#b9d989', label: '가입국', kind: 'fill' }, { cls: 'c3', color: '#ffdd00', label: '유로 사용 국가', kind: 'fill', style: 'outline' }];
+  const b = legendBlock(div(), createLegendState(['c1', 'c3']), items, { title: '유럽 연합' });
+  const sw = findAll(b.el, byClass('at-swatch'));
+  assert.ok(sw[0].classList.contains('at-swatch-fill'));
+  assert.ok(sw[1].classList.contains('at-swatch-outline') && !sw[1].classList.contains('at-swatch-fill'));
+  assert.equal(sw[1].style.borderColor, '#ffdd00');
+  assert.ok(!sw[1].style.background, '채움 없음');
+  b.destroy();
+});

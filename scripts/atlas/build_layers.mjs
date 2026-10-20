@@ -192,11 +192,14 @@ export function decorateLegend(layer, rawLegend) {
   const groupOf = Object.fromEntries(Object.entries(layer.legendGroups || {}).flatMap(([g, names]) => names.map((n) => [n, g])));
   // 화면 색 바꾸기(설정 legendColors: 범례 이름 → {color, why} — 웹 바탕 위에서 너무 옅은 분류). 범례·도형 색을 바꾸고 인쇄 색은 printColor 로 남긴다.
   const recolor = layer.legendColors || {};
+  // 윤곽만 분류(설정 legendStyles: 범례 이름 → 'outline' — 32쪽 유로 사용국 노란 테두리). 면을 칠하지 않고 테두리만(areaLayer)
+  const styles = layer.legendStyles || {};
+  for (const [name, st] of Object.entries(styles)) if (st !== 'outline') throw new Error(`${layer.id}: legendStyles ${name} 모르는 모양 ${st}`);
   const legend = (rawLegend || []).map(({ box, ...e }) => ({
     ...e, ...(shapes[e.label] ? { shape: shapes[e.label] } : {}), ...(strokes[e.label] ? { stroke: strokes[e.label] } : {}), ...(groupOf[e.label] ? { group: groupOf[e.label] } : {}),
-    ...(recolor[e.label] ? { color: recolor[e.label].color, printColor: e.color } : {}),
+    ...(recolor[e.label] ? { color: recolor[e.label].color, printColor: e.color } : {}), ...(styles[e.label] ? { style: styles[e.label] } : {}),
   }));
-  for (const [key, names] of [['legendShapes', Object.keys(shapes)], ['legendStrokes', Object.keys(strokes)], ['legendGroups', Object.keys(groupOf)], ['legendColors', Object.keys(recolor)]]) {
+  for (const [key, names] of [['legendShapes', Object.keys(shapes)], ['legendStrokes', Object.keys(strokes)], ['legendGroups', Object.keys(groupOf)], ['legendColors', Object.keys(recolor)], ['legendStyles', Object.keys(styles)]]) {
     const unknown = names.filter((k) => !legend.some((e) => e.label === k));
     if (unknown.length) throw new Error(`${layer.id}: ${key} 에 범례에 없는 이름 ${unknown.join(', ')}`);
   }
@@ -242,7 +245,7 @@ function finish(layer, meta) {
  */
 export function countryClassLayerJson(layer, cc, m, fit) {
   const { legend } = decorateLegend(layer, cc.legend);
-  const present = new Set(Object.values(cc.classes));
+  const present = new Set(Object.values(cc.classes).flat()); // 나라 하나가 채움 + 윤곽만 분류 둘이면 배열
   const absent = legend.filter((e) => e.geometry !== false && !present.has(e.cls)).map((e) => e.label);
   if (layer.expectLegend != null && legend.length !== layer.expectLegend) throw new Error(`${layer.id}: 범례 ${legend.length} ≠ expectLegend ${layer.expectLegend}`);
   if (absent.length) throw new Error(`${layer.id}: 나라가 없는 범례 분류 ${absent.join(', ')}`);
@@ -266,7 +269,7 @@ function finishCountryClass(layer) {
   const file = path.join(OUT, `layer-${layer.id}.json`);
   fs.writeFileSync(file, JSON.stringify(out));
   return {
-    id: layer.id, type: layer.type, legend: out.legend.length, classes: new Set(Object.values(out.classes)).size, features: Object.keys(out.classes).length,
+    id: layer.id, type: layer.type, legend: out.legend.length, classes: new Set(Object.values(out.classes).flat()).size, features: Object.keys(out.classes).length,
     kb: +(fs.statSync(file).size / 1024).toFixed(1), approx: out.properties.approx, dropped: '-', warnings: cc.report?.warnings || [],
   };
 }

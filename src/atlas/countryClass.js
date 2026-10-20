@@ -11,7 +11,10 @@ import { areaLayer } from './layers.js';
 import { legendItems } from './layerStyle.js';
 import { LAYER_Z, metaOf, setAttr, connect } from './layerCommon.js';
 
-/** 분류 + 나라 도형 → 면 레이어 자료. 나라 Feature 마다 {type:'area', cls, iso, name(ko), label(「이름 · 분류」), color(범례 화면 색)}. */
+/**
+ * 분류 + 나라 도형 → 면 레이어 자료. 나라 Feature 마다 {type:'area', cls, iso, name(ko), label(「이름 · 분류」), color(범례 화면 색)}.
+ * classes[iso] 가 배열이면 분류마다 Feature 하나(채움 분류 + 윤곽만 분류 — 유로 사용 가입국 = 가입국 채움 + 노란 테두리).
+ */
 export function countryClassFeatures(data, countries) {
   const legend = legendItems(data);
   const byCls = new Map(legend.map((e) => [e.cls, e]));
@@ -19,10 +22,12 @@ export function countryClassFeatures(data, countries) {
   const features = [];
   for (const c of countries || []) {
     const iso = c?.properties?.iso;
-    const e = iso ? byCls.get(classes[iso]) : null;
-    if (!e || !c.geometry) continue;
+    if (!iso || !c.geometry) continue;
     const name = c.properties.ko || iso;
-    features.push({ type: 'Feature', properties: { type: 'area', cls: e.cls, iso, name, label: `${name} · ${e.label}`, color: e.color }, geometry: c.geometry });
+    for (const cls of [].concat(classes[iso] ?? [])) {
+      const e = byCls.get(cls);
+      if (e) features.push({ type: 'Feature', properties: { type: 'area', cls: e.cls, iso, name, label: `${name} · ${e.label}`, color: e.color }, geometry: c.geometry });
+    }
   }
   return { type: 'FeatureCollection', properties: { ...(data?.properties || {}), legend: data?.legend || [] }, features };
 }

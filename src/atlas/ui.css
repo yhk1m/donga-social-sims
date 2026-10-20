@@ -79,6 +79,7 @@
 .ds-sim .at-legend-list.has-groups > .at-legend-item { margin-left: 44px; }
 .ds-sim .at-swatch { width: 22px; height: 14px; flex-shrink: 0; box-sizing: border-box; }
 .ds-sim .at-swatch-fill { border: 1px solid rgba(0, 0, 0, .18); border-radius: 2px; }
+.ds-sim .at-swatch-outline { border: 2px solid #231f20; border-radius: 2px; background: transparent; }
 .ds-sim .at-swatch-sym { width: 14px; height: 14px; margin: 0 4px; }
 .ds-sim .at-legend-widths { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--ink-2); align-items: center; }
 .ds-sim .at-legend-width { display: inline-flex; align-items: center; gap: 3px; }

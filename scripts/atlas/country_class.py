@@ -14,8 +14,11 @@
   설정 countryOverrides {iso: {cls | label, why}} 로 고친다(cls 는 범례 번호 'c3' 또는 null = 분류 없음, label 은 범례 이름) —
   교과서와 Natural Earth 의 나라 단위가 다른 곳(서사하라·코소보·북키프로스 등). 고친 것은 출력 overrides 에 [{iso, cls, why, was}].
 
+  윤곽만 분류(설정 legendStyles {범례 이름: 'outline'} — 32쪽 유로 사용국 노란 띠)는 다수결에서 빼고(띠가 가린 표본은 표 없음),
+  나라 경계를 안쪽으로 0.8pt 줄인 테두리 점의 반 이상이 그 색 띠 안이면 그 분류를 더한다(outline_members) → classes[iso] = [채움, 윤곽].
+
 설정(단원 설정 layers[id]): {"map", "type": "countryClass", "mode": "vector"|"raster"(기본 vector), "expectLegend"?,
-  "countryOverrides"?, "samplesGrid"?(기본 3)} + defaults(matchDE·legendSwatchArea 등 — 면 레이어와 같음).
+  "countryOverrides"?, "legendStyles"?, "samplesGrid"?(기본 3)} + defaults(matchDE·legendSwatchArea 등 — 면 레이어와 같음).
 
 출력: $ATLAS_WORK/geo/<id>.cc.json = {id, map, legend:[{cls,color,label,kind}], classes:{iso: cls}, overrides:[…], report:{…, warnings}}
   build_layers.mjs 가 범례 꾸밈(legendColors·legendStyles 등)을 붙여 <config.out>/layer-<id>.json
@@ -84,19 +87,58 @@ def classify(samples, zones, order, fr):
     return classes, rep
 
 
+def outline_members(page_polys, outline_zones, fr, inset=0.8, step=0.5, frac=0.5, tol=0.3):
+    """윤곽만 분류(범례 style 'outline' — 32쪽 유로 사용국: 나라 경계 안쪽에 그린 노란 띠) 찾기.
+    page_polys {iso: 지면 나라 면}, outline_zones {cls: 지면 띠 면} → {iso: [cls]}.
+    나라 면을 inset 만큼 안으로 줄인 테두리 위 step 간격 점 중 틀(fr) 안 점의 frac 이상이 띠(tol 여유) 안이면 그 분류.
+    띠는 경계 안쪽에 그려져 있어 이웃 나라(스위스)의 안쪽 테두리는 띠에 닿지 않는다. 줄이면 없어지는 작은 나라는 면의 frac 이상이 띠면."""
+    fp = prep(fr)
+    zs = {c: (g.buffer(tol), prep(g.buffer(tol))) for c, g in outline_zones.items() if g is not None}
+    out = {}
+    for iso, P in page_polys.items():
+        if P is None or P.is_empty: continue
+        inner = P.buffer(-inset)
+        hit = []
+        for c, (raw, z) in zs.items():
+            if inner.is_empty:
+                ok = P.intersection(raw).area >= frac * P.area
+            else:
+                line = inner.boundary
+                n = max(4, int(line.length / step))
+                pts = [q for q in (line.interpolate(i / n, normalized=True) for i in range(n)) if fp.contains(q)]
+                ok = bool(pts) and sum(z.contains(q) for q in pts) >= frac * len(pts)
+            if ok: hit.append(c)
+        if hit: out[iso] = hit
+    return out
+
+
+def merge_classes(fill, outline):
+    """채움 분류 {iso: cls} + 윤곽만 분류 {iso: [cls]} → {iso: cls | [cls, …]} (둘 이상이면 배열 — 채움 먼저)."""
+    out = dict(fill)
+    for iso, cl in outline.items():
+        lst = ([out[iso]] if iso in out else []) + list(cl)
+        out[iso] = lst[0] if len(lst) == 1 else lst
+    return out
+
+
 def apply_overrides(classes, overrides, legend):
-    """설정 countryOverrides {iso: {cls | label, why}} 적용 → (새 classes, [{iso, cls, why, was}]). 범례에 없는 cls·label 은 오류."""
+    """설정 countryOverrides {iso: {cls | label, why}} 적용 → (새 classes, [{iso, cls, why, was}]). 범례에 없는 cls·label 은 오류.
+    cls 는 범례 번호·null(분류 없음)·번호 배열(채움 + 윤곽만 분류), label 은 범례 이름 또는 이름 배열."""
     by_label = {e['label']: e['cls'] for e in legend}
     known = {e['cls'] for e in legend}
     out, log = dict(classes), []
     for iso, o in (overrides or {}).items():
         if iso.startswith('_'): continue
         if 'label' in o:
-            if o['label'] not in by_label: raise ValueError(f'countryOverrides {iso}: 범례에 없는 이름 {o["label"]}')
-            cls = by_label[o['label']]
+            labels = o['label'] if isinstance(o['label'], list) else [o['label']]
+            bad = [l for l in labels if l not in by_label]
+            if bad: raise ValueError(f'countryOverrides {iso}: 범례에 없는 이름 {bad}')
+            cls = [by_label[l] for l in labels]
+            cls = cls[0] if len(cls) == 1 else cls
         else:
             cls = o.get('cls')
-            if cls is not None and cls not in known: raise ValueError(f'countryOverrides {iso}: 범례에 없는 분류 {cls}')
+            bad = [c for c in (cls if isinstance(cls, list) else [cls]) if c is not None and c not in known]
+            if bad: raise ValueError(f'countryOverrides {iso}: 범례에 없는 분류 {bad}')
         if not o.get('why'): raise ValueError(f'countryOverrides {iso}: why(까닭)가 없음')
         was = out.get(iso)
         if cls is None: out.pop(iso, None)
@@ -141,6 +183,29 @@ def frame_window(fit, bbox, n=40):
     return polygonal(Polygon(ll).buffer(0))
 
 
+def project_countries(fit, countries):
+    """[(iso, 경위도 면)] → {iso: 지면 면} (fit_helper.mjs 한 번 — 고리마다 투영, 투영 못 하는 점은 뺌)."""
+    from shape_controls import node
+    from shapely.geometry import Polygon
+    from shapely.ops import unary_union
+    from atlas_common import flat_polygons
+    rings, idx = [], []
+    for iso, g in countries:
+        for k, p in enumerate(flat_polygons(g)):
+            for R in [p.exterior, *p.interiors]:
+                rings.append([list(c) for c in R.coords]); idx.append((iso, k))
+    res = node([{'op': 'apply', 'fit': fit, 'rings': rings}])[0] if rings else []
+    parts = {}
+    for (iso, k), xy in zip(idx, res):
+        parts.setdefault(iso, {}).setdefault(k, []).append([q for q in xy if q])
+    out = {}
+    for iso, ps in parts.items():
+        polys = [polygonal(Polygon(rs[0], [r for r in rs[1:] if len(r) >= 4]).buffer(0)) for rs in ps.values() if len(rs[0]) >= 4]
+        polys = [q for q in polys if q is not None]
+        if polys: out[iso] = polygonal(unary_union(polys))
+    return out
+
+
 def project_samples(fit, by_iso):
     """{iso: [(lon, lat)]} → {iso: [지면 xy | None]} (fit_helper.mjs 한 번)."""
     from shape_controls import node
@@ -161,13 +226,22 @@ def build(layer_id):
         raise ValueError(f'{layer_id}: 범례 {len(leg)}개 ≠ 설정 expectLegend {exp} — {[e["label"] for e in leg]}')
     zones, zrep = (Z.raster_zones if cfg.get('mode') == 'raster' else Z.vector_zones)(m, leg, cfg, warnings)
     with open(os.path.join(WORK, 'geo', f"{cfg['map']}.fit.json"), encoding='utf-8') as f: fit = json.load(f)
-    order = [e['cls'] for e in leg]
-    classes, rep = classify_countries(ne_countries(), lambda by: project_samples(fit, by), zones, order, frame(m), cfg.get('samplesGrid', 3),
-                                      frame_window(fit, m['bbox']))
+    styles = cfg.get('legendStyles') or {}
+    outline = [e['cls'] for e in leg if styles.get(e['label']) == 'outline']
+    order = [e['cls'] for e in leg if e['cls'] not in outline]
+    window = frame_window(fit, m['bbox'])
+    countries = ne_countries()
+    classes, rep = classify_countries(countries, lambda by: project_samples(fit, by), {c: g for c, g in zones.items() if c not in outline},
+                                      order, frame(m), cfg.get('samplesGrid', 3), window)
+    if outline:   # 윤곽만 분류는 표본 다수결이 아니라 나라 안쪽 테두리가 그 색 띠에 덮였는지로
+        near = [(iso, polygonal(g.intersection(window)) if window is not None else g) for iso, g in countries if window is None or g.intersects(window)]
+        om = outline_members(project_countries(fit, [(i, g) for i, g in near if g is not None]), {c: zones.get(c) for c in outline}, frame(m))
+        classes = merge_classes(classes, om)
+        rep['outline'] = {c: sorted(i for i, cl in om.items() if c in cl) for c in outline}
     classes, ov = apply_overrides(classes, cfg.get('countryOverrides'), leg)
     for iso in rep['split']:
         if not any(o['iso'] == iso for o in ov): warnings.append(f'{iso}: 표본 분류가 반으로 갈림 {rep["votes"][iso]}')
-    present = set(classes.values())
+    present = {c for v in classes.values() for c in (v if isinstance(v, list) else [v])}
     absent = [e['label'] for e in leg if e['cls'] not in present]
     if absent: warnings.append(f'나라가 없는 범례 분류: {absent}')
     legend = [{k: e[k] for k in ('cls', 'color', 'label', 'kind') if k in e} for e in leg]

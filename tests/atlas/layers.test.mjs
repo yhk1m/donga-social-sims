@@ -193,3 +193,12 @@ test('countryClassLayerJson: 분류 + 범례 꾸밈(legendColors) + present, 범
   assert.throws(() => countryClassLayerJson({ ...layer, expectLegend: 3 }, cc, { page: 30 }, fit), /expectLegend/);
   assert.throws(() => decorateLegend({ id: 'x', legendColors: { 없음: { color: '#000000' } } }, cc.legend), /범례에 없는 이름/);
 });
+
+test('decorateLegend: legendStyles {범례 이름: outline} → 범례 항목 style, 모르는 모양·없는 이름은 멈춤', () => {
+  const raw = [{ cls: 'c1', color: '#b9d989', label: '가입국', kind: 'fill', box: [0, 0, 1, 1] }, { cls: 'c3', color: '#ffdd00', label: '유로 사용 국가', kind: 'fill' }];
+  const { legend } = decorateLegend({ id: 'eu', legendStyles: { '유로 사용 국가': 'outline' } }, raw);
+  assert.deepEqual(legend.map((e) => e.style), [undefined, 'outline']);
+  assert.equal(legend[0].box, undefined);
+  assert.throws(() => decorateLegend({ id: 'eu', legendStyles: { '유로 사용 국가': 'dots' } }, raw), /모르는 모양/);
+  assert.throws(() => decorateLegend({ id: 'eu', legendStyles: { 없음: 'outline' } }, raw), /legendStyles 에 범례에 없는 이름/);
+});

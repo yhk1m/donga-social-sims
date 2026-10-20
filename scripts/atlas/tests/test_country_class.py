@@ -68,6 +68,26 @@ class Classify(unittest.TestCase):
         self.assertIn('FAR', rep['absent'])
 
 
+class Outline(unittest.TestCase):
+    def test_band_inside_border_marks_country_not_neighbour(self):
+        # 지면 나라 A(0~40)·B(40~80) 이웃, A 경계 안쪽에 너비 1pt 띠(유로 사용국 노란 테두리) → A 만 윤곽 분류, B(스위스 꼴)는 아님
+        A, B = box(0, 0, 40, 40), box(40, 0, 80, 40)
+        band = A.difference(A.buffer(-1.0))
+        got = cc.outline_members({'AAA': A, 'BBB': B}, {'c3': band}, box(-10, -10, 90, 50))
+        self.assertEqual(got, {'AAA': ['c3']})
+        # 줄이면 없어지는 작은 나라: 면 반 이상이 띠면
+        tiny = box(10, 10, 11.2, 11.2)
+        self.assertEqual(cc.outline_members({'TNY': tiny}, {'c3': tiny}, box(0, 0, 50, 50)), {'TNY': ['c3']})
+
+    def test_merge_and_list_overrides(self):
+        self.assertEqual(cc.merge_classes({'AAA': 'c1', 'BBB': 'c2'}, {'AAA': ['c3'], 'LUX': ['c3']}), {'AAA': ['c1', 'c3'], 'BBB': 'c2', 'LUX': 'c3'})
+        out, log = cc.apply_overrides({'LUX': 'c3'}, {'LUX': {'label': ['80~100', '50 이하'], 'why': '작아서 띠에 덮임'}}, LEGEND)
+        self.assertEqual(out['LUX'], ['c1', 'c3'])
+        out, _ = cc.apply_overrides({}, {'LUX': {'cls': ['c1', 'c3'], 'why': 'x'}}, LEGEND)
+        self.assertEqual(out['LUX'], ['c1', 'c3'])
+        with self.assertRaises(ValueError): cc.apply_overrides({}, {'LUX': {'cls': ['c1', 'c9'], 'why': 'x'}}, LEGEND)
+
+
 class Overrides(unittest.TestCase):
     def test_apply_by_label_cls_and_none(self):
         classes = {'AAA': 'c1', 'BBB': 'c2', 'KOS': 'c3'}

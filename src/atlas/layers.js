@@ -36,6 +36,11 @@ const HALO = 'rgba(255,255,255,.9)';
  * 같은 분류·같은 묶음의 이웃 면 사이 경계는 양쪽 다 안쪽이라 지워진다(합치기 계산 없이 그릴 때 한 번).
  */
 export const SELECT_OUTLINE = Object.freeze({ color: '#111111', px: 1.8 });
+/**
+ * 윤곽만 분류(범례 항목 style 'outline' — 32쪽 유로 사용국 노란 테두리): 면을 칠하지 않고 교과서 색 테두리만(화면 px, 확대와 상관없이 일정).
+ * 범례에서 그 분류를 고르면 굵게(selected). 채움 분류·선택 윤곽 다음에 그어 다른 면에 가리지 않는다.
+ */
+export const OUTLINE_STYLE = Object.freeze({ px: 1.6, selectedPx: 2.4 });
 const LINE_PT = { isotherm: 0.8, line: 1.2 }; // 주제도 선 기본 굵기(pt) — lineWidthPx 로 화면 px
 const LABEL_FONT = '700 10px "Pretendard", "Malgun Gothic", sans-serif';
 /** 면 레이어 지명 글자 크기(px): 교과서 pt × 역할 배율 — 나라(분홍 6.7pt)·「카 슈 미 르」는 크게, 관할 이름(4.8pt)은 작게 */
@@ -62,13 +67,17 @@ function hatchPattern(ctx, color) {
 /**
  * 면 레이어(캔버스). 같은 자료의 선(등온선 type 'isotherm' — 값 글자 포함, 카슈미르 주장 국경·정전 라인 type 'line', dashed)은 흰 테두리 선으로,
  * pattern 'hatch' 면은 빗금으로 그린다. geometry:false 범례 항목은 그릴 것이 없다(범례에만).
+ * 범례 style 'outline' 분류의 면은 채우지 않고 테두리만(OUTLINE_STYLE) — 다른 분류 면과 겹쳐도 된다(유로 사용국 = 가입국 위 테두리).
+ *   맞히기는 테두리 근처(화면 거리)만, 검은 선택 윤곽에는 넣지 않는다(고르면 자기 테두리가 굵어짐).
  */
 export function areaLayer(id, geojson, { legend = null, map = null, layerId = id, legendRefresh = true, colorOf = (f) => f.properties.color, dimAlpha = 0.15, fillOpacity = 0.85, z = LAYER_Z.area } = {}) {
   const feats = featuresOf(geojson);
   const legendList = legendItems(geojson);
   const dashed = new Set(legendList.filter((e) => e.dashed).map((e) => e.cls));
+  const outlineCls = new Set(legendList.filter((e) => e.style === 'outline').map((e) => e.cls));
   // type 'locator' 면(카슈미르 위치도 강조)은 큰 지도에 그리지 않는다 — topic.js 위치도가 쓴다(layer.locator)
-  const areas = feats.filter((f) => isPoly(f) && !f.properties.pattern && f.properties.type !== 'locator');
+  const areas = feats.filter((f) => isPoly(f) && !f.properties.pattern && f.properties.type !== 'locator' && !outlineCls.has(f.properties.cls));
+  const outlines = feats.filter((f) => isPoly(f) && outlineCls.has(f.properties.cls));
   const hatches = feats.filter((f) => isPoly(f) && f.properties.pattern === 'hatch');
   const lines = feats.filter(isLine);
   // 지명(Point {type:'label', text, lines?, size(pt), color, role}) — 카슈미르 「카 슈 미 르」·관할 이름·나라 이름(교과서 글자 자리를 옮긴 것)
@@ -80,7 +89,7 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
   const info = (f) => { let c = cache.get(f); if (!c) { c = { idx: indexGeometry(f.geometry), bounds: null }; cache.set(f, c); } return c; };
   const clip = (f, rect) => clipIndexed(info(f).idx, rect);
   let lastView = null; // 마지막 캔버스 그림의 view(맞히기·강조용)
-  const lineRuns = new Map(); // 선 f → 화면 조각들(마지막 그림)
+  const lineRuns = new Map(); // 선 f → 화면 조각들(마지막 그림) — 윤곽만 분류의 테두리도 여기(맞히기)
   let hovered = null, hoverEl = null;
 
   function drawLine(ctx, path, f, view, alpha) {
@@ -141,6 +150,27 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
     }
   }
 
+  /** 윤곽만 분류: 교과서 색 테두리(고르면 굵게), 흐린 분류는 투명도. 맞히기용 화면 조각을 lineRuns 에 둔다. */
+  function drawOutlines(ctx, path, view) {
+    if (!outlines.length) return;
+    const picked = legend?.selected?.() != null;
+    const proj = view.projection;
+    const toScreen = (ll) => { const q = proj(ll); return q && Number.isFinite(q[0]) ? q : null; };
+    ctx.setLineDash([]); ctx.lineJoin = 'round';
+    for (const f of outlines) {
+      const a = alphaOf(legend, f.properties.cls, dimAlpha);
+      const w = picked && a === 1 ? OUTLINE_STYLE.selectedPx : OUTLINE_STYLE.px;
+      const g = clip(f, view.geoRect);
+      ctx.globalAlpha = a;
+      ctx.beginPath(); path(g);
+      ctx.strokeStyle = colorOf(f); ctx.lineWidth = w; ctx.stroke();
+      const polys = g?.type === 'Polygon' ? [g.coordinates] : g?.type === 'MultiPolygon' ? g.coordinates : [];
+      const runs = [];
+      for (const P of polys) for (const R of P) runs.push(...splitJumps(unwrapLine(R), toScreen));
+      lineRuns.set(f, { runs, w });
+    }
+  }
+
   /** 범례에서 고른 분류(한 분류 또는 묶음)가 있으면 그 면들의 바깥 윤곽(SELECT_OUTLINE). 전체 보기·선 분류만 고름이면 그리지 않는다. */
   function drawSelection(ctx, path, view) {
     if (!legend || legend.selected?.() == null) return;
@@ -183,6 +213,7 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
       }
       drawSelection(ctx, path, view);
       lineRuns.clear();
+      drawOutlines(ctx, path, view);
       ctx.lineJoin = 'round'; ctx.lineCap = 'round';
       for (const f of lines) drawLine(ctx, path, f, view, alphaOf(legend, f.properties.cls, dimAlpha));
       drawIsoLabels(ctx, view);
@@ -201,6 +232,12 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
         if (!lr) continue;
         const tol = Math.max(4, lr.w / 2 + 3);
         if (lr.runs.some((r) => distToPolyline(xy, r) <= tol)) return f;
+      }
+      for (let i = outlines.length - 1; i >= 0; i--) { // 윤곽만 분류는 테두리 근처만
+        const f = outlines[i];
+        if (alphaOf(legend, f.properties.cls, 0) === 0) continue;
+        const lr = lineRuns.get(f);
+        if (lr && lr.runs.some((r) => distToPolyline(xy, r) <= Math.max(4, lr.w / 2 + 3))) return f;
       }
       for (let i = polys.length - 1; i >= 0; i--) {
         const f = polys[i];
