@@ -212,7 +212,12 @@ def drawn_area(items, xy):
     return None, None
 
 
-SMALL_COMP_RATIO = 3.0   # 작은 나라: 표본이 든 분류 조각이 나라 넓이 × 이 값 + SMALL_COMP_PAD 를 넘으면 「교과서가 따로 칠하지 않음」
+# 작은 나라: 표본점을 덮은 채움 도형이 나라 넓이 × SMALL_COMP_RATIO + SMALL_COMP_PAD 를 넘으면 「교과서가 따로 칠하지 않음(이웃 면에 묻힘)」.
+#   비율 3: 교과서가 따로 그린 작은 나라 도형은 Natural Earth 투영 넓이의 0.4~2배(30쪽 룩셈부르크 11.4 ↔ 7.2pt², 안도라 1.97 ↔ 1.3 —
+#   교과서가 작은 나라를 조금 크게 그림)라 3배면 여유가 있고, 묻힌 경우는 이웃 나라 넓이라 수백 배(바티칸이 든 이탈리아 1115pt²).
+#   여유 2pt²: 바티칸(0.01pt²)·모나코처럼 투영 넓이가 0 에 가까우면 비율만으로는 화소 크기 도형(모나코 0.05·건지섬 0.21pt²)도 「묻힘」이
+#   되므로 — 따로 그린 가장 작은 도형들보다 크고 이웃 나라 면보다는 훨씬 작은 값.
+SMALL_COMP_RATIO = 3.0
 SMALL_COMP_PAD = 2.0     # pt²
 
 
@@ -240,6 +245,13 @@ def ne_countries(path=NE_COUNTRIES):
         return [(ft['properties']['ADM0_A3'], shape(ft['geometry'])) for ft in json.load(f)['features']]
 
 
+def check_lon_span(ll):
+    """되돌린 틀 고리 [(lon, lat)]의 경도 폭이 180° 를 넘으면(날짜변경선을 넘는 틀 — 경도가 ±180 에서 접혀 면이 지구 반대쪽을 덮음) ValueError."""
+    lons = [p[0] for p in ll]
+    if lons and max(lons) - min(lons) > 180:
+        raise ValueError(f'frame_window: 틀이 날짜변경선을 넘음(경도 {min(lons):.1f}~{max(lons):.1f}) — 아직 다루지 않음')
+
+
 def frame_window(fit, bbox, n=40):
     """지도 틀(bbox) 둘레를 n 등분한 점을 fit 으로 되돌린 경위도 면(되돌릴 수 없는 점은 뺌). 점이 모자라면 None."""
     from shape_controls import node
@@ -251,8 +263,7 @@ def frame_window(fit, bbox, n=40):
     if len(ll) < 4: return None
     # 날짜변경선을 넘는 틀은 다루지 않는다(되돌린 경도가 ±180 에서 접혀 면이 지구 반대쪽을 덮음) — 유럽·아시아 지도는 해당 없음.
     # 오세아니아(Ⅵ)처럼 넘는 지도가 나오면 경도를 이어 붙이고 접기(clip_land.fold)를 더할 것.
-    lons = [p[0] for p in ll]
-    if max(lons) - min(lons) > 180: raise ValueError(f'frame_window: 틀이 날짜변경선을 넘음(경도 {min(lons):.1f}~{max(lons):.1f}) — 아직 다루지 않음')
+    check_lon_span(ll)
     from shapely.geometry import Polygon
     return polygonal(Polygon(ll).buffer(0))
 

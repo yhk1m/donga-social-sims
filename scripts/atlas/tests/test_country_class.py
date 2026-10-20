@@ -136,6 +136,11 @@ class Levels(unittest.TestCase):
         self.assertEqual(cc.drawn_area(items, (5, 5)), ('c1', 2500.0))
         self.assertEqual(cc.drawn_area(items, (60, 60)), (None, None))
 
+    def test_lon_span_over_180_rejected(self):
+        # 날짜변경선을 넘는 틀(되돌린 고리 경도 170°E … −170°)은 아직 다루지 않음 → ValueError
+        with self.assertRaises(ValueError): cc.check_lon_span([(170, 60), (179, 62), (-179, 62), (-170, 60)])
+        cc.check_lon_span([(-30, 30), (70, 30), (70, 75), (-30, 75)])   # 유럽 틀(폭 100°)은 통과
+
     def test_override_needs_exactly_one_of_cls_label(self):
         with self.assertRaises(ValueError): cc.apply_overrides({}, {'AAA': {'cls': 'c1', 'label': '80~100', 'why': 'x'}}, LEGEND)
         with self.assertRaises(ValueError): cc.apply_overrides({}, {'AAA': {'why': 'x'}}, LEGEND)

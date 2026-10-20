@@ -124,7 +124,7 @@ function barSvg(spec, label) {
     t.v > 0 && t.y > top + 0.5 ? s('line', { class: 'at-ct-grid', x1: x0, x2: x1, y1: t.y, y2: t.y }) : null,
     txt(x0 - 5, t.y + 4, fmtThousands(t.v), { 'text-anchor': 'end', class: 'at-ct at-ct-tick' })));
   const bars = cats.map((c, i) => {
-    const v = vals[i], has = Number.isFinite(v); // 값이 빈 막대(null·undefined)는 막대 없이 「자료 없음」 말풍선만
+    const v = vals[i], has = Number.isFinite(v); // 값이 빈 막대(null·undefined)는 막대를 그리지 않고 <title>(마우스를 올리면 뜨는 글)만 「자료 없음」
     const cx = x0 + band * (i + 0.5), y = has ? sc.y(v) : yb;
     return s('g', { class: 'at-ct-bar' },
       s('title', {}, has ? `${c} ${fmtThousands(v)}${spec.unit ? ` ${spec.unit}` : ''}` : `${c} 자료 없음`),

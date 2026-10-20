@@ -168,7 +168,7 @@
    "mode": "raster",
    "dpi": 150,
    "tol": 0.1,
-   "minArea": 0.1,
+   "minArea": 0.03,
    "expectLegend": 10,
    "legendGroups": {
     "건조": [
@@ -206,7 +206,12 @@
    },
    "rasterIgnoreImages": true,
    "rasterCoastPx": 1,
-   "_raster": "rasterIgnoreImages: 사진 핀 5개(본 지도 4 + 아이슬란드 1)와 그 그림자는 래스터 위 작은 그림이라 이미지만 렌더에 남음 → 그 자리는 가장 가까운 분류로. rasterCoastPx 1: 해안 1화소(0.5pt)는 바다 흰색과 섞인 색(초록 + 흰 → 지중해성 연두)이라 안쪽 분류로 채움 — 아이슬란드 삽입의 지중해성 조각 원인"
+   "_raster": "rasterIgnoreImages: 사진 핀 5개(본 지도 4 + 아이슬란드 1)와 그 그림자는 래스터 위 작은 그림이라 이미지만 렌더에 남음 → 그 자리는 가장 가까운 분류로. rasterCoastPx 1: 해안 1화소(0.5pt)는 바다 흰색과 섞인 색(초록 + 흰 → 지중해성 연두)이라 안쪽 분류로 채움 — 아이슬란드 삽입의 지중해성 조각 원인",
+   "_minArea": "0.03°²: 페로 제도 가장 큰 섬(스트레이모이 약 0.07°²)도 남게(U3-4 리뷰 — 0.1 이면 페로가 빠짐)",
+   "rasterIslands": true,
+   "_rasterIslands": "분류 화소가 없는 작은 섬(페로 제도 — 화소가 모두 흰 바다와 섞인 옅은 초록)은 가장 진한 화소의 가까운 범례 분류로 통째로(U3-4 리뷰)",
+   "rasterEdgePt": 2.5,
+   "_rasterEdgePt": "틀 가장자리 2.5pt 는 바다로: 흰 덮개가 틀 끝까지 오지 않아 북아프리카·튀르키예·우랄 너머 래스터가 1~2pt 띠로 남음(minArea 0.03 에서 보임). 우랄 쪽 진짜 땅도 2.5pt(약 50km) 잘림"
   },
   "p29-jan": {
    "map": "p29-jan",

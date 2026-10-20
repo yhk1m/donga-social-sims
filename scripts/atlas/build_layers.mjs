@@ -18,7 +18,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { makeConverter } from './georef.mjs';
-import { WORK, loadFit, neIndex, key, km } from './geo_util.mjs';
+import { WORK, loadFit as loadFitRaw, fitPath, neIndex, key, km } from './geo_util.mjs';
+import { projectionFromStale } from './projection_from.mjs';
 import { resolveUnit, stripUnitArgs } from './unit.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -34,6 +35,15 @@ const VERIFY_TARGET_PX = 900;  // 검증 그림 긴 변 목표(화소)
 const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
 const maps = Object.fromEntries(JSON.parse(fs.readFileSync(UNIT.mapsPath, 'utf8')).map((m) => [m.id, m]));   // 설정 maps(없으면 maps_<id>.json)
 const OUT = UNIT.dataDir;                                                                                // 설정 out(없으면 sims/<sim>/data)
+/** fit 읽기 + projectionFrom 낡음 검사(본 지도를 다시 맞춘 뒤 삽입을 안 맞췄으면 멈춤 — georef-cli --all 먼저). */
+function loadFit(id) {
+  const fit = loadFitRaw(id), pf = maps[id]?.projectionFrom;
+  if (pf) {
+    const why = projectionFromStale(fit, loadFitRaw(pf), { insetMtime: fs.statSync(fitPath(id)).mtimeMs, parentMtime: fs.statSync(fitPath(pf)).mtimeMs });
+    if (why) throw new Error(`projectionFrom 낡음(${why}) — node scripts/atlas/georef-cli.mjs --unit ${UNIT.id} --all 먼저`);
+  }
+  return fit;
+}
 export const LAYERS = Object.entries(config.layers).map(([id, l]) => ({ ...config.defaults, ...l, id }));
 
 const run = (args) => {

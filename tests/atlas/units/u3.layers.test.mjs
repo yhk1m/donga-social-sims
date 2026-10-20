@@ -56,6 +56,12 @@ test('p29 기후 구분: 범례 10(면 8 + 지도에 없는 2), 경위도가 유
   assert.deepEqual(at([37.6, 55.75]), [['냉대 습윤 기후', 'p29-climate']]);           // 모스크바
   assert.deepEqual(at([46.5, 46.6]).map((x) => x[0]), ['사막 기후']);                 // 카스피해 북서 저지(지도색 #fed08f → 사막)
   assert.deepEqual(at([5, 33]), []);                                                // 북아프리카는 교과서에서 흰 덮개로 가림
+  // 아이슬란드 삽입의 분류는 꼭 넷(해안 섞인 색에서 나던 지중해성·냉대 겨울 건조 조각이 다시 생기지 않게)
+  assert.deepEqual(gj.features.filter((f) => f.properties.src === 'p29-climate-iceland').map((f) => f.properties.label).sort(),
+    ['냉대 습윤 기후', '빙설 기후', '서안 해양성 기후', '툰드라 기후']);
+  // 삽입 틀 덮개(−29.9~−9.5°E, 60.9~70°N 을 되돌린 고리)가 본 지도 땅에 구멍을 내지 않음: 틀 바로 밖 페로 제도(약 2.9° 동쪽)와
+  // 본 지도에서 덮개에 가장 가까운 땅(아우터헤브리디스 루이스섬)이 본 지도 면에 덮여 있음
+  for (const p of [[-6.95, 62.05], [-6.6, 58.2]]) assert.deepEqual(at(p).map((x) => x[1]), ['p29-climate'], `${p}`);
 });
 
 test('p29 1월·7월: 강수 5단계 면 + 등온선(값 붙은 선), 7월 200 이상은 범례에만', () => {
@@ -87,7 +93,10 @@ test('p30 도시 인구 원: 5단계(겹친 원 범례) + 사례 도시 6, 1,000
   assert.deepEqual(cases.map((f) => f.properties.name).sort(), ['런던', '로테르담', '베네치아', '빌바오', '소피아 앙티폴리스', '슈투트가르트']);
   const ven = cases.find((f) => f.properties.name === '베네치아').geometry.coordinates;
   assert.ok(near(ven, [12.33, 45.44], 0.5), `${ven}`);
-  assert.ok(syms.length > 150 && syms.length < 300, `${syms.length}`);
+  // 원 수: 전체 217 ± 10%(겹친 무리 근사), 단계별 수는 같은 렌더·같은 규칙이면 결정적이라 정확히 고정(바뀌면 검증 그림을 다시 볼 것)
+  const circles = syms.filter((f) => f.properties.kind !== '사례 도시');
+  assert.ok(Math.abs(circles.length - 217) <= 21.7, `${circles.length}`);
+  assert.deepEqual(L.properties.legend.slice(0, 5).map((e) => by(e.label).length), [2, 8, 38, 73, 96]);
 });
 
 test('p31 녹색 수도: 도시 15, 이름 = 지면 「도시(연도)」, 위치가 실제 도시와 0.6° 안', () => {
@@ -101,7 +110,8 @@ test('p31 녹색 수도: 도시 15, 이름 = 지면 「도시(연도)」, 위치
   for (const [n, [lon, lat]] of Object.entries(want)) assert.ok(Math.abs(at[n][0] - lon) < 0.6 && Math.abs(at[n][1] - lat) < 0.6, `${n} ${at[n]}`);
   // 교과서 공은 글자 자리 때문에 옮겨 그린 것이 많다(스톡홀름 87km·에센 104km) → 30km 넘으면 Natural Earth 위치(snapped 기록)
   const sn = syms.filter((f) => f.properties.snapped);
-  assert.ok(sn.length >= 5 && sn.every((f) => f.properties.snapped.km > 30), sn.map((f) => f.properties.name).join());
+  assert.equal(sn.length, 7, sn.map((f) => f.properties.name).join());
+  assert.ok(sn.every((f) => f.properties.snapped.km > 30));
 });
 
 test('p31 리스본 사례: 도시 10 × 값 2(충전소·사람 아이콘, 지면 글자 그대로)', () => {
@@ -113,6 +123,7 @@ test('p31 리스본 사례: 도시 10 × 값 2(충전소·사람 아이콘, 지�
   assert.deepEqual(v['오슬로'], ['charger:5.47', 'person:39.8']);
   assert.deepEqual(v['헬싱키'], ['charger:1.16', 'person:13.8']);
   assert.deepEqual(L.properties.valueLegend.map((x) => x.icon), ['charger', 'person']);
+  assert.equal(syms.filter((f) => f.properties.snapped).length, 7);   // 더블린·런던·리스본·베를린·스톡홀름·헬싱키·암스테르담
 });
 
 test('p32 분리 독립: 한 분류 면 + 지역 이름 18(지면 글자 자리)', () => {

@@ -84,6 +84,8 @@ class RasterProtos(unittest.TestCase):
         imgs = Z.map_images(jan)
         self.assertEqual(sum(1 for _, mine in imgs if not mine), 1)          # 왼쪽 가장자리에 걸친 기후 구분 래스터
         self.assertGreaterEqual(sum(1 for _, mine in imgs if mine), 10)      # 1월 강수 래스터는 조각 그림 여러 장
+        ice = {'id': 'p29-climate-iceland', 'page': 29, 'bbox': [94, 95, 150, 166]}
+        self.assertTrue(any(mine for b, mine in Z.map_images(ice) if b[2] - b[0] > 400))   # 삽입 틀을 덮은 본 지도 래스터는 이 지도 것
         clim = {'id': 'p29-climate', 'page': 29, 'bbox': [41.8, 73.7, 523.4, 459.1]}
         self.assertGreaterEqual(len(Z.small_images(clim)), 4)                # 사진 핀 4(+ 아이슬란드 핀 조각)
 

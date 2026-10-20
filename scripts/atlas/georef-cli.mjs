@@ -16,6 +16,7 @@ import { geoPath } from 'd3-geo';
 import { feature } from 'topojson-client';
 import { fitWithTps, robustFit, applyFit, fitProjection, familiesFor, PT_MM } from './georef.mjs';
 import { stale, WORK, fitPath, loadFit } from './geo_util.mjs';
+import { projectionFromStale } from './projection_from.mjs';
 import { resolveUnit, stripUnitArgs } from './unit.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -52,6 +53,11 @@ ${r.stderr}`);
 function fixedFrom(id, who) {
   if (!fs.existsSync(fitPath(id))) throw new Error(`${who}: projectionFrom ${id} 의 fit 파일이 없음(그 지도를 먼저 맞춤)`);
   const f = loadFit(id);
+  // 낡음 알림: 본 지도 fit 이 바뀌었거나 더 새것이면 지금 다시 맞춘다(이 함수는 삽입을 다시 맞추기 직전에 불림)
+  if (fs.existsSync(fitPath(who))) {
+    const why = projectionFromStale(loadFit(who), f, { insetMtime: fs.statSync(fitPath(who)).mtimeMs, parentMtime: fs.statSync(fitPath(id)).mtimeMs });
+    if (why) console.log(`projectionFrom 낡음 → 다시 맞춤: ${why}`);
+  }
   return { family: f.family, params: f.params };
 }
 
