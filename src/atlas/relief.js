@@ -160,11 +160,14 @@ export function invertGrid(invert, width, height, { step = 2, block = 4, tol = 0
  */
 /**
  * 렌더러 보기 두 개가 같은 화면인지 값으로(렌더러는 전체 그림마다 view·투영 객체를 새로 만든다 — 범례·고도 색 단계만 바뀐 다시 그리기도 격자를 다시 쓰게).
- * 도법 key 가 있는 렌더러 보기끼리만 견주고(시험용 보기 {width, height} 는 객체가 같아야 같음), 도법·중심 경도·변환·크기가 모두 같아야 같다.
+ * 도법 key 가 있는 렌더러 보기끼리만 견주고(시험용 보기 {width, height} 는 객체가 같아야 같음), 기준 투영 번호(baseId — 렌더러 setBase 가
+ * makeProjection 결과를 받을 때마다 늘림)·도법·중심 경도·변환(k·x·y)·크기가 모두 같아야 같다. 화면 투영 = viewProjection(기준 투영, 변환, 크기)이라
+ * 이것으로 다 정해진다 — 화면 투영을 바꾸는 값을 렌더러에 새로 두면 view 에 싣고 여기에도 더할 것.
  */
 export function sameView(a, b) {
   if (!a || !b || a.key == null || b.key == null) return false;
-  return a.key === b.key && a.centerLon === b.centerLon && a.k === b.k && a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+  return a.baseId === b.baseId && a.key === b.key && a.centerLon === b.centerLon && a.k === b.k && a.x === b.x && a.y === b.y
+    && a.width === b.width && a.height === b.height;
 }
 
 export function createGridShare({ budget = RELIEF_BUDGET_MS, initialStep = 2 } = {}) {

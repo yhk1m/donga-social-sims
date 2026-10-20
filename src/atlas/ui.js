@@ -237,14 +237,19 @@ export function tintLegendBlock(panel, { title = '높이와 깊이', note = null
  * 옮긴 자리는 주제를 바꿔도 그대로(칸은 조각에 하나 — main.js 가 만들고 주제는 body 에 범례만 넣고 뺌).
  * → { el, body, sync()(보이는 내용이 없으면 칸째 숨김), collapse(on), reclamp(), resetPosition(), collapsed, destroy() }
  */
+let panelSeq = 0;
 export function legendPanel(stage, { title = '범례' } = {}) {
-  const body = h('div', { class: 'at-legend-panel-body' });
+  // aria-controls 용 id: 같은 쪽에 조각이 둘 붙어도(모듈마다 번호가 1부터) 겹치지 않게 난수를 붙임
+  const bodyId = `at-legend-panel-${++panelSeq}-${Math.random().toString(36).slice(2, 8)}`;
+  const body = h('div', { class: 'at-legend-panel-body', id: bodyId });
   const toggle = h('button', {
-    class: 'ds-btn at-legend-panel-toggle', type: 'button', 'aria-expanded': 'true', 'aria-label': '범례 접기', title: '범례 접기',
+    class: 'ds-btn at-legend-panel-toggle', type: 'button', 'aria-expanded': 'true', 'aria-controls': bodyId, 'aria-label': '범례 접기', title: '범례 접기',
     on: { click: () => collapse(!collapsed) },
   }, icon('chevron'));
-  const head = h('div', { class: 'at-legend-panel-head', title: '끌어서 옮기기(두 번 누르면 제자리)' },
-    h('h2', { class: 'at-legend-panel-title' }, title), toggle);
+  const head = h('div', {
+    class: 'at-legend-panel-head', tabindex: '0', role: 'group',
+    'aria-label': '범례 칸 — 끌거나 방향키로 옮기기, 두 번 누르거나 Home 키로 제자리', title: '끌어서 옮기기(두 번 누르면 제자리)',
+  }, h('h2', { class: 'at-legend-panel-title' }, title), toggle);
   const el = h('section', { class: 'at-legend-panel', 'aria-label': title }, head, body);
   stage.append(el);
   let collapsed = false, pos = null, drag = null;
@@ -257,11 +262,12 @@ export function legendPanel(stage, { title = '범례' } = {}) {
     Object.assign(el.style, { left: `${pos.left}px`, top: `${pos.top}px`, right: 'auto', bottom: 'auto' });
     el.classList.add('is-moved');
   }
+  /** 옮긴 칸을 무대 안으로 다시 맞춤(무대·칸 크기가 바뀔 때). 숨었거나 크기를 모르면(0) 그대로 — 0 으로 재면 옮긴 자리를 잃는다. 자리는 저장한 pos 기준. */
   function reclamp() {
-    if (!pos) return;
+    if (!pos || el.hidden) return;
     const sr = stageRect(), r = el.getBoundingClientRect?.();
-    if (!r || !sr.width) return;
-    place(r.left - sr.left, r.top - sr.top);
+    if (!r || !r.width || !sr.width) return;
+    place(pos.left, pos.top);
   }
   function resetPosition() {
     pos = null;
@@ -294,7 +300,7 @@ export function legendPanel(stage, { title = '범례' } = {}) {
   }
   function onUp(e) {
     if (!drag) return;
-    e.stopPropagation();
+    e?.stopPropagation?.();
     try { head.releasePointerCapture?.(drag.id); } catch { /* 이미 놓음 */ }
     drag = null;
     el.classList.remove('is-dragging');
@@ -304,14 +310,31 @@ export function legendPanel(stage, { title = '범례' } = {}) {
   head.addEventListener('pointermove', onMove);
   head.addEventListener('pointerup', onUp);
   head.addEventListener('pointercancel', onUp);
+  head.addEventListener('lostpointercapture', onUp);
   head.addEventListener('dblclick', (e) => { if (!isToggle(e.target)) resetPosition(); });
-  // 칸 안의 휠·누르기가 지도(확대·끌기)로 번지지 않게
-  el.addEventListener('wheel', stop);
+  // 머리에 초점: 방향키 10px(Shift 40px)씩 옮김, Home 은 제자리
+  head.addEventListener('keydown', (e) => {
+    if (e.target !== head) return;
+    if (e.key === 'Home') { resetPosition(); e.preventDefault(); return; }
+    const d = e.shiftKey ? 40 : 10;
+    const mv = { ArrowLeft: [-d, 0], ArrowRight: [d, 0], ArrowUp: [0, -d], ArrowDown: [0, d] }[e.key];
+    if (!mv) return;
+    const sr = stageRect(), r = el.getBoundingClientRect();
+    const cur = pos || { left: r.left - sr.left, top: r.top - sr.top };
+    place(cur.left + mv[0], cur.top + mv[1]);
+    e.preventDefault(); e.stopPropagation();
+  });
+  // 칸 안의 휠·누르기가 지도(확대·끌기)로 번지지 않게. 스크롤하는 body 밖(머리)의 휠은 쪽(호스트 페이지)도 굴리지 않게 막음.
+  const inBody = (t) => { for (let n = t; n && n !== el; n = n.parentNode) if (n === body) return true; return false; };
+  el.addEventListener('wheel', (e) => { e.stopPropagation(); if (!inBody(e.target)) e.preventDefault(); }, { passive: false });
   el.addEventListener('pointerdown', stop);
+  // 무대 크기·칸 크기(다른 주제의 더 긴 범례, 옮긴 뒤 최대 높이)가 바뀌면 다시 맞춤
   const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(() => reclamp()) : null;
   ro?.observe(stage);
+  ro?.observe(el);
   function sync() {
     el.hidden = ![...body.children].some((c) => !c.hidden && c.childNodes.length > 0); // 빈 묶음(.at-legends)·숨긴 고도 색 범례는 내용 아님
+    reclamp();
   }
   sync();
   return {

@@ -288,7 +288,7 @@ test('고도 색 훅: tint 일 때만 sea → land 차례, 음영과 같은 공�
   assert.deepEqual(seq, ['sea', 'land', 'relief']);
   assert.ok(seen[0] === seen[1] && seen[1] === seen[2], '같은 격자 객체');
   const last = map.gridStats.renders.at(-1);
-  assert.deepEqual([last.misses + last.hits, last.misses <= 1], [3, true], '세 훅이 격자 하나(보기가 그대로라 앞 그림의 격자를 다시 쓰면 miss 0)');
+  assert.deepEqual([last.misses, last.hits], [0, 3], '세 훅이 격자 하나 — 보기가 그대로라 앞(음영만) 그림의 격자를 다시 씀');
   assert.deepEqual(opts, [true]);
   map.redraw();
   assert.equal(seen.at(-1), seen[0], '보기가 그대로면 다시 그려도 같은 격자(값으로 견줌 — 범례·고도 색 단계만 바뀐 다시 그리기)');
@@ -296,7 +296,31 @@ test('고도 색 훅: tint 일 때만 sea → land 차례, 음영과 같은 공�
   map.flyTo({ zoom: 2 }, 0);
   dom.flushRaf();
   assert.notEqual(seen.at(-1), seen[0], '보기가 바뀌면 새 격자');
+  const moved = map.gridStats.renders.at(-1);
+  assert.deepEqual([moved.misses, moved.hits], [1, 2], '새 보기의 첫 고도 색 그림: 격자 계산 한 번(miss 1) + 나머지 두 훅 hit');
   off();
+  map.destroy();
+});
+
+test('공유 격자: setCenterLon·setProjection(기준 투영을 새로 만듦)은 격자 miss 정확히 한 번 + 새 격자', () => {
+  const { map } = setup();
+  const seen = [];
+  map.setReliefDrawer((ctx, projection, view, o) => { seen.push(o.grid()); });
+  dom.flushRaf();
+  const g0 = seen.at(-1);
+  for (const [name, act] of [['setCenterLon', () => map.setCenterLon(150)], ['setProjection', () => map.setProjection('robinson')]]) {
+    const m0 = map.gridStats.misses, prev = seen.at(-1), b0 = map.view.baseId;
+    act();
+    map.redraw(); // 도법 보간을 끝내고 멈춘 그림
+    dom.flushRaf();
+    assert.notEqual(map.view.baseId, b0, `${name}: 기준 투영 번호가 바뀜`);
+    assert.equal(map.gridStats.misses - m0, 1, `${name}: miss 한 번`);
+    assert.notEqual(seen.at(-1), prev, `${name}: 새 격자`);
+    assert.notEqual(seen.at(-1), g0);
+    const m1 = map.gridStats.misses;
+    map.redraw(); dom.flushRaf();
+    assert.equal(map.gridStats.misses, m1, `${name}: 그 뒤 같은 보기 다시 그리기는 miss 없음`);
+  }
   map.destroy();
 });
 
@@ -344,7 +368,7 @@ test('자연색 훅: natural 이 켜져 있고 붙었으면 고도 색 대신 �
   assert.deepEqual(opts, [true], '붙으면 options 알림');
   assert.deepEqual(seq, ['natural:sea', 'natural:land', 'relief:true']);
   const last = map.gridStats.renders.at(-1);
-  assert.deepEqual([last.misses + last.hits, last.misses <= 1], [3, true], '자연색 두 단계 + 음영이 격자 하나(보기가 그대로면 앞 그림 격자 — miss 0)');
+  assert.deepEqual([last.misses, last.hits], [0, 3], '자연색 두 단계 + 음영이 격자 하나(보기가 그대로라 앞 그림 격자 — miss 0)');
   seq.length = 0;
   map.setOptions({ natural: false });
   dom.flushRaf();

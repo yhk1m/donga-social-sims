@@ -60,6 +60,8 @@ export function createGridDrawer({ fill, clock = () => performance.now(), step: 
     if (cache && cache.view === view && cache.projection === projection && cache.selKey === selKey) return cache;
     const t0 = clock();
     const grid = gridOf ? gridOf() : invertGrid((p) => projection.invert(p), view.width, view.height, { step: ownStep, forward: (ll) => projection(ll) });
+    // 공유 격자가 같은 객체(보기가 그대로)이고 고르기도 같으면 두 장이 그대로 — 채우기·putImageData 를 건너뜀
+    if (cache && cache.grid === grid && cache.selKey === selKey && offS) { cache.view = view; cache.projection = projection; return cache; }
     if (!offS) { offS = h('canvas'); offL = h('canvas'); }
     const cs = offS.getContext('2d'), cl = offL.getContext('2d');
     if (!ids || ids.width !== grid.cols || ids.height !== grid.rows) { // 크기가 그대로면 캔버스·ImageData 를 다시 씀(채우기가 모든 화소를 덮어씀)
@@ -69,7 +71,7 @@ export function createGridDrawer({ fill, clock = () => performance.now(), step: 
     fill(grid, ids.data, idl.data, extra);
     cs.putImageData(ids, 0, 0); cl.putImageData(idl, 0, 0);
     const ms = clock() - t0;
-    cache = { view, projection, selKey, step: grid.step, cols: grid.cols, rows: grid.rows, ms };
+    cache = { view, projection, selKey, grid, step: grid.step, cols: grid.cols, rows: grid.rows, ms };
     stats.push({ ms, step: grid.step, cols: grid.cols, rows: grid.rows });
     if (stats.length > 60) stats.shift();
     return cache;

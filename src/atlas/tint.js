@@ -168,7 +168,7 @@ export const loadTint = (url = TINT_URL) => loadImagePixels(url, { label: '고�
  * 격자와 그 크기는 렌더러의 공유 격자(extra.grid, createGridShare)가 정한다 — 그림 도중 크기가 바뀌지 않는다. 혼자 쓰면 step 2 로 계산.
  * fn.stats = 최근 계산 기록 [{ ms, step, cols, rows }]. 그리는 차례는 baseDrawer.createGridDrawer.
  */
-export function createTintDrawer(img, { clock, luts = tintLuts(), step } = {}) {
+export function createTintDrawer(img, { clock, t = TINT, luts = tintLuts(t), step } = {}) {
   if (!img) return Object.assign(() => {}, { stats: [], indexBuilds: 0 });
   // 격자(공유 격자는 보기가 그대로면 같은 객체)마다 분류 번호를 한 번만 뽑고(fn.indexBuilds), 고르기에 따른 색 표는 고르기 값이 바뀔 때만 만든다
   let idxGrid = null, idx = null, lutKey = '', curLuts = luts;
@@ -176,7 +176,7 @@ export function createTintDrawer(img, { clock, luts = tintLuts(), step } = {}) {
     if (grid !== idxGrid) { idx = tintIndex(grid, img, idx); idxGrid = grid; fn.indexBuilds++; }
     const sel = extra?.selection?.length ? extra.selection : null;
     const key = sel ? sel.join(',') : '';
-    if (key !== lutKey) { curLuts = sel ? tintLuts(TINT, new Set(sel)) : luts; lutKey = key; }
+    if (key !== lutKey) { curLuts = sel ? tintLuts(t, new Set(sel)) : luts; lutKey = key; }
     tintPaint(idx, curLuts, sea, land);
   };
   const fn = createGridDrawer({ fill, clock, step });

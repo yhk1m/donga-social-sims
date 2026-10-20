@@ -205,3 +205,24 @@ test('createTintDrawer: 격자마다 분류 번호를 한 번 뽑아 두고, 단
   fn(ctx, proj, { width: 64, height: 32 }, { phase: 'sea', path: pathF, grid: () => ({ ...grid }) });
   assert.equal(fn.indexBuilds, 2, '새 격자면 다시 뽑음');
 });
+
+test('createTintDrawer: 같은 공유 격자·같은 고르기로 새 view 를 그리면 다시 채우지 않음, t 옵션의 표로 색 표', () => {
+  const img = { width: 8, height: 4, data: new Uint8Array(32).fill(LAND0 + 1) };
+  const proj = Object.assign(([lon, lat]) => [(lon + 180) * 2, (90 - lat) * 2], { invert: ([x, y]) => [x / 2 - 180, 90 - y / 2] });
+  const custom = { ...TINT, landColors: TINT.landColors.map((c, i) => (i === 2 ? '#000000' : c)) }; // 100~200 m 를 검정으로
+  const fn = createTintDrawer(img, { t: custom });
+  const ctx = fakeCtx('ctx');
+  const grid = { cols: 2, rows: 1, step: 32, lon: Float64Array.from([-90, 90]), lat: Float64Array.from([0, 0]) };
+  const pathF = () => {};
+  fn(ctx, proj, { width: 64, height: 32 }, { phase: 'sea', path: pathF, grid: () => grid });
+  assert.equal(fn.stats.length, 1);
+  fn(ctx, proj, { width: 64, height: 32 }, { phase: 'sea', path: pathF, grid: () => grid });
+  assert.equal(fn.stats.length, 1, '격자·고르기 그대로 — 다시 채우지 않음');
+  fn(ctx, proj, { width: 64, height: 32 }, { phase: 'sea', path: pathF, grid: () => grid, selection: [LAND0 + 1] });
+  assert.equal(fn.stats.length, 2, '고르기가 바뀌면 다시 채움');
+  fn(ctx, proj, { width: 64, height: 32 }, { phase: 'sea', path: pathF, grid: () => grid, selection: [LAND0 + 1] });
+  assert.equal(fn.stats.length, 2);
+  // t 옵션: 고르기 색 표도 custom 에서(고른 100~200 m = 검정 그대로, 고르지 않은 단계는 흐림)
+  const sel = tintLuts(custom, new Set([LAND0 + 1]));
+  assert.deepEqual([...sel.land.slice((LAND0 + 1) * 3, (LAND0 + 1) * 3 + 3)], [0, 0, 0]);
+});

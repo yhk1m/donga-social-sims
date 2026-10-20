@@ -396,7 +396,9 @@ test('legendPanel: 무대 오른쪽 아래 떠 있는 범례 칸 — 머리 「�
   assert.equal(find(P.el, byClass('at-legend-panel-title')).textContent, '범례');
   assert.ok(find(btn, byClass('ds-icon')), '선 아이콘(icon())');
   assert.equal(btn.getAttribute('aria-expanded'), 'true');
-  assert.equal(btn.getAttribute('aria-controls'), null, '문서 전역 id 를 쓰지 않음');
+  assert.equal(btn.getAttribute('aria-controls'), P.body.getAttribute('id'), '접기 단추가 칸 몸통을 가리킴');
+  assert.match(P.body.getAttribute('id'), /^at-legend-panel-\d+-[a-z0-9]+$/, '조각이 둘이어도 겹치지 않게 난수');
+  assert.notEqual(legendPanel(div()).body.getAttribute('id'), P.body.getAttribute('id'));
   btn.dispatch('click');
   assert.equal(btn.getAttribute('aria-expanded'), 'false');
   assert.equal(P.body.hidden, true);
@@ -492,4 +494,45 @@ test('tintLegendBlock + map: 높이·깊이 단계를 누르면 그 단계만(�
   // map 없이 만든 범례는 누를 것 없음(그림과 글)
   const T2 = tintLegendBlock(null);
   assert.ok(findAll(T2.el, byClass('at-tint-row')).every((r) => r.tagName !== 'button'));
+});
+
+test('legendPanel 다시 맞춤: 숨었거나 크기 0 이면 옮긴 자리를 지킴, 내용이 바뀌면(sync) 다시 맞춤, 놓친 포인터(lostpointercapture)는 끌기 끝, 머리 방향키·Home', () => {
+  const stage = div();
+  stage._rect = { left: 0, top: 0, width: 800, height: 600 };
+  const P = legendPanel(stage);
+  const c = div(); c.append(div()); P.body.append(c); P.sync();
+  P.el._rect = { left: 550, top: 300, width: 240, height: 290 };
+  const head = find(P.el, byClass('at-legend-panel-head'));
+  assert.equal(head.getAttribute('tabindex'), '0');
+  head.dispatch('pointerdown', { clientX: 600, clientY: 310, pointerId: 1, button: 0, target: head });
+  head.dispatch('pointermove', { clientX: 400, clientY: 210, pointerId: 1 });
+  assert.deepEqual(P.position, { left: 350, top: 200 });
+  head.dispatch('lostpointercapture', { pointerId: 1 });
+  assert.ok(!P.el.classList.contains('is-dragging'), '놓친 포인터 = 끌기 끝');
+  head.dispatch('pointermove', { clientX: 0, clientY: 0, pointerId: 1 });
+  assert.deepEqual(P.position, { left: 350, top: 200 }, '끝난 뒤 움직임 무시');
+  P.el._rect = { left: 350, top: 200, width: 240, height: 290 };
+  // 숨은 칸(범례 없는 주제)은 크기 0 — 다시 맞춰도 자리 그대로
+  c.hidden = true; P.sync();
+  assert.equal(P.el.hidden, true);
+  P.el._rect = { left: 0, top: 0, width: 0, height: 0 };
+  P.reclamp();
+  assert.deepEqual(P.position, { left: 350, top: 200 });
+  // 보이지만 크기를 모름(0)도 그대로
+  P.el.hidden = false; P.reclamp();
+  assert.deepEqual(P.position, { left: 350, top: 200 });
+  // 다시 보이고 더 긴 범례(높이 500) → sync 가 무대 안으로(top ≤ 600 − 500)
+  c.hidden = false;
+  P.el._rect = { left: 350, top: 200, width: 240, height: 500 };
+  P.sync();
+  assert.deepEqual(P.position, { left: 350, top: 100 });
+  // 방향키(10px, Shift 40px), Home = 제자리
+  head.dispatch('keydown', { key: 'ArrowLeft', target: head });
+  assert.deepEqual(P.position, { left: 340, top: 100 });
+  head.dispatch('keydown', { key: 'ArrowUp', shiftKey: true, target: head });
+  assert.deepEqual(P.position, { left: 340, top: 60 });
+  head.dispatch('keydown', { key: 'Home', target: head });
+  assert.equal(P.position, null);
+  assert.equal(P.el.style.left, '');
+  P.destroy();
 });
