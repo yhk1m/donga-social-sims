@@ -10,7 +10,7 @@ import { installFakeDom } from './helpers/fakeDom.mjs';
 
 register('./helpers/cssHooks.mjs', import.meta.url);
 const dom = installFakeDom();
-const { topicNav, mapTools, legendBlock, detailCard, pageViewer, tooltip, creditBlock } = await import('../../src/atlas/ui.js');
+const { topicNav, mapTools, legendBlock, legendPanel, tintLegendBlock, detailCard, pageViewer, tooltip, creditBlock } = await import('../../src/atlas/ui.js');
 const { coloringLayer, coloringQuiz, heritageQuiz } = await import('../../src/atlas/quiz.js');
 const { renderChart } = await import('../../src/atlas/charts.js');
 const { createLegendState } = await import('../../src/atlas/legendState.js');
@@ -385,4 +385,154 @@ test('legendBlock 묶음: 기후 범례는 열대·건조·온대·냉대·한�
   assert.equal(lg.selected(), items[0].cls);
   assert.equal(heads[1].getAttribute('aria-pressed'), 'false');
   b.destroy();
+});
+
+test('legendPanel: 무대 오른쪽 아래 떠 있는 범례 칸 — 머리 「범례」 + 접기 단추(aria-expanded), 접으면 머리만', () => {
+  const stage = div();
+  const P = legendPanel(stage);
+  assert.ok(stage.childNodes.includes(P.el));
+  assert.ok(P.el.classList.contains('at-legend-panel'));
+  const btn = find(P.el, byClass('at-legend-panel-toggle'));
+  assert.equal(find(P.el, byClass('at-legend-panel-title')).textContent, '범례');
+  assert.ok(find(btn, byClass('ds-icon')), '선 아이콘(icon())');
+  assert.equal(btn.getAttribute('aria-expanded'), 'true');
+  assert.equal(btn.getAttribute('aria-controls'), P.body.getAttribute('id'), '접기 단추가 칸 몸통을 가리킴');
+  assert.match(P.body.getAttribute('id'), /^at-legend-panel-\d+-[a-z0-9]+$/, '조각이 둘이어도 겹치지 않게 난수');
+  assert.notEqual(legendPanel(div()).body.getAttribute('id'), P.body.getAttribute('id'));
+  btn.dispatch('click');
+  assert.equal(btn.getAttribute('aria-expanded'), 'false');
+  assert.equal(P.body.hidden, true);
+  assert.ok(P.el.classList.contains('is-collapsed'));
+  assert.equal(P.collapsed, true);
+  btn.dispatch('click');
+  assert.equal(P.body.hidden, false);
+  // 내용이 없으면 칸째 숨김
+  P.sync();
+  assert.equal(P.el.hidden, true);
+  const a = div(); P.body.append(a); a.append(div()); P.sync();
+  assert.equal(P.el.hidden, false);
+  a.hidden = true; P.sync();
+  assert.equal(P.el.hidden, true, '보이는 내용이 없으면 숨김');
+  P.destroy();
+  assert.ok(!stage.childNodes.includes(P.el));
+});
+
+test('legendPanel 끌기: 머리를 끌면 무대 안에서만 옮김(pointer capture, 지도 끌기로 번지지 않음), 접기 단추에서는 시작 안 함, 무대 크기가 바뀌면 다시 맞춤, 두 번 누르면 제자리', () => {
+  const stage = div();
+  stage._rect = { left: 100, top: 50, width: 800, height: 600 };
+  const P = legendPanel(stage);
+  { const c = div(); c.append(div()); P.body.append(c); } P.sync();
+  P.el._rect = { left: 100 + 800 - 250, top: 50 + 600 - 300, width: 240, height: 290 }; // 오른쪽 아래(CSS)
+  const head = find(P.el, byClass('at-legend-panel-head'));
+  let captured = 0;
+  head.setPointerCapture = () => { captured++; };
+  const ev = (x, y, extra = {}) => ({ clientX: x, clientY: y, pointerId: 1, button: 0, ...extra }); // (가짜 DOM 은 stopPropagation 을 덮어씀 — 번짐은 헤드리스로 확인)
+  head.dispatch('pointerdown', ev(700, 400, { target: head }));
+  assert.equal(captured, 1);
+  head.dispatch('pointermove', ev(500, 300));
+  assert.equal(P.el.style.left, `${800 - 250 - 200}px`);
+  assert.equal(P.el.style.top, `${600 - 300 - 100}px`);
+  assert.equal(P.el.style.right, 'auto'); assert.equal(P.el.style.bottom, 'auto');
+  // 무대 밖으로는 못 나감
+  head.dispatch('pointermove', ev(-2000, -2000));
+  assert.equal(P.el.style.left, '0px'); assert.equal(P.el.style.top, '0px');
+  head.dispatch('pointermove', ev(5000, 5000));
+  assert.equal(P.el.style.left, `${800 - 240}px`); assert.equal(P.el.style.top, `${600 - 290}px`);
+  head.dispatch('pointerup', ev(5000, 5000));
+  assert.ok(P.el.classList.contains('is-moved'));
+  // 끈 뒤 움직임은 무시
+  head.dispatch('pointermove', ev(0, 0));
+  assert.equal(P.el.style.left, `${800 - 240}px`);
+  // 접기 단추에서 누르면 끌기 시작 안 함
+  const btn = find(P.el, byClass('at-legend-panel-toggle'));
+  head.dispatch('pointerdown', ev(700, 400, { target: btn }));
+  head.dispatch('pointermove', ev(100, 100));
+  assert.equal(P.el.style.left, `${800 - 240}px`);
+  head.dispatch('pointerup', ev(100, 100));
+  // 무대가 작아지면 안으로 다시 맞춤
+  P.el._rect = { left: 100 + 560, top: 50 + 310, width: 240, height: 290 };
+  stage._rect = { left: 100, top: 50, width: 500, height: 400 };
+  P.reclamp();
+  assert.equal(P.el.style.left, `${500 - 240}px`); assert.equal(P.el.style.top, `${400 - 290}px`);
+  // 두 번 누르면 오른쪽 아래로(인라인 자리 지움)
+  head.dispatch('dblclick', { target: head });
+  assert.equal(P.el.style.left, ''); assert.equal(P.el.style.top, '');
+  assert.ok(!P.el.classList.contains('is-moved'));
+  P.destroy();
+});
+
+test('tintLegendBlock + map: 높이·깊이 단계를 누르면 그 단계만(여러 개 고름), 다시 누르면 뺌, 전체 보기, aria-pressed 는 지도 옵션을 따라감, destroy 로 고름 풀기', () => {
+  const map = fakeMap();
+  map.setOptions({ tint: true, tintSelection: null });
+  const T = tintLegendBlock(null, { map });
+  const rows = findAll(T.el, byClass('at-tint-row'));
+  assert.equal(rows.length, 18);
+  assert.ok(rows.every((r) => r.tagName === 'button' && r.getAttribute('type') === 'button'), '단추(키보드·읽기 프로그램)');
+  const byTitle = (t) => rows.find((r) => r.getAttribute('aria-label') === `육지 ${t}`);
+  const b23 = byTitle('2,000~3,000 m'), b34 = byTitle('3,000~4,000 m');
+  assert.ok(b23 && b34);
+  assert.equal(b23.getAttribute('aria-pressed'), 'false');
+  b23.dispatch('click');
+  assert.deepEqual(map.options.tintSelection, [Number(b23.dataset.cls)]);
+  b34.dispatch('click');
+  assert.deepEqual([...map.options.tintSelection].sort(), [Number(b23.dataset.cls), Number(b34.dataset.cls)].sort());
+  assert.equal(b23.getAttribute('aria-pressed'), 'true'); assert.equal(b34.getAttribute('aria-pressed'), 'true');
+  const reset = find(T.el, byClass('at-legend-reset'));
+  assert.equal(reset.hidden, false);
+  b23.dispatch('click');
+  assert.deepEqual(map.options.tintSelection, [Number(b34.dataset.cls)], '다시 누르면 뺌');
+  reset.dispatch('click');
+  assert.equal(map.options.tintSelection, null);
+  assert.equal(reset.hidden, true);
+  assert.equal(b34.getAttribute('aria-pressed'), 'false');
+  map.setOptions({ tintSelection: [Number(b23.dataset.cls)] });
+  assert.equal(b23.getAttribute('aria-pressed'), 'true', '다른 곳에서 바꿔도 따라감');
+  const n = map.handlerCount;
+  T.destroy();
+  assert.equal(map.options.tintSelection, null, '주제를 바꾸면(범례를 버리면) 고름 풀기');
+  assert.equal(map.handlerCount, n - 1);
+  // map 없이 만든 범례는 누를 것 없음(그림과 글)
+  const T2 = tintLegendBlock(null);
+  assert.ok(findAll(T2.el, byClass('at-tint-row')).every((r) => r.tagName !== 'button'));
+});
+
+test('legendPanel 다시 맞춤: 숨었거나 크기 0 이면 옮긴 자리를 지킴, 내용이 바뀌면(sync) 다시 맞춤, 놓친 포인터(lostpointercapture)는 끌기 끝, 머리 방향키·Home', () => {
+  const stage = div();
+  stage._rect = { left: 0, top: 0, width: 800, height: 600 };
+  const P = legendPanel(stage);
+  const c = div(); c.append(div()); P.body.append(c); P.sync();
+  P.el._rect = { left: 550, top: 300, width: 240, height: 290 };
+  const head = find(P.el, byClass('at-legend-panel-head'));
+  assert.equal(head.getAttribute('tabindex'), '0');
+  head.dispatch('pointerdown', { clientX: 600, clientY: 310, pointerId: 1, button: 0, target: head });
+  head.dispatch('pointermove', { clientX: 400, clientY: 210, pointerId: 1 });
+  assert.deepEqual(P.position, { left: 350, top: 200 });
+  head.dispatch('lostpointercapture', { pointerId: 1 });
+  assert.ok(!P.el.classList.contains('is-dragging'), '놓친 포인터 = 끌기 끝');
+  head.dispatch('pointermove', { clientX: 0, clientY: 0, pointerId: 1 });
+  assert.deepEqual(P.position, { left: 350, top: 200 }, '끝난 뒤 움직임 무시');
+  P.el._rect = { left: 350, top: 200, width: 240, height: 290 };
+  // 숨은 칸(범례 없는 주제)은 크기 0 — 다시 맞춰도 자리 그대로
+  c.hidden = true; P.sync();
+  assert.equal(P.el.hidden, true);
+  P.el._rect = { left: 0, top: 0, width: 0, height: 0 };
+  P.reclamp();
+  assert.deepEqual(P.position, { left: 350, top: 200 });
+  // 보이지만 크기를 모름(0)도 그대로
+  P.el.hidden = false; P.reclamp();
+  assert.deepEqual(P.position, { left: 350, top: 200 });
+  // 다시 보이고 더 긴 범례(높이 500) → sync 가 무대 안으로(top ≤ 600 − 500)
+  c.hidden = false;
+  P.el._rect = { left: 350, top: 200, width: 240, height: 500 };
+  P.sync();
+  assert.deepEqual(P.position, { left: 350, top: 100 });
+  // 방향키(10px, Shift 40px), Home = 제자리
+  head.dispatch('keydown', { key: 'ArrowLeft', target: head });
+  assert.deepEqual(P.position, { left: 340, top: 100 });
+  head.dispatch('keydown', { key: 'ArrowUp', shiftKey: true, target: head });
+  assert.deepEqual(P.position, { left: 340, top: 60 });
+  head.dispatch('keydown', { key: 'Home', target: head });
+  assert.equal(P.position, null);
+  assert.equal(P.el.style.left, '');
+  P.destroy();
 });

@@ -6,6 +6,8 @@
 //   mapTools(stage, map, { relief, tint })           무대 오른쪽 위 도구(도법 5·대서양/태평양·경위선/지명/음영·바탕 색 없음/고도 색/자연색·확대/축소/전체) + 왼쪽 아래 축척 막대,
 //                                                    무대 키보드(무대에 초점이 있을 때만: +/− 확대·축소, 방향키 이동, 0 전체) — update()
 //   legendBlock(panel, legend, items, opts)          범례(색 견본 + 이름, 누르면 legend.toggle) + 제목·출처·위치 근사·이미지 실패 알림
+//   legendPanel(stage)                               무대 오른쪽 아래 떠 있는 범례 칸(머리 「범례」·접기 단추·머리 끌어 옮기기·두 번 누르면 제자리) — body 에 범례를 담음
+//   tintLegendBlock(panel, { map })                  고도 색 범례(교과서 16쪽 상자). map 을 주면 단계를 눌러 그 단계만 색칠(여러 개, 렌더러 옵션 tintSelection)
 //   detailCard(panel, { onExpand })                  .show({ title, photo, text, chart | charts, credit, approx }) / .hide()
 //   pageViewer(stage)                                「원본 쪽 보기」 겹침 창(absolute, z 20): .show({ url, title, bbox } | { title, node }) / .hide()
 //   tooltip(stage, { map })                          포인터 자리 이름 말풍선(map 을 주면 hover 를 구독)
@@ -173,23 +175,174 @@ export function mapTools(stage, map, { relief = true, tint = true } = {}) {
 // ---------- 고도 색 범례(교과서 16쪽 「육지 높이·바다 깊이」 상자) ----------
 /**
  * 세로 색띠 + 칸 경계 숫자(m). 위에서부터 빙하 · 5,000 … 0 · 해수면 아래 땅 · 바다 200 … 8,000(교과서 차례).
- * → { el, show(on), destroy() }. 누를 것 없음(그림과 글).
+ * → { el, show(on), destroy() }. map 이 없으면 누를 것 없음(그림과 글).
+ * map 을 주면(교사 요청 2026-10-20) 줄마다 단추 — 누르면 그 단계만 색칠(map.setOptions({ tintSelection })), 여러 개 고를 수 있고 다시 누르면 뺌,
+ * 「전체 보기」로 모두 풂. aria-pressed 는 지도 옵션(map 'options')을 따라간다. destroy 는 고름을 풀고(주제를 바꾸면 처음처럼) 구독을 푼다.
  */
-export function tintLegendBlock(panel, { title = '높이와 깊이', note = null } = {}) {
+export function tintLegendBlock(panel, { title = '높이와 깊이', note = null, map = null } = {}) {
   const rows = tintLegend();
-  const items = rows.map((r, i) => h('div', { class: `at-tint-row at-tint-${r.kind}${i === rows.length - 1 ? ' at-tint-last' : ''}`, title: r.title },
-    h('span', { class: 'at-tint-top' }, r.top ?? ''),
-    h('span', { class: 'at-tint-sw', style: { background: r.kind === 'glacier' ? `repeating-linear-gradient(135deg, rgba(0, 0, 0, .08) 0 2px, transparent 2px 5px), ${r.color}` : r.color }, 'aria-hidden': 'true' }),
-    r.label ? h('span', { class: 'at-tint-label' }, r.label) : null));
-  const el = h('section', { class: 'at-legend at-tint-legend', 'aria-label': `${title} 범례` },
+  const pick = !!map?.setOptions;
+  const selected = () => new Set(map?.options?.tintSelection || []);
+  const setSel = (set) => map.setOptions({ tintSelection: set.size ? [...set].sort((a, b) => a - b) : null });
+  const btns = [];
+  const items = rows.map((r, i) => {
+    const kids = [
+      h('span', { class: 'at-tint-top', 'aria-hidden': pick ? 'true' : null }, r.top ?? ''),
+      h('span', { class: 'at-tint-sw', style: { background: r.kind === 'glacier' ? `repeating-linear-gradient(135deg, rgba(0, 0, 0, .08) 0 2px, transparent 2px 5px), ${r.color}` : r.color }, 'aria-hidden': 'true' }),
+      r.label ? h('span', { class: 'at-tint-label', 'aria-hidden': pick ? 'true' : null }, r.label) : null];
+    const cls = `at-tint-row at-tint-${r.kind}${i === rows.length - 1 ? ' at-tint-last' : ''}`;
+    if (!pick) return h('div', { class: cls, title: r.title }, kids);
+    const name = r.kind === 'sea' ? `바다 ${r.title}` : r.kind === 'land' ? `육지 ${r.title}` : r.title;
+    const b = h('button', {
+      class: `${cls} is-pick`, type: 'button', 'aria-pressed': 'false', 'aria-label': name, title: `${name} 만 색칠(여러 개 고를 수 있음, 다시 누르면 뺌)`, dataset: { cls: String(r.cls) },
+      on: { click: () => { const s0 = selected(); if (s0.has(r.cls)) s0.delete(r.cls); else s0.add(r.cls); setSel(s0); } },
+    }, kids);
+    btns.push([r.cls, b]);
+    return b;
+  });
+  const reset = pick ? h('button', { class: 'ds-btn at-legend-reset', type: 'button', on: { click: () => setSel(new Set()) } }, '전체 보기') : null;
+  if (reset) reset.hidden = true;
+  const el = h('section', { class: `at-legend at-tint-legend${pick ? ' is-pickable' : ''}`, 'aria-label': `${title} 범례` },
     h('div', { class: 'at-legend-head' }, h('h3', { class: 'ds-h2 at-legend-title' }, title)),
     h('div', { class: 'at-tint-cols' },
       h('div', { class: 'at-tint-caption' }, h('span', {}, '육지 높이 (m)'), h('span', {}, '바다 깊이 (m)')),
-      h('div', { class: 'at-tint-ramp', role: 'img', 'aria-label': '육지 높이 0·100·200·500·1,000·2,000·3,000·4,000·5,000 m, 빙하, 해수면 아래 땅, 바다 깊이 200·1,000·2,000·4,000·6,000·8,000 m' },
-        items)),
+      pick
+        ? h('div', { class: 'at-tint-ramp', role: 'group', 'aria-label': '높이·깊이 단계 — 누르면 그 단계만 색칠' }, items)
+        : h('div', { class: 'at-tint-ramp', role: 'img', 'aria-label': '육지 높이 0·100·200·500·1,000·2,000·3,000·4,000·5,000 m, 빙하, 해수면 아래 땅, 바다 깊이 200·1,000·2,000·4,000·6,000·8,000 m' },
+          items)),
+    reset,
     note ? h('p', { class: 'at-legend-note' }, note) : null);
   if (panel) addBlock(panel, el);
-  return { el, show(on) { el.hidden = !on; }, destroy() { el.remove(); } };
+  const sync = (o) => {
+    const set = new Set(o?.tintSelection || []);
+    for (const [c, b] of btns) b.setAttribute('aria-pressed', String(set.has(c)));
+    if (reset) reset.hidden = !set.size;
+  };
+  let off = null;
+  if (pick) { try { off = map.on('options', sync); } catch { off = null; } sync(map.options); }
+  return {
+    el, show(on) { el.hidden = !on; },
+    destroy() {
+      off?.(); off = null;
+      if (pick && !map.destroyed && map.options?.tintSelection?.length) map.setOptions({ tintSelection: null });
+      el.remove(); btns.length = 0;
+    },
+  };
+}
+
+// ---------- 떠 있는 범례 칸(무대 오른쪽 아래) ----------
+/**
+ * 교사 요청(2026-10-20): 범례를 지도 오른쪽 아래로. 머리(「범례」 + 접기 단추 — aria-expanded)를 끌면 무대 안에서 옮기고(pointer capture,
+ * 지도 끌기로 번지지 않게 stopPropagation, 접기 단추에서는 시작 안 함), 무대 크기가 바뀌거나 접고 펼 때 무대 안으로 다시 맞춘다. 머리를 두 번 누르면 제자리.
+ * 옮긴 자리는 주제를 바꿔도 그대로(칸은 조각에 하나 — main.js 가 만들고 주제는 body 에 범례만 넣고 뺌).
+ * → { el, body, sync()(보이는 내용이 없으면 칸째 숨김), collapse(on), reclamp(), resetPosition(), collapsed, destroy() }
+ */
+let panelSeq = 0;
+export function legendPanel(stage, { title = '범례' } = {}) {
+  // aria-controls 용 id: 같은 쪽에 조각이 둘 붙어도(모듈마다 번호가 1부터) 겹치지 않게 난수를 붙임
+  const bodyId = `at-legend-panel-${++panelSeq}-${Math.random().toString(36).slice(2, 8)}`;
+  const body = h('div', { class: 'at-legend-panel-body', id: bodyId });
+  const toggle = h('button', {
+    class: 'ds-btn at-legend-panel-toggle', type: 'button', 'aria-expanded': 'true', 'aria-controls': bodyId, 'aria-label': '범례 접기', title: '범례 접기',
+    on: { click: () => collapse(!collapsed) },
+  }, icon('chevron'));
+  const head = h('div', {
+    class: 'at-legend-panel-head', tabindex: '0', role: 'group',
+    'aria-label': '범례 칸 — 끌거나 방향키로 옮기기, 두 번 누르거나 Home 키로 제자리', title: '끌어서 옮기기(두 번 누르면 제자리)',
+  }, h('h2', { class: 'at-legend-panel-title' }, title), toggle);
+  const el = h('section', { class: 'at-legend-panel', 'aria-label': title }, head, body);
+  stage.append(el);
+  let collapsed = false, pos = null, drag = null;
+
+  const stageRect = () => stage.getBoundingClientRect?.() || { left: 0, top: 0, width: 0, height: 0 };
+  function place(left, top) {
+    const sr = stageRect(), r = el.getBoundingClientRect?.() || { width: 0, height: 0 };
+    const maxL = Math.max(0, sr.width - r.width), maxT = Math.max(0, sr.height - r.height);
+    pos = { left: Math.round(Math.min(maxL, Math.max(0, left))), top: Math.round(Math.min(maxT, Math.max(0, top))) };
+    Object.assign(el.style, { left: `${pos.left}px`, top: `${pos.top}px`, right: 'auto', bottom: 'auto' });
+    el.classList.add('is-moved');
+  }
+  /** 옮긴 칸을 무대 안으로 다시 맞춤(무대·칸 크기가 바뀔 때). 숨었거나 크기를 모르면(0) 그대로 — 0 으로 재면 옮긴 자리를 잃는다. 자리는 저장한 pos 기준. */
+  function reclamp() {
+    if (!pos || el.hidden) return;
+    const sr = stageRect(), r = el.getBoundingClientRect?.();
+    if (!r || !r.width || !sr.width) return;
+    place(pos.left, pos.top);
+  }
+  function resetPosition() {
+    pos = null;
+    Object.assign(el.style, { left: '', top: '', right: '', bottom: '' });
+    el.classList.remove('is-moved');
+  }
+  function collapse(on) {
+    collapsed = !!on;
+    body.hidden = collapsed;
+    el.classList.toggle('is-collapsed', collapsed);
+    toggle.setAttribute('aria-expanded', String(!collapsed));
+    toggle.setAttribute('aria-label', collapsed ? '범례 펼치기' : '범례 접기');
+    toggle.title = collapsed ? '범례 펼치기' : '범례 접기';
+    reclamp(); // 펼쳐서 커지면 무대 밖으로 나가지 않게
+  }
+  const isToggle = (t) => { for (let n = t; n && n !== head; n = n.parentNode) if (n === toggle) return true; return false; };
+  function onDown(e) {
+    if ((e.button ?? 0) !== 0 || isToggle(e.target)) return;
+    e.stopPropagation();
+    const sr = stageRect(), r = el.getBoundingClientRect();
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, left: r.left - sr.left, top: r.top - sr.top };
+    try { head.setPointerCapture?.(e.pointerId); } catch { /* 이미 놓은 포인터 */ }
+    el.classList.add('is-dragging');
+    e.preventDefault?.();
+  }
+  function onMove(e) {
+    if (!drag || (e.pointerId != null && drag.id != null && e.pointerId !== drag.id)) return;
+    e.stopPropagation();
+    place(drag.left + e.clientX - drag.x, drag.top + e.clientY - drag.y);
+  }
+  function onUp(e) {
+    if (!drag) return;
+    e?.stopPropagation?.();
+    try { head.releasePointerCapture?.(drag.id); } catch { /* 이미 놓음 */ }
+    drag = null;
+    el.classList.remove('is-dragging');
+  }
+  const stop = (e) => e.stopPropagation();
+  head.addEventListener('pointerdown', onDown);
+  head.addEventListener('pointermove', onMove);
+  head.addEventListener('pointerup', onUp);
+  head.addEventListener('pointercancel', onUp);
+  head.addEventListener('lostpointercapture', onUp);
+  head.addEventListener('dblclick', (e) => { if (!isToggle(e.target)) resetPosition(); });
+  // 머리에 초점: 방향키 10px(Shift 40px)씩 옮김, Home 은 제자리
+  head.addEventListener('keydown', (e) => {
+    if (e.target !== head) return;
+    if (e.key === 'Home') { resetPosition(); e.preventDefault(); return; }
+    const d = e.shiftKey ? 40 : 10;
+    const mv = { ArrowLeft: [-d, 0], ArrowRight: [d, 0], ArrowUp: [0, -d], ArrowDown: [0, d] }[e.key];
+    if (!mv) return;
+    const sr = stageRect(), r = el.getBoundingClientRect();
+    const cur = pos || { left: r.left - sr.left, top: r.top - sr.top };
+    place(cur.left + mv[0], cur.top + mv[1]);
+    e.preventDefault(); e.stopPropagation();
+  });
+  // 칸 안의 휠·누르기가 지도(확대·끌기)로 번지지 않게. 스크롤하는 body 밖(머리)의 휠은 쪽(호스트 페이지)도 굴리지 않게 막음.
+  const inBody = (t) => { for (let n = t; n && n !== el; n = n.parentNode) if (n === body) return true; return false; };
+  el.addEventListener('wheel', (e) => { e.stopPropagation(); if (!inBody(e.target)) e.preventDefault(); }, { passive: false });
+  el.addEventListener('pointerdown', stop);
+  // 무대 크기·칸 크기(다른 주제의 더 긴 범례, 옮긴 뒤 최대 높이)가 바뀌면 다시 맞춤
+  const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(() => reclamp()) : null;
+  ro?.observe(stage);
+  ro?.observe(el);
+  function sync() {
+    el.hidden = ![...body.children].some((c) => !c.hidden && c.childNodes.length > 0); // 빈 묶음(.at-legends)·숨긴 고도 색 범례는 내용 아님
+    reclamp();
+  }
+  sync();
+  return {
+    el, body, sync, collapse, reclamp, resetPosition,
+    get collapsed() { return collapsed; },
+    get position() { return pos ? { ...pos } : null; },
+    destroy() { ro?.disconnect(); el.remove(); },
+  };
 }
 
 // ---------- 범례 ----------

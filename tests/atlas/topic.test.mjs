@@ -14,7 +14,7 @@ const dom = installFakeDom();
 class FakeImage { addEventListener() {} set src(v) { this._src = v; } } // 밀도 음영 이미지: 불러오지도 실패하지도 않음
 globalThis.Image = FakeImage;
 const { buildTopic, layerGroups, groupView, groupBounds } = await import('../../src/atlas/topic.js');
-const { pageViewer, tooltip, creditBlock } = await import('../../src/atlas/ui.js');
+const { pageViewer, tooltip, creditBlock, legendPanel } = await import('../../src/atlas/ui.js');
 const { photoCropStyle } = await import('../../src/atlas/uiCore.js');
 const { insetProjection, geoBox } = await import('../../src/atlas/inset.js');
 test.after(() => { delete globalThis.Image; dom.restore(); });
@@ -461,4 +461,35 @@ test('확대 창 기호 흐리기는 legend.isActive — 범례 묶음 고름(to
   assert.deepEqual([...op(c1)], ['1']); assert.deepEqual([...op(c2)], ['1']);
   assert.deepEqual([...op(L.legend.classes[2])], ['0.2']);
   T.destroy();
+});
+
+test('떠 있는 범례 칸(legendPanel): 범례·고도 색 범례는 칸에(사이드바에는 없음), 주제를 바꾸면 비우고 다시, 범례 없는 주제는 칸째 숨김, 고도 색 단계 고름은 주제를 바꾸면 풂', () => {
+  const S = setup();
+  const P = legendPanel(S.stage);
+  const T = S.build(topicOf('religion'), { legendPanel: P });
+  assert.equal(findAll(S.body, byClass('at-legend')).length, 0, '사이드바에는 범례 없음');
+  assert.ok(findAll(P.body, byClass('at-legend-item')).length >= 8);
+  assert.equal(P.el.hidden, false);
+  T.showGroup(1);
+  assert.equal(findAll(P.body, byClass('at-legend')).filter((e) => !e.classList.contains('at-tint-legend')).length, 1, '묶음을 바꾸면 그 범례만');
+  T.destroy();
+  assert.equal(findAll(P.body, byClass('at-legend')).length, 0, '주제를 버리면 칸 비움');
+  assert.equal(P.el.hidden, true);
+  // 일반도: 고도 색 범례(단추) — 단계를 고른 채 주제를 바꾸면 풂
+  const G = S.build(topicOf('general'), { legendPanel: P, tint: true });
+  const tl = find(P.body, byClass('at-tint-legend'));
+  assert.ok(tl && !tl.hidden);
+  assert.equal(P.el.hidden, false, '고도 색 범례만 있어도 칸이 보임');
+  const rows = findAll(tl, byClass('at-tint-row'));
+  rows[3].dispatch('click'); rows[4].dispatch('click');
+  assert.equal(S.map.options.tintSelection.length, 2);
+  S.map.setOptions({ tint: false });
+  assert.equal(P.el.hidden, true, '바탕을 없음으로 바꾸면 고도 색 범례가 숨어 칸도 숨김');
+  S.map.setOptions({ tint: true });
+  G.destroy();
+  assert.equal(S.map.options.tintSelection, null, '주제를 바꾸면 단계 고름 풂');
+  const H = S.build(topicOf('heritage'), { legendPanel: P });
+  assert.equal(P.el.hidden, true, '범례 없는 주제(세계유산)는 칸 숨김');
+  H.destroy();
+  P.destroy();
 });

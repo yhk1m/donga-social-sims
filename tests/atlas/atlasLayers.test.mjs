@@ -28,7 +28,7 @@ const puts = [];
     return el;
   };
 }
-const { areaLayer, symbolLayer, flowLayer, markerLayer, imageLayer } = await import('../../src/atlas/layers.js');
+const { areaLayer, symbolLayer, flowLayer, markerLayer, imageLayer, SELECT_OUTLINE } = await import('../../src/atlas/layers.js');
 const { combineLayers, layerFromRef } = await import('../../src/atlas/layerRef.js');
 test.after(() => dom.restore());
 const DATA = path.join(REPO, 'sims/atlas-u2-asia/data');
@@ -51,6 +51,7 @@ function recCtx() {
     ops,
     save() { stack.push({ ...this, dash }); }, restore() { const p = stack.pop(); if (p) { for (const k of Object.keys(st)) this[k] = p[k]; dash = p.dash; } },
     beginPath() { ops.push({ op: 'beginPath' }); }, moveTo() {}, lineTo() {}, closePath() {}, arc() {},
+    rect(...a) { ops.push({ op: 'rect', a }); }, clip(rule) { ops.push({ op: 'clip', rule }); },
     fill() { ops.push({ op: 'fill', fillStyle: this.fillStyle, alpha: this.globalAlpha }); },
     stroke() { ops.push({ op: 'stroke', strokeStyle: this.strokeStyle, alpha: this.globalAlpha, width: this.lineWidth, dash: [...dash] }); },
     setLineDash(d) { dash = d; }, translate() {}, rotate() {},
@@ -110,6 +111,48 @@ test('areaLayer: 분류마다 색으로 채우고, 고르지 않은 분류는 fi
   fills = drawn(L).filter((o) => o.op === 'fill');
   assert.ok(Math.abs(fills[0].alpha - 0.8 * 0.15) < 1e-9);
   assert.equal(fills[1].alpha, 0.8);
+});
+
+test('areaLayer: 범례에서 고른 분류(묶음)는 검은 윤곽 — 고른 면 바깥만(evenodd 자르기), 화면 굵기 일정, 고르지 않으면·선 분류면 없음', () => {
+  const legend = createLegendState(['a', 'b', 'h', 'iso', 'loc', 'x']);
+  const L = areaLayer('t', areaFC(), { legend });
+  const outline = (ops) => ops.filter((o) => o.op === 'stroke' && o.strokeStyle === SELECT_OUTLINE.color);
+  assert.equal(outline(drawn(L)).length, 0, '전체 보기면 윤곽 없음');
+  legend.toggle('b');
+  let ops = drawn(L);
+  let out = outline(ops);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].alpha, 1);
+  assert.equal(out[0].width, SELECT_OUTLINE.px * 2, '자르기로 안쪽 절반을 지우므로 2배 굵기로 긋는다');
+  assert.ok(SELECT_OUTLINE.px >= 1.5 && SELECT_OUTLINE.px <= 2);
+  const ci = ops.findIndex((o) => o.op === 'clip');
+  assert.equal(ops[ci].rule, 'evenodd');
+  // 자르기 경로 = 화면 사각형 + 고른 면(b 만), 그다음 윤곽 경로도 b 만
+  const pathsBetween = (i0, i1) => ops.slice(i0, i1).filter((o) => o.op === 'path').map((o) => o.g);
+  const bi = ops.lastIndexOf(ops.slice(0, ci).reverse().find((o) => o.op === 'beginPath'));
+  assert.equal(ops[bi + 1].op, 'rect');
+  assert.equal(pathsBetween(bi, ci).length, 1);
+  const si = ops.indexOf(out[0]);
+  assert.equal(pathsBetween(ci, si).length, 1);
+  // 윤곽은 면 채움 뒤, 등온선·지명 앞
+  const lastAreaFill = ops.map((o, i) => (o.op === 'fill' ? i : -1)).filter((i) => i >= 0 && i < si).pop();
+  assert.ok(lastAreaFill < ci);
+  assert.ok(ops.findIndex((o) => o.op === 'stroke' && o.strokeStyle === '#ed1064') > si, '등온선은 윤곽 위');
+  // 묶음(두 분류) = 한 번에 바깥 윤곽(분류 사이 경계는 자르기 안쪽이라 안 보임)
+  legend.toggleGroup('ab', ['a', 'b']);
+  ops = drawn(L); out = outline(ops);
+  assert.equal(out.length, 1);
+  assert.equal(pathsBetween(ops.findIndex((o) => o.op === 'clip'), ops.indexOf(out[0])).length, 2);
+  // 빗금 분류도
+  legend.toggle('h');
+  assert.equal(outline(drawn(L)).length, 1);
+  // 선 분류(등온선)만 고르면 면이 없으니 윤곽 없음
+  legend.toggle('iso');
+  assert.equal(outline(drawn(L)).length, 0);
+  legend.reset();
+  assert.equal(outline(drawn(L)).length, 0, '다시 전체 보기면 없어짐');
+  // 범례 없는 레이어는 윤곽 없음
+  assert.equal(outline(drawn(areaLayer('t', areaFC()))).length, 0);
 });
 
 test('areaLayer: 빗금 면은 무늬로, 선은 흰 테두리 뒤 색 선(정전 라인은 점선), 등온선은 값 글자', () => {

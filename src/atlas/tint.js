@@ -4,7 +4,9 @@
 //   const img = await loadTint(url)                 // { width, height, data: Uint8Array(분류 번호) } | null(실패 → 콘솔 한 줄, 지도는 고도 색 없이)
 //   map.setTintDrawer(createTintDrawer(img))        // 렌더러가 멈출 때 fn(ctx, projection, view, { phase:'sea'|'land', land, under, path, clipOutside, clipSphere, seal })
 //   attachTint(map, { url }) → Promise<drawer | null> // 위 둘을 한 번에(주소 고르기·destroy 지킴)
-//   TINT — 분류 표(build_tint.py 설정 tint 와 같음 — tests 가 견줌), tintClassOf(높이, 육지, 빙하) → 번호, tintLegend() → 범례 줄
+//   TINT — 분류 표(build_tint.py 설정 tint 와 같음 — tests 가 견줌), tintClassOf(높이, 육지, 빙하) → 번호, tintLegend() → 범례 줄(cls = 분류 번호)
+//   단계 고르기(교사 요청 2026-10-20 「해발고도 특정 구간을 선택하면 그 구간만 색칠」): 렌더러 옵션 tintSelection([번호] | null) → 훅 extra.selection →
+//   tintLuts(TINT, 고른 번호) 가 고르지 않은 단계를 바탕 쪽으로 흐린 색 표. 격자마다 분류 번호를 한 번 뽑아 두므로(tintIndex) 고르기만 바뀌면 색 표만 다시 칠한다.
 //
 // 자료: docs/assets/atlas/common/tint-4096.png — ETOPO 2022 60″ 표면 높이(NOAA NCEI, public domain)를 Natural Earth 10m 육지·빙하로 나눠
 //   분류 번호 × 12 의 회색으로 담은 등장방형 4096×2048(relief-4096.jpg 와 같은 격자). build_tint.py 가 만든다.
@@ -66,38 +68,50 @@ export function tintClassOf(elev, land, glacier = false, t = TINT) {
 export const decodeClass = (grey, step = TINT.codeStep) => Math.min(CLASS_COUNT - 1, Math.max(0, Math.round(grey / step)));
 
 const rgbOf = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+/** 단계 고르기에서 고르지 않은 단계: 색을 바탕(육지 = 렌더러 바탕 육지색, 바다 = 아주 옅은 바다색) 쪽으로 mix 만큼 섞는다 — 고른 단계만 또렷이 */
+export const TINT_FADE = Object.freeze({ land: '#f2efe9', sea: '#e3f1f7', mix: 0.82 });
+const fadeRgb = (rgb, to, m) => rgb.map((v, k) => Math.round(v + (to[k] - v) * m));
 /**
  * 색 표 두 장(번호 × 3 RGB): land = 육지 안에 칠할 표(바다 번호 → 0~100 m 색), sea = 바다에 칠할 표(육지·빙하 번호 → 0~200 m 바다색).
  * 해안선은 벡터가 정하므로 분류 화상과 해안이 어긋난 화소는 반대쪽 가장 가까운 단계 색으로 보인다.
+ * selection(Set<번호> | null, 비었으면 전체): 고르지 않은 단계는 TINT_FADE 로 흐리게. 해안 어긋남 칸은 대신 칠하는 단계(0~100 m · 0~200 m)의 고름을 따른다.
  */
-export function tintLuts(t = TINT) {
+export function tintLuts(t = TINT, selection = null) {
   const cls = tintClasses(t);
+  const sel = selection && selection.size ? selection : null;
+  const on = (i) => !sel || sel.has(i);
   const land = new Uint8Array(cls.length * 3), sea = new Uint8Array(cls.length * 3);
+  const fl = rgbOf(TINT_FADE.land), fs = rgbOf(TINT_FADE.sea);
   const lowLand = rgbOf(t.landColors[1]), shallow = rgbOf(t.seaColors[0]);
+  const lowOn = on(LAND0), shallowOn = on(0);
   cls.forEach((c, i) => {
     const rgb = rgbOf(c.color);
-    land.set(c.kind === 'sea' ? lowLand : rgb, i * 3);
-    sea.set(c.kind === 'sea' ? rgb : shallow, i * 3);
+    const isSea = c.kind === 'sea';
+    const lc = isSea ? (lowOn ? lowLand : fadeRgb(lowLand, fl, TINT_FADE.mix)) : (on(i) ? rgb : fadeRgb(rgb, fl, TINT_FADE.mix));
+    const sc = isSea ? (on(i) ? rgb : fadeRgb(rgb, fs, TINT_FADE.mix)) : (shallowOn ? shallow : fadeRgb(shallow, fs, TINT_FADE.mix));
+    land.set(lc, i * 3);
+    sea.set(sc, i * 3);
   });
   return { land, sea };
 }
 
 const fmtM = (v) => v.toLocaleString('en-US');
+// 범례 줄의 분류 번호: 빙하 GLACIER, 육지 i(1 = 0~100 m) → LAND0 + i − 1, 해수면 아래 BELOW, 바다 i → i
 /**
  * 범례 줄(교과서 16쪽 상자처럼 위 → 아래): 빙하 · 5,000 이상 … 0~100 · 해수면 아래 땅 · 0~200 바다 … 8,000 이상.
  * 줄마다 { color, kind, top(줄 위 경계 글자 | null), title, label? }. 경계 글자는 칸과 칸 사이(교과서처럼 칸 윗선에 붙임).
  */
 export function tintLegend(t = TINT) {
-  const rows = [{ color: t.glacierColor, kind: 'glacier', top: null, label: '빙하', title: '빙하' }];
+  const rows = [{ color: t.glacierColor, kind: 'glacier', top: null, label: '빙하', title: '빙하', cls: LAND0 + t.landBreaks.length }];
   const lb = t.landBreaks;
   for (let i = t.landColors.length - 1; i >= 1; i--) {
     const lo = lb[i - 1], hi = lb[i] ?? null;
-    rows.push({ color: t.landColors[i], kind: 'land', top: hi == null ? null : fmtM(hi), title: hi == null ? `${fmtM(lo)} m 이상` : `${fmtM(lo)}~${fmtM(hi)} m` });
+    rows.push({ color: t.landColors[i], kind: 'land', top: hi == null ? null : fmtM(hi), title: hi == null ? `${fmtM(lo)} m 이상` : `${fmtM(lo)}~${fmtM(hi)} m`, cls: LAND0 + i - 1 });
   }
-  rows.push({ color: t.landColors[0], kind: 'below', top: '0', title: '해수면보다 낮은 땅', label: '해수면 아래' });
+  rows.push({ color: t.landColors[0], kind: 'below', top: '0', title: '해수면보다 낮은 땅', label: '해수면 아래', cls: BELOW });
   const sb = [0, ...t.seaBreaks];
   t.seaColors.forEach((color, i) => rows.push({
-    color, kind: 'sea', top: i === 0 ? null : fmtM(sb[i]), title: sb[i + 1] == null ? `깊이 ${fmtM(sb[i])} m 이상` : `깊이 ${fmtM(sb[i])}~${fmtM(sb[i + 1])} m`,
+    color, kind: 'sea', top: i === 0 ? null : fmtM(sb[i]), title: sb[i + 1] == null ? `깊이 ${fmtM(sb[i])} m 이상` : `깊이 ${fmtM(sb[i])}~${fmtM(sb[i + 1])} m`, cls: i,
   }));
   return rows;
 }
@@ -107,16 +121,33 @@ export function tintLegend(t = TINT) {
  * 가로는 날짜변경선을 건너 감쌈). 지도 밖(NaN)은 투명. img = { width, height, data: 분류 번호 }. 해안은 육지 자르기가 매끈하게 한다.
  */
 export function tintGrid(grid, img, luts, outSea, outLand) {
+  tintPaint(tintIndex(grid, img), luts, outSea, outLand);
+}
+
+/** 지도 밖 표본 표시(분류 번호는 CLASS_COUNT 보다 작다) */
+const OUTSIDE = 255;
+/** 경위도 격자 → 표본마다 가장 가까운 화소의 분류 번호(Uint8Array, 지도 밖 = 255). out 을 주면(길이가 같으면) 다시 씀. */
+export function tintIndex(grid, img, out = null) {
   const { lon, lat } = grid, { width: iw, height: ih, data } = img;
-  const L = luts.land, Sx = luts.sea;
-  for (let k = 0, o = 0; k < lon.length; k++, o += 4) {
+  const idx = out && out.length === lon.length ? out : new Uint8Array(lon.length);
+  for (let k = 0; k < lon.length; k++) {
     const lo = lon[k];
-    if (Number.isNaN(lo)) { outSea[o + 3] = 0; outLand[o + 3] = 0; continue; }
+    if (Number.isNaN(lo)) { idx[k] = OUTSIDE; continue; }
     let u = (lo + 180) / 360; u -= Math.floor(u);
-    const fx = u * iw - 0.5;
-    let x = Math.round(fx); if (x >= iw) x = 0; else if (x < 0) x = iw - 1;
+    let x = Math.round(u * iw - 0.5); if (x >= iw) x = 0; else if (x < 0) x = iw - 1;
     let y = Math.round(((90 - lat[k]) / 180) * ih - 0.5); if (y < 0) y = 0; else if (y > ih - 1) y = ih - 1;
-    const c = data[y * iw + x] * 3;
+    idx[k] = data[y * iw + x];
+  }
+  return idx;
+}
+
+/** 분류 번호 → 바다용·육지용 RGBA(색 표로) */
+export function tintPaint(idx, luts, outSea, outLand) {
+  const L = luts.land, Sx = luts.sea;
+  for (let k = 0, o = 0; k < idx.length; k++, o += 4) {
+    const v = idx[k];
+    if (v === OUTSIDE) { outSea[o + 3] = 0; outLand[o + 3] = 0; continue; }
+    const c = v * 3;
     outSea[o] = Sx[c]; outSea[o + 1] = Sx[c + 1]; outSea[o + 2] = Sx[c + 2];
     outLand[o] = L[c]; outLand[o + 1] = L[c + 1]; outLand[o + 2] = L[c + 2];
     outSea[o + 3] = 255; outLand[o + 3] = 255;
@@ -137,9 +168,20 @@ export const loadTint = (url = TINT_URL) => loadImagePixels(url, { label: '고�
  * 격자와 그 크기는 렌더러의 공유 격자(extra.grid, createGridShare)가 정한다 — 그림 도중 크기가 바뀌지 않는다. 혼자 쓰면 step 2 로 계산.
  * fn.stats = 최근 계산 기록 [{ ms, step, cols, rows }]. 그리는 차례는 baseDrawer.createGridDrawer.
  */
-export function createTintDrawer(img, { clock, luts = tintLuts(), step } = {}) {
-  if (!img) return Object.assign(() => {}, { stats: [] });
-  return createGridDrawer({ fill: (grid, sea, land) => tintGrid(grid, img, luts, sea, land), clock, step });
+export function createTintDrawer(img, { clock, t = TINT, luts = tintLuts(t), step } = {}) {
+  if (!img) return Object.assign(() => {}, { stats: [], indexBuilds: 0 });
+  // 격자(공유 격자는 보기가 그대로면 같은 객체)마다 분류 번호를 한 번만 뽑고(fn.indexBuilds), 고르기에 따른 색 표는 고르기 값이 바뀔 때만 만든다
+  let idxGrid = null, idx = null, lutKey = '', curLuts = luts;
+  const fill = (grid, sea, land, extra) => {
+    if (grid !== idxGrid) { idx = tintIndex(grid, img, idx); idxGrid = grid; fn.indexBuilds++; }
+    const sel = extra?.selection?.length ? extra.selection : null;
+    const key = sel ? sel.join(',') : '';
+    if (key !== lutKey) { curLuts = sel ? tintLuts(t, new Set(sel)) : luts; lutKey = key; }
+    tintPaint(idx, curLuts, sea, land);
+  };
+  const fn = createGridDrawer({ fill, clock, step });
+  fn.indexBuilds = 0;
+  return fn;
 }
 
 /**

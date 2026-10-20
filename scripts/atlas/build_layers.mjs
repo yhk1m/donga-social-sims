@@ -187,13 +187,19 @@ function finish(layer, meta) {
   // 기호 테두리(설정 legendStrokes: 범례 이름 → 색 — 회색 석탄처럼 바탕에 묻히는 기호), 범례 묶음(설정 legendGroups: 묶음 이름 → [범례 이름] — 기후 열대·건조…)
   const strokes = layer.legendStrokes || {};
   const groupOf = Object.fromEntries(Object.entries(layer.legendGroups || {}).flatMap(([g, names]) => names.map((n) => [n, g])));
+  // 화면 색 바꾸기(설정 legendColors: 범례 이름 → {color, why} — 웹 바탕 위에서 너무 옅은 분류). 범례·도형 색을 바꾸고 인쇄 색은 printColor 로 남긴다.
+  const recolor = layer.legendColors || {};
   const legend = (meta.legend || []).map(({ box, ...e }) => ({
     ...e, ...(shapes[e.label] ? { shape: shapes[e.label] } : {}), ...(strokes[e.label] ? { stroke: strokes[e.label] } : {}), ...(groupOf[e.label] ? { group: groupOf[e.label] } : {}),
+    ...(recolor[e.label] ? { color: recolor[e.label].color, printColor: e.color } : {}),
   }));
-  for (const [key, names] of [['legendShapes', Object.keys(shapes)], ['legendStrokes', Object.keys(strokes)], ['legendGroups', Object.keys(groupOf)]]) {
+  for (const [key, names] of [['legendShapes', Object.keys(shapes)], ['legendStrokes', Object.keys(strokes)], ['legendGroups', Object.keys(groupOf)], ['legendColors', Object.keys(recolor)]]) {
     const unknown = names.filter((k) => !legend.some((e) => e.label === k));
     if (unknown.length) throw new Error(`${layer.id}: ${key} 에 범례에 없는 이름 ${unknown.join(', ')}`);
   }
+  for (const [name, r] of Object.entries(recolor)) if (!/^#[0-9a-f]{6}$/.test(r?.color || '')) throw new Error(`${layer.id}: legendColors ${name} 색 ${r?.color}`);
+  const colorOfCls = new Map(legend.filter((e) => e.printColor).map((e) => [e.cls, e.color]));
+  for (const f of features) if (colorOfCls.has(f.properties.cls)) f.properties = { ...f.properties, color: colorOfCls.get(f.properties.cls) };
   const present = new Set(features.map((f) => f.properties.cls));
   const ne = layer.source === 'ne';
   const props = {

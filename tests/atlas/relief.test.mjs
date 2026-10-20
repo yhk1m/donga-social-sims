@@ -310,3 +310,33 @@ test('createGridShare: 그림 하나 동안 격자 크기 고정, 같은 view �
   share.begin(); share.grid(proj, view3); share.end();
   assert.equal(share.stats.renders.at(-1).misses, 1, 'release 뒤에는 다시 계산');
 });
+
+test('createGridShare + sameView: 렌더러 보기(key 있음)는 값으로 — baseId·key·centerLon·k·x·y·width·height 하나만 달라도 miss, 같으면 hit / key 없는 보기는 객체가 같아야', async () => {
+  const { createGridShare, sameView } = await import('../../src/atlas/relief.js');
+  const base = { baseId: 3, key: 'miller', centerLon: 0, k: 2, x: -10, y: -20, width: 64, height: 32 };
+  const share = createGridShare();
+  share.begin();
+  const g0 = share.grid(proj, { ...base });
+  assert.equal(share.grid(proj, { ...base }), g0, '값이 같은 새 객체 = hit');
+  assert.deepEqual([share.stats.misses, share.stats.hits], [1, 1]);
+  share.end();
+  const changes = { baseId: 4, key: 'robinson', centerLon: 150, k: 2.5, x: -11, y: -21, width: 66, height: 34 };
+  for (const [f, v] of Object.entries(changes)) {
+    const v2 = { ...base, [f]: v };
+    assert.equal(sameView(base, v2), false, f);
+    const m0 = share.stats.misses;
+    share.begin();
+    const g = share.grid(proj, v2);
+    share.end();
+    assert.equal(share.stats.misses - m0, 1, `${f} 가 바뀌면 miss`);
+    assert.notEqual(g, g0, `${f}: 새 격자`);
+    share.begin(); share.grid(proj, { ...base }); share.end(); // 되돌림(다음 칸도 base 와 견줌)
+  }
+  assert.equal(sameView(base, { ...base }), true);
+  // key 없는 보기(시험용·혼자 쓰는 훅)는 객체가 같아야 같음
+  const a = { width: 64, height: 32 }, b = { width: 64, height: 32 };
+  assert.equal(sameView(a, b), false);
+  const m1 = share.stats.misses;
+  share.begin(); const ga = share.grid(proj, a); assert.equal(share.grid(proj, a), ga); share.grid(proj, b); share.end();
+  assert.equal(share.stats.misses - m1, 2, '같은 객체는 hit, 값만 같은 다른 객체는 miss');
+});

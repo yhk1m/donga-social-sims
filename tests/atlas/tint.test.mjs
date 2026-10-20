@@ -27,7 +27,7 @@ globalThis.Image = class {
 const quietWarn = async (fn) => { const w = console.warn, msgs = []; console.warn = (m) => msgs.push(m); try { return [await fn(), msgs]; } finally { console.warn = w; } };
 
 const {
-  TINT, TINT_URL, tintClasses, tintClassOf, decodeClass, tintLuts, tintLegend, tintGrid, createTintDrawer, loadTint, attachTint, BELOW, LAND0, GLACIER, CLASS_COUNT,
+  TINT, TINT_URL, TINT_FADE, tintClasses, tintClassOf, decodeClass, tintLuts, tintLegend, tintGrid, createTintDrawer, loadTint, attachTint, BELOW, LAND0, GLACIER, CLASS_COUNT,
 } = await import('../../src/atlas/tint.js');
 
 const config = JSON.parse(readFileSync(path.join(REPO, 'scripts/atlas/config/u2.json'), 'utf8')).tint;
@@ -161,4 +161,68 @@ test('createTintDrawer + 공유 격자: 느린 시계에서도 그림마다 sea�
   tintGrid(g, img2, tintLuts(), os, ol);
   const cols = new Set([0, 4, 8, 12].map((o) => [...ol.slice(o, o + 3)].join(',')));
   assert.deepEqual([...cols].sort(), ['222,234,174', '224,183,127'], '100~200 m · 3,000~4,000 m 두 색만');
+});
+
+test('tintLegend 줄마다 분류 번호 cls(빙하 GLACIER · 5,000+ … 0~100 · 해수면 아래 BELOW · 바다 0 … 6)', () => {
+  const rows = tintLegend();
+  assert.deepEqual(rows.map((r) => r.cls), [GLACIER, ...Array.from({ length: 9 }, (_, i) => LAND0 + 8 - i), BELOW, 0, 1, 2, 3, 4, 5, 6]);
+  for (const r of rows) assert.equal(tintClasses()[r.cls].color, r.color);
+});
+
+test('tintLuts(selection): 고른 단계는 제 색, 나머지는 바탕 쪽으로 흐리게(TINT_FADE) — 해안 어긋남 칸은 이웃 단계(0~100 m · 0~200 m)를 따름', () => {
+  const sel = new Set([LAND0 + 5, LAND0 + 6]); // 2,000~3,000 · 3,000~4,000 m
+  const { land, sea } = tintLuts(TINT, sel);
+  const all = tintLuts();
+  const rgb = (lut, i) => [...lut.slice(i * 3, i * 3 + 3)];
+  assert.deepEqual(rgb(land, LAND0 + 5), rgb(all.land, LAND0 + 5));
+  assert.deepEqual(rgb(land, LAND0 + 6), rgb(all.land, LAND0 + 6));
+  const faded = rgb(land, LAND0 + 2);
+  assert.notDeepEqual(faded, rgb(all.land, LAND0 + 2));
+  const fl = [0xf2, 0xef, 0xe9];
+  for (let k = 0; k < 3; k++) assert.ok(Math.abs(faded[k] - fl[k]) < Math.abs(all.land[(LAND0 + 2) * 3 + k] - fl[k]) || faded[k] === fl[k], '바탕 육지색에 가까워짐');
+  assert.deepEqual(rgb(sea, 3), rgb(tintLuts(TINT, new Set([GLACIER])).sea, 3), '고르지 않은 바다는 모두 흐림');
+  assert.notDeepEqual(rgb(sea, 3), rgb(all.sea, 3));
+  // 바다 단계를 고르면 바다 표의 육지 칸(해안 어긋남)도 0~200 m 와 같이
+  const s0 = tintLuts(TINT, new Set([0]));
+  assert.deepEqual(rgb(s0.sea, LAND0 + 3), rgb(all.sea, 0));
+  assert.deepEqual(rgb(s0.land, 2), rgb(s0.land, LAND0), '육지 표의 바다 칸 = 0~100 m 상태');
+  assert.deepEqual(tintLuts(TINT, null), all);
+  assert.deepEqual(tintLuts(TINT, new Set()), all, '빈 고름 = 전체');
+});
+
+test('createTintDrawer: 격자마다 분류 번호를 한 번 뽑아 두고, 단계 고르기(selection)만 바뀌면 색 표만 다시 칠함', () => {
+  const img = { width: 8, height: 4, data: new Uint8Array(32).fill(LAND0 + 5) };
+  const proj = Object.assign(([lon, lat]) => [(lon + 180) * 2, (90 - lat) * 2], { invert: ([x, y]) => [x / 2 - 180, 90 - y / 2] });
+  const fn = createTintDrawer(img);
+  const ctx = fakeCtx('ctx');
+  const grid = { cols: 4, rows: 2, step: 16, lon: Float64Array.from([-170, -60, 60, 170, -170, -60, 60, 170]), lat: Float64Array.from([45, 45, 45, 45, -45, -45, -45, -45]) };
+  const pathF = () => {};
+  fn(ctx, proj, { width: 64, height: 32 }, { phase: 'sea', path: pathF, grid: () => grid });
+  assert.equal(fn.indexBuilds, 1);
+  fn(ctx, proj, { width: 64, height: 32 }, { phase: 'sea', path: pathF, grid: () => grid, selection: [LAND0 + 1] });
+  assert.equal(fn.indexBuilds, 1, '같은 격자 — 분류 번호 다시 뽑지 않음');
+  assert.equal(fn.stats.length, 2, '색은 다시 칠함');
+  fn(ctx, proj, { width: 64, height: 32 }, { phase: 'sea', path: pathF, grid: () => ({ ...grid }) });
+  assert.equal(fn.indexBuilds, 2, '새 격자면 다시 뽑음');
+});
+
+test('createTintDrawer: 같은 공유 격자·같은 고르기로 새 view 를 그리면 다시 채우지 않음, t 옵션의 표로 색 표', () => {
+  const img = { width: 8, height: 4, data: new Uint8Array(32).fill(LAND0 + 1) };
+  const proj = Object.assign(([lon, lat]) => [(lon + 180) * 2, (90 - lat) * 2], { invert: ([x, y]) => [x / 2 - 180, 90 - y / 2] });
+  const custom = { ...TINT, landColors: TINT.landColors.map((c, i) => (i === 2 ? '#000000' : c)) }; // 100~200 m 를 검정으로
+  const fn = createTintDrawer(img, { t: custom });
+  const ctx = fakeCtx('ctx');
+  const grid = { cols: 2, rows: 1, step: 32, lon: Float64Array.from([-90, 90]), lat: Float64Array.from([0, 0]) };
+  const pathF = () => {};
+  fn(ctx, proj, { width: 64, height: 32 }, { phase: 'sea', path: pathF, grid: () => grid });
+  assert.equal(fn.stats.length, 1);
+  fn(ctx, proj, { width: 64, height: 32 }, { phase: 'sea', path: pathF, grid: () => grid });
+  assert.equal(fn.stats.length, 1, '격자·고르기 그대로 — 다시 채우지 않음');
+  fn(ctx, proj, { width: 64, height: 32 }, { phase: 'sea', path: pathF, grid: () => grid, selection: [LAND0 + 1] });
+  assert.equal(fn.stats.length, 2, '고르기가 바뀌면 다시 채움');
+  fn(ctx, proj, { width: 64, height: 32 }, { phase: 'sea', path: pathF, grid: () => grid, selection: [LAND0 + 1] });
+  assert.equal(fn.stats.length, 2);
+  // t 옵션: 고르기 색 표도 custom 에서(고른 100~200 m = 검정 그대로, 고르지 않은 단계는 흐림)
+  const sel = tintLuts(custom, new Set([LAND0 + 1]));
+  assert.deepEqual([...sel.land.slice((LAND0 + 1) * 3, (LAND0 + 1) * 3 + 3)], [0, 0, 0]);
 });

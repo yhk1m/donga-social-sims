@@ -19,9 +19,10 @@
 //     viewchange: fn(view) — 보기(도법·중심 경도·변환·크기·상세도·움직임 여부)가 실제로 바뀔 때만. 레이어·옵션 변경으로는 나지 않음
 //     options: fn(options) — setOptions 로 값이 바뀌었을 때·고도 색 그리기 함수가 붙었을 때(지도 도구 체크 상자·고도 색 범례가 따라감)
 //   map.project(lonlat) → [x, y] | null,  map.invert(xy) → lonlat | null
-//   map.view → { key, centerLon, k, x, y, width, height, center, kmPerPx, detail, moving, projection, geoRect }
+//   map.view → { key, centerLon, k, x, y, width, height, center, kmPerPx, detail, moving, projection, geoRect, baseId }
+//     (baseId = 기준 투영 번호 — 기준 투영을 새로 만들 때마다 바뀜. 화면 투영은 baseId + k·x·y·크기로 정해진다: relief.sameView)
 //     읽기 전용 객체, 보기가 바뀔 때만 새로 만든다(같으면 같은 객체). center·kmPerPx 는 처음 읽을 때 한 번만 계산(지연 getter).
-//   map.setOptions({ graticule, labels, relief, tint, natural }), map.options(사본), map.setReliefDrawer(fn), map.setTintDrawer(fn), map.tintReady,
+//   map.setOptions({ graticule, labels, relief, tint, natural, tintSelection }), map.options(사본), map.setReliefDrawer(fn), map.setTintDrawer(fn), map.tintReady,
 //   map.setNaturalDrawer(fn), map.naturalReady(자연색 — natural 이 켜져 있고 붙었으면 고도 색 대신 그 자리에, 음영 훅에는 natural: true),
 //   map.redraw()(전체 다시 그림 + 지명), map.destroy(), map.destroyed
 //     (destroy 뒤에는 setOptions·setReliefDrawer·setPlaces·invalidate·refreshLayer 가 아무것도 하지 않는다)
@@ -109,6 +110,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   let W = 0, H = 0, dpr = 1;
   let key = projection, cLon = centerLon;
   let base = null; // 무대에 지구 전체를 맞춘 기준 투영
+  let baseId = 0;   // 기준 투영을 새로 만들 때마다(setBase — 도법·중심 경도·크기) 1 늘림. view.baseId → relief.sameView 가 견줌(격자 나눠 쓰기)
   let T = { k: 1, x: 0, y: 0 }; // 확대 변환(화면 = k·기준 투영 + [x, y])
   let vp = null; // 화면 투영 = viewProjection(base, T)
   let snapT = null; // 스냅숏을 찍은 때의 T
@@ -129,7 +131,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   let idleHandle = null; // 나라 색인 미리 만들기 예약
   const dirty = { raf: 0, canvas: false, svgAll: false, svgIds: new Set(), labels: false }; // invalidate·refreshLayer·setPlaces 를 한 rAF 로
   const warned = new Set();
-  const opts = { graticule: true, labels: true, relief: true, tint: false, natural: false };
+  const opts = { graticule: true, labels: true, relief: true, tint: false, natural: false, tintSelection: null };
   const layers = []; // {layer, g}
   const handlers = { click: new Set(), hover: new Set(), viewchange: new Set(), options: new Set() };
   const stats = { render: [], labels: [], labelCount: 0, morphFrames: [], interactiveFrames: [], countryIndexMs: null };
@@ -216,6 +218,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   const constrain = (t) => zb.constrain(t);
   function setBase(b) {
     base = b;
+    baseId++;
     zb.extent([[0, 0], [W, H]]).translateExtent(translateExtentOf(b));
   }
   function updateVP() {
@@ -326,7 +329,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     const callTint = (phase, extra) => {
       const th = now();
       ctx.save();
-      try { baseDrawer(ctx, vp, view, { phase, path, grid, ...extra }); } catch (err) { console.error(naturalOn ? '자연색 실패' : '고도 색 실패', err); }
+      try { baseDrawer(ctx, vp, view, { phase, path, grid, selection: naturalOn ? null : opts.tintSelection, ...extra }); } catch (err) { console.error(naturalOn ? '자연색 실패' : '고도 색 실패', err); }
       ctx.restore();
       gridShare.add(now() - th);
     };
@@ -530,7 +533,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     const pv = vp, w = W, hh = H;
     let c, cDone = false, km, kmDone = false;
     viewCache = {
-      key, centerLon: cLon, k: T.k, x: T.x, y: T.y, width: w, height: hh, detail, moving: mode !== 'idle', projection: pv, geoRect: rect,
+      key, centerLon: cLon, k: T.k, x: T.x, y: T.y, width: w, height: hh, detail, moving: mode !== 'idle', projection: pv, geoRect: rect, baseId,
       get center() { if (!cDone) { c = pv ? centerOf(pv, w, hh) : null; cDone = true; } return c; },
       get kmPerPx() { if (!kmDone) { km = pv ? kmPerPx(pv, [w / 2, hh / 2]) : null; kmDone = true; } return km; },
     };
@@ -781,6 +784,10 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
       let changed = false;
       for (const k of ['graticule', 'relief', 'tint', 'natural']) if (k in o && opts[k] !== !!o[k]) { opts[k] = !!o[k]; canvasChanged = true; }
       if ('labels' in o && opts.labels !== !!o.labels) { opts.labels = !!o.labels; dirty.labels = true; schedule(); changed = true; }
+      if ('tintSelection' in o) { // 고도 색 단계 고르기(분류 번호 목록, 빈 목록·null = 전체) — 정렬·중복 없앰, 값이 같으면 그대로
+        const sel = Array.isArray(o.tintSelection) && o.tintSelection.length ? [...new Set(o.tintSelection)].sort((a, b) => a - b) : null;
+        if (String(sel) !== String(opts.tintSelection)) { opts.tintSelection = sel; if (opts.tint && !opts.natural) canvasChanged = true; else changed = true; }
+      }
       if (canvasChanged) invalidate();
       if (canvasChanged || changed) emit('options', { ...opts });
     },

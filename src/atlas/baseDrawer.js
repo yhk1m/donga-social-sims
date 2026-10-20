@@ -6,7 +6,7 @@
 //       실패하면 콘솔 경고 한 줄 「{label} 생략(까닭): 주소」 + null, 캐시에서 빼므로 다음 호출이 다시 시도한다.
 //   releaseImagePixels(url) — 캐시에서 뺀다(풀린 배열은 붙은 drawer 가 놓으면 GC). 자연색 RGBA 는 32 MB 라 지도를 아주 버릴 때 부른다.
 //   createGridDrawer({ fill, clock, step }) → fn(ctx, projection, view, extra)   렌더러 훅(setTintDrawer·setNaturalDrawer)
-//       fill(grid, seaRGBA, landRGBA) 가 격자 표본마다 두 장(바다용·육지용)을 채운다. 'sea' 단계에서 한 번 계산해 두고 'land' 단계가 그대로 쓴다
+//       fill(grid, seaRGBA, landRGBA, extra) 가 격자 표본마다 두 장(바다용·육지용)을 채운다(extra.selection = 고도 색 단계 고르기 — 값이 바뀌면 다시 채움). 'sea' 단계에서 한 번 계산해 두고 'land' 단계가 그대로 쓴다
 //       (같은 view·같은 투영이면 — 그림 하나에 한 번). 격자는 렌더러의 공유 격자(extra.grid)를 쓰고, 없으면 혼자 step 2 로 invertGrid.
 //       cols·rows 가 그대로면 캔버스·ImageData 를 다시 쓴다. fn.stats = [{ ms, step, cols, rows }](최근 60).
 //       그리는 차례: sea = 지구 자르기(clipSphere) 안에 바다용 / land = 육지 경로 안에 육지용 → (10a 면) 단원 상자 밖 under 안에 육지용 →
@@ -55,27 +55,30 @@ export function createGridDrawer({ fill, clock = () => performance.now(), step: 
   let cache = null;
   let offS = null, offL = null, ids = null, idl = null;
   const stats = [];
-  function compute(projection, view, gridOf) {
-    if (cache && cache.view === view && cache.projection === projection) return cache;
+  function compute(projection, view, gridOf, extra) {
+    const selKey = extra?.selection?.length ? extra.selection.join(',') : '';
+    if (cache && cache.view === view && cache.projection === projection && cache.selKey === selKey) return cache;
     const t0 = clock();
     const grid = gridOf ? gridOf() : invertGrid((p) => projection.invert(p), view.width, view.height, { step: ownStep, forward: (ll) => projection(ll) });
+    // 공유 격자가 같은 객체(보기가 그대로)이고 고르기도 같으면 두 장이 그대로 — 채우기·putImageData 를 건너뜀
+    if (cache && cache.grid === grid && cache.selKey === selKey && offS) { cache.view = view; cache.projection = projection; return cache; }
     if (!offS) { offS = h('canvas'); offL = h('canvas'); }
     const cs = offS.getContext('2d'), cl = offL.getContext('2d');
     if (!ids || ids.width !== grid.cols || ids.height !== grid.rows) { // 크기가 그대로면 캔버스·ImageData 를 다시 씀(채우기가 모든 화소를 덮어씀)
       for (const c of [offS, offL]) { c.width = grid.cols; c.height = grid.rows; }
       ids = cs.createImageData(grid.cols, grid.rows); idl = cl.createImageData(grid.cols, grid.rows);
     }
-    fill(grid, ids.data, idl.data);
+    fill(grid, ids.data, idl.data, extra);
     cs.putImageData(ids, 0, 0); cl.putImageData(idl, 0, 0);
     const ms = clock() - t0;
-    cache = { view, projection, step: grid.step, cols: grid.cols, rows: grid.rows, ms };
+    cache = { view, projection, selKey, grid, step: grid.step, cols: grid.cols, rows: grid.rows, ms };
     stats.push({ ms, step: grid.step, cols: grid.cols, rows: grid.rows });
     if (stats.length > 60) stats.shift();
     return cache;
   }
-  const fn = (ctx, projection, view, { phase, land, under = null, path, clipOutside = null, clipSphere = null, seal = null, grid = null } = {}) => {
+  const fn = (ctx, projection, view, { phase, land, under = null, path, clipOutside = null, clipSphere = null, seal = null, grid = null, selection = null } = {}) => {
     if (!view?.width || !view?.height || !path) return;
-    const c = compute(projection, view, grid);
+    const c = compute(projection, view, grid, { selection });
     const W = c.cols * c.step, H = c.rows * c.step;
     ctx.imageSmoothingEnabled = true;
     if (phase === 'sea') {

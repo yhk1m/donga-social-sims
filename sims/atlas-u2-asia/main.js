@@ -9,7 +9,7 @@ import { createMap } from '../../src/atlas/renderer.js';
 import { attachRelief } from '../../src/atlas/relief.js';
 import { attachTint } from '../../src/atlas/tint.js';
 import { attachNatural, lazyNatural, releaseNatural } from '../../src/atlas/natural.js';
-import { topicNav, mapTools, pageViewer, tooltip, creditBlock } from '../../src/atlas/ui.js';
+import { topicNav, mapTools, pageViewer, tooltip, creditBlock, legendPanel } from '../../src/atlas/ui.js';
 import { buildTopic } from '../../src/atlas/topic.js';
 import basemap from './data/basemap.json';
 import places from './data/places.json';
@@ -42,6 +42,8 @@ export default function mount(root) {
     attach: (m) => attachNatural(m).then((d) => { root.atlasNatural = d; return d; }),
     onState: (st) => tools.setBaseState('natural', st),
   });
+  // 범례는 무대 오른쪽 아래 떠 있는 칸 하나(접기·끌어 옮기기 — 옮긴 자리는 주제를 바꿔도 그대로, 교사 요청 2026-10-20)
+  const legends = legendPanel(stage);
   const tip = tooltip(stage, { map });
   const viewer = pageViewer(stage);
   const nav = topicNav(panel, topics, (id) => show(id));
@@ -58,7 +60,7 @@ export default function mount(root) {
     current?.destroy();
     nav.update(topic.id);
     current = buildTopic({
-      map, stage, body, viewer, credits, tip, topic, charts, layers: layerData, countryFeatures, insets: INSETS, boundsOf: BOUNDS_OF, centerLonOf: CENTER_LON_OF, locators: LOCATORS, baseColor: BASE_COLOR[topic.id] || 'none',
+      map, stage, body, viewer, credits, tip, topic, charts, layers: layerData, countryFeatures, insets: INSETS, boundsOf: BOUNDS_OF, centerLonOf: CENTER_LON_OF, locators: LOCATORS, legendPanel: legends, baseColor: BASE_COLOR[topic.id] || 'none',
     });
     root.atlasTopic = current; // 확인용(헤드리스 캡처)
     return current;
@@ -75,7 +77,7 @@ export default function mount(root) {
 
   // 확인용(헤드리스 캡처·성능 측정): 지도·부품·주제 바꾸기
   root.atlasMap = map;
-  root.atlasUi = { map, tools, tip, viewer, nav, credits };
+  root.atlasUi = { map, tools, tip, viewer, nav, credits, legends };
   root.atlasShowTopic = show;
   root.atlasCharts = charts;
 
@@ -83,7 +85,7 @@ export default function mount(root) {
   function destroy() {
     current?.destroy(); current = null;
     natural.destroy();
-    tools.destroy(); tip.destroy(); viewer.destroy(); nav.destroy(); credits.destroy();
+    tools.destroy(); legends.destroy(); tip.destroy(); viewer.destroy(); nav.destroy(); credits.destroy();
     map.destroy();
     releaseNatural(); // 캐시한 자연색 화소(약 32MB)도 놓아줌
   }

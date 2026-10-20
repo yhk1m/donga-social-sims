@@ -12,6 +12,7 @@
 //   layerId = 렌더러에 올린 id(기본 = id). combineLayers 의 부분 레이어는 부모 id 로 다시 그리고 hover 를 받는다.
 // 강조(hover): 렌더러 hover 이벤트의 feature 가 자기 것이면 SVG 로 테두리를 굵게(면 = 그 분류 전체 윤곽, 선·기호 = 굵은 테두리). 움직이는 동안은 숨김.
 // 범례(legendState): 고르지 않은 분류는 흐리게(면 dimAlpha, 기호·선 dimAlpha 조금 더 짙게). hit 은 흐린 분류를 맞히지 않는다.
+//   면 레이어는 분류를 고르면 고른 면의 바깥 윤곽을 검은 선(SELECT_OUTLINE, 화면 1.8px)으로 긋는다.
 // layer.meta = 자료 맨 위 properties(+ layerFromRef 가 주제 항목 값), layer.meta.approx = 「위치 근사」 표시 여부. layer.legendItems = 화면 범례 항목.
 //
 // 규칙(EMBED_RULES.md): DOM 은 h()/s() 로만, 빗금은 오프스크린 캔버스 createPattern(data: 주소 없음).
@@ -29,6 +30,12 @@ export { LAYER_Z } from './layerCommon.js';
 export { imageLayer, loadImageData } from './imageLayer.js';
 
 const HALO = 'rgba(255,255,255,.9)';
+/**
+ * 범례에서 고른 분류의 윤곽(교사 요청 2026-10-20 — 「고른 지역을 검은 약간 두꺼운 줄로」): 색·화면 굵기(px, 확대와 상관없이 일정).
+ * 고른 면들을 합친 바깥 경계만 긋는다 — 화면 사각형 + 고른 면을 evenodd 로 잘라(고른 면 바깥만 남김) 2배 굵기로 그으면 바깥 절반만 보이고,
+ * 같은 분류·같은 묶음의 이웃 면 사이 경계는 양쪽 다 안쪽이라 지워진다(합치기 계산 없이 그릴 때 한 번).
+ */
+export const SELECT_OUTLINE = Object.freeze({ color: '#111111', px: 1.8 });
 const LINE_PT = { isotherm: 0.8, line: 1.2 }; // 주제도 선 기본 굵기(pt) — lineWidthPx 로 화면 px
 const LABEL_FONT = '700 10px "Pretendard", "Malgun Gothic", sans-serif';
 /** 면 레이어 지명 글자 크기(px): 교과서 pt × 역할 배율 — 나라(분홍 6.7pt)·「카 슈 미 르」는 크게, 관할 이름(4.8pt)은 작게 */
@@ -134,6 +141,25 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
     }
   }
 
+  /** 범례에서 고른 분류(한 분류 또는 묶음)가 있으면 그 면들의 바깥 윤곽(SELECT_OUTLINE). 전체 보기·선 분류만 고름이면 그리지 않는다. */
+  function drawSelection(ctx, path, view) {
+    if (!legend || legend.selected?.() == null) return;
+    const sel = polys.filter((f) => legend.isActive(f.properties.cls));
+    if (!sel.length) return;
+    const geoms = sel.map((f) => clip(f, view.geoRect));
+    ctx.save();
+    ctx.globalAlpha = 1; ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.rect(-SELECT_OUTLINE.px * 4, -SELECT_OUTLINE.px * 4, view.width + SELECT_OUTLINE.px * 8, view.height + SELECT_OUTLINE.px * 8);
+    for (const g of geoms) path(g);
+    ctx.clip('evenodd');
+    ctx.beginPath();
+    for (const g of geoms) path(g);
+    ctx.strokeStyle = SELECT_OUTLINE.color; ctx.lineWidth = SELECT_OUTLINE.px * 2; ctx.lineJoin = 'round';
+    ctx.stroke();
+    ctx.restore();
+  }
+
   const layer = {
     id, z, meta: metaOf(geojson), legendItems: legendList, features: feats,
     /** 위치도 강조 면(type 'locator', 카슈미르) — 없으면 null */
@@ -155,6 +181,7 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
         ctx.beginPath(); path(g); ctx.fill();
         ctx.strokeStyle = colorOf(f); ctx.lineWidth = 0.6; ctx.globalAlpha *= 0.7; ctx.stroke();
       }
+      drawSelection(ctx, path, view);
       lineRuns.clear();
       ctx.lineJoin = 'round'; ctx.lineCap = 'round';
       for (const f of lines) drawLine(ctx, path, f, view, alphaOf(legend, f.properties.cls, dimAlpha));
