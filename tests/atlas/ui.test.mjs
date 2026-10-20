@@ -577,3 +577,18 @@ test('legendBlock 값 아이콘 설명(valueLegend): 아이콘 두 개와 설명
   assert.equal(rows.filter((r) => find(r, byClass('at-legend-vicon'))).length, 2);
   b.destroy();
 });
+
+test('renderChart 유럽 형식: 묶음 막대는 csat 캔버스, 강조·축 생략 막대는 SVG(강조 색 막대 하나·물결·눈금 680)', () => {
+  const box = div();
+  const g = renderChart(box, { id: 'p31-tallinn', type: 'groupedBar', title: '탈린', unit: '%', categories: ['대중교통', '승용차'],
+    series: [{ name: '도입 전', values: [55, 31], color: '#e60012' }, { name: '도입 후', values: [63, 28], color: '#0e90c1' }], axes: { y: { step: 10, n: 8 } } });
+  assert.ok(find(g.el, (n) => n.tagName === 'CANVAS' || n.tagName === 'canvas'), '캔버스');
+  assert.equal(find(g.el, byClass('ds-note')), null, '실패 글 없음');
+  const b = renderChart(box, { id: 'p30-gfci', type: 'bar', title: '국제 금융 센터 지수', unit: '지수', categories: ['뉴욕', '런던', '서울'],
+    series: [{ name: '지수', values: [763, 744, 727], color: '#0e90c1' }], colors: { 런던: '#e60012' }, axisBreak: [0, 680], axes: { y: { step: 20, n: 6 } } });
+  const rects = findAll(b.el, (n) => n.tagName === 'rect' && n.parentNode?.classList?.contains('at-ct-bar'));
+  assert.deepEqual(rects.map((r) => r.getAttribute('fill')), ['#0e90c1', '#e60012', '#0e90c1']);
+  assert.equal(findAll(b.el, byClass('at-ct-wave')).length, 2, '물결선 두 줄');
+  assert.ok(findAll(b.el, byClass('at-ct-tick')).some((t) => t.textContent === '680'));
+  assert.equal(find(b.el, byClass('ds-note')), null);
+});

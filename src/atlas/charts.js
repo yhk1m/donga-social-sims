@@ -16,6 +16,7 @@ import { h, s, icon } from '../shared/dom.js';
 import { segButtons } from './seg.js';
 import {
   chartPlan, toClimateData, toLineData, toStackedAreaData, toPyramidData, toPieData, toStackedBarData, toAbsBarData, stackLegend, stackCells, linearScale, arcPath, ringRows, laneLabels, shareFormatter, totalText,
+  toGroupedBarData, barFills, breakScale, barAxis, fmtThousands,
 } from './chartCore.js';
 import './ui.css';
 
@@ -32,6 +33,7 @@ function csatData(spec) {
     case 'pie': return toPieData(spec);
     case 'stackedBar': return toStackedBarData(spec);
     case 'bar': return toAbsBarData(spec);
+    case 'groupedBar': return toGroupedBarData(spec);
     default: return null;
   }
 }
@@ -105,6 +107,41 @@ function stackedBarsSvg(spec, label) {
   return s('svg', { class: 'at-chart-svg', viewBox: `0 0 ${W} ${Hh}`, role: 'img', 'aria-label': label }, grid, bars);
 }
 
+/**
+ * 세로 막대(시험지 양식) — 막대마다 색(colors: 30쪽 런던·로테르담 강조)·축 생략 물결(axisBreak [0, 680]): 검은 틀, 점선 가로 격자,
+ * 눈금 숫자·단위(왼쪽 위), 물결 자리는 흰 띠 + 물결선 두 줄(축과 막대를 가로질러), 범주 이름은 막대 아래 비스듬히. 막대마다 <title>.
+ */
+function barSvg(spec, label) {
+  const ax = barAxis(spec);
+  const vals = spec.series[0].values, fills = barFills(spec), cats = spec.categories;
+  const W = 460, left = 50, right = 10, top = 24, plotH = 200; // 사이드바 너비(약 300~420px)에서 글자가 너무 작아지지 않게
+  const catLen = Math.max(...cats.map((c) => textW(c, 11)));
+  const Hh = top + plotH + 14 + catLen * 0.75 + 10;
+  const x0 = left, x1 = W - right, yb = top + plotH;
+  const sc = breakScale(ax, [yb, top]);
+  const band = (x1 - x0) / cats.length, bw = band * 0.56;
+  const grid = sc.ticks.map((t) => s('g', {},
+    t.v > 0 && t.y > top + 0.5 ? s('line', { class: 'at-ct-grid', x1: x0, x2: x1, y1: t.y, y2: t.y }) : null,
+    txt(x0 - 5, t.y + 4, fmtThousands(t.v), { 'text-anchor': 'end', class: 'at-ct at-ct-tick' })));
+  const bars = cats.map((c, i) => {
+    const cx = x0 + band * (i + 0.5), y = sc.y(vals[i] ?? 0);
+    return s('g', { class: 'at-ct-bar' },
+      s('title', {}, `${c} ${fmtThousands(vals[i])}${spec.unit ? ` ${spec.unit}` : ''}`),
+      s('rect', { x: (cx - bw / 2).toFixed(1), y: y.toFixed(1), width: bw.toFixed(1), height: Math.max(0, yb - y).toFixed(1), fill: fills[i] }),
+      s('text', { class: 'at-ct at-ct-barcat', 'text-anchor': 'end', transform: `translate(${cx.toFixed(1)},${yb + 12}) rotate(-50)` }, String(c)));
+  });
+  let wave = null;
+  if (sc.breakAt != null) { // 물결: 흰 띠 + 위아래 물결선(축 왼쪽 조금 밖부터 오른쪽 끝까지)
+    const zig = (yy) => { let d = `M${x0 - 6},${yy.toFixed(1)}`; for (let x = x0 - 6, k = 0; x < x1; x += 5, k++) d += `L${Math.min(x + 5, x1)},${(yy + (k % 2 ? -2.5 : 2.5)).toFixed(1)}`; return d; };
+    wave = s('g', { class: 'at-ct-break' },
+      s('rect', { x: x0 - 6, y: (sc.breakAt - 3).toFixed(1), width: x1 - x0 + 6, height: 6, fill: '#fff' }),
+      s('path', { class: 'at-ct-wave', d: zig(sc.breakAt - 3) }), s('path', { class: 'at-ct-wave', d: zig(sc.breakAt + 3) }));
+  }
+  const frame = s('path', { class: 'at-ct-axis', d: `M${x0},${top}V${yb}H${x1}` });
+  return s('svg', { class: 'at-chart-svg', viewBox: `0 0 ${W} ${Hh.toFixed(0)}`, role: 'img', 'aria-label': label },
+    grid, bars, frame, wave, spec.unit ? txt(x0 - 4, top - 12, `(${spec.unit})`, { 'text-anchor': 'end', class: 'at-ct at-ct-tick' }) : null);
+}
+
 /** 고리 막대(중국·인도 연령대 비율): 범주마다 고리 셋(바깥 = 첫 계열, 교과서처럼 맞붙임), 12시에서 시계 방향 값 %.
  *  계열 이름은 12시 띠 높이에 고리 왼쪽, 값은 호 끝 바깥(고리 색), 범주 이름은 가운데 — 교과서 배치. */
 function radialSvg(spec, label) {
@@ -163,7 +200,7 @@ export function renderChart(container, spec, { title = undefined, source = true 
   let body;
   try {
     if (plan.via === 'csat') body = csatCanvas(spec, plan, label);
-    else if (plan.via === 'svg') body = spec.type === 'radialBar' ? radialSvg(spec, label) : stackedBarsSvg(spec, label);
+    else if (plan.via === 'svg') body = spec.type === 'radialBar' ? radialSvg(spec, label) : spec.type === 'bar' ? barSvg(spec, label) : stackedBarsSvg(spec, label);
     else if (plan.via === 'table') body = tableEl(spec);
     else body = h('p', { class: 'ds-note' }, `그릴 수 없는 그래프 종류: ${spec?.type}`);
   } catch (err) {

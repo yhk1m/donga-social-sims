@@ -42,7 +42,7 @@ export function classSymbolPx(sizePt, k, sizes, { pxPerPt = 2.4, min = 4, max = 
  * 반지름 = maxR × size / 가장 큰 size, 원 가운데 (maxR, 2maxR − r). 글자 줄(labelY)은 원 꼭대기 높이에서 시작하되 앞 글자와 gap 이상 떨어지게 아래로.
  * → {width(원 칸), height, items:[{cls, r, cx, cy, top, labelY}]}(큰 원부터)
  */
-export function nestedCircles(entries, { maxR = 18, gap = 12 } = {}) {
+export function nestedCircles(entries, { maxR = 24, gap = 14 } = {}) {
   const list = [...entries].filter((e) => e.size > 0).sort((a, b) => b.size - a.size);
   const big = list[0]?.size || 1;
   let prev = -Infinity;

@@ -209,3 +209,71 @@ test('shareFormatter·totalText·fmtThousands: 100% 띠 비율 소수 자리(인
   assert.equal(totalText(null), '');
   assert.equal(fmtThousands(1234567.5), '1,234,567.5');
 });
+
+// ── 유럽 그래프 형식(U3-3f): 묶음 막대·강조 막대·축 생략 ──────────────────
+import { toGroupedBarData, barFills, breakScale, barAxis } from '../../src/atlas/chartCore.js';
+
+const tallinn = {
+  id: 'p31-tallinn', type: 'groupedBar', title: '탈린의 교통수단 분담률 변화', unit: '%', categories: ['대중교통', '승용차', '도보', '자전거', '기타'],
+  series: [{ name: '도입 전(2012년)', values: [55, 31, 12, 1, 1], color: '#e60012' }, { name: '도입 후(2013년)', values: [63, 28, 7, 1, 1], color: '#0e90c1' }],
+  axes: { y: { step: 10, n: 8 } },
+};
+const finance = {
+  id: 'p30-gfci', type: 'bar', title: '국제 금융 센터 지수 상위 10개 도시', unit: '지수', categories: ['뉴욕', '런던', '싱가포르', '홍콩', '샌프란시스코', '로스앤젤레스', '상하이', '시카고', '보스턴', '서울'],
+  series: [{ name: '지수', values: [763, 744, 742, 741, 732, 731, 730, 729, 728, 727], color: '#0e90c1' }],
+  colors: { 런던: '#e60012' }, axisBreak: [0, 680], axes: { y: { step: 20, n: 6 } },
+};
+
+test('chartPlan: groupedBar 는 csat absbar(세로 다계열), 강조 색·축 생략 막대는 시험지 양식 SVG, 그냥 막대는 그대로 csat', () => {
+  assert.deepEqual(chartPlan(tallinn), { via: 'csat', renderer: 'absbar', size: [1300, 700] });
+  assert.equal(chartPlan(finance).via, 'svg');
+  assert.equal(chartPlan({ ...finance, colors: undefined }).via, 'svg', '축 생략만 있어도');
+  assert.equal(chartPlan({ ...finance, axisBreak: undefined }).via, 'svg', '강조 색만 있어도');
+  assert.equal(chartPlan({ ...finance, colors: undefined, axisBreak: undefined }).renderer, 'absbar');
+});
+
+test('toGroupedBarData: 범주마다 계열 차례로 값, 색·범례 = 계열(교과서 색), 세로·쌓지 않음, 축 = 간격 × (눈금 수 − 1)', () => {
+  const d = toGroupedBarData(tallinn);
+  assert.equal(d.barDirection, 'vertical');
+  assert.equal(d.stacked, false);
+  assert.deepEqual(d.categories.map((c) => [c.label, ...c.values]), [['대중교통', 55, 63], ['승용차', 31, 28], ['도보', 12, 7], ['자전거', 1, 1], ['기타', 1, 1]]);
+  assert.deepEqual(d.seriesLabels, ['도입 전(2012년)', '도입 후(2013년)']);
+  assert.deepEqual(d.seriesFills, ['#e60012', '#0e90c1']);
+  assert.deepEqual(d.yRange, { min: 0, max: 70, auto: false, step: 10 });
+  assert.equal(d.unit, '(%)');
+  // 3계열(코펜하겐) — 계열 차례 그대로, 빈 값은 0
+  const cph = toGroupedBarData({ ...tallinn, categories: [2012, 2014], series: [{ name: '자동차', values: [11, 10] }, { name: '인구', values: [55, null] }, { name: '자전거', values: [65, 60] }], axes: undefined });
+  assert.deepEqual(cph.categories.map((c) => c.values), [[11, 55, 65], [10, 0, 60]]);
+  assert.equal(cph.seriesFills.length, 3);
+  assert.deepEqual(cph.yRange, { min: 0, max: 70, auto: false, step: 10 });
+});
+
+test('barFills: 강조 색은 그 막대에만(범주 이름 또는 차례 배열), 나머지는 계열 색', () => {
+  const f = barFills(finance);
+  assert.equal(f[1], '#e60012');
+  assert.ok(f.every((c, i) => (i === 1 ? c === '#e60012' : c === '#0e90c1')));
+  assert.deepEqual(barFills({ ...finance, colors: [null, null, null, null, null, null, null, null, null, '#e60012'] }).filter((c) => c === '#e60012').length, 1);
+  assert.ok(barFills({ ...finance, colors: undefined }).every((c) => c === '#0e90c1'));
+});
+
+test('breakScale·barAxis: 축 생략 [0, 680] — 0 은 바닥, 680~780 은 위 칸에 선형, 생략 구간은 물결 틈, 눈금 0 · 680 · 700 … 780', () => {
+  const ax = barAxis(finance);
+  assert.deepEqual(ax, { min: 0, max: 780, step: 20, axisBreak: [0, 680] });
+  const sc = breakScale(ax, [300, 50], { gapPx: 14, belowPx: 10 });
+  assert.equal(sc.y(0), 300);
+  assert.equal(sc.y(680), 300 - 10 - 14);
+  assert.ok(Math.abs(sc.y(780) - 50) < 1e-9);
+  assert.ok(Math.abs(sc.y(730) - (276 + 50) / 2) < 1e-9, '위 칸 안은 선형');
+  assert.deepEqual(sc.ticks.map((t) => t.v), [0, 680, 700, 720, 740, 760, 780]);
+  assert.equal(sc.breakAt, 300 - 10 - 7);
+  // 런던(744)이 뉴욕(763)보다 낮고 서울(727)보다 높게 — 생략 없는 0~780 축이면 차이가 거의 안 보임
+  assert.ok(sc.y(763) < sc.y(744) && sc.y(744) < sc.y(727));
+  assert.ok(sc.y(727) - sc.y(763) > 80, `화면 높이 차 ${sc.y(727) - sc.y(763)}px`);
+  // 축 생략 없음: 0~max 한 칸
+  const plain = breakScale({ max: 50, step: 10 }, [300, 50]);
+  assert.equal(plain.breakAt, null);
+  assert.deepEqual(plain.ticks.map((t) => t.v), [0, 10, 20, 30, 40, 50]);
+  assert.equal(plain.y(25), 175);
+  assert.throws(() => barAxis({ ...finance, axisBreak: [700, 680] }), /axisBreak/);
+  assert.throws(() => barAxis({ ...finance, axisBreak: [0, 800], axes: undefined }), /axisBreak/, '값(최대 763)보다 높은 생략');
+});

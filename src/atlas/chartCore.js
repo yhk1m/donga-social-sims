@@ -6,7 +6,10 @@
 //   csat-chart.js  climograph → climate · line → line · stackedArea → line(stacked + areaFill) · pyramid → pyramid
 //                  (쌓은 면은 1년 칸으로 펴서 — annualSeries)
 //                  pie → stacked(pie) · 한 막대 stackedBar(카타르 외국인) → stacked(bar, labelInSegment) · bar → absbar
-//   직접(SVG)      여러 막대 stackedBar(자원·수출 비율) — csat 가로 100% 막대는 칸 안 이름을 못 쓰고(값만), 칸마다 다른 색·막대 굵기(칸의 30%)도
+//                  groupedBar(31쪽 탈린 2계열·코펜하겐 3계열 묶음 막대) → absbar(세로, stacked:false — csat 2.2.2 renderAbsBarGraph 는
+//                  categories[].values 가 계열 수만큼이면 범주마다 계열 막대를 나란히 그리고 seriesFills·범례도 계열별: d.mts·구현으로 확인)
+//   직접(SVG)      막대마다 색(colors — 30쪽 런던·로테르담 강조)이나 축 생략 물결(axisBreak [0, 680])이 있는 bar — csat absbar 는 색이
+//                  계열 단위(seriesFills)뿐이고 축 생략이 없어서(barSvg, 시험지 양식) · 여러 막대 stackedBar(자원·수출 비율) — csat 가로 100% 막대는 칸 안 이름을 못 쓰고(값만), 칸마다 다른 색·막대 굵기(칸의 30%)도
 //                  교과서(칸마다 「나라 비율」 글자, 지시선)와 달라 읽을 수 없다 · radialBar(고리 막대) — csat 에 없는 종류
 //   표(HTML)       table(네옴시티) — 그래프가 아니라 글 표
 
@@ -20,7 +23,8 @@ export function chartPlan(spec) {
     case 'stackedArea': return { via: 'csat', renderer: 'line', size: [1100, 820] };
     case 'pyramid': return { via: 'csat', renderer: 'pyramid', size: [800, 720] };
     case 'pie': return { via: 'csat', renderer: 'stacked', size: [800, 640] };
-    case 'bar': return { via: 'csat', renderer: 'absbar', size: [1000, 600] };
+    case 'bar': return spec.colors || spec.axisBreak ? { via: 'svg' } : { via: 'csat', renderer: 'absbar', size: [1000, 600] };
+    case 'groupedBar': return { via: 'csat', renderer: 'absbar', size: [1300, 700] }; // 1000 폭이면 「대중교통」 같은 범주 이름이 칸보다 넓어 csat 가 하나 걸러 씀
     case 'stackedBar':
       return spec.categories?.length === 1 ? { via: 'csat', renderer: 'stacked', size: [800, 720] } : { via: 'svg' };
     case 'radialBar': return { via: 'svg' };
@@ -247,6 +251,69 @@ export function toAbsBarData(spec) {
     // 빈 이름의 그룹 하나로 감싸 이름 폭을 재게 한다(그룹 이름 칸은 0).
     groups: [{ label: '', span: spec.categories.length }],
   };
+}
+
+/** 값 축(세로 막대·묶음 막대): axes.y(없으면 x) {step, n} 이면 0 ~ step × (n − 1), 아니면 값에 맞춘 valueRange(간격 step 또는 10) */
+function barValueAxis(spec, values) {
+  const ax = spec.axes?.y || spec.axes?.x;
+  if (ax?.step && ax?.n) return { min: 0, max: clean(ax.step * (ax.n - 1)), step: ax.step };
+  return valueRange(values, ax?.step ?? 10);
+}
+
+/** groupedBar(묶음 막대) → csat AbsBarGraphData(세로, stacked:false): 범주마다 계열 차례대로 막대, 색·범례 = 계열(교과서 색) */
+export function toGroupedBarData(spec) {
+  const r = barValueAxis(spec, spec.series.flatMap((s) => s.values));
+  return {
+    barDirection: 'vertical',
+    stacked: false,
+    categories: spec.categories.map((label, i) => ({ label: String(label), values: spec.series.map((s) => s.values[i] ?? 0) })),
+    seriesLabels: spec.series.map((s) => s.name),
+    seriesFills: spec.series.map((s, i) => colorOf(s) || ['#5b9bd5', '#ed7d31', '#a5a5a5'][i % 3]),
+    unit: unitOf(spec),
+    yRange: { min: r.min, max: r.max, auto: false, step: r.step },
+  };
+}
+
+/** 막대마다 채움색: 계열 색, spec.colors({범주 이름: 색} 또는 범주 차례 배열, null = 계열 색)가 있으면 그 막대만 그 색(강조) */
+export function barFills(spec) {
+  const base = colorOf(spec.series[0]) || '#999';
+  const c = spec.colors;
+  return spec.categories.map((cat, i) => (Array.isArray(c) ? c[i] : c?.[cat]) || base);
+}
+
+/**
+ * 축 생략(물결) 눈금: axisBreak [a, b](a < b — 0~680 생략)면 값 0~a 는 아래 칸(px0 → px0 − below), a~b 는 물결 틈(gapPx), b~max 는 위 칸,
+ * 축 생략이 없으면 0~max 한 칸. → {y(v)(화면 높이), ticks:[{v, y}], breakAt(물결 가운데 y) | null}. px0 = 0 의 화면 y(아래), px1 = max 의 화면 y(위).
+ * 눈금: 0(축 생략이면 아래 칸 끝 a 도), b 부터 step 마다 max 까지.
+ */
+export function breakScale({ max, step, axisBreak = null }, [px0, px1], { gapPx = 14, belowPx = 10 } = {}) {
+  if (!axisBreak) {
+    const y = linearScale([0, max], [px0, px1]);
+    const ticks = [];
+    for (let v = 0; v <= max + 1e-9; v = clean(v + step)) ticks.push({ v, y: y(v) });
+    return { y, ticks, breakAt: null };
+  }
+  const [a, b] = axisBreak;
+  const lowTop = px0 - belowPx, highBot = lowTop - gapPx;
+  const low = linearScale([0, a || 1], [px0, lowTop]), mid = linearScale([a, b], [lowTop, highBot]), high = linearScale([b, max], [highBot, px1]);
+  const y = (v) => (v <= a ? (a > 0 ? low(Math.max(0, v)) : px0) : v <= b ? mid(v) : high(v));
+  const ticks = [{ v: 0, y: px0 }, ...(a > 0 ? [{ v: a, y: lowTop }] : [])];
+  for (let v = b; v <= max + 1e-9; v = clean(v + step)) ticks.push({ v, y: high(v) });
+  return { y, ticks, breakAt: (lowTop + highBot) / 2 };
+}
+
+/**
+ * 세로 막대(시험지 양식 SVG — 강조 색·축 생략) 값 축. 축 생략이 있으면 눈금 {step, n} 은 생략 위 칸 눈금(680·700·…·780 = 6개)이라
+ * max = axisBreak[1] + step × (n − 1), 없으면 barValueAxis. axisBreak 위 끝은 max 보다 작아야 함.
+ */
+export function barAxis(spec) {
+  const br = spec.axisBreak || null;
+  const ax = spec.axes?.y || spec.axes?.x;
+  const r = br && ax?.step && ax?.n ? { min: 0, max: clean(br[1] + ax.step * (ax.n - 1)), step: ax.step }
+    : br ? { min: 0, max: clean(Math.ceil(Math.max(...spec.series[0].values) / (ax?.step ?? 10)) * (ax?.step ?? 10)), step: ax?.step ?? 10 }
+      : barValueAxis(spec, spec.series[0].values);
+  if (br && !(br[0] < br[1] && br[1] < r.max)) throw new Error(`${spec.id}: axisBreak ${br} 가 축(0~${r.max})과 맞지 않음`);
+  return { ...r, axisBreak: br };
 }
 
 /**
