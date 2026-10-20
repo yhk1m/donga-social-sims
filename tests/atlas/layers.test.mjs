@@ -313,6 +313,15 @@ test('disputedLayerJson: 상자 밖으로 걸친 선은 잘라 안쪽만(통째�
   assert.throws(() => disputedLayerJson({ ...layer, disputed: { ...layer.disputed, pairs: [['Egypt', 'Sudan']] } }, gj, [[-37, -39, 67, 42]]), /Egypt \| Sudan/, '상자 밖에만 있는 짝은 멈춤');
 });
 
+test('chartSymbolsLayerJson: 설정 lonlat(+ _why)이 있으면 되돌린 자리 대신 그것, _why 없으면 멈춤(U4-4 리뷰)', () => {
+  const cv = { invert: () => [10, 60] };
+  const charts = { c: { id: 'c', type: 'pie', ring: 0.6, title: 't', series: [{ name: 'a', values: [1], color: '#112233' }] } };
+  const L = { id: 'rc', items: [{ chart: 'c', centerPt: [1, 1], lonlat: [-25, 7], _why: '대서양' }] };
+  assert.deepEqual(chartSymbolsLayerJson(L, charts, cv, { page: 38 }).items[0].lonlat, [-25, 7]);
+  assert.deepEqual(chartSymbolsLayerJson({ id: 'rc', items: [{ chart: 'c', centerPt: [1, 1] }] }, charts, cv, { page: 38 }).items[0].lonlat, [10, 60]);
+  assert.throws(() => chartSymbolsLayerJson({ id: 'rc', items: [{ chart: 'c', centerPt: [1, 1], lonlat: [0, 0] }] }, charts, cv, { page: 38 }), /_why/);
+});
+
 test('chartSymbolsLayerJson: ring true 는 donut 값을 수로, 계열 색이 colors 면 첫 색', () => {
   const cv = { invert: () => [0, 0] };
   const charts = { c: { id: 'c', type: 'pie', ring: true, donut: 0.55, title: 't', series: [{ name: 'a', values: [1], colors: ['#112233'] }] } };

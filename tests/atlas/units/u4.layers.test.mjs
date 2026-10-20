@@ -1,9 +1,11 @@
 // © 2026 김용현
 // tests/atlas/units/u4.layers.test.mjs — Ⅳ 아프리카 주제 레이어 생성물(sims/atlas-u4-africa/data/layer-*.json) 검사 (U4-4)
 //   분류 이름은 교과서 범례 글자 그대로. 나라 단위 단계구분도(countryClass)는 {iso: cls | [cls…]}(줄무늬면 배열).
-//   계획 시험에서 바꾼 것(실측 — 계획 「실행 중 결정」 U4-4): 고리 기호 경위도 범위(위 줄 고리 셋은 지도 틀 밖 유럽·서아시아 위),
+//   계획 시험에서 바꾼 것(실측 — 계획 「실행 중 결정」 U4-4): 고리 기호 자리는 설정 lonlat(아프리카 둘레 바다 — 리뷰 결정),
 //   태양광 지명은 properties.text(지역 이름 글자 꼴), 소말릴란드는 소말리아와 같은 값(Q3 — U4-9 합치기 전후 모두 맞게).
 import test from 'node:test'; import assert from 'node:assert/strict'; import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { geoContains, geoDistance } from 'd3-geo';
+import { WORK } from '../../../scripts/atlas/geo_util.mjs';
 
 const D = 'sims/atlas-u4-africa/data';
 const read = (id) => JSON.parse(readFileSync(`${D}/layer-${id}.json`, 'utf8'));
@@ -53,6 +55,12 @@ test('나라 단위 레이어 공통: Q4·Q5 분류 없음(비르 타윌·아프
   }
 });
 
+test('p38 종교: 4분류 모두 면', () => {
+  const gj = read('p38-religion');
+  assert.deepEqual(gj.properties.legend.map((e) => e.label), ['이슬람교', '크리스트교', '토속 종교', '비거주지']);
+  assert.deepEqual([...new Set(gj.features.map((f) => f.properties.cls))].sort(), ['c1', 'c2', 'c3', 'c4']);
+});
+
 test('p38 자원: 생산국 10(범례 = 나라 이름), 콩고 민주 공화국·레소토', () => {
   const L = read('p38-resources'); assert.equal(Object.keys(L.classes).length, 10);
   assert.equal(L.legend.length, 10);
@@ -61,10 +69,48 @@ test('p38 자원: 생산국 10(범례 = 나라 이름), 콩고 민주 공화국�
   assert.equal(L.classes.DZA ?? null, null, '알제리는 생산국 아님(경계 어긋남 표본 고침)');
 });
 
-test('p38 자원 고리 7: 그래프 자료(U4-7)가 있으면 아프리카 둘레(위 줄 셋은 유럽·서아시아 위)', { skip: !existsSync(`${D}/layer-p38-resource-charts.json`) && 'U4-7 그래프 자료 전 — 레이어 건너뜀' }, () => {
+// 고리 자리 규칙(U4-4 리뷰): 아프리카 둘레 바다 — 가운데가 땅 밖, 둘레 상자 안, 아프리카 밖 땅에서 RING_KM 넘게(기본 보기 원판 반지름 약 600km)
+const RING_KM = 700;
+const ringItems = () => JSON.parse(readFileSync('scripts/atlas/config/u4.json', 'utf8')).layers['p38-resource-charts'].items;
+function checkRingSpots(spots) {
+  const ne = `${WORK}/raw/ne/ne_50m_admin_0_countries.geojson`;
+  assert.ok(existsSync(ne), `Natural Earth 50m 나라가 있어야 함 ${ne}`);
+  const gj = JSON.parse(readFileSync(ne, 'utf8'));
+  const african = (f) => f.properties.CONTINENT === 'Africa' || ['MUS', 'SYC', 'CPV', 'STP', 'COM'].includes(f.properties.ADM0_A3);
+  for (const [id, ll] of spots) {
+    const [lon, lat] = ll;
+    assert.ok(lon > -30 && lon < 70 && lat > -42 && lat < 38, `${id} 아프리카 둘레 상자 밖 ${ll}`);
+    const land = gj.features.find((f) => geoContains(f, ll));
+    assert.equal(land?.properties.ADM0_A3 ?? null, null, `${id} 가운데가 땅 위 ${ll}`);
+    let near = Infinity, who = '';
+    for (const f of gj.features) {
+      if (african(f)) continue;
+      for (const poly of f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates)
+        for (const q of poly[0]) { const d = geoDistance(ll, q) * 6371; if (d < near) { near = d; who = f.properties.ADM0_A3; } }
+    }
+    assert.ok(near > RING_KM, `${id} 아프리카 밖 땅(${who})에서 ${Math.round(near)}km — ${RING_KM}km 넘어야 함`);
+  }
+}
+
+test('p38 자원 고리 7 자리(설정 — 그래프 자료 없이 지금 돎): 아프리카 둘레 바다, 교과서 배치 차례, 자리마다 까닭', () => {
+  const items = ringItems();
+  assert.deepEqual(items.map((x) => x.chart), ['p38-bauxite', 'p38-uranium', 'p38-diamond', 'p38-chromium', 'p38-cobalt', 'p38-platinum', 'p38-manganese']);
+  for (const it of items) assert.ok(Array.isArray(it.lonlat) && it._why, `${it.chart} lonlat·_why`);
+  checkRingSpots(items.map((it) => [it.chart, it.lonlat]));
+  // 교과서 배치: 왼쪽 열(보크사이트·크롬·우라늄·백금)은 서쪽, 오른쪽 열(다이아몬드·코발트·망간)은 동쪽, 열마다 위→아래 차례
+  const at = Object.fromEntries(items.map((it) => [it.chart.slice(4), it.lonlat]));
+  for (const k of ['bauxite', 'chromium', 'uranium', 'platinum']) assert.ok(at[k][0] < 15, k);
+  for (const k of ['diamond', 'cobalt', 'manganese']) assert.ok(at[k][0] > 45, k);
+  const desc = (ks) => ks.every((k, i) => !i || at[ks[i - 1]][1] > at[k][1]);
+  assert.ok(desc(['bauxite', 'chromium', 'uranium', 'platinum']) && desc(['diamond', 'cobalt', 'manganese']));
+});
+
+const CHARTS = `${WORK}/units/u4/tables/charts-u4.json`;
+test('p38 자원 고리 7 레이어: 그래프 자료(U4-7)가 생기면 레이어 파일도 있어야 하고 자리 = 설정', { skip: !existsSync(CHARTS) && 'U4-7 그래프 자료 전(그래프 자료가 생기면 이 시험이 돎 — 레이어가 없으면 실패)' }, () => {
+  assert.ok(existsSync(`${D}/layer-p38-resource-charts.json`), '그래프 자료가 있는데 고리 레이어가 없음 — build_layers --unit u4 p38-resource-charts');
   const C = read('p38-resource-charts'); assert.equal(C.items.length, 7);
-  assert.deepEqual(C.items.map((x) => x.chart), ['p38-bauxite', 'p38-uranium', 'p38-diamond', 'p38-chromium', 'p38-cobalt', 'p38-platinum', 'p38-manganese']);
-  for (const it of C.items) { const [lon, lat] = it.lonlat; assert.ok(lon > -45 && lon < 85 && lat > -30 && lat < 55, it.id); }
+  assert.deepEqual(C.items.map((x) => x.lonlat), ringItems().map((x) => x.lonlat));
+  checkRingSpots(C.items.map((it) => [it.id, it.lonlat]));
 });
 
 test('p38 태양광: 범례 6, 동해·독도·이어도 글자, 세계 범위', () => {

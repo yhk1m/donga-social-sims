@@ -395,7 +395,7 @@ export function countryClassLayerJson(layer, cc, m, fit) {
 const chartMap = (c) => (Array.isArray(c) ? Object.fromEntries(c.map((x) => [x.id, x])) : c?.charts ? chartMap(c.charts) : c || {});
 
 /**
- * 지도 위 고리 기호(type 'chartSymbols', U4-3c — 38쪽 자원 7): 설정 items [{chart, centerPt(교과서 고리 가운데 지면 pt), sizePt?, title?, center?}]
+ * 지도 위 고리 기호(type 'chartSymbols', U4-3c — 38쪽 자원 7): 설정 items [{chart, centerPt(교과서 고리 가운데 지면 pt), lonlat?(+ _why), sizePt?, title?, center?}]
  * → {type:'chartSymbols', properties, items:[{id, chart, lonlat, title, center, sizePt, ring, series}]}. lonlat = centerPt 를 그 지도 fit 으로 되돌린 자리
  * (고리가 지도 둘레 바다 위라 웹에서도 같은 자리), series·ring 은 그래프 자료(charts — id → spec)에서 옮김(앱 레이어가 그래프 자료 없이 그림).
  */
@@ -405,7 +405,9 @@ export function chartSymbolsLayerJson(layer, charts, cv, m, fit = {}) {
   const items = layer.items.map((it) => {
     const sp = C[it.chart];
     if (!sp) throw new Error(`${layer.id}: 그래프 ${it.chart} 가 그래프 자료에 없음`);
-    const ll = cv.invert(it.centerPt);
+    // 설정 lonlat(U4-4 리뷰 — 웹 지도에서 고리가 놓일 바다 자리, _why 필수)이 있으면 그것, 없으면 교과서 고리 가운데를 되돌린 자리
+    if (it.lonlat && !it._why) throw new Error(`${layer.id}: ${it.chart} lonlat 에 _why(자리 까닭)가 없음`);
+    const ll = it.lonlat || cv.invert(it.centerPt);
     if (!ll) throw new Error(`${layer.id}: ${it.chart} 고리 가운데 ${it.centerPt} 를 경위도로 되돌릴 수 없음`);
     return {
       id: it.id || it.chart, chart: it.chart, lonlat: [r3(ll[0]), r3(ll[1])], title: it.title || sp.title, center: it.center || sp.center || [],
