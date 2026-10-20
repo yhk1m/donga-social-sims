@@ -62,6 +62,20 @@ def _plot(cid, ch, ax):
     elif t == 'line':
         for s, c in zip(ch['series'], cols): ax.plot(cats, s['values'], color=c, label=s['name'], lw=1.5)
         ax.legend(fontsize=8); ax.grid(alpha=0.3)
+    elif t in ('bar', 'groupedBar') and 'y' in ch.get('axes', {}):   # 세로 막대(유럽 U3-7 — 아시아 가로 막대는 axes.x 라 아래 길 그대로)
+        n = len(ch['series']); w = 0.8 / n; xs = range(len(cats))
+        for k, (s, c) in enumerate(zip(ch['series'], cols)):
+            pos = [i - 0.4 + w * (k + 0.5) for i in xs]
+            fill = [ch.get('colors', {}).get(str(cat), c) for cat in cats] if n == 1 else c
+            ax.bar(pos, s['values'], width=w * 0.9, color=fill, label=s['name'])
+            for x, v in zip(pos, s['values']): ax.text(x, v, f'{v:g}', ha='center', va='bottom', fontsize=7)
+            m = _measured(s)
+            if m: ax.plot(pos, m, 'v', color='k', ms=4)
+        ax.set_xticks(list(xs), [str(c) for c in cats], rotation=45, ha='right', fontsize=8)
+        ya = ch['axes']['y']; lo = ch['axisBreak'][1] if ch.get('axisBreak') else 0
+        ax.set_ylim(lo, lo + ya['step'] * (ya['n'] - 1) if ch.get('axisBreak') else ya['step'] * (ya['n'] - 1))
+        if n > 1: ax.legend(fontsize=8)
+        ax.grid(axis='y', alpha=0.3)
     elif t == 'bar':
         s = ch['series'][0]
         ax.barh(range(len(cats)), s['values'], color=cols[0])

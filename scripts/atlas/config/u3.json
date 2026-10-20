@@ -2382,7 +2382,7 @@
   ]
  },
  "charts": {
-  "_doc": "C4 그래프 숫자·부록 표(extract_tables.py). 좌표는 모두 지면 pt. 읽개 종류(type): climograph·line·bar·stackedBar·stackedArea·pyramid·radialBar·pie·stackedPrinted(칸마다 인쇄된 세로 쌓은 막대, 출력 type 은 stackedBar)·table. 상자: bbox = 대조표에 자르는 그래프 영역, titleBox·sourceBox·unitBox = 원문 그대로 읽는 글자 상자, *AxisBox = 눈금 글자, *TickBox = 눈금선(세로·가로 곧은 선, 또는 *TickFillColor 색 채움 막대의 가운데) 찾는 곳, plotBox = 막대·선·면 도형 찾는 곳. 허용치: sumTol = 원·100% 띠 합(인쇄값) 100 과의 차, maxDiff = 인쇄 숫자 ↔ 잰 값 짝 지을 때 최대 차, warnDiff = 그 차가 넘으면 경고.",
+  "_doc": "C4 그래프 숫자·부록 표(extract_tables.py). 좌표는 모두 지면 pt. 읽개 종류(type): climograph·line·bar·stackedBar·stackedArea·pyramid·radialBar·pie·stackedPrinted(칸마다 인쇄된 세로 쌓은 막대, 출력 type 은 stackedBar)·table, 그리고 2단계 유럽(U3-7) — vbar(세로 막대: 계열 하나면 출력 type bar(강조 막대는 colors, 축 생략은 axisBreak), 둘 이상이면 groupedBar; 범주 이름 labelMode diagonal(비스듬히 한 글자씩)·row(한 줄)·config(설정 categories), 막대 위 인쇄된 수는 printedBox)·donut(고리 조각마다 인쇄된 %, 출력 type pie + donut 비)·figure(수치 그림 — 칸 cells[].box 마다 이름 줄·값 줄, 출력 type table). climograph 의 climateBox = 제목 둘째 줄 「(○○ 기후)」 → climate. 상자: bbox = 대조표에 자르는 그래프 영역, titleBox·sourceBox·unitBox = 원문 그대로 읽는 글자 상자, *AxisBox = 눈금 글자, *TickBox = 눈금선(세로·가로 곧은 선, 또는 *TickFillColor 색 채움 막대의 가운데) 찾는 곳, plotBox = 막대·선·면 도형 찾는 곳. 허용치: sumTol = 원·100% 띠 합(인쇄값) 100 과의 차, maxDiff = 인쇄 숫자 ↔ 잰 값 짝 지을 때 최대 차, warnDiff = 그 차가 넘으면 경고.",
   "sumTol": 0.15,
   "defaults": {
    "colorDE": 0.0,
@@ -2424,9 +2424,807 @@
    "precSumTol": 1.0,
    "precSumRel": 0.002,
    "tempMeanTol": 0.6,
-   "notInTable": {}
+   "notInTable": {
+    "그레니비크": "97쪽 「주요 도시의 기후」 표에 그레니비크가 없다 — 29쪽 그래프를 잰 값만 쓴다(method measured). 출처도 다름(climate-data.org, 2023)."
+   },
+   "aliases": {
+    "파리": "파리(오를리)"
+   },
+   "_aliases": "그래프 제목의 도시 이름 → 97쪽 표 이름(표는 관측소까지 적음 — 파리 그래프 값이 표 「파리(오를리)」와 맞음: check)."
   },
-  "items": []
+  "items": {
+   "p29-clim-paris": {
+    "page": 29,
+    "type": "climograph",
+    "bbox": [
+     51.41,
+     586.31,
+     122.07,
+     682.48
+    ],
+    "cityBox": [
+     66.4,
+     588.8,
+     107.4,
+     595.6
+    ],
+    "titleBox": [
+     65.4,
+     588.5,
+     107.4,
+     601.5
+    ],
+    "climateBox": [
+     64.5,
+     595.8,
+     108.5,
+     601.6
+    ],
+    "sourceBox": [
+     126.4,
+     676,
+     216.4,
+     684
+    ],
+    "tempColor": "#f15a22",
+    "precColor": "#3677bc",
+    "unit": "℃, mm",
+    "tempTol": 0.6,
+    "precTol": 6.0
+   },
+   "p29-clim-lisbon": {
+    "page": 29,
+    "type": "climograph",
+    "bbox": [
+     229.99,
+     586.31,
+     300.65,
+     682.48
+    ],
+    "cityBox": [
+     244.98,
+     588.8,
+     285.98,
+     595.6
+    ],
+    "titleBox": [
+     243.98,
+     588.5,
+     285.98,
+     601.5
+    ],
+    "climateBox": [
+     243.08,
+     595.8,
+     287.08,
+     601.6
+    ],
+    "sourceBox": [
+     304.98,
+     676,
+     394.98,
+     684
+    ],
+    "tempColor": "#f15a22",
+    "precColor": "#3677bc",
+    "unit": "℃, mm",
+    "tempTol": 0.6,
+    "precTol": 6.0
+   },
+   "p29-clim-moscow": {
+    "page": 29,
+    "type": "climograph",
+    "bbox": [
+     408.57,
+     586.31,
+     479.23,
+     682.48
+    ],
+    "cityBox": [
+     423.56,
+     588.8,
+     464.56,
+     595.6
+    ],
+    "titleBox": [
+     422.56,
+     588.5,
+     464.56,
+     601.5
+    ],
+    "climateBox": [
+     421.66,
+     595.8,
+     465.66,
+     601.6
+    ],
+    "sourceBox": [
+     483.56,
+     676,
+     573.56,
+     684
+    ],
+    "tempColor": "#f15a22",
+    "precColor": "#3677bc",
+    "unit": "℃, mm",
+    "tempTol": 0.6,
+    "precTol": 6.0
+   },
+   "p29-clim-grenivik": {
+    "page": 29,
+    "type": "climograph",
+    "bbox": [
+     587.15,
+     586.31,
+     657.81,
+     682.48
+    ],
+    "cityBox": [
+     602.14,
+     588.8,
+     643.14,
+     595.6
+    ],
+    "titleBox": [
+     601.14,
+     588.5,
+     643.14,
+     601.5
+    ],
+    "climateBox": [
+     600.24,
+     595.8,
+     644.24,
+     601.6
+    ],
+    "sourceBox": [
+     662.14,
+     676,
+     752.14,
+     684
+    ],
+    "tempColor": "#f15a22",
+    "precColor": "#3677bc",
+    "unit": "℃, mm",
+    "tempTol": 0.6,
+    "precTol": 6.0,
+    "_sourceBox": "오른쪽 끝 그래프라 출처 상자가 사진 설명 아래(같은 자리) — climate-data.org, 2023."
+   },
+   "p30-finance": {
+    "page": 30,
+    "type": "vbar",
+    "bbox": [
+     210,
+     86,
+     382,
+     195
+    ],
+    "titleBox": [
+     218,
+     198.5,
+     340,
+     209
+    ],
+    "sourceBox": [
+     271,
+     98.5,
+     378,
+     106
+    ],
+    "unitBox": [
+     211,
+     87.5,
+     224,
+     94
+    ],
+    "yAxisBox": [
+     211,
+     93,
+     223,
+     160
+    ],
+    "yTickBox": [
+     222,
+     94,
+     378,
+     168
+    ],
+    "plotBox": [
+     223,
+     94,
+     378,
+     168
+    ],
+    "series": [
+     {
+      "name": "지수",
+      "color": "#2fa3dc"
+     }
+    ],
+    "highlightColors": [
+     "#ed1c24"
+    ],
+    "highlight": [
+     "런던"
+    ],
+    "labelMode": "diagonal",
+    "labelBox": [
+     222.5,
+     166,
+     380,
+     195
+    ],
+    "axisBreak": [
+     0,
+     680
+    ],
+    "categories": [
+     "뉴욕",
+     "런던",
+     "싱가포르",
+     "홍콩",
+     "샌프란시스코",
+     "로스앤젤레스",
+     "상하이",
+     "시카고",
+     "보스턴",
+     "서울"
+    ],
+    "_yAxisBox": "축 생략(물결, 0~680): 세로축은 생략 위 눈금 680~780(6개)으로만 맞춘다 — 0 글자는 상자 밖. 막대 위 메달 번호(1~10)는 순위라 값이 아님(인쇄된 지수 없음 → 잰 값).",
+    "notes": "막대 위에 지수가 인쇄돼 있지 않아 막대 높이를 잰 값이다(메달 안 수는 순위). 세로축은 0~680 을 물결로 생략했다."
+   },
+   "p30-container": {
+    "page": 30,
+    "type": "vbar",
+    "bbox": [
+     565,
+     86,
+     742,
+     195
+    ],
+    "titleBox": [
+     576,
+     198.5,
+     700,
+     209
+    ],
+    "sourceBox": [
+     672,
+     98.5,
+     735,
+     106
+    ],
+    "unitBox": [
+     570,
+     88.5,
+     592,
+     94.5
+    ],
+    "yAxisBox": [
+     572,
+     93,
+     580,
+     172
+    ],
+    "yTickBox": [
+     580,
+     94,
+     735,
+     168.5
+    ],
+    "plotBox": [
+     581,
+     94,
+     735,
+     168.5
+    ],
+    "series": [
+     {
+      "name": "물동량",
+      "color": "#2fa3dc"
+     }
+    ],
+    "highlightColors": [
+     "#ed1c24"
+    ],
+    "highlight": [
+     "로테르담"
+    ],
+    "labelMode": "diagonal",
+    "labelBox": [
+     581,
+     166,
+     735,
+     195
+    ],
+    "categories": [
+     "상하이",
+     "싱가포르",
+     "닝보-저우산",
+     "선전",
+     "광저우",
+     "칭다오",
+     "부산",
+     "톈진",
+     "홍콩",
+     "로테르담"
+    ],
+    "notes": "막대 위에 수가 인쇄돼 있지 않아 막대 높이를 잰 값이다."
+   },
+   "p31-tallinn": {
+    "page": 31,
+    "type": "vbar",
+    "bbox": [
+     576,
+     86,
+     746,
+     193
+    ],
+    "titleBox": [
+     588,
+     197,
+     683,
+     206.5
+    ],
+    "sourceBox": [
+     652,
+     185.5,
+     746,
+     192.5
+    ],
+    "unitBox": [
+     582,
+     87.5,
+     589,
+     93
+    ],
+    "yAxisBox": [
+     581,
+     92,
+     589,
+     180
+    ],
+    "yTickBox": [
+     589,
+     90,
+     745,
+     177
+    ],
+    "plotBox": [
+     589,
+     96,
+     746,
+     177
+    ],
+    "series": [
+     {
+      "name": "도입 전(2012년)",
+      "color": "#ed1c24"
+     },
+     {
+      "name": "도입 후(2013년)",
+      "color": "#2fa3dc"
+     }
+    ],
+    "legendBox": [
+     660,
+     89,
+     740,
+     95.5
+    ],
+    "labelMode": "row",
+    "labelBox": [
+     590,
+     178,
+     746,
+     185
+    ],
+    "categories": [
+     "대중교통",
+     "승용차",
+     "도보",
+     "자전거",
+     "기타"
+    ],
+    "printedBox": [
+     590,
+     96,
+     746,
+     177
+    ],
+    "warnDiff": 1.0,
+    "_warnDiff": "막대 위 인쇄된 수(정수)와 막대 높이 차 허용 — 1% 막대는 높이 0.99pt(0.87%)로 그려져 있다.",
+    "_plotBox": "범례 견본(y 90~94)은 plotBox 위쪽 밖."
+   },
+   "p31-copenhagen": {
+    "page": 31,
+    "type": "vbar",
+    "bbox": [
+     43,
+     377,
+     148,
+     481
+    ],
+    "titleBox": [
+     52,
+     484.5,
+     210,
+     493.5
+    ],
+    "sourceBox": [
+     166,
+     472.5,
+     210,
+     479.5
+    ],
+    "unitBox": [
+     45,
+     378,
+     74,
+     384.2
+    ],
+    "yAxisBox": [
+     44,
+     384,
+     52,
+     469
+    ],
+    "yTickBox": [
+     52.5,
+     385,
+     147.5,
+     466
+    ],
+    "plotBox": [
+     52.5,
+     385,
+     147.5,
+     466
+    ],
+    "minBarHeight": 4.5,
+    "series": [
+     {
+      "name": "자동차",
+      "color": "#ed1c24"
+     },
+     {
+      "name": "인구",
+      "color": "#78cdd0"
+     },
+     {
+      "name": "자전거",
+      "color": "#2fa3dc"
+     }
+    ],
+    "legendBox": [
+     54,
+     388.5,
+     115,
+     395
+    ],
+    "labelMode": "config",
+    "categories": {
+     "years": [
+      2012,
+      2022,
+      2
+     ]
+    },
+    "_minBarHeight": "범례 견본(높이 4.04pt)이 plotBox 안에 있어 그보다 낮은 채움은 뺀다(가장 낮은 막대 10.1pt).",
+    "_labelMode": "가로축 해 글자 「2020」「2022」가 한 낱말 「20202022」로 붙어 있어 설정 해(2012~2022, 2년 간격)를 쓰고 막대 무리 수(6)로 확인.",
+    "notes": "막대 위에 수가 인쇄돼 있지 않아 막대 높이를 잰 값이다. 단위 글자는 「(십 만 / 대, 명)」이지만 막대 높이는 만 단위로 보인다(issues.md)."
+   },
+   "p31-copenhagen-2021": {
+    "page": 31,
+    "type": "donut",
+    "bbox": [
+     148,
+     384,
+     215,
+     467
+    ],
+    "titleBox": [
+     52,
+     484.5,
+     210,
+     493.5
+    ],
+    "sourceBox": [
+     166,
+     472.5,
+     210,
+     479.5
+    ],
+    "unit": "%",
+    "category": "2021년",
+    "valueColor": "#ffffff",
+    "legendBox": [
+     148,
+     384,
+     215,
+     474.5
+    ],
+    "series": [
+     {
+      "name": "도보",
+      "color": "#78cdd0",
+      "labelColor": "#78cdd0"
+     },
+     {
+      "name": "자전거",
+      "color": "#2fa3dc",
+      "labelColor": "#2fa3dc"
+     },
+     {
+      "name": "승용차",
+      "color": "#ed1c24",
+      "labelColor": "#ed1c24"
+     },
+     {
+      "name": "대중교통",
+      "color": "#a3cf62",
+      "labelColor": "#a3cf62"
+     }
+    ],
+    "warnDiff": 0.5,
+    "_series": "12시부터 시계 방향 차례. 같은 색 아이콘(버스·자동차·자전거·사람)은 조각보다 작아 색마다 가장 큰 채움을 조각으로 쓴다. 이름은 조각 밖 같은 색 글자(labelColor).",
+    "notes": "왼쪽 묶음 막대와 같은 제목·출처를 쓰는 2021년 통근·통학 교통수단 분담률 고리."
+   },
+   "p31-ljubljana": {
+    "page": 31,
+    "type": "vbar",
+    "bbox": [
+     576,
+     555,
+     746,
+     672
+    ],
+    "titleBox": [
+     588,
+     659.5,
+     707,
+     668.5
+    ],
+    "sourceBox": [
+     590,
+     557.5,
+     639,
+     564
+    ],
+    "unitBox": [
+     582,
+     557.7,
+     589,
+     563.5
+    ],
+    "yAxisBox": [
+     581,
+     562,
+     589,
+     641
+    ],
+    "yTickBox": [
+     589,
+     562,
+     746,
+     639
+    ],
+    "yTickFillColor": "#808285",
+    "plotBox": [
+     589,
+     564,
+     746,
+     639
+    ],
+    "series": [
+     {
+      "name": "녹지 면적 비율",
+      "color": "#b0d361"
+     }
+    ],
+    "highlightColors": [
+     "#4fb848"
+    ],
+    "highlight": [
+     "류블랴나"
+    ],
+    "labelMode": "diagonal",
+    "labelBox": [
+     586,
+     638.5,
+     746,
+     659
+    ],
+    "categories": [
+     "오슬로",
+     "베른",
+     "류블랴나",
+     "베를린",
+     "마드리드",
+     "브뤼셀",
+     "빈",
+     "로마",
+     "파리",
+     "아테네"
+    ],
+    "_yTickFillColor": "위 다섯 가로 격자는 점선(얇은 채움 묶음), 아래 셋은 선 — 둘 다 눈금선.",
+    "notes": "막대 위에 수가 인쇄돼 있지 않아 막대 높이를 잰 값이다."
+   },
+   "p31-freiburg": {
+    "page": 31,
+    "type": "figure",
+    "bbox": [
+     583,
+     392,
+     746,
+     482
+    ],
+    "titleBox": [
+     588,
+     485.5,
+     726,
+     494.8
+    ],
+    "sourceBox": [
+     692,
+     474.8,
+     746,
+     481.8
+    ],
+    "seriesName": "내용",
+    "ignoreColors": [
+     "#92c5eb"
+    ],
+    "nameLine": 0,
+    "cells": [
+     {
+      "box": [
+       605,
+       405,
+       628,
+       428
+      ]
+     },
+     {
+      "box": [
+       632,
+       428.5,
+       654,
+       451
+      ]
+     },
+     {
+      "box": [
+       676,
+       444,
+       698,
+       459.5
+      ]
+     },
+     {
+      "box": [
+       692,
+       425,
+       727,
+       442.5
+      ]
+     }
+    ],
+    "categories": [
+     "1992년",
+     "2018년",
+     "2030년",
+     "2035년까지"
+    ],
+    "_ignoreColors": "구름 글자는 옅은 파랑(#92c5eb) 그림자 글자를 같은 자리에 한 번 더 찍었다 — 그림자는 뺀다.",
+    "notes": "구름 그림의 수치(1992년 배출량을 100% 로 둔 감축 목표). 그래프가 아니라 글 표로 둔다."
+   },
+   "p30-sophia": {
+    "page": 30,
+    "type": "figure",
+    "bbox": [
+     216,
+     563,
+     380,
+     668
+    ],
+    "titleBox": [
+     53,
+     545.5,
+     219,
+     557.5
+    ],
+    "sourceBox": [
+     300,
+     661,
+     378,
+     668
+    ],
+    "seriesName": "내용",
+    "replace": {
+     "km2": "km²"
+    },
+    "nameLine": -1,
+    "cells": [
+     {
+      "box": [
+       233,
+       567,
+       266,
+       585
+      ]
+     },
+     {
+      "box": [
+       283,
+       567,
+       318,
+       585
+      ]
+     },
+     {
+      "box": [
+       233,
+       591,
+       266,
+       609
+      ]
+     },
+     {
+      "box": [
+       283,
+       591,
+       318,
+       609
+      ]
+     },
+     {
+      "box": [
+       233,
+       615.5,
+       266,
+       633.5
+      ]
+     },
+     {
+      "box": [
+       283,
+       615.5,
+       318,
+       633.5
+      ]
+     },
+     {
+      "box": [
+       233,
+       638.5,
+       266,
+       656.5
+      ]
+     },
+     {
+      "box": [
+       283,
+       638.5,
+       318,
+       656.5
+      ]
+     }
+    ],
+    "categories": [
+     "기업",
+     "일자리",
+     "연구원",
+     "녹지 지역",
+     "학생",
+     "외국 기업",
+     "개발 지역",
+     "연구 개발"
+    ],
+    "_titleBox": "수치 그림에 제목이 없어 사례 제목(「5 첨단 산업 중심지, 소피아 앙티폴리스」의 글)을 쓴다. 아래 설명 글은 사진 카드(U3-6)·주제 내용(U3-8)에서.",
+    "notes": "수치 그림(아이콘 + 수 + 이름 8칸). 그래프가 아니라 글 표로 둔다. km 뒤 위첨자 2 는 km² 로 적는다(replace)."
+   }
+  }
  },
  "basemap": {
   "_doc": "D2 바탕 지도(build_basemap.mjs). Natural Earth GeoJSON(rawDir, 없으면 sourceUrl 에서 받음) → mapshaper(버전 고정)로 단순화 → TopoJSON 하나(out). 육지(land*)는 나라(countries*)를 녹여(dissolve2) 만들어 해안 호(arc)를 나라와 나눠 쓴다(용량). 10a = 10m 을 단원 범위 상자들(unitBoxes)로 자른 것. 나라 속성은 iso(ADM0_A3)·ko(NAME_KO)만, 하천·호수는 s(scalerank)만. maxBytes 를 넘으면 쓰지 않고 실패.",

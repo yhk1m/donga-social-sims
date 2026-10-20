@@ -78,7 +78,7 @@ def extract_charts(warnings):
     cfg = charts_config()
     rows = climate_table()
     ctx = {'warnings': warnings, 'climate': rows, 'climatePage': cfg['climateTable']['page'], 'climateDecimals': _decimals(rows),
-           'notInTable': climate_not_in_table(), 'defaults': defaults()}
+           'notInTable': climate_not_in_table(), 'defaults': defaults(), 'climateAliases': cfg['climateTable'].get('aliases', {})}
     out = {}
     for cid, c in cfg['items'].items():
         try:

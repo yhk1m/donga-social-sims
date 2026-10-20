@@ -331,6 +331,110 @@ class Words(unittest.TestCase):
         vals = [t['value'] for t in AX.number_tokens(24, [649, 386.5, 724, 394.5])]
         self.assertEqual(vals, [0, 100, 200, 300, 400, 500, 600])
 
+# ── 2단계 유럽(u3, 29~31쪽) — 설정 config/u3.json 의 charts 로 같은 읽개를 돌린다 ──────────
+U3_CONFIG = os.path.join(os.path.dirname(__file__), '..', 'config', 'u3.json')
+
+
+@NEED_PDF
+class ChartsU3(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import json
+        from unittest import mock
+        import extract_tables as et
+        cls.et = et
+        with open(U3_CONFIG, encoding='utf-8') as f: cls.cfg = json.load(f)['charts']
+        cls.warnings = []
+        et._climate.clear()                      # 부록 표 캐시를 u3 설정으로 다시 읽고, 끝나면 비워 u2 시험에 남기지 않는다
+        try:
+            with mock.patch.object(et, 'charts_config', lambda: cls.cfg):
+                cls.charts = et.extract_charts(cls.warnings)
+                cls.again = et.extract_charts([])
+                cls.rows = et.climate_table()
+        finally:
+            et._climate.clear()
+
+    def test_every_configured_chart_clean(self):
+        self.assertEqual(set(self.charts), set(self.cfg['items']))
+        self.assertEqual(len(self.charts), 12)
+        self.assertEqual(self.warnings, [])
+        self.assertEqual(self.et.validate(self.charts, self.cfg), [])
+
+    def test_climographs(self):
+        clim = {cid: c for cid, c in self.charts.items() if c['type'] == 'climograph'}
+        self.assertEqual(len(clim), 4)
+        want = {'p29-clim-paris': ('파리', '서안 해양성', 'printed'), 'p29-clim-lisbon': ('리스본', '지중해성', 'printed'),
+                'p29-clim-moscow': ('모스크바', '냉대 습윤', 'printed'), 'p29-clim-grenivik': ('그레니비크', '툰드라', 'measured')}
+        for cid, (city, zone, method) in want.items():
+            with self.subTest(cid):
+                c = clim[cid]
+                self.assertEqual((c['city'], c['climate']), (city, zone))
+                t = next(s for s in c['series'] if s['name'] == '기온'); p = next(s for s in c['series'] if s['name'] == '강수량')
+                for s in (t, p):
+                    self.assertEqual(len(s['values']), 12)
+                    self.assertTrue(all(isinstance(v, (int, float)) for v in s['values']))
+                    self.assertEqual(s['method'], method)
+                    if method == 'measured': self.assertIsInstance(s['precision'], float)
+                if method == 'printed':     # 97쪽 표 값 = 그래프를 잰 값(허용 안)
+                    self.assertLessEqual(c['check']['maxTempDiff'], 0.6); self.assertLessEqual(c['check']['maxPrecDiff'], 6.0)
+        self.assertEqual(clim['p29-clim-paris']['tableName'], '파리(오를리)')                 # 표 이름 다름(aliases)
+        self.assertEqual(clim['p29-clim-paris']['series'][0]['values'], self.rows['파리(오를리)']['temp'])
+        self.assertNotIn('그레니비크', self.rows)
+
+    def test_tallinn_printed(self):
+        c = self.charts['p31-tallinn']
+        self.assertEqual(c['type'], 'groupedBar')
+        self.assertEqual(c['categories'], ['대중교통', '승용차', '도보', '자전거', '기타'])
+        self.assertEqual(len(c['series']), 2)
+        self.assertEqual([s['values'] for s in c['series']], [[55, 31, 12, 1, 1], [63, 28, 7, 1, 1]])   # 인쇄된 수
+        self.assertTrue(all(s['method'] == 'printed' for s in c['series']))
+        self.assertLessEqual(c['check']['maxAbsDiff'], 1.0)
+
+    def test_copenhagen(self):
+        c = self.charts['p31-copenhagen']
+        self.assertEqual(c['type'], 'groupedBar')
+        self.assertEqual(c['categories'], [2012, 2014, 2016, 2018, 2020, 2022])
+        self.assertEqual([s['name'] for s in c['series']], ['자동차', '인구', '자전거'])
+        r = self.charts['p31-copenhagen-2021']
+        self.assertEqual(r['type'], 'pie')
+        self.assertAlmostEqual(sum(s['values'][0] for s in r['series']), 100, delta=0.5)
+        self.assertAlmostEqual(r['check']['measuredSum'], 100, delta=0.5)
+        self.assertEqual({s['name']: s['values'][0] for s in r['series']}, {'도보': 11, '자전거': 35, '승용차': 32, '대중교통': 22})
+
+    def test_bars_measured(self):
+        f = self.charts['p30-finance']
+        self.assertEqual((f['type'], f['axisBreak'], f['colors']), ('bar', [0, 680], {'런던': '#ed1c24'}))
+        self.assertEqual((f['axes']['y']['step'], f['axes']['y']['n']), (20, 6))                 # 생략 위 눈금 680~780
+        self.assertEqual(self.charts['p30-container']['colors'], {'로테르담': '#ed1c24'})
+        self.assertEqual(self.charts['p31-ljubljana']['colors'], {'류블랴나': '#4fb848'})
+        self.assertEqual(self.charts['p30-container']['categories'][2], '닝보-저우산')            # 비스듬한 글자 잇기
+        for cid in ('p30-finance', 'p30-container', 'p31-ljubljana', 'p31-copenhagen'):
+            for s in self.charts[cid]['series']:
+                with self.subTest(f'{cid} {s["name"]}'):
+                    self.assertEqual(len(s['values']), 6 if cid == 'p31-copenhagen' else 10)
+                    self.assertEqual(s['method'], 'measured')
+                    self.assertIsInstance(s['precision'], float)
+                    self.assertLess(s['precision'], 0.5)
+
+    def test_every_measured_has_precision(self):
+        for cid, c in self.charts.items():
+            for s in c['series']:
+                if s['method'] == 'measured':
+                    with self.subTest(f'{cid} {s["name"]}'): self.assertIsInstance(s.get('precision'), (int, float))
+
+    def test_figure_tables(self):
+        fr = self.charts['p31-freiburg']
+        self.assertEqual(fr['type'], 'table')
+        self.assertEqual(fr['categories'], ['1992년', '2018년', '2030년', '2035년까지'])
+        self.assertEqual(fr['series'][0]['values'], ['11.8톤 100%', '7.4톤 -37%', '-60%', '-100%'])   # 그림자 글자 뺌
+        so = self.charts['p30-sophia']
+        self.assertEqual(len(so['categories']), 8)
+        self.assertEqual(so['series'][0]['values'][3], '24km²')
+
+    def test_deterministic(self):
+        import json
+        self.assertEqual(json.dumps(self.again, ensure_ascii=False, sort_keys=True), json.dumps(self.charts, ensure_ascii=False, sort_keys=True))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -8,10 +8,14 @@
 #   막대 = 사각형 길이, 꺾은선 = 선 위 x 에서의 y, 띠 면 = 세로선 위 보이는 색 구간(칠한 순서), 원·고리 = 바깥 호가 쓸어 간 각.
 #   인쇄된 숫자와 잰 값이 둘 다 있으면 짝을 지어(헝가리안) 어긋남을 check 에 남긴다.
 #   잰 값의 소수 자리 = 정밀도의 한 자리 아래, 그래프에 인쇄된 수의 자리 + 1 을 넘지 않는다.
+# 2단계 유럽(U3-7)에서 더한 읽개: vbar(세로 막대 — 계열 하나면 bar + 강조 colors·축 생략 axisBreak, 둘 이상이면 groupedBar,
+#   막대 위 인쇄된 수 printedBox), donut(고리 — 조각 안 인쇄된 %, 가운데 = 안쪽 호 중심 중앙값, 출력 pie + donut),
+#   figure(수치 그림 칸 → 글 표). climograph 는 climateBox(제목 둘째 줄 → climate)·climateTable.aliases(표 이름 다른 도시).
 import math, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import numpy as np
 from shapely.geometry import Point
 import pdfkit
 import charts_axes as AX
@@ -32,6 +36,14 @@ RING_GAP_PT = 0.5         # 바깥·안쪽 호 반지름이 이만큼 넘게 다
 APEX_FRAC = 0.2           # 부채꼴 꼭짓점은 맞춘 원 중심에서 반지름의 이 비율 안
 PRINTED_PREC = 0.05       # 인쇄값(소수 한 자리)의 반올림 정밀도
 MISS = 1e6                # 헝가리안 짝 없음 비용(가능한 짝보다 늘 크게)
+DIAG_GROUP_PT = 4.0       # 비스듬한 범주 이름: 같은 이름 글자의 cx + cy 차(≈ 0)와 이웃 이름 차(≈ 막대 간격 15pt) 사이
+GRID_FILL_MAX_H = 1.0     # 점선 격자(얇은 가로 채움)의 높이 상한(막대와 가름)
+GRID_FILL_MIN_W = 20.0    # 점선 격자 채움 묶음의 너비 하한
+PRINTED_DX_PT = 3.0       # 막대 위 인쇄된 수 ↔ 막대: 가운데 x 차 상한
+PRINTED_DY_PT = 4.0       # 막대 위 끝 − 글자 아래 끝 상한(글자가 막대 위 끝보다 1pt 넘게 아래면 짝 아님)
+CELL_LINE_PT = 2.5        # 수치 그림 칸: 세로 가운데가 이만큼 안이면 한 줄(위첨자 「2」도 같은 줄)
+CELL_JOIN_EM = 0.15       # 수치 그림 칸: 같은 줄 낱말 사이가 글자 크기의 이만큼 넘게 벌면 공백
+CLIMATE_SUFFIX = ' 기후'   # 기후 그래프 제목의 기후 이름 끝(「서안 해양성 기후」 → climate 「서안 해양성」)
 
 
 # ── 공통 ────────────────────────────────────────────────────────────────
@@ -124,7 +136,17 @@ def read_climograph(cid, c, ctx):
     out['categories'] = list(range(1, 13)); out['categoryKind'] = 'month'
     out['axes'] = {'temp': tax.to_json(), 'prec': pax.to_json()}
     out['unit'] = c['unit']
-    row = ctx['climate'].get(city)
+    # 기후 이름: 그래프 제목 둘째 줄 「(서안 해양성 기후)」 → 「서안 해양성」 (climateBox 가 있을 때만 — u2 설정에는 없음)
+    if c.get('climateBox'):
+        zone = strip_parens(text(p, c['climateBox']))
+        out['climate'] = zone[:-len(CLIMATE_SUFFIX)].strip() if zone.endswith(CLIMATE_SUFFIX) else zone
+        out['title'] = f'{city} ({zone})'   # 두 줄 제목을 box_text 로 이으면 줄 길이에 따라 공백이 들고 빠져(「그레니비크(툰드라 기후)」) 두 상자 글자로 맞춘다
+    # 표 이름이 그래프 제목과 다른 도시(파리 ↔ 97쪽 「파리(오를리)」): 설정 climateTable.aliases
+    key = ctx.get('climateAliases', {}).get(city, city)
+    row = ctx['climate'].get(key)
+    if row and key != city: out['tableName'] = key
+    if row and c.get('climateBox') and row.get('zone') and row['zone'] != out['climate'] + CLIMATE_SUFFIX:
+        W.append(f'{cid}: 그래프 기후 「{out["climate"]}」 ≠ {row["page"]}쪽 표 「{row["zone"]}」')
     meas_t = [rnd(v, AX.decimals_for(tp, cap)) for v in mtemp]; meas_p = [rnd(v, AX.decimals_for(pp, cap)) for v in mprec]
     if row:
         at = f'p{row["page"]} 표'
@@ -205,6 +227,212 @@ def read_bar(cid, c, ctx):
     if c.get('subtitleBox'): out['subtitle'] = text(p, c['subtitleBox'])
     out['series'] = [series_entry(c['seriesName'], [rnd(xax.val(f['rect'][2]) - xax.val(f['rect'][0]), nd) for f in bars],
                                   'measured', precision=round(prec, 3), color=c['barColor'])]
+    return out
+
+
+# ── 세로 막대(단순·강조 색·축 생략 / 묶음) ─────────────────────────────────────
+def y_ticks(c):
+    """세로축 눈금선 y: yTickBox 안 가로 곧은 선 + (yTickFillColor 가 있으면) 그 색의 얇은 가로 채움(점선 격자를 잘게 쪼갠 사각형 묶음)."""
+    if not c.get('yTickBox'): return None
+    p = c['page']
+    ys = list(G.hlines(p, c['yTickBox']))
+    if c.get('yTickFillColor'):
+        ys += [yc(f['rect']) for f in G.fills(p, c['yTickBox'], c['yTickFillColor'])
+               if f['rect'][3] - f['rect'][1] < GRID_FILL_MAX_H and f['rect'][2] - f['rect'][0] > GRID_FILL_MIN_W]
+    return G.dedup(sorted(ys))
+
+
+def diagonal_labels(p, box, n):
+    """비스듬히(왼쪽 아래 → 오른쪽 위) 한 글자씩 놓인 범주 이름 → 왼쪽 막대부터 n 개.
+    같은 이름의 글자는 cx + cy 가 같다(한 글자마다 x +d, y −d). cx + cy 로 무리를 나누고, 무리 안은 x 순으로 잇는다."""
+    ws = sorted((w for w in AX.words(p, box) if w['text'].strip()), key=lambda w: w['cx'] + w['cy'])
+    groups = []
+    for w in ws:
+        k = w['cx'] + w['cy']
+        if groups and k - groups[-1]['k'] < DIAG_GROUP_PT: groups[-1]['ws'].append(w)
+        else: groups.append({'ws': [w]})
+        groups[-1]['k'] = k
+    if len(groups) != n: raise ValueError(f'비스듬한 이름 무리 {len(groups)}개 ≠ 막대 {n}개')
+    return [''.join(w['text'] for w in sorted(g['ws'], key=lambda w: w['cx'])) for g in groups]
+
+
+def row_labels(p, box, centers):
+    """한 줄에 가로로 놓인 범주 이름 → 가운데 x 가 가장 가까운 막대 무리에 붙인다(무리마다 x 순으로 이음)."""
+    got = [[] for _ in centers]
+    for w in AX.words(p, box):
+        j = min(range(len(centers)), key=lambda j: abs(centers[j] - w['cx']))
+        got[j].append(w)
+    return [' '.join(w['text'] for w in sorted(g, key=lambda w: w['cx'])) for g in got]
+
+
+def read_vbar(cid, c, ctx):
+    """세로 막대: 값 = 막대 위 끝 y 를 세로축으로(축 생략이면 yAxisBox 를 생략 위 눈금만 담게 — 0 은 생략 아래라 맞추기에서 뺀다).
+    계열이 하나면 type 'bar'(막대 색이 계열 색과 다르면 colors {범주: 색} — 강조), 둘 이상이면 type 'groupedBar'(범주마다 계열 차례).
+    막대 위에 인쇄된 수(printedBox)가 있으면 그것(printed, 잰 값은 measured, 차는 check), 없으면 잰 값(measured + precision).
+    범주 이름: labelMode 'diagonal'(비스듬히 한 글자씩) · 'row'(한 줄 가로) · 'config'(설정 categories — 해 {years} 또는 목록)."""
+    W = ctx['warnings']; p = c['page']
+    out = meta(cid, c)
+    yax, ytoks = axis(cid, c, ctx, c['yAxisBox'], 'y', name='세로', ticks=y_ticks(c), require_snap=c.get('yRequireSnap', False),
+                      scale=opt(c, ctx, 'axisScale'))
+    prec = AX.precision(yax); nd = AX.decimals_for(prec, cap_from(ytoks))
+    series = c['series']
+    colors = [s['color'] for s in series] + list(c.get('highlightColors', []))
+    de = opt(c, ctx, 'colorDE')
+    bars = sorted((f for f in G.fills(p, c['plotBox'], colors, de=de) if f['rect'][3] - f['rect'][1] >= c.get('minBarHeight', 0)),
+                  key=lambda f: f['rect'][0])
+    ns = len(series)
+    if not bars or len(bars) % ns: raise ValueError(f'{cid}: 막대 {len(bars)}개가 계열 {ns}개로 나뉘지 않음')
+    groups = [bars[k:k + ns] for k in range(0, len(bars), ns)]
+    if ns > 1:
+        # 묶음: 무리 안은 설정 series 차례(왼쪽부터)로 색이 하나씩, 무리 안 틈 < 무리 사이 틈
+        inner = max(g[i + 1]['rect'][0] - g[i]['rect'][2] for g in groups for i in range(ns - 1))
+        outer = min(b[0]['rect'][0] - a[-1]['rect'][2] for a, b in zip(groups, groups[1:])) if len(groups) > 1 else math.inf
+        if inner >= outer: W.append(f'{cid}: 막대 무리를 가를 수 없음(무리 안 틈 {inner:.2f} ≥ 무리 사이 {outer:.2f}pt)')
+        for g in groups:
+            got = [f['color'] for f in g]
+            if got != [s['color'] for s in series]: W.append(f'{cid}: 무리 {[round(f["rect"][0], 1) for f in g]} 색 차례 {got}')
+    centers = [(g[0]['rect'][0] + g[-1]['rect'][2]) / 2 for g in groups]
+    mode = c.get('labelMode', 'row')
+    if mode == 'diagonal': cats = diagonal_labels(p, c['labelBox'], len(groups))
+    elif mode == 'row': cats = row_labels(p, c['labelBox'], centers)
+    elif mode == 'config': cats = year_list(c['categories']) if isinstance(c['categories'], dict) else list(c['categories'])
+    else: raise ValueError(f'{cid}: 모르는 labelMode {mode}')
+    if mode != 'config' and c.get('categories') and cats != c['categories']:
+        W.append(f'{cid}: 항목 글자 {cats} ≠ 설정 {c["categories"]}')
+    if len(cats) != len(groups): raise ValueError(f'{cid}: 항목 {len(cats)}개 ≠ 막대 무리 {len(groups)}개')
+    out['categories'] = cats
+    if mode == 'config' and isinstance(c['categories'], dict): out['categoryKind'] = 'year'
+    out['axes'] = {'y': yax.to_json()}
+    if c.get('axisBreak'): out['axisBreak'] = list(c['axisBreak'])
+    else:   # 바닥 = 0 인지(축 생략이면 바닥은 생략 아래라 보지 않음)
+        base = max(abs(yax.val(f['rect'][3])) for f in bars)
+        if base > 2 * prec: W.append(f'{cid}: 막대 바닥이 0 이 아님(최대 {base:.2f})')
+    meas = [[yax.val(g[i]['rect'][1]) for g in groups] for i in range(ns)]
+    printed = None
+    if c.get('printedBox'):
+        # 막대 위 인쇄된 수 ↔ 막대: 가운데 x 가 가깝고 글자 아래 끝이 막대 위 끝 바로 위 — 헝가리안 짝
+        toks = AX.number_tokens(p, c['printedBox'], font=opt(c, ctx, 'numberFont'))
+        flat = [(i, k, g[i]['rect']) for k, g in enumerate(groups) for i in range(ns)]
+        dx = lambda a, b: abs(toks[a]['cx'] - cx(flat[b][2]))
+        dy = lambda a, b: flat[b][2][1] - toks[a]['bbox'][3]
+        m = pair(list(range(len(toks))), list(range(len(flat))), lambda a, b: dx(a, b) + abs(dy(a, b)),
+                 lambda a, b: dx(a, b) <= PRINTED_DX_PT and -1.0 <= dy(a, b) <= PRINTED_DY_PT, miss=lambda a: MISS)
+        if len(m) != len(flat) or len(toks) != len(flat):
+            W.append(f'{cid}: 막대 {len(flat)}·인쇄된 수 {len(toks)}·짝 {len(m)}')
+        printed = [[None] * len(groups) for _ in range(ns)]
+        for a, b in m.items():
+            i, k, _ = flat[b]; printed[i][k] = toks[a]['value']
+    out['series'] = []
+    maxd = 0.0
+    for i, s in enumerate(series):
+        mv = [rnd(v, nd) for v in meas[i]]
+        if printed:
+            maxd = max([maxd] + [abs(a - b) for a, b in zip(printed[i], meas[i]) if a is not None])
+            out['series'].append(series_entry(s['name'], printed[i], 'printed', measured=mv, precision=round(prec, 3), color=s['color']))
+        else:
+            out['series'].append(series_entry(s['name'], mv, 'measured', precision=round(prec, 3), color=s['color']))
+    if ns == 1:
+        hl = {cats[k]: g[0]['color'] for k, g in enumerate(groups) if g[0]['color'] != series[0]['color']}
+        if hl: out['colors'] = hl
+        if 'highlight' in c and sorted(hl) != sorted(c['highlight']): W.append(f'{cid}: 강조 막대 {sorted(hl)} ≠ 설정 {sorted(c["highlight"])}')
+    out['type'] = 'bar' if ns == 1 else 'groupedBar'
+    if printed:
+        out['check'] = {'maxAbsDiff': round(maxd, 3)}
+        if maxd > c['warnDiff']: W.append(f'{cid}: 막대 높이와 인쇄된 수 차 최대 {maxd:.2f} (허용 {c["warnDiff"]})')
+    return out
+
+
+# ── 고리(도넛) — 조각마다 인쇄된 % ────────────────────────────────────────────
+def read_donut(cid, c, ctx):
+    """고리 조각: 계열 색마다 가장 큰 채움(같은 색 아이콘과 가름)을 조각으로. 고리 가운데 = 조각들 안쪽 호 중심의 중앙값
+    (짧은 바깥 호 하나로 맞춘 원은 중심이 흔들린다 — 31쪽 도보 11% 조각은 따로 맞추면 반지름 25.9 ↔ 27.5),
+    잰 % = 그 가운데에서 바깥 호가 쓸어 간 각. 조각 안 인쇄된 수(valueColor) = 값(printed).
+    이름은 조각 밖 같은 색 글자(labelColor, legendBox 안)로 확인. 출력 type 'pie' + donut(안쪽/바깥 반지름) — 화면은 원그래프 길."""
+    W = ctx['warnings']; p = c['page']
+    out = meta(cid, c)
+    out['type'] = 'pie'
+    toks = AX.number_tokens(p, c['bbox'], color=c.get('valueColor'), font=opt(c, ctx, 'numberFont'))
+    nd = cap_from(toks)
+    slices = []
+    for s in c['series']:
+        fl = G.fills(p, c['bbox'], s['color'], geom=True, de=opt(c, ctx, 'colorDE'))
+        f = max(fl, key=lambda f: f['geom'].area) if fl else None
+        A = G.arcs(f['d']) if f else []
+        outer = max(A, key=lambda a: a['r']) if A else None
+        inner = [a for a in A if outer and a['r'] < outer['r'] - RING_GAP_PT]
+        slices.append((s, f, outer, inner))
+        if f is None: W.append(f'{cid}: {s["name"]} 조각({s["color"]}) 없음')
+        elif outer is None: W.append(f'{cid}: {s["name"]} 조각에 원호가 없음 — 각을 잴 수 없음')
+    inn = [a for *_, inner in slices for a in inner] or [o for _, _, o, _ in slices if o]
+    if not inn: raise ValueError(f'{cid}: 고리 원호가 없음')
+    center = (float(np.median([a['cx'] for a in inn])), float(np.median([a['cy'] for a in inn])))
+    words = AX.words(p, c.get('legendBox', c['bbox']))
+    out['categories'] = [c.get('category', '')]
+    out['series'] = []
+    maxd, msum, r_out, r_in, used = 0.0, 0.0, [], [], set()
+    for s, f, outer, inner in slices:
+        v = mv = None
+        if f is not None:
+            inside = [j for j, t in enumerate(toks) if f['geom'].contains(Point(t['cx'], t['cy']))]
+            used.update(inside)
+            v = toks[inside[0]]['value'] if len(inside) == 1 else None
+            if v is None: W.append(f'{cid}: {s["name"]} 조각 안 수 {len(inside)}개')
+        if outer is not None:
+            mv = 100 * G.sweep_deg(outer['pts'], center) / 360
+            r_out.append(float(np.mean([math.hypot(x - center[0], y - center[1]) for x, y in outer['pts']])))
+            r_in += [float(np.mean([math.hypot(x - center[0], y - center[1]) for x, y in a['pts']])) for a in inner]
+            msum += mv
+            if v is not None: maxd = max(maxd, abs(v - mv))
+        if s.get('labelColor') and not any(w['text'] == s['name'] and w['color'] == s['labelColor'] for w in words):
+            W.append(f'{cid}: {s["name"]} 이름 글자({s["labelColor"]})가 없음')
+        out['series'].append(series_entry(s['name'], [v], 'printed', measured=[rnd(mv, nd)], precision=PRINTED_PREC, color=s['color']))
+    if len(toks) != len(used): W.append(f'{cid}: 조각에 들지 않은 수 {[toks[j]["text"] for j in range(len(toks)) if j not in used]}')
+    if r_out and (max(r_out) - min(r_out) > RING_GAP_PT or (r_in and max(r_in) - min(r_in) > RING_GAP_PT)):
+        W.append(f'{cid}: 조각 반지름이 서로 다름(바깥 {min(r_out):.2f}~{max(r_out):.2f}, 안 {min(r_in, default=0):.2f}~{max(r_in, default=0):.2f})')
+    if r_out and r_in: out['donut'] = round(float(np.mean(r_in)) / float(np.mean(r_out)), 3)
+    out['check'] = {'maxAbsDiff': round(maxd, 3), 'measuredSum': round(msum, 2)}
+    if maxd > c['warnDiff']: W.append(f'{cid}: 조각 각과 인쇄 비율 차 최대 {maxd:.2f}%p')
+    if abs(msum - 100) > c['warnDiff']: W.append(f'{cid}: 조각 각 합 {msum:.2f}% ≠ 100 (겹치거나 빈 조각)')
+    return out
+
+
+# ── 수치 그림(인포그래픽 — 칸마다 이름·수 글자) → 글 표 ───────────────────────────
+def cell_text(p, box, ignore=()):
+    """상자 안 낱말을 줄(세로 가운데 LINE_PT 안)로 묶어 [줄 글자] (위→아래). 같은 줄 낱말 사이가 글자 크기의 JOIN_EM 넘게 벌면 공백,
+    아니면 붙인다(「2,500」+「개」 → 2,500개, 「24km」+위첨자 「2」 → 24km2 — 설정 replace 로 km²). ignore = 뺄 글자색(겹쳐 찍은 그림자 글자)."""
+    ws = sorted((w for w in AX.words(p, box) if w['color'] not in ignore), key=lambda w: (w['cy'], w['cx']))
+    lines = []
+    for w in ws:
+        if lines and abs(w['cy'] - lines[-1]['cy']) < CELL_LINE_PT: lines[-1]['ws'].append(w)
+        else: lines.append({'cy': w['cy'], 'ws': [w]})
+    out = []
+    for L in lines:
+        t, prev = '', None
+        for w in sorted(L['ws'], key=lambda w: w['bbox'][0]):
+            if prev is not None and w['bbox'][0] - prev['bbox'][2] > CELL_JOIN_EM * max(w['size'], prev['size']): t += ' '
+            t += w['text']; prev = w
+        out.append(t)
+    return out
+
+
+def read_figure(cid, c, ctx):
+    """수치 그림(30쪽 소피아 앙티폴리스 8칸, 31쪽 프라이부르크 구름 4개): 칸(cells[].box)마다 글자 줄 → 이름·값.
+    이름 = nameLine 번째 줄(기본: 마지막 줄 — 「2,500개 / 기업」), 값 = 나머지 줄을 공백으로. 출력은 글 표(type 'table')."""
+    W = ctx['warnings']; p = c['page']
+    out = meta(cid, c)
+    out['type'] = 'table'
+    ign = set(c.get('ignoreColors', []))
+    cats, vals = [], []
+    for cell in c['cells']:
+        lines = cell_text(p, cell['box'], ign)
+        for a, b in c.get('replace', {}).items(): lines = [L.replace(a, b) for L in lines]
+        k = c.get('nameLine', -1)
+        if len(lines) < 2: W.append(f'{cid}: 칸 {cell["box"]} 줄 {lines}'); cats.append(' '.join(lines)); vals.append(''); continue
+        k = k % len(lines)
+        cats.append(lines[k]); vals.append(' '.join(L for j, L in enumerate(lines) if j != k))
+    if c.get('categories') and cats != c['categories']: W.append(f'{cid}: 이름 {cats} ≠ 설정 {c["categories"]}')
+    out['categories'] = cats
+    out['series'] = [series_entry(c['seriesName'], vals, 'printed')]
     return out
 
 
@@ -578,4 +806,5 @@ def read_table(cid, c, ctx):
 
 READERS = {'climograph': read_climograph, 'line': read_line, 'bar': read_bar, 'stackedBar': read_stacked_bar,
            'stackedArea': read_stacked_area, 'pyramid': read_pyramid, 'radialBar': read_radial, 'pie': read_pie,
-           'stackedPrinted': read_stacked_printed, 'table': read_table}
+           'stackedPrinted': read_stacked_printed, 'table': read_table,
+           'vbar': read_vbar, 'donut': read_donut, 'figure': read_figure}   # 2단계 유럽(U3-7): 세로·묶음 막대, 고리, 수치 그림
