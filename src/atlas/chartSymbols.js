@@ -7,14 +7,15 @@
 //   바깥 지름 = classSymbolPx(sizePt, k, 모든 sizePt) — 기호 레이어 규칙(확대해도 고리끼리 지름 비 그대로), 안쪽 = ring 비(없으면 0.6).
 //   누르면 onPick(feature {properties:{type:'chartSymbol', label: title, chart}}) → 주제(topic.js)가 상세 카드에 그 그래프를 크게.
 //   hit(xy): 바깥 원 안(가운데 빈 곳 포함) → 그 항목. labelObstacles = 보이는 고리 상자(지명이 피함). 범례 없음.
-//   모양은 CSS 가 아니라 SVG 속성으로(공유 atlas.css 에 넣으면 이 레이어를 안 쓰는 u2·u3 조각도 커짐), 강조는 구멍 테두리 굵기.
+//   모양은 CSS 가 아니라 SVG 속성으로(공유 atlas.css 에 넣으면 이 레이어를 안 쓰는 u2·u3 조각도 커짐), 강조는 구멍 테두리 굵기,
+//   키보드 초점은 focus·blur 때 고리 바깥에 그리는 파란 테두리 원(at-ring-focus — CSS :focus-visible 없이도 보임).
 //   layerRef 에 직접 넣지 않고 chartsExtra.installExtraCharts() 가 'chartSymbols' 로 등록한다.
 import { s } from '../shared/dom.js';
 import { classSymbolPx } from './layerStyle.js';
 import { ringRatio, ringSlices, sectorPath } from './chartCore.js';
 import { LAYER_Z, round1, metaOf, setAttr, connect } from './layerCommon.js';
 
-const INK = '#231f20';
+const INK = '#231f20', FOCUS = '#1a73e8';
 
 /** 고리 기호 지름 규칙(px): 지면 pt × 2 × 확대 배율, 단계 전체 [52, 96] — 가운데 글자 3줄이 들어갈 만큼 */
 export const RING_STYLE = Object.freeze({ pxPerPt: 2, min: 52, max: 96, minTextPx: 30 });
@@ -24,7 +25,7 @@ const emW = (t) => [...String(t)].reduce((a, ch) => a + (/[ㄱ-힣]/.test(ch) ? 
 export function chartSymbolLayer(id, data, { map = null, onPick = null, layerId = id, z = LAYER_Z.symbol } = {}) {
   // lonlat·series 가 없는 항목(손으로 고친·낡은 자료)은 건너뜀 — 지도 그리기 전체가 멈추지 않게
   const items = (data?.items || []).filter((it) => Array.isArray(it?.lonlat) && it.series?.length).map((it) => ({
-    it, el: null, hole: null, xy: null, r: 0, key: '',
+    it, el: null, hole: null, ring: null, focused: false, xy: null, r: 0, key: '',
     f: { type: 'Feature', properties: { type: 'chartSymbol', label: it.title, name: it.title, chart: it.chart }, geometry: { type: 'Point', coordinates: it.lonlat } },
   }));
   const sizes = items.map((x) => x.it.sizePt || 30);
@@ -46,14 +47,19 @@ export function chartSymbolLayer(id, data, { map = null, onPick = null, layerId 
       lines.forEach((t, i) => kids.push(s('text', { class: 'at-ring-text', y: round1((i - (lines.length - 1) / 2) * fs * 1.05 + fs * 0.35), 'font-size': round1(fs),
         fill: INK, 'text-anchor': 'middle', 'font-weight': i ? 600 : 800, 'pointer-events': 'none' }, t)));
     }
+    // 키보드 초점 테두리(바깥 지름 + 3px) — 다시 그려도 초점 상태를 이어 감
+    x.ring = s('circle', { class: 'at-ring-focus', r: round1(R + 3), fill: 'none', stroke: FOCUS, 'stroke-width': 2.5, 'pointer-events': 'none', display: x.focused ? null : 'none' });
+    kids.push(x.ring);
     x.el.replaceChildren(...kids);
   }
+  const setFocus = (x, on) => { x.focused = on; if (x.ring) setAttr(x.ring, 'display', on ? null : 'none'); };
 
   function build(g) {
     root = s('g', { class: 'at-rings' });
     for (const x of items) {
       x.el = s('g', { class: 'at-ring', role: 'button', tabindex: 0, 'aria-label': x.it.title, cursor: 'pointer',
-        on: { click: (e) => { e.stopPropagation(); onPick?.(x.f, e); }, keydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick?.(x.f, e); } } } });
+        on: { focus: () => setFocus(x, true), blur: () => setFocus(x, false),
+          click: (e) => { e.stopPropagation(); onPick?.(x.f, e); }, keydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick?.(x.f, e); } } } });
       x.key = '';
       root.append(x.el);
     }
@@ -86,7 +92,7 @@ export function chartSymbolLayer(id, data, { map = null, onPick = null, layerId 
       return null;
     },
     labelObstacles: () => items.filter((x) => x.xy).map((x) => [x.xy[0] - x.r, x.xy[1] - x.r, x.xy[0] + x.r, x.xy[1] + x.r]),
-    destroy() { offs.forEach((off) => off()); offs.length = 0; },
+    destroy() { offs.forEach((off) => off()); offs.length = 0; root?.remove(); root = null; },
   };
   const offs = connect({ map, layerId, onHover });
   return layer;

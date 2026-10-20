@@ -250,7 +250,7 @@ test('snapSymbols: 이름(끝 「(연도)」 뺌)이 Natural Earth 에 하나뿐
 });
 
 // ── U4-3a·c·f 파이프라인: multiFill 넘김 · 고리 기호 레이어 · 미확정 국경 ─────────────────
-const { chartSymbolsLayerJson, disputedLayerJson } = await import('../../scripts/atlas/build_layers.mjs');
+const { chartSymbolsLayerJson, disputedLayerJson, clipLineToBox } = await import('../../scripts/atlas/build_layers.mjs');
 
 test('countryClassLayerJson: multiFill(country_class 설정 multi) 은 그대로 넘기고, 없으면 키도 없음(u3 생성물 그대로)', () => {
   const cc = { legend: [{ cls: 'c1', color: '#3a9a48', label: '아랍어', kind: 'fill' }, { cls: 'c2', color: '#a7a9ac', label: '기타', kind: 'fill' }], classes: { MAR: ['c1', 'c2'], EGY: 'c1' } };
@@ -298,6 +298,19 @@ test('disputedLayerJson: FEATURECLA·나라 짝(차례 상관없음)·단원 상
   assert.deepEqual(out.properties.legend, [{ cls: 'c1', color: '#ed1c24', label: '미확정 국경', kind: 'line', dashed: true, present: true }]);
   assert.throws(() => disputedLayerJson({ ...layer, disputed: { ...layer.disputed, pairs: [...layer.disputed.pairs, ['Somalia', 'Ethiopia']] } }, gj, [[-37, -39, 67, 42]]), /Ethiopia \| Somalia/);
   assert.throws(() => disputedLayerJson({ ...layer, disputed: {} }, gj), /featurecla/);
+});
+
+test('disputedLayerJson: 상자 밖으로 걸친 선은 잘라 안쪽만(통째로 버리지 않음), 상자 밖에만 있는 짝은 멈춤 — clipLineToBox 들락거림·보간', () => {
+  assert.deepEqual(clipLineToBox([[-1, 0], [1, 0]], [0, -1, 2, 1]), [[[0, 0], [1, 0]]], '왼쪽 끝 잘림');
+  assert.deepEqual(clipLineToBox([[0.5, 0], [3, 0], [3, 0.5], [0.5, 0.5]], [0, -1, 2, 1]), [[[0.5, 0], [2, 0]], [[2, 0.5], [0.5, 0.5]]], '나갔다 들어오면 두 조각');
+  assert.deepEqual(clipLineToBox([[5, 5], [6, 6]], [0, -1, 2, 1]), [], '밖');
+  assert.deepEqual(clipLineToBox([[0.2, 0.2], [0.4, 0.4], [0.6, 0.2]], [0, -1, 2, 1]), [[[0.2, 0.2], [0.4, 0.4], [0.6, 0.2]]], '안이면 그대로');
+  const ln = (l, r, coords) => ({ type: 'Feature', properties: { FEATURECLA: 'Disputed (please verify)', ADM0_LEFT: l, ADM0_RIGHT: r }, geometry: { type: 'LineString', coordinates: coords } });
+  const gj = { type: 'FeatureCollection', features: [ln('Kenya', 'South Sudan', [[66, 4], [68, 4]]), ln('Egypt', 'Sudan', [[70, 22], [71, 22]])] };
+  const layer = { id: 'ne-disputed', disputed: { featurecla: ['Disputed (please verify)'], pairs: [['South Sudan', 'Kenya']] } };
+  const out = disputedLayerJson(layer, gj, [[-37, -39, 67, 42]]);
+  assert.deepEqual(out.features[0].geometry.coordinates, [[[66, 4], [67, 4]]], '상자 끝 67°E 까지');
+  assert.throws(() => disputedLayerJson({ ...layer, disputed: { ...layer.disputed, pairs: [['Egypt', 'Sudan']] } }, gj, [[-37, -39, 67, 42]]), /Egypt \| Sudan/, '상자 밖에만 있는 짝은 멈춤');
 });
 
 test('chartSymbolsLayerJson: ring true 는 donut 값을 수로, 계열 색이 colors 면 첫 색', () => {

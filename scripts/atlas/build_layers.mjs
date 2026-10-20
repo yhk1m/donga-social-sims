@@ -434,15 +434,17 @@ export function disputedLayerJson(layer, gj, boxes = []) {
   if (!cla.size) throw new Error(`${layer.id}: disputed.featurecla 가 없음`);
   const key = (a, b) => [a, b].sort().join(' | ');
   const pairs = new Map((d.pairs || []).map((p) => [key(...p), 0]));
-  const inBox = (c) => !boxes.length || boxes.some(([w, s0, e, n]) => c[0] >= w && c[0] <= e && c[1] >= s0 && c[1] <= n);
   const lines = [];
   for (const f of gj.features) {
     const p = f.properties, k = key(p.ADM0_LEFT, p.ADM0_RIGHT);
     if (!cla.has(p.FEATURECLA) || (pairs.size && !pairs.has(k))) continue;
     for (const L of f.geometry.type === 'LineString' ? [f.geometry.coordinates] : f.geometry.coordinates) {
-      if (!L.every(inBox)) continue;
-      lines.push(L.map(([x, y]) => [r3(x), r3(y)]));
-      if (pairs.size) pairs.set(k, pairs.get(k) + 1);
+      // 상자 밖으로 나가는 선은 통째로 버리지 않고 상자에 잘라 안쪽 조각만(상자가 여럿이면 상자마다)
+      for (const part of boxes.length ? boxes.flatMap((b) => clipLineToBox(L, b)) : [L]) {
+        if (part.length < 2) continue;
+        lines.push(part.map(([x, y]) => [r3(x), r3(y)]));
+        if (pairs.size) pairs.set(k, pairs.get(k) + 1);
+      }
     }
   }
   const none = [...pairs].filter(([, n]) => !n).map(([k]) => k);
@@ -454,6 +456,32 @@ export function disputedLayerJson(layer, gj, boxes = []) {
       source: `Natural Earth 10m 육지 국경선(${[...cla].join(', ')})`, legend: [{ cls: 'c1', color, label, kind: 'line', dashed: true, present: true }] },
     features: [{ type: 'Feature', properties: { type: 'line', cls: 'c1', label, color, dashed: true }, geometry: { type: 'MultiLineString', coordinates: lines } }],
   };
+}
+
+/**
+ * 꺾은선 L([[x, y]…])을 경위도 상자 [w, s, e, n] 로 자른 안쪽 조각들(Liang–Barsky, 마디마다) — 상자를 들락거리면 조각 여럿.
+ * 상자 경계에 걸친 점은 잘린 자리(보간)로 넣는다.
+ */
+export function clipLineToBox(L, [w, s0, e, n]) {
+  const parts = [];
+  let cur = null;
+  const same = (a, b) => a && b && a[0] === b[0] && a[1] === b[1];
+  for (let i = 0; i + 1 < L.length; i++) {
+    const [x0, y0] = L[i], [x1, y1] = L[i + 1], dx = x1 - x0, dy = y1 - y0;
+    let t0 = 0, t1 = 1, ok = true;
+    for (const [pp, q] of [[-dx, x0 - w], [dx, e - x0], [-dy, y0 - s0], [dy, n - y0]]) {
+      if (pp === 0) { if (q < 0) { ok = false; break; } continue; }
+      const r = q / pp;
+      if (pp < 0) { if (r > t1) { ok = false; break; } if (r > t0) t0 = r; } else { if (r < t0) { ok = false; break; } if (r < t1) t1 = r; }
+    }
+    if (!ok) { if (cur) { parts.push(cur); cur = null; } continue; }
+    const a = t0 === 0 ? [x0, y0] : [x0 + t0 * dx, y0 + t0 * dy], b = t1 === 1 ? [x1, y1] : [x0 + t1 * dx, y0 + t1 * dy];
+    if (!cur || !same(cur[cur.length - 1], a)) { if (cur) parts.push(cur); cur = [a]; }
+    cur.push(b);
+    if (t1 < 1) { parts.push(cur); cur = null; }
+  }
+  if (cur) parts.push(cur);
+  return parts.filter((q) => q.length >= 2);
 }
 
 function writeLayer(layer, out, extra = {}) {

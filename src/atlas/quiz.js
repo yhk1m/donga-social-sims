@@ -116,14 +116,14 @@ export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85,
     for (const iso of smallIsos || [...(byIso['50']?.keys() || [])]) {
       const inf = infoOf(iso, view);
       if (!inf) continue;
-      const [[w, s0], [e, n]] = inf.b;
-      if (e < w) continue; // 날짜변경선을 넘는 나라(러시아 등)는 작은 나라가 아님
       if (smallMetric === 'area') {
         const big = inf.big, px = big && areaPx(proj, big);
         if (px == null || px >= smallPx) continue;
         drawMark(ctx, iso, proj(big.c), W, H);
         continue;
       }
+      const [[w, s0], [e, n]] = inf.b;
+      if (e < w) continue; // 상자 기준: 날짜변경선을 넘는 나라(러시아 등)는 작은 나라가 아님
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, ok = true;
       for (const ll of [[w, s0], [e, s0], [e, n], [w, n], [(w + e) / 2, s0], [(w + e) / 2, n]]) {
         const q = proj(ll);

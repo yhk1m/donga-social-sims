@@ -716,3 +716,25 @@ test('coloringLayer smallMetric area(U4-3e): 가늘고 긴 나라·흩어진 섬
   arcs.length = 0; area.draw(ctx, geoPath(zoom, ctx), { width: 4000, height: 2000, geoRect: null });
   assert.deepEqual(arcs.map((a) => Math.round(zoom.invert([a.x, a.y])[0] * 100) / 100), [20.05]);
 });
+
+test('coloringLayer smallMetric area: 날짜변경선을 넘는 흩어진 섬나라(상자 e < w)도 넓이로 잼, 상자 기준은 여전히 건너뜀(U4-3 리뷰 후속)', async () => {
+  const { geoEquirectangular, geoPath } = await import('d3-geo');
+  const rect = (x, y, w, hh) => [[[x, y], [x, y + hh], [x + w, y + hh], [x + w, y], [x, y]]];
+  // FJI 꼴: 179.5°E 섬(0.3°) + −179.8° 섬(0.1°) → geoBounds 상자가 날짜변경선을 넘음(e < w)
+  const f = { type: 'Feature', properties: { iso: 'FJI', ko: 'FJI' }, geometry: { type: 'MultiPolygon', coordinates: [rect(179.5, -17, 0.3, 0.3), rect(-179.8, -16.5, 0.1, 0.1)] } };
+  const { geoBounds } = await import('d3-geo');
+  const b = geoBounds(f);
+  assert.ok(b[1][0] < b[0][0], `상자가 날짜변경선을 넘어야 함 ${JSON.stringify(b)}`);
+  const proj = geoEquirectangular().rotate([-180, 0]).scale(10 * 180 / Math.PI).translate([400, 300]);
+  const arcs = [];
+  const ctx = { beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {}, stroke() {}, arc(x, y, r) { arcs.push({ x, y, r }); } };
+  const view = { width: 800, height: 600, geoRect: null };
+  const area = coloringLayer([f], { smallPx: 16, smallIsos: ['FJI'], smallMetric: 'area' });
+  area.draw(ctx, geoPath(proj, ctx), view);
+  assert.equal(arcs.length, 1, '넓이 기준: 가장 큰 섬(3px)에 동그라미');
+  const ll = proj.invert([arcs[0].x, arcs[0].y]);
+  assert.ok(Math.abs(ll[0] - 179.65) < 0.05 && Math.abs(ll[1] + 16.85) < 0.05, JSON.stringify(ll));
+  arcs.length = 0;
+  coloringLayer([f], { smallPx: 16, smallIsos: ['FJI'] }).draw(ctx, geoPath(proj, ctx), view);
+  assert.equal(arcs.length, 0, '상자 기준(u3): 날짜변경선 넘는 나라는 건너뜀 그대로');
+});

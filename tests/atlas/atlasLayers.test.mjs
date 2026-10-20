@@ -918,6 +918,26 @@ test('chartSymbolLayer: 고리(조각 = 계열, 가운데 글자), 맞히기는 
   assert.equal(L.labelObstacles().length, 0);
 });
 
+test('chartSymbolLayer: 키보드 초점이면 바깥 초점 테두리가 보이고(다시 그려도 유지) blur 면 숨김, destroy 는 뿌리 <g> 를 지움(U4-3 리뷰 후속)', () => {
+  const L = chartSymbolLayer('rc', ringData());
+  const g = document.createElementNS('svg', 'g'); const v = viewOf();
+  L.drawSvg(g, v.project, v.view);
+  const ringEl = g.childNodes[0].childNodes[0];
+  const focusOf = () => ringEl.childNodes.find((c) => c.getAttribute?.('class') === 'at-ring-focus');
+  assert.equal(focusOf().getAttribute('display'), 'none', '처음엔 숨김');
+  ringEl.dispatch('focus');
+  assert.notEqual(focusOf().getAttribute('display'), 'none', '초점 → 보임');
+  assert.equal(focusOf().getAttribute('fill'), 'none');
+  const vk = viewOf({ k: 4 }); L.drawSvg(g, vk.project, vk.view);                 // 크기가 바뀌어 다시 그림
+  assert.notEqual(focusOf().getAttribute('display'), 'none', '다시 그려도 초점 유지');
+  ringEl.dispatch('blur');
+  assert.equal(focusOf().getAttribute('display'), 'none', 'blur → 숨김');
+  L.destroy();
+  assert.equal(g.childNodes.length, 0, 'destroy 뒤 뿌리 <g> 없음');
+  L.drawSvg(g, v.project, v.view);
+  assert.equal(g.childNodes.length, 1, '다시 그리면 새로 만듦(뿌리 하나)');
+});
+
 test('layerFromRef: type chartSymbols — 등록 전에는 모르는 종류(u2·u3 조각엔 코드 없음), registerLayerType 뒤 고리 기호 레이어(범례 없음), 누르면 onPick 에 그래프 id', async () => {
   assert.throws(() => layerFromRef({ ref: 'rc', type: 'chartSymbols' }, { rc: ringData() }), /모르는 레이어 종류 chartSymbols/);
   const { registerLayerType } = await import('../../src/atlas/layerRef.js');
