@@ -178,9 +178,9 @@ test('모르는 단원·쪽 없는 단원은 오류', () => assert.throws(() => 
 
 **Files:** Create `scripts/atlas/config/u4.json`, `scripts/atlas/maps_u4.json`, `scripts/atlas/tests/test_maps_u4.py`; Modify `scripts/atlas/units.json`
 
-- [ ] **Step 1:** `units.json`에 `"u4": { "sim": "atlas-u4-africa", "title": "Ⅳ. 아프리카", "pages": [34, 39], "config": "config/u4.json" }`.
-- [ ] **Step 2:** `config/u4.json`은 **u3 설정의 키 구조를 복사**해 만든다(값은 비우거나 아프리카 값): `maps: "../maps_u4.json"`, `out: "sims/atlas-u4-africa/data"`, `photos.outJson: content/atlas/u4/photos.json`, `photos.assetDir: docs/assets/atlas/u4`, `photos.assetPrefix: "u4/"`, 작업 파일 키(places.index.out·charts.out·content.labels·content.charts·photos.sheetDir)는 `units/u4/…`(유럽 U3-1 결정 — `@unit/`을 풀지 않는 키), 도장은 `@unit/…`. `tint`·`natural` 절 없음. `georef.families`: 1단계 8개(정거 방위 `azimuthalEquidistant` 포함 — 새 후보 불필요). `basemap.unitBoxes`: 34쪽 틀 어림 `[[-30, -40, 65, 42]]`(U4-2 뒤 fit 으로 다시). `basemap.levels` 10a 의 `simplifyByIso`는 **두지 않음**(아프리카 상자에 한반도 없음 — 유럽 U3-9 `checkByIso` 결정).
-- [ ] **Step 3:** `python -I scripts/atlas/find_maps.py 34 39`(34쪽은 작은 그림 12,000여 개가 후보를 덮으면 크기 하한 옵션으로) + 쪽 렌더를 보며 `maps_u4.json`. kind 는 1단계·유럽 목록 + `language|religion|resources|solar|afcfta|desertification`.
+- [x] **Step 1:** `units.json`에 `"u4": { "sim": "atlas-u4-africa", "title": "Ⅳ. 아프리카", "pages": [34, 39], "config": "config/u4.json" }`.
+- [x] **Step 2:** `config/u4.json`은 **u3 설정의 키 구조를 복사**해 만든다(값은 비우거나 아프리카 값): `maps: "../maps_u4.json"`, `out: "sims/atlas-u4-africa/data"`, `photos.outJson: content/atlas/u4/photos.json`, `photos.assetDir: docs/assets/atlas/u4`, `photos.assetPrefix: "u4/"`, 작업 파일 키(places.index.out·charts.out·content.labels·content.charts·photos.sheetDir)는 `units/u4/…`(유럽 U3-1 결정 — `@unit/`을 풀지 않는 키), 도장은 `@unit/…`. `tint`·`natural` 절 없음. `georef.families`: 1단계 8개(정거 방위 `azimuthalEquidistant` 포함 — 새 후보 불필요). `basemap.unitBoxes`: 34쪽 틀 어림 `[[-30, -40, 65, 42]]`(U4-2 뒤 fit 으로 다시). `basemap.levels` 10a 의 `simplifyByIso`는 **두지 않음**(아프리카 상자에 한반도 없음 — 유럽 U3-9 `checkByIso` 결정).
+- [x] **Step 3:** `python -I scripts/atlas/find_maps.py 34 39`(34쪽은 작은 그림 12,000여 개가 후보를 덮으면 크기 하한 옵션으로) + 쪽 렌더를 보며 `maps_u4.json`. kind 는 1단계·유럽 목록 + `language|religion|resources|solar|afcfta|desertification`.
   - 지도 12개:
 
     | id | kind | 지면 | 기준점 길 |
@@ -197,9 +197,9 @@ test('모르는 단원·쪽 없는 단원은 오류', () => assert.throws(() => 
     | `p39-desert` | desertification | 잘린 틀(서아프리카~아프리카의 뿔, 500km) | 해안 꺾인 점(베르데곶·본곶·하푼곶)·차드호, 안 되면 `projectionFrom: p34-africa` + 닮음 |
 
   - 지도로 넣지 않는 것: 38쪽 「아프리카의 면적 비교」 삽화, 39쪽 「의제 2063」 그림 → 사진 카드(벡터 삽화를 렌더해 자름). 39쪽 AfCFTA 수치 그림 → 표 카드. 37·38·39쪽 사진 위 말풍선·활동 상자는 활동 블록.
-- [ ] **Step 4: 개수 대조** — `python -I -c "import json;print(len(json.load(open('scripts/atlas/maps_u4.json',encoding='utf-8'))))"` = 12. 설계 §5.2 표(13)와 다른 까닭을 「실행 중 결정」에(면적 비교는 삽화).
-- [ ] **Step 5: 테스트** `scripts/atlas/tests/test_maps_u4.py`(test_maps_u3.py 꼴): id 유일·쪽 34~39·bbox 가 쪽 안·kind 가 정해진 목록·`georef:false` 아닌 지도는 `graticuleLabels` 또는 `shapes`/`controls`·`projectionFrom`이 가리키는 지도가 목록에 있음.
-- [ ] **Step 6:** 커밋(`scripts/atlas/units.json scripts/atlas/config/u4.json scripts/atlas/maps_u4.json scripts/atlas/tests/test_maps_u4.py`).
+- [x] **Step 4: 개수 대조** — `python -I -c "import json;print(len(json.load(open('scripts/atlas/maps_u4.json',encoding='utf-8'))))"` = 12. 설계 §5.2 표(13)와 다른 까닭을 「실행 중 결정」에(면적 비교는 삽화).
+- [x] **Step 5: 테스트** `scripts/atlas/tests/test_maps_u4.py`(test_maps_u3.py 꼴): id 유일·쪽 34~39·bbox 가 쪽 안·kind 가 정해진 목록·`georef:false` 아닌 지도는 `graticuleLabels` 또는 `shapes`/`controls`·`projectionFrom`이 가리키는 지도가 목록에 있음.
+- [x] **Step 6:** 커밋(`scripts/atlas/units.json scripts/atlas/config/u4.json scripts/atlas/maps_u4.json scripts/atlas/tests/test_maps_u4.py`).
 
 ### Task U4-2: 기준점과 경위도 맞추기
 
@@ -499,3 +499,9 @@ test('태양광 묶음은 태평양 중심 지도', () => assert.ok(by.potential
   - u2 확인: 옮기기 전 `regress_u2.mjs --check` 출력과 옮긴 뒤 `regress_u2.mjs --check`·`regress_unit.mjs --unit u2 --check` 출력이 글자까지 같음(diff 0) — 해시 163개 중 도장만 다름 2(coloring.json·basemap.json), 캡처 41장 화소 차 0(화면 지명 수만 heritage 3장면 100→101, 참고), 대조표 0/9/134/24 수·HTML 같음, 조각 2,058.1 KB(+0.790%) — 회귀 없음. u2 기준선 파일은 건드리지 않음.
   - u3 기준선: `compare_shots --unit u3`(31장) → `compare --unit u3`(다름 0 · 알려진 차이 26 · 같음 118 · 참고 42) → `npm run embed -- atlas-u3-europe`(1,461,440 B = 1,427.2 KB, 유럽 공개 때와 바이트 수 같음) → `--unit u3 --baseline`: 해시 194개(저장소 134 = sims/atlas-u3-europe/data 16 · content/atlas/u3 5 · docs/assets/atlas/u3 106 · common 3 · docs/atlas-u3-europe 3 · 조각 1; 작업 폴더 60 = vec 39 · fit 15 · places-p26 1 · units/u3 의 p27-labels·charts-u3·climate-world·index·city-holdout 5). 곧바로 `--check` 다름 0·화소 차 0. **캡처를 한 번 더 찍고 compare 다시 → `--check`도 다름 0·화소 차 0·화면 값 같음**(u3 캡처가 결정적임 — fixedNow 덕, u2 heritage 지명 수 흔들림 같은 것도 없음).
   - 시험 `tests/atlas/regressUnit.test.mjs` 5개(쪽 접두·u2 명세 옛 값·u2 쪽 무늬 = 옛 정규식·u3 명세·모르는 단원/쪽 없음/설정 없음 오류). npm test: **Python 279 · Node 464**(459 + 5).
+- (U4-1, 2026-10-20) 아프리카 설정 뼈대·지도 목록 — `units.json` u4, `config/u4.json`, `maps_u4.json`(12장), `test_maps_u4.py`
+  - **지도 12장**(설계 §5.2 표의 13 과 다름): 38쪽 「아프리카의 면적 비교」는 아프리카 위에 나라 12개 윤곽을 겹친 삽화라 지도로 세지 않고 사진 카드(U4-6), 39쪽 「의제 2063」도 삽화. 쪽 목록 표의 12장 그대로 — `p34-africa`(general, 경위선 눈금) · `p35-coloring` · `p36-relief` · `p37-climate`(눈금 12개 + 섬) · `p37-jan`·`p37-jul` · `p38-language`·`p38-religion`·`p38-resources`·`p38-solar` · `p39-afcfta`·`p39-desert`.
+  - `config/u4.json` = 유럽 U3-1 뼈대(git 88e6dd0 의 u3.json)의 키 구조 + 그 뒤 u3 에 생긴 공용 절(`shapeControls` 수치, `places` 양식 표·glue — U4-5 에서 34쪽을 보고 고침). 단원 고유 값은 비움(layers·photos.items·charts.items·insets·neAlias·extraNames). 작업 파일 키는 `units/u4/…`, 도장은 `@unit/…`, 색칠하기 라벨은 `units/u4/text/p35-labels.json`. `basemap.levels` 10a 에 `simplifyByIso` 없음(유럽 U3-9 와 같은 까닭), `unitBoxes`·`places.neBox` 어림 `[-30, -40, 65, 42]`(U4-2 에서 fit 으로 다시). `regress_unit` 의 `unitSpec('u4')`가 설정에서 경로를 끝까지 푸는 것 확인.
+  - 틀·덮개 상자는 쪽 그리기·글자에서 잼(`find_maps.py 34 39`: 34쪽 눈금 글자 32 · 37쪽 16(기후 구분 12 + 1·7월 적도 「0˚」 4) · 나머지 쪽 0, 클립 사각은 참고만). 계획의 덮개 어림(예: 36쪽 활동하기 [45,505,275,535])은 화소 값이 섞여 있어 글자 상자로 다시 잼 — 36쪽 [33,503,196,537], 37쪽 기후 구분 「활동하기 2」 [42,430,255,456](틀 안이라 cartoucheBbox), 35쪽 개관 글 상자 [52,527,321,690].
+  - 38쪽 자원 지도 틀은 둘레 고리 그래프 7개를 피해 작은 아프리카만([438,168,557,304]) — 고리의 회색 조각이 땅 색 #ede9e4 와 거의 같다. 39쪽 사막화 틀 아래 끝은 지도 그림 끝(583.4)까지 — 위험 단계 범례와 원 크기 그래프는 틀 밖(U4-4 에서 범례를 읽을 때 넓힐지 정함).
+  - 처음 식(`shapes.init`)은 섬 씨앗(`seeds`, 교과서 자리 = land_shapes 도형 넓이 중심). 섬이 없는 39쪽 사막화는 새 꼴 `{"fromMap": "p34-africa", "pts": [베르데곶, 과르다푸이곶]}`(U4-2 에서 shape_controls 에 더함). 작은 지도 7장은 `tips: true`(대륙 해안 꺾인 점 — 대륙은 Natural Earth 10m 육지에서 유라시아와 한 조각이라 넓이 중심 짝이 없다).
