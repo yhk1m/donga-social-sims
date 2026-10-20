@@ -15,7 +15,8 @@ import layerData from './data/layers.js';
 const BASE_COLOR = { general: 'tint', relief: 'natural' };
 // 확대 창(insets)은 두지 않는다: 30쪽 소피아 앙티폴리스·베네치아는 사진 카드이고, 27쪽 색칠하기의 작은 나라(안도라·리히텐슈타인·모나코·
 // 몰타·산마리노·바티칸·룩셈부르크)는 교과서도 확대 창 없이 ★·이름만 둔다. 대신 바티칸(최대 확대에서도 약 1px)·모나코(약 7px)처럼
-// 화면에서 8px 보다 작은 27쪽 나라는 지름 8px 동그라미로 그려 칠하고 누를 수 있게 한다(U3-9 캡처 확인 — 계획 「실행 중 결정」).
+// 나라 전체가 화면에서 8px 보다 작은 27쪽 나라는 반지름 7px 동그라미(수도 기호 네모를 둘러싸는 테)로 그려 칠하고 누를 수 있게 한다
+// (U3-9 캡처 확인 — 계획 「실행 중 결정」).
 const COLORING = { smallPx: 8 };
 
 export default function mount(root) {

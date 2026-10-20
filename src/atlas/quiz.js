@@ -7,7 +7,7 @@
 //
 // 색칠하기: 팔레트 색을 고르고 지도에서 나라를 누르면 그 색으로 칠한다(같은 색으로 다시 누르면 지움, 지우개). 17쪽 나라(46개)만 칠한다.
 // 이름 맞히기: 무작위 나라 하나를 칠해 강조하고 그 둘레로 화면을 옮긴 뒤 보기 4개. 맞힌 수/푼 수.
-import { geoBounds } from 'd3-geo';
+import { geoBounds, geoCentroid } from 'd3-geo';
 import { h, icon } from '../shared/dom.js';
 import { indexGeometry, clipIndexed } from './geoClip.js';
 import { mulberry32, quizOptions, pickNext, shuffle, photoCropStyle } from './uiCore.js';
@@ -20,8 +20,10 @@ const TARGET = { fill: '#ff922b', stroke: '#c2410c' };
 /**
  * 나라 칠하기 레이어. features = 바탕 지도 나라 Feature 들({properties:{iso, ko}}) — 상세도별로 줄 수 있다: { '50': [...], '10a': [...] }
  * (view.detail 이 '10a' 면 10a, 아니면 50). layer.paint(iso, color|null), layer.colorOf(iso), layer.setTarget(iso|null), layer.clear().
- * smallPx > 0 이면(유럽 27쪽 — 바티칸·모나코는 최대 확대에서도 1~8px) smallIsos 중 화면 상자가 smallPx 보다 작은 나라를 지름 smallPx 의
- * 동그라미로 덧그리고(칠한 색 / 문제 강조 주황 / 안 칠했으면 흰 바탕 + 회색 테), 그 동그라미를 누르면(반지름 + 3px) 그 나라로 맞힌다(layer.hit).
+ * smallPx > 0 이면(유럽 27쪽 — 바티칸·모나코는 최대 확대에서도 1~8px) smallIsos 중 화면 크기가 smallPx 보다 작은 나라를 반지름
+ * smallPx/2 + 3 의 동그라미로 덧그리고(칠한 색 / 문제 강조 주황 / 안 칠했으면 흰 바탕, 굵은 테 — 수도 기호 6px 네모보다 커서 그 밑에 묻히지
+ * 않음), 그 동그라미를 누르면(반지름 + 3px) 그 나라로 맞힌다(layer.hit). 크기는 화면에 잘린 도형이 아니라 나라 전체의 경위도 상자를 투영해
+ * 잰다(가장자리에 조금만 걸친 큰 나라에 동그라미가 생기지 않게). 경위도 상자·중심은 나라마다 한 번만 계산하고, 화면 크기가 작은 나라만 그린다.
  * 0(기본)이면 동그라미·hit 없음 — 아시아(u2) 그림·동작 그대로.
  */
 export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85, smallPx = 0, smallIsos = null } = {}) {
@@ -34,6 +36,8 @@ export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85,
   const colors = new Map();
   let target = null;
   let marks = []; // 작은 나라 동그라미 화면 자리 [{iso, x, y}] — 마지막 draw 의 것(smallPx > 0 일 때만)
+  const markR = smallPx / 2 + 3;
+  const lonlatInfo = new Map(); // '<상세도>:<iso>' → { b: [[w, s], [e, n]], c: [lon, lat] } — 나라 전체(잘리기 전), 한 번만
   const geomOf = (iso, view) => {
     const lv = view?.detail === '10a' && byIso['10a']?.has(iso) ? '10a' : (byIso['50'] ? '50' : Object.keys(byIso)[0]);
     const it = byIso[lv]?.get(iso);
@@ -75,30 +79,57 @@ export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85,
       let best = null, bd = Infinity;
       for (const m of marks) {
         const d = Math.hypot(xy[0] - m.x, xy[1] - m.y);
-        if (d <= smallPx / 2 + 3 && d < bd) { bd = d; best = m; }
+        if (d <= markR + 3 && d < bd) { bd = d; best = m; }
       }
       return best ? layer.feature(best.iso) : null;
     };
   }
   return layer;
 
-  /** 작은 나라 동그라미(화면 상자 < smallPx) — 칠한 색·문제 강조 위에 덧그림, 자리는 hit 이 씀 */
+  /** 나라 전체 경위도 상자·중심(그 상세도 도형, 처음 한 번) — 중심이 안 나오면(넓이 없는 도형) 상자 가운데 */
+  function infoOf(iso, view) {
+    const lv = view?.detail === '10a' && byIso['10a']?.has(iso) ? '10a' : (byIso['50'] ? '50' : Object.keys(byIso)[0]);
+    const key = `${lv}:${iso}`;
+    if (lonlatInfo.has(key)) return lonlatInfo.get(key);
+    const f = byIso[lv]?.get(iso)?.f;
+    let v = null;
+    if (f) {
+      const b = geoBounds(f);
+      let c = geoCentroid(f);
+      if (!Number.isFinite(c[0]) || !Number.isFinite(c[1])) c = [(b[0][0] + b[1][0]) / 2, (b[0][1] + b[1][1]) / 2];
+      v = { b, c };
+    }
+    lonlatInfo.set(key, v);
+    return v;
+  }
+  /** 작은 나라 동그라미(나라 전체 화면 크기 < smallPx) — 칠한 색·문제 강조 위에 덧그림, 자리는 hit 이 씀 */
   function drawSmall(ctx, path, view) {
     marks = [];
-    const r = smallPx / 2;
+    const proj = path.projection?.();
+    if (!proj) return;
+    const W = view?.width ?? Infinity, H = view?.height ?? Infinity;
     for (const iso of smallIsos || [...(byIso['50']?.keys() || [])]) {
-      const g = geomOf(iso, view);
-      if (!g) continue;
-      const [[x0, y0], [x1, y1]] = path.bounds(g);
-      if (!(x1 >= x0 && y1 >= y0) || Math.max(x1 - x0, y1 - y0) >= smallPx) continue;
-      const [x, y] = path.centroid(g);
-      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      const inf = infoOf(iso, view);
+      if (!inf) continue;
+      const [[w, s0], [e, n]] = inf.b;
+      if (e < w) continue; // 날짜변경선을 넘는 나라(러시아 등)는 작은 나라가 아님
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, ok = true;
+      for (const ll of [[w, s0], [e, s0], [e, n], [w, n], [(w + e) / 2, s0], [(w + e) / 2, n]]) {
+        const q = proj(ll);
+        if (!q || !Number.isFinite(q[0]) || !Number.isFinite(q[1])) { ok = false; break; }
+        x0 = Math.min(x0, q[0]); y0 = Math.min(y0, q[1]); x1 = Math.max(x1, q[0]); y1 = Math.max(y1, q[1]);
+      }
+      if (!ok || Math.max(x1 - x0, y1 - y0) >= smallPx) continue;
+      const q = proj(inf.c);
+      if (!q || !Number.isFinite(q[0]) || !Number.isFinite(q[1])) continue;
+      const [x, y] = q;
+      if (x < -markR || y < -markR || x > W + markR || y > H + markR) continue; // 화면 밖
       marks.push({ iso, x, y });
       const isTarget = iso === target, c = colors.get(iso);
       ctx.globalAlpha = 1;
-      ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI);
+      ctx.beginPath(); ctx.arc(x, y, markR, 0, 2 * Math.PI);
       ctx.fillStyle = isTarget ? TARGET.fill : c || 'rgba(255,255,255,0.85)'; ctx.fill();
-      ctx.lineWidth = isTarget ? 2 : 1.2; ctx.strokeStyle = isTarget ? TARGET.stroke : '#6b6b6b'; ctx.stroke();
+      ctx.lineWidth = isTarget ? 2.5 : 2; ctx.strokeStyle = isTarget ? TARGET.stroke : '#4d4d4d'; ctx.stroke();
     }
   }
 }

@@ -331,34 +331,42 @@ test('coloringQuiz: 누르면 고른 색으로 칠하고(같은 색 다시 = 지
   }
 });
 
-test('coloringLayer smallPx(u3 작은 나라): 화면 상자가 작은 나라만 동그라미(칠한 색·강조·빈 테) + 동그라미 누르면 그 나라, 0 이면 동그라미·hit 없음', () => {
-  const sq = (iso, x, y, d) => ({ type: 'Feature', properties: { iso, ko: iso }, geometry: { type: 'Polygon', coordinates: [[[x, y], [x + d, y], [x + d, y + d], [x, y + d], [x, y]]] } });
-  const feats = [sq('BIG', 0, 0, 10), sq('VAT', 20, 20, 0.1), sq('MCO', 30, 30, 0.5)];
-  // 1° = 1px 인 가짜 경로(bounds·centroid 는 첫 고리 상자)
-  const ring = (g) => (g.type === 'MultiPolygon' ? g.coordinates[0][0] : g.coordinates[0]);
-  const path = Object.assign(() => {}, {
-    bounds: (g) => { const r = ring(g); const xs = r.map((p) => p[0]), ys = r.map((p) => p[1]); return [[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]]; },
-    centroid: (g) => { const [[a, b], [c, d]] = path.bounds(g); return [(a + c) / 2, (b + d) / 2]; },
-  });
+test('coloringLayer smallPx(u3 작은 나라): 나라 전체 화면 크기가 작은 나라만 동그라미(칠한 색·강조·빈 테) + 누르면 그 나라, 화면에 조금만 걸친 큰 나라는 아님, 0 이면 없음', async () => {
+  const { geoEquirectangular, geoPath } = await import('d3-geo');
+  const sq = (iso, x, y, d) => ({ type: 'Feature', properties: { iso, ko: iso }, geometry: { type: 'Polygon', coordinates: [[[x, y], [x, y + d], [x + d, y + d], [x + d, y], [x, y]]] } });
+  // BIG 10°, VAT 0.1°, MCO 0.5°, EDGE 20° 나라(화면 왼쪽 위 모서리에 0.2°×0.2° 만 걸침 — 잘린 조각은 2×2px), FAR 0.1°(화면 밖)
+  const feats = [sq('BIG', 0, 0, 10), sq('VAT', 20, 20, 0.1), sq('MCO', 30, 30, 0.5), sq('EDGE', -29.8, 39.8, 20), sq('FAR', 150, 10, 0.1)];
+  // 1° ≈ 10px 정거 원통, 화면 0..800 × 0..600 = 경위도 대략 [-10, -20, 70, 40] → geoRect 로 잘라 그림
+  const proj = geoEquirectangular().scale(10 * 180 / Math.PI).translate([100, 400]);
   const arcs = [];
-  const ctx = { beginPath() {}, fill() { arcs.at(-1) && (arcs.at(-1).fill = this.fillStyle); }, stroke() { arcs.at(-1) && (arcs.at(-1).stroke = this.strokeStyle); }, arc(x, y, r) { arcs.push({ x, y, r }); } };
+  const ctx = { beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() { arcs.at(-1) && (arcs.at(-1).fill = this.fillStyle); }, stroke() { arcs.at(-1) && (arcs.at(-1).stroke = this.strokeStyle); }, arc(x, y, r) { arcs.push({ x, y, r }); } };
+  const path = geoPath(proj, ctx);
+  const view = { width: 800, height: 600, geoRect: [-10, -20, 70, 40] };
   const plain = coloringLayer(feats);
   assert.equal(plain.hit, undefined, '기본(0)은 hit 없음 — u2 동작 그대로');
-  plain.draw(ctx, path, {});
+  plain.draw(ctx, path, view);
   assert.equal(arcs.length, 0, '기본(0)은 동그라미 없음');
-  const layer = coloringLayer(feats, { smallPx: 8, smallIsos: ['BIG', 'VAT', 'MCO'] });
+  const layer = coloringLayer(feats, { smallPx: 8, smallIsos: ['BIG', 'VAT', 'MCO', 'EDGE', 'FAR'] });
   layer.paint('MCO', '#b8dea0');
   layer.setTarget('VAT');
-  layer.draw(ctx, path, {});
-  assert.deepEqual(arcs.map((a) => [a.x, a.y, a.r]), [[20.05, 20.05, 4], [30.25, 30.25, 4]], 'BIG(10px)는 동그라미 없음');
+  layer.draw(ctx, path, view);
+  const at = (lon, lat) => proj([lon, lat]).map((v) => Math.round(v * 10) / 10);
+  assert.deepEqual(arcs.map((a) => [Math.round(a.x * 10) / 10, Math.round(a.y * 10) / 10, a.r]), [[...at(20.05, 20.05), 7], [...at(30.25, 30.25), 7]],
+    'BIG(100px)·EDGE(잘린 조각은 2×2px 지만 나라 전체 200px)·FAR(화면 밖)는 동그라미 없음');
   assert.equal(arcs[0].fill, '#ff922b', '문제 강조는 주황');
   assert.equal(arcs[1].fill, '#b8dea0', '칠한 색');
-  assert.equal(layer.hit([22, 22])?.properties.iso, 'VAT', '반지름 + 3px 안');
-  assert.equal(layer.hit([30, 36])?.properties.iso, 'MCO');
-  assert.equal(layer.hit([5, 5]), null, '큰 나라는 바탕 지도 맞히기에 맡김');
+  const v = proj([20.05, 20.05]), m = proj([30.25, 30.25]);
+  assert.equal(layer.hit([v[0] + 8, v[1]])?.properties.iso, 'VAT', '반지름(7) + 3px 안');
+  assert.equal(layer.hit([m[0], m[1] + 9])?.properties.iso, 'MCO');
+  assert.equal(layer.hit([v[0] + 11, v[1]]), null);
+  assert.equal(layer.hit(proj([5, 5])), null, '큰 나라는 바탕 지도 맞히기에 맡김');
   layer.setTarget(null); layer.paint('MCO', null);
-  arcs.length = 0; layer.draw(ctx, path, {});
+  arcs.length = 0; layer.draw(ctx, path, view);
   assert.equal(arcs[0].fill, 'rgba(255,255,255,0.85)', '안 칠했으면 흰 바탕');
+  // 확대하면(1° = 100px) MCO 50px·VAT 10px → 동그라미 없음
+  const big = geoPath(geoEquirectangular().scale(100 * 180 / Math.PI).translate([-2000, 3400]), ctx);
+  arcs.length = 0; layer.draw(ctx, big, { width: 800, height: 600, geoRect: [20, 28, 28, 34] });
+  assert.equal(arcs.length, 0);
 });
 
 test('heritageQuiz: 사진 + 나라/종교 보기 4개, 여러 종교는 묶음이 정답, onFocus, 채점', () => {
