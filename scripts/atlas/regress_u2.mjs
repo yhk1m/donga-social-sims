@@ -120,7 +120,7 @@ function check() {
   }
   const stampOnly = real.filter((x) => x.stampOnly).length;
   if (stampOnly) console.log(`  (그중 도장만 다름 ${stampOnly} — 입력 스크립트를 고치면 정당하게 바뀜, 내용은 같음)`);
-  fail |= real.length > 0;
+  fail |= real.length - stampOnly > 0;   // 도장 값만 다른 것은 정당(입력 스크립트를 고침) — 알리기만
   // 2. 캡처
   const bm = readJson(join(BASE, 'shots', 'manifest.json'));
   const nm = existsSync(join(SHOTS, 'manifest.json')) ? readJson(join(SHOTS, 'manifest.json')) : { shots: [] };
@@ -144,7 +144,11 @@ function check() {
   for (const [n, v] of pxDiff) console.log(`  화소 ${n}: ${v.error || `${v.diff}화소 상자 ${JSON.stringify(v.bbox)}`}`);
   if (labelDiff.length) console.log(`  (참고) 화면 지명 수만 다른 장면 ${labelDiff.length}: ${labelDiff.map((n) => `${n} ${bs[n].stats.labels}→${ns[n].stats.labels}`).join(', ')} — 재는 시점 흔들림, 화소가 같으면 무시`);
   for (const n of statDiff) console.log(`  화면 값 ${n}: ${JSON.stringify(bs[n].stats).slice(0, 200)} → ${JSON.stringify(ns[n].stats).slice(0, 200)}`);
-  fail |= missing.length > 0 || extra.length > 0 || pxDiff.length > 0 || statDiff.length > 0;
+  // 장면 차례·정보(이름·주제·도법·묶음·종류·설명 — stats 뺌)도 같아야 한다(대조표 HTML 의 캡처 차례가 이것을 따름)
+  const infoOf = (m) => JSON.stringify(m.shots.map(({ stats, ...rest }) => rest));
+  const sameInfo = infoOf(bm) === infoOf(nm);
+  console.log(`  장면 차례·정보 ${sameInfo ? "같음" : "다름"}`);
+  fail |= missing.length > 0 || extra.length > 0 || pxDiff.length > 0 || statDiff.length > 0 || !sameInfo;
   // 3. 대조표
   const bc = compareResult(readFileSync(join(BASE, 'compare-u2.html'), 'utf8'));
   const nc = existsSync(COMPARE) ? compareResult(readFileSync(COMPARE, 'utf8')) : { counts: {}, body: '' };

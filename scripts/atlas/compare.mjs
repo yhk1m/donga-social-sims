@@ -1,36 +1,50 @@
 // © 2026 김용현
-// scripts/atlas/compare.mjs — E2 교과서 대조표: $ATLAS_WORK/compare-u2.html (로컬 검토용, 공개하지 않음)
-//   node scripts/atlas/compare.mjs            (캡처는 먼저 node scripts/atlas/compare_shots.mjs)
+// scripts/atlas/compare.mjs — 교과서 대조표: 단원 작업 폴더의 <out> (로컬 검토용, 공개하지 않음 — u2 = $ATLAS_WORK/compare-u2.html)
+//   node scripts/atlas/compare.mjs [--unit uN]   (캡처는 먼저 node scripts/atlas/compare_shots.mjs [--unit uN])
+//   단원 고유 값(색칠하기 글자 파일·확대 창 레이어·화면 기호 없는 레이어·도법/중심 확인·대표 지도·알려진 차이 설명)은
+//   단원 설정 옆 <uN>.compare.json 의 checks·notes(단원 설정은 생성물 도장 때문에 얼려 둠 — 2단계 설계 §4.2).
 //   행 = 주제마다 「주제 확인(사진·그래프·핀·출처·글)」 + 지도(묶음·바로가기)마다 「교과서 쪽 | 웹 캡처 | 확인 항목」.
-//   웹 값 = 생성물(sims/atlas-u2-asia/data: topics·charts·layer-*·overlay·places·inset) + 캡처 때 화면에서 센 값(manifest.json stats).
-//   교과서 값 = 파이프라인 원본: maps_u2.json(제목·영역), $ATLAS_WORK/vec/<map>.features.json(범례·기호·선 추출),
-//     text/places-<map>.json·text/p17-labels.json(지면 지명), tables/charts-u2.json(그래프 추출), content/atlas/u2/photos.json(사진 추출),
+//   웹 값 = 생성물(단원 dataDir, u2 = sims/atlas-u2-asia/data: topics·charts·layer-*·overlay·places·inset) + 캡처 때 화면에서 센 값(manifest.json stats).
+//   교과서 값 = 파이프라인 원본: 지도 목록(u2 = maps_u2.json — 제목·영역), $ATLAS_WORK/vec/<map>.features.json(범례·기호·선 추출),
+//     text/places-<map>.json·색칠하기 글자(checks.coloringLabels)(지면 지명), 설정 content.charts(그래프 추출), content.photos(사진 추출),
 //     설정 content.expect·expectCredits, 그리고 PDF 글자(pdfkit — 쪽 전체 글·인쇄 출처·범례 상자 글).
 //   상태: 같음 / 다름(빨강) / 알려진 차이(노랑 — 결정 기록에 있는 의도된 차이, 까닭을 적음) / 참고(교과서 값이 없음).
 import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { resolveUnit } from './unit.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..', '..');
 const WORK = process.env.ATLAS_WORK || 'C:/Users/Public/atlas-work';
-const OUT = join(WORK, 'compare-u2.html');
-const SHOTS = join(WORK, 'shots', 'e2');
-const DATA = join(ROOT, 'sims/atlas-u2-asia/data');
+const UNIT = resolveUnit();
+const CMP_FILE = UNIT.configPath.replace(/\.json$/, '.compare.json');
+const CMP = existsSync(CMP_FILE) ? JSON.parse(readFileSync(CMP_FILE, 'utf8')) : {};
+const CHECKS = { insetLayers: [], noScreenSymbols: [], centerChecks: [], mainMap: {}, ...CMP.checks };
+const NOTES = {
+  recolored: '웹 바탕 위에서 너무 옅어 명도만 낮춤(설정 legendColors)', noVecLegend: '추출 산출물 없음 — 범례는 지면 범례 상자 글과 대조',
+  mapLabelToLegend: '교과서의 지도 위 이름을 범례로', movedPlaces: '지면 위치에서 옮긴 지명(설정 places.relocate)',
+  viewProjection: '로빈슨(기본)', viewProjectionNote: '웹은 세계 도법 5종만', ...CMP.notes,
+};
+const SHOTS_REL = CMP.shotsDir || 'shots/compare';           // 대조표 HTML 에서 캡처를 가리키는 상대 경로(작업 폴더 기준)
+const OUT = UNIT.workFile(CMP.out || 'compare.html');
+const SHOTS = UNIT.workFile(SHOTS_REL);
+const DATA = UNIT.dataDir;
 const PY = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
 const PAGE_W = 779.53, PAGE_H = 722.84; // 쪽 크기(pt) — 쪽 jpg 1191×1105 = 110dpi
 
 const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'));
 const tryJson = (p) => (existsSync(p) ? readJson(p) : null);
-const cfg = readJson(join(ROOT, 'scripts/atlas/config/u2.json'));
-const maps = readJson(join(ROOT, 'scripts/atlas/maps_u2.json'));
+const cfg = UNIT.config;
+const maps = readJson(UNIT.mapsPath);
 const mapById = Object.fromEntries(maps.map((m) => [m.id, m]));
 const topics = readJson(join(DATA, 'topics.json'));
 const charts = readJson(join(DATA, 'charts.json'));
 const places = readJson(join(DATA, 'places.json'));
-const photosTb = readJson(join(ROOT, 'content/atlas/u2/photos.json'));
-const chartsTb = readJson(join(WORK, 'tables/charts-u2.json'));
-const p17 = readJson(join(WORK, 'text/p17-labels.json'));
+const photosTb = readJson(join(ROOT, cfg.content.photos));
+const chartsTb = readJson(join(WORK, cfg.content.charts));
+const coloringLabelsFile = CHECKS.coloringLabels || cfg.content.labels;     // 색칠하기 지면 글자(u2 = 17쪽, 작업 폴더 기준)
+const coloringTb = coloringLabelsFile && existsSync(join(WORK, coloringLabelsFile)) ? readJson(join(WORK, coloringLabelsFile)) : null;
 const manifest = tryJson(join(SHOTS, 'manifest.json')) || { shots: [] };
 const OVERRIDES = readJson(join(ROOT, cfg.content.overrides)).items;
 const layerFile = (ref) => tryJson(join(DATA, `${ref}.json`));
@@ -44,13 +58,14 @@ sys.path.insert(0, sys.argv[1])
 import pdfkit, extract_text
 maps = json.load(open(sys.argv[2], encoding='utf-8'))
 out = {}
-for p in range(16, 26):
+for p in range(int(sys.argv[3]), int(sys.argv[4]) + 1):
     out[p] = {'all': ' '.join(s['text'] for s in pdfkit.page_spans(p)), 'credits': extract_text.printed_credits(p), 'legend': {}}
 for m in maps:
     if m.get('legendBbox'): out[m['page']]['legend'][m['id']] = pdfkit.box_text(m['page'], m['legendBbox'])
 sys.stdout.buffer.write(json.dumps(out, ensure_ascii=False).encode('utf-8'))
 `;
-  const r = spawnSync(PY, ['-I', '-c', py, join(ROOT, 'scripts/atlas'), join(ROOT, 'scripts/atlas/maps_u2.json')], { encoding: 'utf8', maxBuffer: 1 << 26 });
+  const [p0, p1] = cfg.content.pages || UNIT.pages;
+  const r = spawnSync(PY, ['-I', '-c', py, join(ROOT, 'scripts/atlas'), UNIT.mapsPath, String(p0), String(p1)], { encoding: 'utf8', maxBuffer: 1 << 26 });
   if (r.status !== 0) throw new Error(`PDF 글자 읽기 실패: ${r.stderr}`);
   return JSON.parse(r.stdout);
 }
@@ -114,15 +129,16 @@ function mapChecks(mapId, refs, shot, topicId) {
       const colorDiff = vec.legend.filter((e) => { const w = webOf(e); return w && !same(w.color, e.color) && !recolored.includes(e); }).map((e) => `${e.label} ${e.color}→${webOf(e).color}`);
       out.push(check(`${tag}범례 글자`, '추출 그대로', labelDiff.length ? `다름: ${list(labelDiff)}` : '모두 같음', labelDiff.length ? DIFF : OK));
       out.push(check(`${tag}범례 색`, '추출 그대로', colorDiff.length ? list(colorDiff) : recolored.length ? '나머지 모두 같음' : '모두 같음', colorDiff.length ? DIFF : OK));
-      if (recolored.length) out.push(check(`${tag}범례 색(화면용으로 바꿈)`, list(recolored.map((e) => `${e.label} ${e.color}`)), list(recolored.map((e) => `${webOf(e).color}`)), KNOWN, '교사 요청(2026-10-20): 웹 바탕 위에서 너무 옅어 명도만 낮춤(설정 legendColors)'));
+      if (recolored.length) out.push(check(`${tag}범례 색(화면용으로 바꿈)`, list(recolored.map((e) => `${e.label} ${e.color}`)), list(recolored.map((e) => `${webOf(e).color}`)), KNOWN, NOTES.recolored));
       const present = legend.filter((e) => e.present !== false).length;
       const tbPresent = rep.outputClasses ?? (vec.legend.length - (rep.absent || []).length);
       out.push(eq(`${tag}지도에 있는 분류`, tbPresent, present, (rep.absent || []).length ? `교과서 추출에서 빠진 분류: ${rep.absent.join(', ')}` : ''));
       if (vec.symbols.length) {
         const n = L.features.filter((f) => f.properties ? f.properties.type === 'symbol' : f.type === 'symbol').length;
         out.push(eq(`${tag}기호 수(자료)`, vec.symbols.length, n));
-        const screen = r.ref === 'layer-p22-singapore' ? st.insetSymbols : (r.ref === 'layer-p23-density-cities' ? null : st.symbols);
-        if (screen != null) out.push(eq(`${tag}기호 수(화면${r.ref === 'layer-p22-singapore' ? ' — 확대 창' : ''})`, vec.symbols.length, screen));
+        const inset = CHECKS.insetLayers.includes(r.ref);
+        const screen = inset ? st.insetSymbols : (CHECKS.noScreenSymbols.includes(r.ref) ? null : st.symbols);
+        if (screen != null) out.push(eq(`${tag}기호 수(화면${inset ? ' — 확대 창' : ''})`, vec.symbols.length, screen));
       }
       if (vec.lines.length) {
         const kinds = {};
@@ -139,10 +155,10 @@ function mapChecks(mapId, refs, shot, topicId) {
       const miss = legend.filter((e) => !box.includes(squash(e.label)));
       const onMap = miss.filter((e) => pageHay[page].includes(squash(e.label))).map((e) => e.label); // 지면에서는 지도 위 글자
       const absent = miss.filter((e) => !pageHay[page].includes(squash(e.label))).map((e) => e.label);
-      out.push(check(`${tag}범례 분류 수`, '추출 없음', legend.length, INFO, isOverlay ? '래스터 음영 — 범례는 C3 에서 지면 색을 읽음' : '경계는 실제 자료(Natural Earth), 종교 면·지명은 교과서 모식도에서 옮김 — 교과서 범례 7항목(주장 국경 3·정전 라인·종교 3)'));
+      out.push(check(`${tag}범례 분류 수`, '추출 없음', legend.length, INFO, isOverlay ? '래스터 음영 — 범례는 C3 에서 지면 색을 읽음' : NOTES.noVecLegend));
       out.push(check(`${tag}범례 글자 ↔ 지면 범례`, '범례 상자 글', absent.length ? `지면에 없는 글자: ${list(absent)}` : '모두 지면에 있음', absent.length ? DIFF : OK,
         absent.length ? `지면 범례 상자: 「${short(TB[page]?.legend?.[mapId], 140)}」` : ''));
-      if (onMap.length) out.push(check(`${tag}지도 위 글자 → 범례`, '지도 위에 쓴 이름', `범례 항목으로: ${list(onMap)}`, KNOWN, 'C1 결정 — 관할 지역 면은 Natural Earth 분쟁 지역, 교과서의 지도 위 이름을 범례로'));
+      if (onMap.length) out.push(check(`${tag}지도 위 글자 → 범례`, '지도 위에 쓴 이름', `범례 항목으로: ${list(onMap)}`, KNOWN, NOTES.mapLabelToLegend));
     }
     if (r.legendTitle) {
       const c = coverage(r.legendTitle, page), ov = OVERRIDES[`${topicId}.layers.${r.ref}.legendTitle`];
@@ -169,7 +185,7 @@ function placeChecks(mapId, shot) {
   const moved = places.filter((p) => p.page === mapById[mapId].page && p.moved).map((p) => p.name);
   out.push(check('지면 지명(이름 종류)', tbNames.length, `${tbNames.length - missing.length} 있음${missing.length ? ` · 없음 ${missing.length}: ${list(missing, 15)}` : ''}`, missing.length ? DIFF : OK));
   out.push(check('이 지도가 위치를 준 지명', `지면 글자 ${src.labels.length}개`, `${places.filter((p) => p.page === mapById[mapId].page).length}개(같은 이름은 여러 지도에서 하나로 합침)`, INFO));
-  if (moved.length) out.push(check('옮긴 지명', '지면 위치', list(moved), KNOWN, '교사 확인(2026-10-19): 「대한민국」·「미국」 본토 위로 좋음'));
+  if (moved.length) out.push(check('옮긴 지명', '지면 위치', list(moved), KNOWN, NOTES.movedPlaces));
   if (shot?.stats?.labels != null) {
     const onScreen = new Set((shot.stats.labelNames || []).map(squash));
     const vis = tbNames.filter((n) => onScreen.has(n)).length;
@@ -237,11 +253,11 @@ function topicChecks(t) {
   out.push(check('글 일치(본문·제목·설명, 펼침면)', `${texts.length}개`, low.length ? `지면과 다름 ${low.length}: ${list(low, 8)}` : `${texts.length}개 모두 지면 글과 같음`, low.length ? DIFF : OK,
     overridden.size ? `사람이 고친 값(overrides): ${[...overridden].join(', ')}` : ''));
   // 색칠하기: 나라 수
-  if (t.quiz?.type === 'coloring') {
-    out.push(eq('색칠하기 나라 수', p17.countries.length, t.quiz.countries.length));
+  if (t.quiz?.type === 'coloring' && coloringTb) {
+    out.push(eq('색칠하기 나라 수', coloringTb.countries.length, t.quiz.countries.length));
     const from = {}; for (const c of t.quiz.countries) from[c.capitalFrom] = (from[c.capitalFrom] || 0) + 1;
-    out.push(check('수도', `지면 작은 수도 글자 ${p17.capitals.length}`, `${t.quiz.countries.filter((c) => c.capital).length}개 나라 모두(지면 글자 ${from.printed || 0} + 일반도 지명 ${from.places || 0})`,
-      (from.printed || 0) === p17.capitals.length ? INFO : DIFF, '17쪽에 수도 글자가 없는 나라(큰 나라)는 일반도 지명에서 가져옴'));
+    out.push(check('수도', `지면 작은 수도 글자 ${coloringTb.capitals.length}`, `${t.quiz.countries.filter((c) => c.capital).length}개 나라 모두(지면 글자 ${from.printed || 0} + 일반도 지명 ${from.places || 0})`,
+      (from.printed || 0) === coloringTb.capitals.length ? INFO : DIFF, `${cfg.content.coloring?.page}쪽에 수도 글자가 없는 나라(큰 나라)는 일반도 지명에서 가져옴`));
   }
   if (t.quiz?.type === 'heritage') out.push(eq('세계유산 문제(핀)', cfg.content.expect.markers.heritage, (t.markers || []).filter((m) => m.quiz).length || (t.markers || []).length));
   return out;
@@ -250,7 +266,7 @@ function topicChecks(t) {
 // ---------- 행 만들기 ----------
 const rows = [];
 const mapOfView = (v) => v.map;
-const MAIN_MAP = { general: 'p16-asia', coloring: 'p17-coloring', relief: 'p20-relief', heritage: 'p25-heritage' };
+const MAIN_MAP = CHECKS.mainMap;
 for (const t of topics) {
   const extra = shotsOf((s) => s.topic === t.id && s.kind === 'extra' && !s.group);
   rows.push({ kind: 'topic', topic: t, checks: topicChecks(t), shots: extra });
@@ -265,7 +281,7 @@ for (const t of topics) {
       checks.push(check('지도 제목 ↔ 지면', '지면 글', cov >= 0.99 ? '지면에 있음' : `지면에 없음(${Math.round(cov * 100)}%)`, cov >= 0.99 ? OK : INFO, cov >= 0.99 ? '' : '교과서 활동 지도는 제목이 따로 인쇄되지 않음 — 목록 제목'));
       checks.push(...mapChecks(mapId, g.refs, main, t.id));
       if (mapById[mapId].projection) checks.push(check('도법', mapById[mapId].projection, '로빈슨(기본) · 도구에서 바꿈', KNOWN, '웹은 세계 도법 5종만'));
-      if (g.refs.some((r) => r.ref === 'layer-p24-trade')) checks.push(check('도법·중심', '밀러, 태평양 중심', '묶음을 고르면 중심 경도 150(태평양)', OK));
+      for (const c of CHECKS.centerChecks) if (g.refs.some((r) => r.ref === c.ref)) checks.push(check('도법·중심', c.tb, c.web, OK));
       rows.push({ kind: 'map', topic: t, title: g.label, mapId, shots, checks });
     }
   } else {
@@ -276,7 +292,7 @@ for (const t of topics) {
       const m = mapById[v.map];
       const checks = [check('지도', `${m.title} (${m.page}쪽)`, v.label, INFO)];
       checks.push(...placeChecks(v.map, main));
-      if (m.projection) checks.push(check('도법', m.projection, '로빈슨(기본) · 둘째 캡처 이퀄어스(정적 도법)', KNOWN, '웹은 세계 도법 5종만(람베르트 없음)'));
+      if (m.projection) checks.push(check('도법', m.projection, NOTES.viewProjection, KNOWN, NOTES.viewProjectionNote));
       if (m.scale) checks.push(check('축척', m.scale, '축척 막대(확대에 따라 바뀜)', INFO));
       rows.push({ kind: 'map', topic: t, title: v.label, mapId: v.map, shots, checks });
     }
@@ -285,7 +301,7 @@ for (const t of topics) {
 
 // ---------- HTML ----------
 const fileUrl = (p) => pathToFileURL(p).href;
-const pageImg = (page) => fileUrl(join(ROOT, `docs/assets/atlas/u2/page/p${String(page).padStart(3, '0')}.jpg`));
+const pageImg = (page) => fileUrl(join(ROOT, `${cfg.content.pageDir}/p${String(page).padStart(3, '0')}.jpg`));
 function cropBox(mapId) {
   const m = mapById[mapId];
   let [x0, y0, x1, y1] = m.bbox;
@@ -306,7 +322,7 @@ function cropDiv(mapId) {
     data-full="${pageImg(m.page)}" data-hl="${hl.join(',')}" data-cap="교과서 ${m.page}쪽 — ${esc(m.title)}" aria-label="교과서 ${m.page}쪽 크게 보기"></button>
     <p class="cap">${m.page}쪽 · ${esc(m.title)}</p>`;
 }
-const shotImg = (s) => `<figure class="shot"><button class="thumb" data-full="${esc(`shots/e2/${s.name}.png`)}" data-cap="${esc(`${s.name} — ${s.proj}${s.note ? ` · ${s.note}` : ''}`)}" aria-label="${esc(s.name)} 크게 보기"><img loading="lazy" src="shots/e2/${esc(s.name)}.png" alt=""></button>
+const shotImg = (s) => `<figure class="shot"><button class="thumb" data-full="${esc(`${SHOTS_REL}/${s.name}.png`)}" data-cap="${esc(`${s.name} — ${s.proj}${s.note ? ` · ${s.note}` : ''}`)}" aria-label="${esc(s.name)} 크게 보기"><img loading="lazy" src="${esc(SHOTS_REL)}/${esc(s.name)}.png" alt=""></button>
   <figcaption>${esc(s.proj === 'robinson' ? '로빈슨' : s.proj === 'equalEarth' ? '이퀄어스' : s.proj === 'miller' ? '밀러' : s.proj)}${s.note ? ` · ${esc(s.note)}` : ''}</figcaption></figure>`;
 const LABEL = { ok: '같음', diff: '다름', known: '알려진 차이', info: '참고' };
 const table = (checks) => `<table class="ck"><thead><tr><th>확인 항목</th><th>교과서</th><th>웹</th><th>상태</th></tr></thead><tbody>
@@ -316,9 +332,10 @@ ${checks.map((c) => `<tr class="st-${c.status}"><td>${esc(c.item)}</td><td>${esc
 const all = rows.flatMap((r) => r.checks);
 const count = (s) => all.filter((c) => c.status === s).length;
 const diffs = rows.flatMap((r) => r.checks.filter((c) => c.status === DIFF).map((c) => ({ r, c })));
+const UNIT_TITLE = UNIT.title.replace('. ', ' '); // 「Ⅱ. 아시아」 → 「Ⅱ 아시아」
 let html = `<!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>교과서 대조표 Ⅱ 아시아</title>
+<title>교과서 대조표 ${esc(UNIT_TITLE)}</title>
 <style>
 :root{--bg:#f6f5f2;--card:#fff;--ink:#1d1d1f;--mute:#6b6b70;--line:#e3e1dc;--ok:#1f7a4d;--okbg:#e6f4ec;--diff:#b3261e;--diffbg:#fdeceb;--known:#8a5a00;--knownbg:#fff4d6;--info:#4a5560;--infobg:#eef1f4;--acc:#1f5fbf}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 "Pretendard","Malgun Gothic",system-ui,sans-serif}
@@ -354,7 +371,7 @@ body.simple .grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}body.simple 
 #lb button{position:absolute;top:14px;right:18px;font:inherit;font-size:15px;background:#fff;border:0;border-radius:8px;padding:6px 12px;cursor:pointer}
 </style></head><body>
 <header>
-<h1>교과서 대조표 — 사회과부도 Ⅱ 아시아(16~25쪽)</h1>
+<h1>교과서 대조표 — 사회과부도 ${esc(UNIT_TITLE)}(${(cfg.content.pages || UNIT.pages).join('~')}쪽)</h1>
 <p>왼쪽 = 교과서 쪽(지도 영역 확대, 누르면 쪽 전체에 빨간 상자), 가운데 = 웹 개발 미리보기 캡처 1440×900(?topic=&amp;proj=), 오른쪽 = 확인 항목(생성물에서 자동 계산, 교과서 값은 파이프라인 추출·PDF 글자).</p>
 <p>만든 때 ${esc(new Date().toISOString().slice(0, 16).replace('T', ' '))} · 캡처 ${esc(manifest.at?.slice(0, 16).replace('T', ' ') || '없음')} (${manifest.shots.length}장) · node scripts/atlas/compare.mjs</p>
 <div class="sum"><span class="b-diff">다름 ${count(DIFF)}</span><span class="b-known">알려진 차이 ${count(KNOWN)}</span><span class="b-ok">같음 ${count(OK)}</span><span class="b-info">참고 ${count(INFO)}</span></div>
