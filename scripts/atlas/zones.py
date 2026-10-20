@@ -16,8 +16,9 @@ TILE_SEAM_KERNEL = 3         # 래스터: 1화소 타일 이음매·얼룩을 �
 MIN_VALID_LAND_PCT = 80.0    # 래스터: 분류된 육지 화소 비율이 이보다 낮으면 경고
 
 
-def vector_zones(m, fills, cfg, warnings):
-    """범례색 채움 도형 → {cls: 면}. 뒤에 그린 다른 분류 도형에 가린 부분은 뺀다(화가 알고리즘)."""
+def vector_items(m, fills, cfg):
+    """지도 안(덮개 상자 밖) 범례색 채움 도형 → ([(cls, 면)] 그린 차례, 보고서 조각 {unmatched, alias_used}).
+    vector_zones 와 country_class(작은 나라가 교과서에서 따로 칠해졌는지)가 같은 규칙으로 쓴다."""
     aliases = cfg.get('aliases') or {}
     ex = excluded_boxes(m)
     items, unmatched, alias_used = [], {}, {}
@@ -33,6 +34,13 @@ def vector_zones(m, fills, cfg, warnings):
             unmatched[h] = unmatched.get(h, 0) + 1; continue
         g = drawing_geom(d)
         if g is not None: items.append((e['cls'], g))
+    return items, unmatched, alias_used
+
+
+def vector_zones(m, fills, cfg, warnings):
+    """범례색 채움 도형 → {cls: 면}. 뒤에 그린 다른 분류 도형에 가린 부분은 뺀다(화가 알고리즘)."""
+    aliases = cfg.get('aliases') or {}
+    items, unmatched, alias_used = vector_items(m, fills, cfg)
     if not items: raise ValueError(f"{m['id']}: 범례색 채움 도형이 하나도 없음")
     tree = STRtree([g for _, g in items])
     by_cls = {}

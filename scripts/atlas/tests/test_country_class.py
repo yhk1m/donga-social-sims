@@ -102,4 +102,45 @@ class Overrides(unittest.TestCase):
         with self.assertRaises(ValueError): cc.apply_overrides({}, {'AAA': {'cls': 'c1'}}, LEGEND)
 
 
+class Levels(unittest.TestCase):
+    """U3-3 리뷰(중요 1): 분류는 50m 나라로 뽑지만 앱은 10a(10m 을 단원 상자로 자름)도 그린다 — 두 상세도 iso 대조, 10a 에만 있는 나라도 분류."""
+    def test_level_check_reports_one_level_only(self):
+        r = cc.level_check(['AAA', 'GIB', 'OLD', 'ZZZ'], have50={'AAA', 'OLD'}, have10a={'AAA', 'GIB'})
+        self.assertEqual(r, {'only50': ['OLD'], 'only10a': ['GIB'], 'neither': ['ZZZ']})
+
+    def test_extra_10a_countries_inside_unit_boxes(self):
+        c50 = [('AAA', box(0, 0, 8, 8))]
+        c10 = [('AAA', box(0, 0, 8, 8)), ('GIB', box(5, 5, 5.1, 5.1)), ('FAR', box(100, 0, 101, 1))]
+        self.assertEqual([i for i, _ in cc.extra_10a(c50, c10, [[-10, -10, 20, 20]])], ['GIB'])
+
+    def test_small_state_needs_check_when_not_drawn_alone(self):
+        # 작은 나라(지면 넓이 < smallPt2): 표본이 든 분류 면 조각이 나라보다 훨씬 크면(이웃 나라 면에 묻힘) 또는 분류가 없으면 확인 필요
+        states = {'SMR': {'pt2': 0.3, 'comp': 0.35, 'cls': 'c1'},       # 교과서가 따로 칠함
+                  'VAT': {'pt2': 0.01, 'comp': 1115.0, 'cls': 'c2'},    # 이탈리아 면에 묻힘
+                  'LIE': {'pt2': 0.6, 'comp': None, 'cls': None},       # 분류 없음(띠·범례 상자 밑)
+                  'FRA': {'pt2': 2000.0, 'comp': 2300.0, 'cls': 'c1'}}  # 큰 나라는 보지 않음
+        got = cc.small_state_issues(states, small_pt2=8.0)
+        self.assertEqual([i for i, _ in got], ['LIE', 'VAT'])
+
+    def test_component_area_of_zone_part(self):
+        zones = {'c1': box(0, 0, 10, 10).union(box(20, 20, 21, 21))}
+        self.assertAlmostEqual(cc.component_area(zones, 'c1', (20.5, 20.5)), 1.0)
+        self.assertAlmostEqual(cc.component_area(zones, 'c1', (5, 5)), 100.0)
+        self.assertIsNone(cc.component_area(zones, 'c1', (15, 15)))
+        self.assertIsNone(cc.component_area(zones, None, (5, 5)))
+
+    def test_drawn_area_topmost_item(self):
+        # 벡터 지도: 같은 분류 이웃(안도라 c1 ↔ 에스파냐 c1)과 합친 면 조각 대신, 그 점을 덮은 맨 위 채움 도형 하나의 넓이
+        items = [('c1', box(0, 0, 50, 50)), ('c1', box(10, 10, 11, 11)), ('c2', box(30, 30, 31, 31))]
+        self.assertEqual(cc.drawn_area(items, (10.5, 10.5)), ('c1', 1.0))
+        self.assertEqual(cc.drawn_area(items, (5, 5)), ('c1', 2500.0))
+        self.assertEqual(cc.drawn_area(items, (60, 60)), (None, None))
+
+    def test_override_needs_exactly_one_of_cls_label(self):
+        with self.assertRaises(ValueError): cc.apply_overrides({}, {'AAA': {'cls': 'c1', 'label': '80~100', 'why': 'x'}}, LEGEND)
+        with self.assertRaises(ValueError): cc.apply_overrides({}, {'AAA': {'why': 'x'}}, LEGEND)
+        out, _ = cc.apply_overrides({'AAA': 'c1'}, {'AAA': {'cls': None, 'why': '분류 없음'}}, LEGEND)
+        self.assertEqual(out, {})
+
+
 if __name__ == '__main__': unittest.main()
