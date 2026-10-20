@@ -64,8 +64,10 @@ for m in maps:
     if m.get('legendBbox'): out[m['page']]['legend'][m['id']] = pdfkit.box_text(m['page'], m['legendBbox'])
 sys.stdout.buffer.write(json.dumps(out, ensure_ascii=False).encode('utf-8'))
 `;
-  const [p0, p1] = cfg.content.pages || UNIT.pages;
-  const r = spawnSync(PY, ['-I', '-c', py, join(ROOT, 'scripts/atlas'), UNIT.mapsPath, String(p0), String(p1)], { encoding: 'utf8', maxBuffer: 1 << 26 });
+  const pr = cfg.content.pages || UNIT.pages;
+  if (!pr) throw new Error(`${UNIT.id}: 쪽 범위 없음 — 단원 설정 content.pages 나 units.json pages 를 적으세요`);
+  const [p0, p1] = pr;
+  const r = spawnSync(PY, ['-I', '-c', py, join(ROOT, 'scripts/atlas'), UNIT.mapsPath, String(p0), String(p1)], { encoding: 'utf8', maxBuffer: 1 << 26, env: UNIT.childEnv() });
   if (r.status !== 0) throw new Error(`PDF 글자 읽기 실패: ${r.stderr}`);
   return JSON.parse(r.stdout);
 }
@@ -371,7 +373,7 @@ body.simple .grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}body.simple 
 #lb button{position:absolute;top:14px;right:18px;font:inherit;font-size:15px;background:#fff;border:0;border-radius:8px;padding:6px 12px;cursor:pointer}
 </style></head><body>
 <header>
-<h1>교과서 대조표 — 사회과부도 ${esc(UNIT_TITLE)}(${(cfg.content.pages || UNIT.pages).join('~')}쪽)</h1>
+<h1>교과서 대조표 — 사회과부도 ${esc(UNIT_TITLE)}(${(cfg.content.pages || UNIT.pages || []).join('~')}쪽)</h1>
 <p>왼쪽 = 교과서 쪽(지도 영역 확대, 누르면 쪽 전체에 빨간 상자), 가운데 = 웹 개발 미리보기 캡처 1440×900(?topic=&amp;proj=), 오른쪽 = 확인 항목(생성물에서 자동 계산, 교과서 값은 파이프라인 추출·PDF 글자).</p>
 <p>만든 때 ${esc(new Date().toISOString().slice(0, 16).replace('T', ' '))} · 캡처 ${esc(manifest.at?.slice(0, 16).replace('T', ' ') || '없음')} (${manifest.shots.length}장) · node scripts/atlas/compare.mjs</p>
 <div class="sum"><span class="b-diff">다름 ${count(DIFF)}</span><span class="b-known">알려진 차이 ${count(KNOWN)}</span><span class="b-ok">같음 ${count(OK)}</span><span class="b-info">참고 ${count(INFO)}</span></div>

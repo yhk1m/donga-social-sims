@@ -3,6 +3,8 @@
  "shotsDir": "shots/e2",
  "out": "compare-u2.html",
  "_paths": "u2 는 1단계 자리(shots/e2 · compare-u2.html) 그대로 — G0 기준선과 같은 자리. 새 단원 기본값은 단원 작업 폴더의 shots/compare · compare.html.",
+ "fixedNow": 1760918400000,
+ "_fixedNow": "캡처 쪽의 Date.now 고정값(ms) — 퀴즈 seed 기본값이 시각이라 세계유산 퀴즈 문제가 캡처마다 달랐다. 2026-10-20 00:00 UTC.",
  "projections": {"default": "robinson", "extra": {"general": ["equalEarth"], "coloring": ["equalEarth"]}},
  "_projections": "장면 = 주제마다 기본 도법 + extra 도법(일반도·색칠하기 = 교과서 람베르트 정적 방위에 가까운 정적 도법 이퀄어스). 도법마다 묶음(지도 고르기)마다 한 장, 묶음이 없으면 주제 한 장 + 바로가기(views)마다 한 장.",
  "extraScenes": {

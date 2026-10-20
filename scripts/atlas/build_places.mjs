@@ -33,14 +33,14 @@ const VERIFY_DPI = 200;
 
 const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
 const PC = config.places;
-const maps = Object.fromEntries(JSON.parse(fs.readFileSync(path.resolve(path.dirname(CONFIG_FILE), config.maps), 'utf8')).map((m) => [m.id, m]));
-const OUT = path.join(root, config.out, PC.out);
-const MAPS_FILE = path.resolve(path.dirname(CONFIG_FILE), config.maps);
+const MAPS_FILE = UNIT.mapsPath;                                  // 설정 maps(없으면 maps_<id>.json)
+const maps = Object.fromEntries(JSON.parse(fs.readFileSync(MAPS_FILE, 'utf8')).map((m) => [m.id, m]));
+const OUT = path.join(UNIT.dataDir, PC.out);                      // 설정 out(없으면 sims/<sim>/data)
 const NE_FILE = `${WORK}/${PC.neFile}`;
 const RANK_MIN = Math.min(...PC.rankBySize.map((r) => r[1])), RANK_MAX = Math.max(...PC.rankBySize.map((r) => r[1]));
 
 const run = (args) => {
-  const r = spawnSync(PY, ['-I', ...args], { cwd: root, encoding: 'utf8', maxBuffer: 1 << 26 });
+  const r = spawnSync(PY, ['-I', ...args], { cwd: root, encoding: 'utf8', maxBuffer: 1 << 26, env: UNIT.childEnv() }); // 자식도 같은 단원
   if (r.status !== 0) throw new Error(`${PY} ${args.join(' ')} 실패\n${r.stdout}\n${r.stderr}`);
   return r.stdout;
 };

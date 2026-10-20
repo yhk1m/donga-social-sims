@@ -349,7 +349,7 @@ export function loadInputs() {
   const coloring = readJson(path.join(REPO, cfg.coloringOut));
   checkStamp(unit, 'coloring', coloring.inputsHash, 'node scripts/atlas/coloring_quiz.mjs --write');
   const outDir = path.join(REPO, cfg.out);
-  const maps = readJson(path.resolve(path.dirname(CONFIG), unit.maps));
+  const maps = readJson(UNIT.mapsPath);   // 설정 maps(없으면 maps_<id>.json)
   const fitCache = new Map(), layerCache = new Map();
   return {
     cfg, overrides: readJson(path.join(REPO, cfg.overrides)).items,

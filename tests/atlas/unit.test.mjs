@@ -34,13 +34,23 @@ test('단원 작업 폴더: u2 는 옛 경로 그대로(설정에 없으면), �
   assert.equal(w('u2'), 'C:/W/text/topics-check.json');
   assert.equal(w('u3'), 'C:/W/units/u3/text/topics-check.json');
 });
-test('설정이 아직 없는 단원도 고를 수 있고, config 를 볼 때만 오류', () => {
-  const u = resolveUnit(['--unit', 'u3'], {});
-  if (u.hasConfig) return; // U3-1 뒤에는 설정이 있다
-  assert.equal(u.sim, 'atlas-u3-europe');
-  assert.match(u.mapsPath.replace(/\\/g, '/'), /scripts\/atlas\/maps_u3\.json$/);
-  assert.equal(u.dataDir.replace(/\\/g, '/').split('/').slice(-3).join('/'), 'sims/atlas-u3-europe/data');
-  assert.throws(() => u.config, /u3/);
+test('설정이 아직 없는 단원도 고를 수 있고(기본 경로), config 를 볼 때만 오류 — 시험용 단원 표', () => {
+  const units = ({ u2: { sim: 'atlas-u2-asia', title: 'x', pages: [16, 25], config: 'config/u2.json' },
+    u8: { sim: 'atlas-u8-test', title: 'Ⅷ. 시험', pages: [1, 2], config: 'config/u8-none.json' } });
+  {
+    const u = resolveUnit(['--unit', 'u8'], { ATLAS_WORK: 'C:/W' }, { units });
+    assert.equal(u.hasConfig, false);
+    assert.equal(u.sim, 'atlas-u8-test');
+    assert.match(u.mapsPath.replace(/\\/g, '/'), /scripts\/atlas\/maps_u8\.json$/);
+    assert.equal(u.dataDir.replace(/\\/g, '/').split('/').slice(-3).join('/'), 'sims/atlas-u8-test/data');
+    assert.equal(u.workFile('a/b.json'), 'C:/W/units/u8/a/b.json');
+    assert.throws(() => u.config, /u8/);
+  }
+});
+test('childEnv: 자식 프로세스에 고른 단원을 넘김(--unit 은 자식 명령줄에 없으므로)', () => {
+  assert.equal(resolveUnit(['--unit', 'u3'], { ATLAS_UNIT: 'u2', X: '1' }).childEnv().ATLAS_UNIT, 'u3');
+  assert.equal(resolveUnit(['--unit', 'u3'], { X: '1' }).childEnv().X, '1');
+  assert.equal(resolveUnit([], {}).childEnv().ATLAS_UNIT, 'u2');
 });
 test('stripUnitArgs: --unit 두 칸만 빼고 나머지 옵션은 차례 그대로', () => {
   assert.deepEqual(stripUnitArgs(['--write', '--unit', 'u3', '--force']), { unit: 'u3', rest: ['--write', '--force'] });
@@ -58,4 +68,15 @@ test('layers.js 머리 주석 경로 = 생성물 폴더(u2 는 옛 글자 그대
   const root = path.resolve(HERE, '..', '..');
   assert.match(layersModule(['a']).split('\n')[1], /^\/\/ sims\/atlas-u2-asia\/data\/layers\.js — 생성물/);
   assert.match(layersModule(['a'], path.join(root, 'sims', 'atlas-u3-europe', 'data')).split('\n')[1], /^\/\/ sims\/atlas-u3-europe\/data\/layers\.js — 생성물/);
+});
+test('Python 자식이 childEnv 로 같은 단원·같은 단원 작업 폴더를 고른다(Node ↔ Python 규칙 같음)', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const py = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
+  const probe = 'import sys, json; sys.path.insert(0, sys.argv[1]); import atlas_common as a; sys.stdout.write(json.dumps([a.unit()["id"], a.unit_work("x/y.json")]))';
+  for (const id of ['u2', 'u3']) {
+    const u = resolveUnit(['--unit', id], { ...process.env, ATLAS_WORK: 'C:/W' });
+    const r = spawnSync(py, ['-I', '-c', probe, HERE], { env: u.childEnv(), encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stderr);
+    assert.deepEqual(JSON.parse(r.stdout), [id, u.workFile('x/y.json')]);
+  }
 });

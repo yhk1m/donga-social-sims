@@ -30,12 +30,12 @@ const DOMAIN_LAT = 85;
 const VERIFY_TARGET_PX = 900;  // 검증 그림 긴 변 목표(화소)
 
 const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-const maps = Object.fromEntries(JSON.parse(fs.readFileSync(path.resolve(path.dirname(CONFIG_FILE), config.maps), 'utf8')).map((m) => [m.id, m]));
-const OUT = path.join(root, config.out);
+const maps = Object.fromEntries(JSON.parse(fs.readFileSync(UNIT.mapsPath, 'utf8')).map((m) => [m.id, m]));   // 설정 maps(없으면 maps_<id>.json)
+const OUT = UNIT.dataDir;                                                                                // 설정 out(없으면 sims/<sim>/data)
 export const LAYERS = Object.entries(config.layers).map(([id, l]) => ({ ...config.defaults, ...l, id }));
 
 const run = (args) => {
-  const r = spawnSync(PY, ['-I', ...args], { cwd: root, encoding: 'utf8', maxBuffer: 1 << 26 });
+  const r = spawnSync(PY, ['-I', ...args], { cwd: root, encoding: 'utf8', maxBuffer: 1 << 26, env: UNIT.childEnv() }); // 자식도 같은 단원
   if (r.status !== 0) throw new Error(`${PY} ${args.join(' ')} 실패\n${r.stdout}\n${r.stderr}`);
   return r.stdout;
 };

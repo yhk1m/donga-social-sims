@@ -2,7 +2,8 @@
 // scripts/atlas/unit.mjs — 단원 고르기 한 곳(Node). 2단계 설계 §4.2, Python 은 atlas_common.unit() 이 같은 규칙.
 //   우선순위: 명령줄 --unit uN → env ATLAS_UNIT → env ATLAS_UNIT_CONFIG(옛 방식, 설정 파일 경로) → 기본 u2.
 //   기본이 u2 라 --unit 없이 돌리는 지금 명령은 하나도 바뀌지 않는다.
-//   resolveUnit(argv, env) → { id, sim, title, pages, configPath, config(늦게 읽음), mapsPath, dataDir, contentDir, assetDir, work, workDir, workFile(rel) }
+//   resolveUnit(argv, env, {unitsFile, units}) → { id, sim, title, pages, configPath, config(늦게 읽음), mapsPath, dataDir, contentDir, assetDir, work, workDir, workFile(rel), childEnv() }
+//   - childEnv(): 자식 프로세스(Python 단계)용 env — ATLAS_UNIT 을 넣어 --unit 으로 고른 단원이 자식에도 이어지게.
 //   - 설정 파일은 config 를 처음 볼 때 읽는다(아직 설정이 없는 단원도 고를 수 있게 — 단원 표·경로만 필요한 경우).
 //   - 단원 작업 폴더 workDir: 설정 unitWork(작업 폴더 기준)가 있으면 그것, u2 는 작업 폴더 그대로(1단계 경로), 그 밖은 units/<id>.
 //   stripUnitArgs(argv) → { unit, rest }: 각 스크립트의 기존 옵션 해석과 부딪치지 않게 --unit <id> 두 칸만 먼저 빼낸다.
@@ -40,8 +41,8 @@ const slash = (p) => p.replace(/\\/g, '/');
 const same = (a, b) => path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
 
 /** 단원 하나를 고른다. 모르는 단원 id 면 오류. */
-export function resolveUnit(argv = process.argv.slice(2), env = process.env) {
-  const units = loadUnits();
+export function resolveUnit(argv = process.argv.slice(2), env = process.env, { unitsFile = UNITS_FILE, units: given = null } = {}) {
+  const units = given || loadUnits(unitsFile);   // units = 단원 표 객체(시험용 — 파일을 쓰지 않고)
   const work = slash(env.ATLAS_WORK || 'C:/Users/Public/atlas-work');
   const fromArg = stripUnitArgs(argv).unit;
   let id = fromArg || env.ATLAS_UNIT || null;
@@ -90,6 +91,8 @@ export function resolveUnit(argv = process.argv.slice(2), env = process.env) {
     },
     /** 단원 작업 파일 경로(rel = 'text/topics-check.json' 같은 작업 폴더 상대 경로). */
     workFile(rel) { return `${this.workDir}/${slash(rel)}`; },
+    /** 자식 프로세스 env: 부모 env + ATLAS_UNIT(옛 ATLAS_UNIT_CONFIG 로 고른 단원이면 그 경로도 그대로 — 표 밖 설정). */
+    childEnv() { return { ...env, ATLAS_UNIT: units[id] ? id : '', ...(units[id] ? {} : { ATLAS_UNIT_CONFIG: configPath }) }; },
   };
   return u;
 }

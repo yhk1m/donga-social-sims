@@ -41,7 +41,7 @@ function refreshControls() {
   if (!stale(inputs, outs)) return;
   console.log(`기준점 파일이 ${path.basename(MAPS_FILE)} 보다 오래됨 → python -I scripts/atlas/extract_vectors.py --controls all (단원 ${UNIT.id})`);
   const r = spawnSync(process.env.PYTHON || 'python', ['-I', path.join(here, 'extract_vectors.py'), '--controls', 'all'],
-    { encoding: 'utf8', env: { ...process.env, ATLAS_UNIT: UNIT.id } });
+    { encoding: 'utf8', env: UNIT.childEnv() });
   if (r.status !== 0) throw new Error(`extract_vectors.py --controls all 실패
 ${r.stdout}
 ${r.stderr}`);
@@ -113,7 +113,7 @@ function verify(target) {
       title: `${id}  ${fit.family}  rms ${fit.rmsPt}pt  mean ${fit.meanMm}mm${fit.tps ? '  +TPS' : ''}  NE ${res}` };
     const ovPath = `${WORK}/geo/${id}.overlay.json`;
     fs.writeFileSync(ovPath, JSON.stringify(ov));
-    const r = spawnSync(process.env.PYTHON || 'python', ['-I', path.join(here, 'overlay.py'), ovPath], { encoding: 'utf8' });
+    const r = spawnSync(process.env.PYTHON || 'python', ['-I', path.join(here, 'overlay.py'), ovPath], { encoding: 'utf8', env: UNIT.childEnv() });
     if (r.status !== 0) { console.error(r.stderr); return 1; }
     process.stdout.write(r.stdout);
   }

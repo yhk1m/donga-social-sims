@@ -21,7 +21,7 @@ const UNIT = resolveUnit();
 const CMP_FILE = UNIT.configPath.replace(/\.json$/, '.compare.json');
 const CMP = existsSync(CMP_FILE) ? JSON.parse(readFileSync(CMP_FILE, 'utf8')) : {};
 const OUT = UNIT.workFile(CMP.shotsDir || 'shots/compare');
-const PROJ = { default: 'robinson', extra: {}, ...CMP.projections };
+const PROJ = { default: CMP.projections?.default || 'robinson', extra: { ...CMP.projections?.extra } };
 const EXTRA = CMP.extraScenes || {};
 const CHROME = process.env.CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const PAGES = 'https://yhk1m.github.io/donga-social-sims/assets/';
@@ -206,6 +206,9 @@ try {
   });
   await send('Fetch.enable', { patterns: [{ urlPattern: PAGES + '*', requestStage: 'Request' }] });
   await send('Page.enable'); await send('Runtime.enable'); await send('Network.setCacheDisabled', { cacheDisabled: true });
+  // 퀴즈 차례(coloringQuiz·heritageQuiz 의 seed 기본값 = Date.now())를 캡처마다 같게: 설정 fixedNow 가 있으면 쪽마다 Date.now 고정
+  // (앱에서 Date.now 는 퀴즈 seed 에만 쓰임 — 회귀 비교에서 세계유산 장면이 시각에 따라 달라지던 것, G 리뷰)
+  if (CMP.fixedNow != null) await send('Page.addScriptToEvaluateOnNewDocument', { source: `Date.now = () => ${Number(CMP.fixedNow)};` });
   await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: 1, mobile: false });
   await scenes();
   // --only 로 일부만 다시 찍으면 이전 manifest 의 나머지 장면은 그대로 둔다

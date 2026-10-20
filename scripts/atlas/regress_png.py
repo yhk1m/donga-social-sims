@@ -14,9 +14,11 @@ def compare(a, b):
     if not os.path.exists(b): return {'diff': None, 'bbox': None, 'size': None, 'error': f'새 캡처 없음 {b}'}
     ia, ib = Image.open(a).convert('RGBA'), Image.open(b).convert('RGBA')
     if ia.size != ib.size: return {'diff': None, 'bbox': None, 'size': [list(ia.size), list(ib.size)], 'error': '크기 다름'}
+    # 주의: 불투명 그림의 RGBA 차이는 알파가 늘 0 이라 getbbox() 기본값(alpha_only=True, Pillow 10.1+)은 상자를 못 찾는다
+    # → alpha_only=False, 수는 상자와 따로 numpy 로 네 값 모두(코드 리뷰 지적, test_regress_png.py)
     d = ImageChops.difference(ia, ib)
-    box = d.getbbox()
-    n = int(np.count_nonzero(np.asarray(d).max(axis=2))) if box else 0
+    box = d.getbbox(alpha_only=False)
+    n = int(np.any(np.asarray(ia) != np.asarray(ib), axis=2).sum())
     return {'diff': n, 'bbox': list(box) if box else None, 'size': list(ia.size)}
 
 

@@ -29,7 +29,7 @@ const CONFIG_FILE = UNIT.configPath;
 const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
 const CC = config.cityControls;
 const PC = config.places;                                     // neFile·neBox 는 places 와 함께 쓴다
-const MAPS_FILE = path.resolve(path.dirname(CONFIG_FILE), config.maps);
+const MAPS_FILE = UNIT.mapsPath;   // 설정 maps(없으면 maps_<id>.json)
 const mapEntry = (id) => JSON.parse(fs.readFileSync(MAPS_FILE, 'utf8')).find((m) => m.id === id);
 const PY = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
 const r2 = (v) => Math.round(v * 100) / 100, r4 = (v) => Math.round(v * 1e4) / 1e4;
@@ -165,7 +165,7 @@ function writeMaps(sel) {
     '        m["controlsNote"]=d["note"]',
     'f=open(p,"w",encoding="utf-8",newline="\\n"); json.dump(maps,f,ensure_ascii=False,indent=1); f.close()',
   ].join('\n');
-  const r = spawnSync(PY, ['-I', '-c', py, MAPS_FILE], { input: Buffer.from(JSON.stringify({ sel: payload, note: CC.note }), 'utf8') });
+  const r = spawnSync(PY, ['-I', '-c', py, MAPS_FILE], { env: UNIT.childEnv(), input: Buffer.from(JSON.stringify({ sel: payload, note: CC.note }), 'utf8') });
   if (r.status !== 0) throw new Error(String(r.stderr));
 }
 
@@ -189,7 +189,7 @@ function main(argv) {
     fs.writeFileSync(holdFile, JSON.stringify({ folds: CC.folds, seed: CC.seed, maps: hold }, null, 1));
     console.log(`겹 나누기 결과 → ${holdFile}`);
   }
-  if (argv.includes('--write')) { writeMaps(sel); console.log(`maps_u2.json controls 에 src:'city' 기준점을 씀`); }
+  if (argv.includes('--write')) { writeMaps(sel); console.log(`${path.basename(MAPS_FILE)} controls 에 src:'city' 기준점을 씀`); }
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(stripUnitArgs(process.argv.slice(2)).rest);
