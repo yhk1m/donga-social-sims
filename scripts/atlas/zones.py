@@ -153,6 +153,13 @@ def force_boxes(lbl, sea, force, boxes, masked):
         lbl[b] = 0; sea[op] = False; force[op] = True
 
 
+def edge_band(lbl, sea, e):
+    """틀 가장자리 e 화소 띠를 바다로(lbl 0, sea True) — 제자리. e ≤ 0 이면 그대로(arr[-0:] 은 배열 전체라 다 덮는다)."""
+    if e <= 0: return
+    for arr, v in ((lbl, 0), (sea, True)):
+        arr[:e, :] = v; arr[-e:, :] = v; arr[:, :e] = v; arr[:, -e:] = v
+
+
 def fill_labels(lbl, sea, force, fill_px, grow_px):
     """화소 분류 lbl(0 = 미분류) → 채운 분류: 미분류 육지는 fill_px 안, 바다 쪽은 grow_px 띠까지, force 자리는 거리 제한 없이 가장 가까운 분류."""
     import cv2
@@ -215,9 +222,7 @@ def raster_zones(m, fills, cfg, warnings):
         force_boxes(lbl, sea, force, [px(b) for b in small_images(m)], masked)
     if cfg.get('rasterEdgePt'):
         # 틀 가장자리 띠(29쪽: 흰 덮개가 틀 끝까지 오지 않아 남는 1~2pt 래스터 띠 — 북아프리카·튀르키예·우랄 너머가 가는 띠로 새어 나옴)는 바다로
-        e = int(round(cfg['rasterEdgePt'] * s))
-        for arr, v in ((lbl, 0), (sea, True)):
-            arr[:e, :] = v; arr[-e:, :] = v; arr[:, :e] = v; arr[:, -e:] = v
+        edge_band(lbl, sea, int(round(cfg['rasterEdgePt'] * s)))
     for b in excluded_boxes(m):
         c0, r0 = max(int((b[0] - x0) * s), 0), max(int((b[1] - y0) * s), 0)
         c1, r1 = max(int((b[2] - x0) * s) + 1, 0), max(int((b[3] - y0) * s) + 1, 0)

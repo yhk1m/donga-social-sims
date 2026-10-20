@@ -79,6 +79,20 @@ class RasterHeuristics(unittest.TestCase):
         self.assertTrue(sea[:, 3:].all() and not sea[:, :3].any())
         self.assertTrue((self.Z.fill_labels(lbl, sea, force, 1.0, 0)[:, 3:] == 0).all())   # 덮개 자리는 채워지지 않음
 
+    def test_edge_band_margin_becomes_sea(self):
+        # rasterEdgePt: 틀 가장자리 e 화소 안의 분류 화소는 바다가 되고, 채우기도 되살리지 않음(29쪽 틀 끝 래스터 띠)
+        lbl = np.full((6, 8), 2, np.int32); sea = np.zeros(lbl.shape, bool)
+        self.Z.edge_band(lbl, sea, 1)
+        self.assertEqual(lbl[0, 3], 0); self.assertTrue(sea[0, 3])       # 가장자리 화소 → 바다
+        self.assertTrue(sea[:, 0].all() and sea[:, -1].all() and sea[-1, :].all())
+        self.assertTrue((lbl[1:-1, 1:-1] == 2).all() and not sea[1:-1, 1:-1].any())
+        full = self.Z.fill_labels(lbl, sea, np.zeros(lbl.shape, bool), 2.5, 0)
+        self.assertEqual(full[0, 3], 0)
+        # e = 0 이면 아무것도 바꾸지 않음(arr[-0:] 은 배열 전체라 그대로 쓰면 다 덮음)
+        lbl0 = np.full((4, 4), 2, np.int32); sea0 = np.zeros(lbl0.shape, bool)
+        self.Z.edge_band(lbl0, sea0, 0)
+        self.assertTrue((lbl0 == 2).all() and not sea0.any())
+
 
 class RescueIslands(unittest.TestCase):
     def test_deblend_prefers_strong_color_mixed_with_white(self):
