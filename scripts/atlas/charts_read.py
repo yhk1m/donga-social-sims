@@ -114,6 +114,13 @@ def cap_from(tokens):
 
 
 # ── 기후 그래프 ───────────────────────────────────────────────────────────
+def _warn_bar_base(cid, bars, pax, W):
+    """강수 막대 바닥(사각형 아래 변)이 0mm 선에서 정밀도 2배 넘게 떨어지면 경고 — barsByMonth 길·옛 길 공통."""
+    base = [pax.val(f['rect'][3]) for f in bars]
+    if base and max(abs(v) for v in base) > 2 * AX.precision(pax):
+        W.append(f'{cid}: 강수 막대 바닥이 0mm 가 아님(최대 {max(abs(v) for v in base):.1f})')
+
+
 def read_climograph(cid, c, ctx):
     W = ctx['warnings']; p = c['page']; fr = c['bbox']
     out = meta(cid, c)
@@ -135,17 +142,13 @@ def read_climograph(cid, c, ctx):
             k = min(range(len(dx)), key=lambda k: abs(dx[k] - (f['rect'][0] + f['rect'][2]) / 2))
             if k in by: W.append(f'{cid}: {k + 1}월에 강수 막대 둘')
             by[k] = f
-        base = [pax.val(f['rect'][3]) for f in bars]
-        if base and max(abs(v) for v in base) > 2 * AX.precision(pax):
-            W.append(f'{cid}: 강수 막대 바닥이 0mm 가 아님(최대 {max(abs(v) for v in base):.1f})')
-        mprec = [pax.val(by[k]['rect'][1]) if k in by else 0.0 for k in range(12)]
-        out['noBarMonths'] = [k + 1 for k in range(12) if k not in by]
     elif len(bars) != 12 or len(dots) != 12:
         W.append(f'{cid}: 강수 막대 {len(bars)}개·기온 점 {len(dots)}개 (12개여야 함)')
-    if not c.get('barsByMonth'):
-        base = [pax.val(f['rect'][3]) for f in bars]
-        if base and max(abs(v) for v in base) > 2 * AX.precision(pax):
-            W.append(f'{cid}: 강수 막대 바닥이 0mm 가 아님(최대 {max(abs(v) for v in base):.1f})')
+    _warn_bar_base(cid, bars, pax, W)
+    if c.get('barsByMonth'):
+        mprec = [pax.val(by[k]['rect'][1]) if k in by else 0.0 for k in range(12)]
+        out['noBarMonths'] = [k + 1 for k in range(12) if k not in by]
+    else:
         mprec = [pax.val(f['rect'][1]) for f in bars][:12]
     mtemp = [tax.val(yc(f['rect'])) for f in dots][:12]
     tp, pp = AX.precision(tax), AX.precision(pax)
@@ -930,6 +933,32 @@ def _bar_run(mask_row, z, step, gap, start_tol):
     return last
 
 
+def _color_mask(L, hex_color, de):
+    """Lab 화소 배열 L(H×W×3)에서 hex_color 와 ΔE ≤ de 인 화소 가면."""
+    from atlas_common import lab
+    target = lab(np.array([[int(hex_color[k:k + 2], 16) for k in (1, 3, 5)]], dtype=float))[0]
+    return np.sqrt(((L - target) ** 2).sum(axis=2)) <= de
+
+
+def _row_edges_px(img, mask, y0, y1, zpx, step, gap, start_tol):
+    """나이 줄 하나(화소 행 y0~y1)에서 행마다 막대 끝의 화소 좌표(실수 — 열 왼쪽 변 = 정수) 목록.
+    가운데 열 zpx 에서 step 쪽으로 이어진 막대 화소 끝(_bar_run) + 가장자리 바깥 화소가 막대 색과 배경(두 칸 바깥) 사이에서
+    섞인 몫(화소 안 덮인 비율). 막대가 없는 행은 건너뜀."""
+    H, Wd = mask.shape
+    ends = []
+    for y in range(max(0, y0), min(H, y1 + 1)):
+        e = _bar_run(mask[y], zpx, step, gap, start_tol)
+        if e is None: continue
+        xo, xb = e + step, e + 2 * step
+        frac = 0.0
+        if 0 <= xb < Wd:
+            bg, px = img[y, xb], img[y, xo]; fg = img[y, e]
+            den = float(((fg - bg) ** 2).sum())
+            if den > 1e-6: frac = min(1.0, max(0.0, float(((px - bg) * (fg - bg)).sum()) / den))
+        ends.append((e - frac) if step < 0 else (e + 1 + frac))
+    return ends
+
+
 def read_pyramid_raster(cid, c, ctx):
     """인구 피라미드 — 막대가 인라인 그림(벡터가 아님, 38쪽): plotBox 를 dpi 로 렌더 → 남·여 막대 색 화소(ΔE ≤ pixelDE) 가면 →
     나이 글자 줄마다(세로 가운데 ± rowHalfPt) 가운데 0 선에서 왼쪽·오른쪽으로 이어진 막대 끝 화소(가장자리 화소는 배경과 섞인 몫만큼) →
@@ -964,25 +993,11 @@ def read_pyramid_raster(cid, c, ctx):
     out['series'], tot, inner = [], 0.0, 0.0
     for s, step in ((c['series'][0], -1), (c['series'][1], 1)):
         if s['name'] not in legend: W.append(f'{cid}: 범례에 「{s["name"]}」 없음')
-        target = lab(np.array([[int(s['color'][k:k + 2], 16) for k in (1, 3, 5)]], dtype=float))[0]
-        dist = np.sqrt(((L - target) ** 2).sum(axis=2))
-        mask = dist <= c['pixelDE']
+        mask = _color_mask(L, s['color'], c['pixelDE'])
         vals = []
         for q in labels:
             y0 = int((q['cy'] - c['rowHalfPt'] - box[1]) / sy); y1 = int((q['cy'] + c['rowHalfPt'] - box[1]) / sy)
-            ends = []
-            for y in range(max(0, y0), min(H, y1 + 1)):
-                e = _bar_run(mask[y], zpx, step, gap, start_tol)
-                if e is None: continue
-                # 가장자리 바깥 화소: 막대 색과 배경(두 칸 바깥) 사이 섞인 몫 → 화소 안 덮인 비율
-                xo, xb = e + step, e + 2 * step
-                frac = 0.0
-                if 0 <= xb < Wd:
-                    bg, px = img[y, xb], img[y, xo]; fg = img[y, e]
-                    den = float(((fg - bg) ** 2).sum())
-                    if den > 1e-6: frac = min(1.0, max(0.0, float(((px - bg) * (fg - bg)).sum()) / den))
-                edge = box[0] + ((e - frac) * sx if step < 0 else (e + 1 + frac) * sx)
-                ends.append(edge)
+            ends = [box[0] + e * sx for e in _row_edges_px(img, mask, y0, y1, zpx, step, gap, start_tol)]
             if not ends:
                 W.append(f'{cid} {s["name"]} {q["text"]}: 막대 화소 없음'); vals.append(None); continue
             vals.append(abs(xax.val(float(np.median(ends)))))

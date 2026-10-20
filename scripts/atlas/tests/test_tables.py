@@ -543,5 +543,94 @@ class ChartsU4(unittest.TestCase):
         self.assertEqual(json.dumps(self.again, ensure_ascii=False, sort_keys=True), json.dumps(self.charts, ensure_ascii=False, sort_keys=True))
 
 
+
+class PyramidRasterSynthetic(unittest.TestCase):
+    """U4-7 리뷰 후속: read_pyramid_raster 의 화소 길을 PDF 없이 — 만든 배열(막대 길이·틈·가장자리 섞임·색 허용치를 아는 값)로."""
+    MALE, FEMALE = '#fcbb76', '#f4858e'
+
+    @staticmethod
+    def _rgb(h):
+        return np.array([int(h[k:k + 2], 16) for k in (1, 3, 5)], dtype=float)
+
+    def _img(self):
+        """200×100 화소, 흰 바탕. 가운데 0 열 = 100. 행 10~30 = 위 나이 줄, 행 60~80 = 아래 나이 줄."""
+        img = np.full((100, 200, 3), 255.0)
+        m, f = self._rgb(self.MALE), self._rgb(self.FEMALE)
+        white = np.full(3, 255.0)
+        # 아래 줄(어린 나이 — 먼저 읽힘): 남 = 60~99 + 59 열은 막대 색과 흰색 반반(덮인 몫 0.5), 여 = 100~129 에 틈 3화소(110~112 — gapPx 4 안)
+        img[60:81, 60:100] = m; img[60:81, 59] = (m + white) / 2
+        img[60:81, 100:130] = f; img[60:81, 110:113] = white
+        # 위 줄: 남 = 90~99 다음 틈 6화소(84~89 — gapPx 넘음) 뒤 70~83 은 세지 않음,
+        #        여 = 0 선 회색 3화소(100~102 — startTolPx 6 안) 뒤 103~119 는 색이 조금 다른 막대(ΔE ≤ 12), 120~139 는 회색(색 허용치 밖)
+        img[10:31, 90:100] = m; img[10:31, 70:84] = m
+        img[10:31, 100:103] = 150.0
+        img[10:31, 103:120] = self._rgb('#f0888f'); img[10:31, 120:140] = 160.0
+        return img
+
+    def test_color_mask_tolerance(self):
+        import charts_read as CR
+        from atlas_common import lab
+        img = np.array([[self._rgb(self.FEMALE), self._rgb('#f0888f'), np.full(3, 160.0), (self._rgb(self.FEMALE) + 255) / 2]])
+        mask = CR._color_mask(lab(img.reshape(-1, 3)).reshape(1, 4, 3), self.FEMALE, 12)
+        self.assertEqual(mask.tolist(), [[True, True, False, False]])
+
+    def test_bar_run_gap_and_start(self):
+        import charts_read as CR
+        row = np.zeros(30, bool); row[10:20] = True; row[3:7] = True        # 틈 3화소(7~9)
+        self.assertEqual(CR._bar_run(row, 19, -1, 4, 6), 3)                # 틈 4 안 → 끝까지 이어 봄
+        self.assertEqual(CR._bar_run(row, 19, -1, 2, 6), 10)               # 틈 2 → 틈 앞에서 끝
+        late = np.zeros(30, bool); late[10:20] = True                     # 시작 허용(6) 밖 빈 화소 3(7~9)이 틈(2)을 넘음
+        self.assertEqual(CR._bar_run(late, 0, 1, 2, 6), None)
+        self.assertEqual(CR._bar_run(late, 0, 1, 2, 9), 19)                # 시작 허용 9 → 빈 화소 0
+        self.assertEqual(CR._bar_run(late, 0, 1, 3, 6), 19)                # 틈 3 → 이어 봄
+
+    def test_row_edges_fraction(self):
+        import charts_read as CR
+        from atlas_common import lab
+        img = self._img(); L = lab(img.reshape(-1, 3)).reshape(100, 200, 3)
+        male = CR._color_mask(L, self.MALE, 12)
+        ends = CR._row_edges_px(img, male, 60, 80, 100, -1, 4, 6)
+        self.assertEqual(len(ends), 21)
+        for e in ends: self.assertAlmostEqual(e, 59.5, places=6)           # 60 열 왼쪽 변에서 섞인 반 화소 더
+        self.assertEqual(CR._row_edges_px(img, male, 40, 50, 100, -1, 4, 6), [])   # 막대 없는 행
+
+    def test_reader_end_to_end(self):
+        """가로축 1pt = 1%, 0 = 10pt, 화소 0.1pt — 아는 막대 길이가 %로 나오고, 막대 없는 줄은 경고."""
+        from unittest import mock
+        import charts_read as CR
+        img = self._img()
+        legend_box, label_box = [0, 0, 1, 1], [0, 0, 2, 2]
+        labels = [{'text': '5~9', 'cy': 2.0}, {'text': '0~4', 'cy': 7.0}, {'text': '10~14', 'cy': 4.5}]
+
+        class Ax:
+            units_per_pt = 1.0
+            def val(self, x): return x - 10.0
+            def to_json(self): return {'k': 1}
+
+        def lines(p, box):
+            return [{'text': '남', 'cy': 0}, {'text': '여', 'cy': 0}] if box is legend_box else list(labels)
+
+        c = {'type': 'pyramidRaster', 'page': 38, 'bbox': [0, 0, 20, 10], 'title': '시험', 'plotBox': [0, 0, 20, 10], 'dpi': 720,
+             'xAxisBox': [0, 10, 20, 12], 'labelBox': label_box, 'legendBox': legend_box, 'rowHalfPt': 1.0, 'pixelDE': 12,
+             'sumTol': 1000, 'series': [{'name': '남', 'color': self.MALE}, {'name': '여', 'color': self.FEMALE}]}
+        ctx = {'warnings': [], 'defaults': {'numberFont': None, 'snapTol': 1.0}}
+        with mock.patch.object(CR, '_render_rgb', lambda p, box, dpi: img), \
+             mock.patch.object(CR, 'label_lines', lines), mock.patch.object(CR, 'text', lambda p, box: ''), \
+             mock.patch.object(CR, 'x_ticks', lambda c: [6.0, 10.0, 14.0]), \
+             mock.patch.object(CR.AX, 'number_tokens', lambda *a, **k: [{'cx': 10.1, 'value': 0, 'text': '0'}]), \
+             mock.patch.object(CR, 'axis', lambda *a, **k: (Ax(), [{'text': '2.0'}])):
+            out = CR.read_pyramid_raster('syn', c, ctx)
+        self.assertEqual(out['type'], 'pyramid')
+        self.assertEqual(out['categories'], ['0~4', '10~14', '5~9'])      # 아래(cy 큰 것)부터
+        male, female = (s['values'] for s in out['series'])
+        self.assertAlmostEqual(male[0], 4.05, places=6)                    # 59.5 화소 → 5.95pt → 4.05%
+        self.assertAlmostEqual(female[0], 3.0, places=6)                   # 틈 3화소 건너 130 열 → 13pt
+        self.assertIsNone(male[1]); self.assertIsNone(female[1])           # 4.5pt 줄(행 35~55)에는 막대 없음
+        self.assertAlmostEqual(male[2], 1.0, places=6)                     # 틈 6화소에서 끊김 → 90 열 → 9pt
+        self.assertAlmostEqual(female[2], 2.0, places=6)                   # 회색 0 선 건너 ΔE 안 막대 120 열까지, 회색 막대는 안 셈
+        self.assertEqual(out['series'][0]['precision'], 0.1)
+        self.assertEqual(sorted(ctx['warnings']), ['syn 남 10~14: 막대 화소 없음', 'syn 여 10~14: 막대 화소 없음'])
+        self.assertAlmostEqual(out['check']['sum'], 10.05, places=6)
+
 if __name__ == '__main__':
     unittest.main()
