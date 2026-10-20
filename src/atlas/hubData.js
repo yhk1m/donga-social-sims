@@ -109,3 +109,15 @@ export function cardTree(u, { href = u.url, thumb = u.thumb, newTab = false, ope
   if (planned) return ['div', { class: 'ah-card is-planned', 'aria-disabled': 'true', dataset: { unit: u.id } }, thumbNode, body];
   return ['a', { class: 'ah-card is-link', href, ...(newTab ? { target: '_blank', rel: 'noopener' } : {}), dataset: { unit: u.id } }, thumbNode, body];
 }
+
+/**
+ * 보기 페이지 주소 #<id> → 열 단원 id | null(모음 격자). ids = 공개 단원 id 배열.
+ * 깨진 %-부호(#%E0%A4%A)·constructor·__proto__ 같은 객체 키는 모두 null. hub_page.mjs 가 이 함수 원문을 페이지 스크립트에 그대로 넣는다
+ * (그래서 ES5 문법·바깥 이름 없이 씀).
+ */
+export function resolveHubHash(hash, ids) {
+  var raw = String(hash || '').replace(/^#/, '');
+  var id;
+  try { id = decodeURIComponent(raw); } catch (e) { return null; }
+  return ids.indexOf(id) >= 0 ? id : null;
+}

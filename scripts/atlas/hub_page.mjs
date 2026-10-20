@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { SIMS } from '../../src/registry.js';
-import { hubUnits, cardTree, topicTitles, HUB_THUMB_DIR } from '../../src/atlas/hubData.js';
+import { hubUnits, cardTree, topicTitles, resolveHubHash, HUB_THUMB_DIR } from '../../src/atlas/hubData.js';
 import { ICONS } from '../../src/shared/dom.js';
 
 const ROOT = resolve(import.meta.dirname, '..', '..');
@@ -104,14 +104,16 @@ ${cards}
 <script>
 (function () {
   var UNITS = ${JSON.stringify(data)};
+  var IDS = Object.keys(UNITS);
+  var resolveHubHash = ${resolveHubHash.toString()};
   var grid = document.getElementById('av-grid'), view = document.getElementById('av-view');
   var frame = document.getElementById('av-frame'), solo = document.getElementById('av-solo');
   var tabs = view.querySelectorAll('.av-tab');
   // 썸네일을 못 불러오면 숨김(빈 상자 대신 바탕색)
   document.querySelectorAll('img').forEach(function (img) { img.addEventListener('error', function () { img.style.visibility = 'hidden'; }, { once: true }); });
   function route() {
-    var id = decodeURIComponent(location.hash.slice(1));
-    var u = UNITS[id];
+    var id = resolveHubHash(location.hash, IDS); // src/atlas/hubData.js 원문(깨진 주소·객체 키 → 모음)
+    var u = id ? UNITS[id] : null;
     if (!u) {
       view.hidden = true; grid.hidden = false;
       if (frame.dataset.unit) { frame.removeAttribute('src'); delete frame.dataset.unit; }

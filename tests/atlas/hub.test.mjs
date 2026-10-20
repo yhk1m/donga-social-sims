@@ -2,9 +2,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { SIMS } from '../../src/registry.js';
-import { hubUnits, parseUnit, pageRange, pagesText, cardTree, ATLAS_PLAN, PAGES_BASE } from '../../src/atlas/hubData.js';
+import { hubUnits, parseUnit, pageRange, pagesText, cardTree, resolveHubHash, ATLAS_PLAN, PAGES_BASE } from '../../src/atlas/hubData.js';
 import { renderHubPage, readTopics, HUB_PAGE } from '../../scripts/atlas/hub_page.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..', '..');
@@ -82,4 +83,30 @@ test('docs/atlas/index.html 이 최신(아니면 node scripts/atlas/hub_page.mjs
   assert.equal(readFileSync(HUB_PAGE, 'utf8'), page);
   for (const id of hubUnits({ sims: SIMS, versions, plan: [] }).map((u) => u.id)) assert.ok(page.includes(`href="#${id}"`));
   assert.ok(readFileSync(join(ROOT, 'docs', 'index.html'), 'utf8').includes('href="./atlas/"'), '목록 페이지에 모음 링크');
+});
+
+test('resolveHubHash: 공개 단원만, 객체 키·깨진 %-부호·빈 주소는 모음(null)', () => {
+  const ids = ['atlas-u2-asia', 'atlas-u3-europe'];
+  assert.equal(resolveHubHash('#atlas-u3-europe', ids), 'atlas-u3-europe');
+  assert.equal(resolveHubHash('atlas-u2-asia', ids), 'atlas-u2-asia');
+  assert.equal(resolveHubHash('#atlas-u4-africa', ids), null);
+  for (const h of ['#constructor', '#__proto__', '#toString', '#hasOwnProperty']) assert.equal(resolveHubHash(h, ids), null, h);
+  assert.equal(resolveHubHash('#%E0%A4%A', ids), null);
+  assert.equal(resolveHubHash('#%', ids), null);
+  assert.equal(resolveHubHash('', ids), null);
+  assert.equal(resolveHubHash(undefined, ids), null);
+});
+
+test('보기 페이지 스크립트가 resolveHubHash 원문을 쓰고 단원 표를 직접 열지 않음', () => {
+  const page = readFileSync(HUB_PAGE, 'utf8');
+  assert.ok(page.includes(resolveHubHash.toString()));
+  assert.ok(!page.includes('decodeURIComponent(location.hash'));
+});
+
+test('조각 atlas-hub 가 빌드되고 규칙 검사를 통과함', { timeout: 120000 }, () => {
+  const out = execFileSync(process.execPath, [join(ROOT, 'scripts', 'build-embed.mjs'), 'atlas-hub'], { cwd: ROOT, encoding: 'utf8' });
+  assert.ok(out.includes('[atlas-hub] 통과'), out);
+  const html = readFileSync(join(ROOT, 'embed', 'atlas-hub.html'), 'utf8');
+  assert.ok(html.startsWith('<div class="ds-atlas-hub">'));
+  assert.ok(html.includes('사회과부도 모음'));
 });
