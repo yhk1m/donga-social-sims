@@ -18,7 +18,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { mesh as topoMesh } from 'topojson-client';
-import { geoDistance } from 'd3-geo';
+import { geoDistance, geoContains, geoCentroid } from 'd3-geo';
 import { makeConverter } from './georef.mjs';
 import { WORK, loadFit as loadFitRaw, fitPath, neIndex, key, km } from './geo_util.mjs';
 import { projectionFromStale, projectionFromOlder, fitFromStale } from './projection_from.mjs';
@@ -488,6 +488,55 @@ export function chartSymbolsLayerJson(layer, charts, cv, m, fit = {}) {
 }
 
 /**
+ * 네모 단위 기호(type 'unitSymbols', U5-3f — 47쪽 마킬라도라): features.py mode 'unit-symbols' 결과(feat — 지면 pt 칸 묶음 symbols [{xy(밑 칸 가운데),
+ * series:[{cls, count}], maxRun, leaderPt?}], legend [{cls, label, color, unit, short?, unitText?}]) → FeatureCollection
+ * {properties:{id, map, page, title, kind, layerType:'unitSymbols', approx, source, maxRun, legend[present]}, features:[{properties:{id(주 key), name, label,
+ * series:[{cls, count, value(= count × unit)}], leader?}, geometry: Point(칸 묶음 밑 가운데 — 교과서 자리)}]}.
+ * 주 = 지시선 끝(있으면) 또는 밑 칸 자리를 품은 하위 행정 구역(states — 설정 states {source, key, name}의 GeoJSON features), 없으면 넓이 중심이 가장
+ * 가까운 주 + 경고. 두 묶음이 한 주면 경고. 칸 수는 센 값 그대로. → {out, warnings}
+ */
+export function unitSymbolsLayerJson(layer, feat, cv, m = {}, fit = {}, states = null) {
+  const leg = new Map((feat.legend || []).map((e) => [e.cls, e]));
+  const sc = layer.states || {};
+  const warnings = [];
+  const inv = (xy, what) => { const ll = cv.invert(xy); if (!ll) throw new Error(`${layer.id}: ${what} ${xy} 를 경위도로 되돌릴 수 없음`); return [r3(ll[0]), r3(ll[1])]; };
+  const stateOf = (ll) => {
+    if (!states?.length) return null;
+    const hit = states.find((f) => geoContains(f, ll));
+    if (hit) return { f: hit };
+    const near = states.map((f) => ({ f, d: geoDistance(ll, geoCentroid(f)) })).sort((a, b) => a.d - b.d)[0];
+    return { f: near.f, km: Math.round(near.d * 6371) };
+  };
+  const seen = new Map();
+  const features = (feat.symbols || []).map((s, i) => {
+    for (const q of s.series) if (!leg.has(q.cls)) throw new Error(`${layer.id}: 범례에 없는 계열 ${q.cls}`);
+    const base = inv(s.xy, '칸 묶음 밑');
+    const leader = s.leaderPt ? inv(s.leaderPt, '지시선 끝') : null;
+    const st = stateOf(leader || base);
+    const key = st ? st.f.properties[sc.key || 'iso_3166_2'] : `u${i + 1}`;
+    const name = st ? st.f.properties[sc.name || 'name'] ?? st.f.properties.name : null;
+    if (st?.km != null) warnings.push(`칸 묶음 ${i + 1}(${s.xy}) 이 주 밖 — 가장 가까운 ${name}(넓이 중심 ${st.km}km)에 붙임`);
+    if (seen.has(key)) warnings.push(`칸 묶음 ${seen.get(key)} · ${i + 1} 이 같은 주 ${name ?? key}`);
+    seen.set(key, i + 1);
+    const series = s.series.map((q) => ({ cls: q.cls, count: q.count, value: q.count * (leg.get(q.cls).unit || 1) }));
+    const label = [name, ...series.map((q) => { const e = leg.get(q.cls); return `${e.short || e.label} ${q.count}칸${e.unitText ? `(×${e.unitText})` : ''}`; })].filter(Boolean).join(' · ');
+    return { type: 'Feature', properties: { id: key, ...(name ? { name } : {}), label, series, ...(leader ? { leader } : {}) }, geometry: { type: 'Point', coordinates: base } };
+  });
+  const present = new Set(features.flatMap((f) => f.properties.series.map((q) => q.cls)));
+  const out = {
+    type: 'FeatureCollection',
+    properties: {
+      id: layer.id, map: layer.map, page: m.page, title: layer.title || m.title, kind: m.kind, layerType: 'unitSymbols', approx: !!fit.approx,
+      source: `교과서 22개정 중학 사회과 부도 ${m.page}쪽 (칸 묶음 자리 — 경위도 맞추기: ${fit.family})`,
+      maxRun: Math.max(1, ...(feat.symbols || []).map((s) => s.maxRun || 1)),
+      legend: [...leg.values()].map((e) => ({ ...e, present: present.has(e.cls) })),
+    },
+    features,
+  };
+  return { out, warnings };
+}
+
+/**
  * 미확정 국경(source 'ne-disputed', U4-3f — 34쪽 서사하라·할라이브·일레미 붉은 점선, 교사 Q2): Natural Earth 10m 육지 국경선
  * (raw/ne/ne_10m_admin_0_boundary_lines_land) 중 FEATURECLA ∈ disputed.featurecla 이고, disputed.pairs([[나라, 나라]] — ADM0_LEFT·RIGHT
  * 차례 상관없음)가 있으면 그 짝인 선을, 단원 상자(basemap.unitBoxes) 안 것만 → 점선 선 레이어(1단계 선 레이어 그대로 — 주제 항목 type 'area').
@@ -636,11 +685,19 @@ function main(argv) {
   fs.mkdirSync(`${WORK}/geo`, { recursive: true });
   // 나라 단위 단계구분도는 도형을 옮기지 않는다(country_class.py → 나라별 분류만). 고리 기호·미확정 국경도 PDF 도형을 뽑지 않음(U4-3c·f)
   const cc = todo.filter((l) => l.type === 'countryClass' || l.type === 'regionClass');   // regionClass = 하위 행정 구역판(U5-3d, 설정 units)
-  const special = (l) => l.type === 'chartSymbols' || l.source === 'ne-disputed';
+  const special = (l) => l.type === 'chartSymbols' || l.source === 'ne-disputed' || l.type === 'unitSymbols';
   const geo = todo.filter((l) => l.type !== 'countryClass' && l.type !== 'regionClass' && !special(l));
   const byId = new Map();
+  const units = todo.filter((l) => l.type === 'unitSymbols');   // 네모 단위 기호(U5-3f): PDF 칸 묶음은 features.py 가 뽑고, 주 붙이기·경위도는 여기서
+  if (units.length) prepare(units, { extract: flags.has('--extract') });
   for (const l of todo.filter(special)) {
-    if (l.type === 'chartSymbols') {
+    if (l.type === 'unitSymbols') {
+      const feat = JSON.parse(fs.readFileSync(`${WORK}/vec/${l.id}.features.json`, 'utf8'));
+      const states = l.states ? JSON.parse(fs.readFileSync(path.join(WORK, l.states.source), 'utf8')).features : null;
+      const fit = loadFit(l.map);
+      const { out, warnings } = unitSymbolsLayerJson(l, feat, converter(l, fit), maps[l.map], fit, states);
+      byId.set(l.id, { ...writeLayer(l, out, { legend: out.properties.legend.length, classes: out.properties.legend.filter((e) => e.present).length, features: out.features.length }), warnings });
+    } else if (l.type === 'chartSymbols') {
       const cf = path.join(WORK, config.content.charts);
       if (!fs.existsSync(cf)) {   // 그래프 자료(extract_tables --charts)가 아직 없으면 이 레이어만 건너뜀 — 있는데 그래프가 빠졌으면 chartSymbolsLayerJson 이 멈춤
         byId.set(l.id, { id: l.id, type: l.type, legend: 0, classes: 0, features: 0, kb: 0, approx: false, dropped: '-', warnings: [`그래프 자료 ${config.content.charts} 가 없어 건너뜀(extract_tables --charts 먼저)`] });

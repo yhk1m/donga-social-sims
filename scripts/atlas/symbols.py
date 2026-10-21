@@ -454,3 +454,94 @@ def sized_circles(m, cfg, warnings):
     syms.sort(key=lambda q: -q['size'])
     return legend, syms, {'circles': len(found), 'leaders': sum(1 for t in targets if t), 'leaderSegments': used,
                           'sqrt': {'k': round(k, 4), 'exponent': round(expo, 3), 'maxRelErr': round(err, 3), 'legendPt': legd}}
+
+
+# ── 네모 단위 기호(U5-3f — 47쪽 마킬라도라: 주마다 파랑(1칸 = 50개 공장)·주황(1칸 = 2만 명 근로자) 작은 네모를 세로 열로 쌓음) ──────────
+def unit_columns(pts, tol, pitch):
+    """네모 가운데 [(x, y, cls)] → 열 [{cls, x, top, bot, n}]: 같은 계열·같은 x(tol 안)이고 y 가 이어진(간격 ≤ pitch × 1.5) 칸끼리."""
+    cols = []
+    for cls in dict.fromkeys(p[2] for p in pts):
+        xs = sorted((p for p in pts if p[2] == cls), key=lambda p: (p[0], p[1]))
+        groups = []
+        for p in xs:
+            g = next((g for g in groups if abs(g[0][0] - p[0]) <= tol), None)
+            if g is None: groups.append([p])
+            else: g.append(p)
+        for g in groups:
+            ys = sorted(q[1] for q in g)
+            run = [ys[0]]
+            for y in ys[1:] + [None]:
+                if y is not None and y - run[-1] <= pitch * 1.5: run.append(y); continue
+                cols.append({'cls': cls, 'x': float(np.mean([q[0] for q in g])), 'top': run[0], 'bot': run[-1], 'n': len(run)})
+                if y is not None: run = [y]
+    return cols
+
+
+def unit_stacks(cols, pitch, order):
+    """열 → 칸 묶음(주 하나): 이웃 열(x 차 ≤ pitch × 1.25)이고 밑 칸 y 차 ≤ pitch × 0.6 이면 한 묶음(계열 상관없음).
+    → [{x0, x1, top, bot(밑 칸 가운데 y), base([가운데 x, 밑 칸 가운데 y]), series:[{cls, count}](order 차례, 0 은 뺌), maxRun, cols}]"""
+    cols = sorted(cols, key=lambda c: c['x'])
+    parent = list(range(len(cols)))
+    def find(i):
+        while parent[i] != i: parent[i] = parent[parent[i]]; i = parent[i]
+        return i
+    for i, a in enumerate(cols):
+        for j in range(i + 1, len(cols)):
+            b = cols[j]
+            if b['x'] - a['x'] > pitch * 1.25: break
+            if abs(b['bot'] - a['bot']) <= pitch * 0.6: parent[find(j)] = find(i)
+    out = {}
+    for i, c in enumerate(cols): out.setdefault(find(i), []).append(c)
+    stacks = []
+    for g in out.values():
+        cnt = {cls: sum(c['n'] for c in g if c['cls'] == cls) for cls in order}
+        x0, x1 = min(c['x'] for c in g), max(c['x'] for c in g)
+        bot = max(c['bot'] for c in g)
+        stacks.append({'x0': x0, 'x1': x1, 'top': min(c['top'] for c in g), 'bot': bot, 'base': [round((x0 + x1) / 2, 2), round(bot, 2)],
+                       'series': [{'cls': k, 'count': v} for k, v in cnt.items() if v], 'maxRun': max(c['n'] for c in g), 'cols': len(g)})
+    return sorted(stacks, key=lambda s_: (s_['base'][1], s_['base'][0]))
+
+
+def unit_symbols(m, cfg, warnings):
+    """네모 단위 기호 → (legend, symbols, report). 설정 cfg['series'] [{cls, fill, label('1칸당 50개 공장'), unit(50), short('공장'), unitText('50개')}],
+    cfg['cellPt'] [최소, 최대](네모 한 변), cfg['pitchPt'](칸 간격 — 가운데끼리), cfg['colTolPt']?(같은 열 x 여유, 0.4),
+    cfg['leaders']?({stroke, width, dotFill, dotPt:[최소, 최대], nearPt} — 칸 묶음을 비켜 그리고 꺾인 선으로 주를 가리킨 것: 선 한 끝 = 끝 점, 다른 끝 = 묶음 상자 근처).
+    기호 xy = 묶음 밑 칸 가운데 줄의 가운데(지면 pt), series, bbox, leaderPt?(끝 점 가운데). 범례 항목 = 네모 견본(shape square, unit·short·unitText)."""
+    lo, hi = cfg['cellPt']; pitch = cfg['pitchPt']; order = [s_['cls'] for s_ in cfg['series']]
+    byfill = {s_['fill']: s_['cls'] for s_ in cfg['series']}
+    pts = []
+    for d in drawings(m['page']):
+        f = hexc(d.get('fill'))
+        # 지도 틀 안이면(덮개 상자는 안 봄 — 47쪽 마킬라도라는 아래 칸 묶음이 범례 상자에 걸침, 범례 견본 네모는 크기 cellPt 로 거름)
+        if f not in byfill or not inside(d['rect'], m['bbox'], 0): continue
+        r = d['rect']
+        if lo <= r.width <= hi and lo <= r.height <= hi: pts.append(((r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2, byfill[f]))
+    stacks = unit_stacks(unit_columns(pts, cfg.get('colTolPt', 0.4), pitch), pitch, order)
+    half = (lo + hi) / 4
+    for s_ in stacks: s_['bbox'] = [round(s_['x0'] - half, 2), round(s_['top'] - half, 2), round(s_['x1'] + half, 2), round(s_['bot'] + half, 2)]
+    linked = 0
+    lc = cfg.get('leaders')
+    if lc:
+        dlo, dhi = lc['dotPt']
+        dots = [((d['rect'].x0 + d['rect'].x1) / 2, (d['rect'].y0 + d['rect'].y1) / 2) for d in drawings(m['page'])
+                if hexc(d.get('fill')) == lc['dotFill'] and in_map(d, m) and dlo <= max(d['rect'].width, d['rect'].height) <= dhi]
+        for d in drawings(m['page']):
+            if d['type'] != 's' or hexc(d.get('color')) != lc['stroke'] or abs((d.get('width') or 0) - lc['width']) > 0.05 or not in_map(d, m): continue
+            P = [(it[k].x, it[k].y) for it in d['items'] if it[0] == 'l' for k in (1, 2)]
+            if len(P) < 2: continue
+            for a, b in ((P[0], P[-1]), (P[-1], P[0])):
+                dot = min(dots, key=lambda q: np.hypot(q[0] - a[0], q[1] - a[1]), default=None)
+                if dot is None or np.hypot(dot[0] - a[0], dot[1] - a[1]) > lc['nearPt'] + dhi / 2: continue
+                gap = lambda s_: float(np.hypot(max(s_['bbox'][0] - b[0], 0, b[0] - s_['bbox'][2]), max(s_['bbox'][1] - b[1], 0, b[1] - s_['bbox'][3])))
+                st = min(stacks, key=gap, default=None)
+                if st is None or gap(st) > lc['nearPt']: continue
+                st['leaderPt'] = [round(dot[0], 2), round(dot[1], 2)]; linked += 1
+                break
+            else:
+                warnings.append(f"지시선 {[round(v, 1) for v in d['rect']]} 에 끝 점·칸 묶음을 못 붙임")
+    legend = [{'cls': s_['cls'], 'color': s_['fill'], 'label': s_['label'], 'kind': 'symbol', 'shape': 'square', 'unit': s_['unit'],
+               **({'short': s_['short']} if s_.get('short') else {}), **({'unitText': s_['unitText']} if s_.get('unitText') else {})} for s_ in cfg['series']]
+    syms = [{'xy': s_['base'], 'cls': s_['series'][0]['cls'], 'kind': 'unit', 'series': s_['series'], 'bbox': s_['bbox'], 'maxRun': s_['maxRun'],
+             **({'leaderPt': s_['leaderPt']} if s_.get('leaderPt') else {})} for s_ in stacks]
+    counts = {c: sum(q['count'] for s_ in stacks for q in s_['series'] if q['cls'] == c) for c in order}
+    return legend, syms, {'cells': len(pts), 'counts': counts, 'stacks': len(stacks), 'maxRun': max((s_['maxRun'] for s_ in stacks), default=0), 'leaders': linked}

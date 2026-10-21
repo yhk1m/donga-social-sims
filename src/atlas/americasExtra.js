@@ -22,7 +22,7 @@ import { registerFamily } from './fitCore.js';
 import { PROJECTIONS } from './projections.js';
 import { graticuleStep } from './lineStyle.js';
 import { registerLayerType } from './layerRef.js';
-import { flowWidthPx, arrowHead, arrowSize, alphaOf, distToPolyline } from './layerStyle.js';
+import { flowWidthPx, arrowHead, arrowSize, alphaOf, distToPolyline, zoomScale } from './layerStyle.js';
 import { LAYER_Z, round1, metaOf, setAttr, connect, hoverClass, featuresOf, isLine } from './layerCommon.js';
 
 /** 3a: 평사·정사 도법 등록. 매개변수 p = [중심 경도, 중심 위도](방위 도법과 같은 꼴). */
@@ -278,9 +278,108 @@ export function pathFlowLayer(id, data, { legend = null, map = null, layerId = i
   return layer;
 }
 
+// ---------- 3f 네모 단위 기호(47쪽 마킬라도라) ----------
+/** 칸 크기(px): 화면 약 4px(k 2.2)에서 확대에 따라 [3, 8]. 틈 = 칸 × 0.25(최소 1px). */
+export function unitCellPx(k) {
+  const c = Math.min(8, Math.max(3, 4 * zoomScale(k, { ref: 2.2, exp: 0.5, min: 0.75, max: 2 })));
+  return { c, g: Math.max(1, c * 0.25) };
+}
+
+/**
+ * 칸 배치(밑 가운데 = (0, 0), 위로 쌓음): series [{cls, count}] 를 범례 차례(order)로, 계열마다 maxRun 칸씩 열을 왼쪽부터 채우고 계열 열을 나란히.
+ * → {cells:[{cls, x, y}], w, h}(칸 왼쪽 위 자리, 묶음 너비·높이 px)
+ */
+export function unitLayout(series, order, maxRun, c, g) {
+  const p = c + g, cols = [];
+  const by = new Map(series.map((s) => [s.cls, s.count]));
+  for (const cls of order) for (let left = by.get(cls) || 0; left > 0; left -= maxRun) cols.push({ cls, n: Math.min(maxRun, left) });
+  const w = cols.length * p - g, cells = [];
+  cols.forEach((col, i) => { for (let r = 0; r < col.n; r++) cells.push({ cls: col.cls, x: -w / 2 + i * p, y: -c - r * p }); });
+  return { cells, w: Math.max(0, w), h: Math.max(0, ...cols.map((col) => col.n * p - g)) };
+}
+
+/**
+ * 네모 단위 기호 레이어(SVG, type 'unitSymbols'). 자료 = FeatureCollection {properties:{layerType:'unitSymbols', maxRun(한 열 최대 칸 — 교과서 가장 긴 열),
+ * legend:[{cls, label, color, kind:'symbol', shape:'square', unit}]}, features:[{properties:{id, name, label(말풍선), series:[{cls, count}], leader?:[lon, lat]},
+ * geometry: Point(칸 묶음 밑 가운데 — 교과서 자리를 되돌린 경위도)}]}. 칸 수는 센 값 그대로, 확대하면 칸 크기만 바뀜(unitCellPx — 칸 비 그대로).
+ * leader 가 있으면(교과서가 칸 묶음을 비켜 그리고 지시선으로 주를 가리킨 것) 묶음 밑 가운데 → leader 점 선 + 끝 점. 누르면 onPick(feature),
+ * 지명 장애물 = 칸 묶음 상자, 범례 고름 = 고르지 않은 계열 칸 흐리게. CSS 없이 속성으로 그린다(공유 atlas.css 를 늘리지 않음).
+ */
+export function unitSymbolsLayer(id, data, { legend = null, map = null, layerId = id, onPick = null, dimAlpha = 0.2, z = LAYER_Z.symbol } = {}) {
+  const feats = featuresOf(data).filter((f) => f.geometry?.type === 'Point');
+  const legendList = data.properties?.legend || [];
+  const order = legendList.map((e) => e.cls), colorOf = new Map(legendList.map((e) => [e.cls, e.color]));
+  const maxRun = data.properties?.maxRun || 10;
+  const items = feats.map((f) => ({ f }));
+  const byF = new Map(items.map((it) => [it.f, it]));
+  let root = null;
+  function build(g) {
+    root = s('g', { class: 'at-units' });
+    for (const it of items) {
+      Object.assign(it, { key: '', box: null, groups: null });
+      it.el = s('g', { class: 'at-unit-item', cursor: 'pointer', on: { click: (e) => { e.stopPropagation(); onPick?.(it.f, e); } } }, s('title', {}, it.f.properties.label || it.f.properties.name || ''));
+      if (it.f.properties.leader) {
+        it.leader = s('path', { class: 'at-unit-leader', fill: 'none', stroke: '#231f20', 'stroke-width': 0.8 });
+        it.dot = s('circle', { class: 'at-unit-dot', r: 1.6, fill: '#231f20' });
+        root.append(it.leader, it.dot);
+      }
+    }
+    root.append(...items.map((it) => it.el));
+    g.append(root);
+  }
+  const onHover = hoverClass((f) => byF.get(f));
+  const layer = {
+    id, z, meta: metaOf(data), features: feats,
+    labelObstacles: () => items.filter((it) => it.box).map((it) => [...it.box]),
+    drawSvg(g, project, view) {
+      if (!root || root.parentNode !== g) build(g);
+      const { c, g: gap } = unitCellPx(view.k);
+      for (const it of items) {
+        const q = project(it.f.geometry.coordinates);
+        const shown = !!q && q[0] > -60 && q[0] < view.width + 60 && q[1] > -10 && q[1] < view.height + 200;
+        setAttr(it.el, 'display', shown ? null : 'none');
+        const e = shown && it.f.properties.leader ? project(it.f.properties.leader) : null;
+        if (it.leader && !e) { setAttr(it.leader, 'd', null); setAttr(it.dot, 'display', 'none'); }
+        if (!shown) { it.box = null; continue; }
+        const key = `${round1(c)}`;
+        if (key !== it.key) { // 칸 크기가 바뀌었을 때만 칸을 다시 만든다
+          it.key = key;
+          const lay = unitLayout(it.f.properties.series || [], order, maxRun, c, gap);
+          it.groups = order.map((cls) => s('g', { class: 'at-unit-series', fill: colorOf.get(cls) },
+            lay.cells.filter((x) => x.cls === cls).map((x) => s('rect', { class: 'at-unit-cell', 'data-cls': cls, x: round1(x.x), y: round1(x.y), width: round1(c), height: round1(c) }))));
+          it.el.replaceChildren(it.el.childNodes[0], ...it.groups);
+          it.w = lay.w; it.h = lay.h;
+        }
+        setAttr(it.el, 'transform', `translate(${round1(q[0])},${round1(q[1])})`);
+        it.box = [q[0] - it.w / 2, q[1] - it.h, q[0] + it.w / 2, q[1]];
+        if (e) { // 지시선: 칸 묶음 상자에서 끝 점에 가장 가까운 점 → 끝 점(교과서 꺾인 선 대신 곧은 선)
+          const bx = Math.max(it.box[0], Math.min(e[0], it.box[2])), by = Math.max(it.box[1], Math.min(e[1], it.box[3]));
+          setAttr(it.leader, 'd', `M${round1(bx)},${round1(by)}L${round1(e[0])},${round1(e[1])}`);
+          setAttr(it.dot, 'display', null); setAttr(it.dot, 'cx', round1(e[0])); setAttr(it.dot, 'cy', round1(e[1]));
+        }
+        order.forEach((cls, i) => { const a = alphaOf(legend, cls, dimAlpha); setAttr(it.groups[i], 'opacity', a === 1 ? null : a); });
+        const hot = it.f === onHover.current();
+        it.el.classList.toggle('is-hover', hot);
+        setAttr(it.el, 'stroke', hot ? '#1f2a44' : null);
+      }
+    },
+    hit(xy) {
+      for (let i = items.length - 1; i >= 0; i--) {
+        const b = items[i].box;
+        if (b && xy[0] >= b[0] - 2 && xy[0] <= b[2] + 2 && xy[1] >= b[1] - 2 && xy[1] <= b[3] + 2) return items[i].f;
+      }
+      return null;
+    },
+    destroy() { offs.forEach((off) => off()); offs.length = 0; root?.remove(); root = null; },
+  };
+  const offs = connect({ map, legend, layerId, onHover });
+  return layer;
+}
+
 /** 아메리카 단원 조각의 모든 등록(뒤 하위 기능이 여기에 더함). 여러 번 불러도 같음(지구본 회전 상태는 처음 등록 것을 이어 감). */
 export function installAmericasExtras() {
   installAmericasFamilies();
   if (!PROJECTIONS.globe) registerProjection('globe', globeProjection());
   registerLayerType('pathFlow', (id, d, ctx) => pathFlowLayer(id, d, ctx));
+  registerLayerType('unitSymbols', (id, d, ctx) => unitSymbolsLayer(id, d, ctx));
 }

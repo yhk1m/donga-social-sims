@@ -8,7 +8,8 @@
 #    report:{..., warnings:[...]}}
 # mode: vector(zones.vector_zones) | raster(zones.raster_zones) | symbols(symbols.symbols) | density-markers(symbols.density_markers)
 #   | raster-circles(symbols.raster_circles — 렌더 화소에서 찾는 크기 단계 원) | labelled-points(symbols.labelled_points — 이름 붙은 점)
-#   | sized-circles(symbols.sized_circles — 지름 ∝ √값 원 + 겹친 원 범례 + 지시선 끝 자리, U5-3e 47쪽 본사).
+#   | sized-circles(symbols.sized_circles — 지름 ∝ √값 원 + 겹친 원 범례 + 지시선 끝 자리, U5-3e 47쪽 본사)
+#   | unit-symbols(symbols.unit_symbols — 주별 네모 칸 묶음, U5-3f 47쪽 마킬라도라 — build_layers 가 type 'unitSymbols' 로 주에 붙임).
 # 부가: hatch(빗금 분류), isotherm(lines.isotherms), flows(lines.flows), extraLegend(범례에 없는 칠한 분류), outlineFills(띠로 그린 지역 경계 →
 #   테두리만 분류 style 'outline'), labels(지역 이름 글자 → Point {type:'label'}).
 # domain: build_layers.mjs 가 쓰는 $ATLAS_WORK/geo/<map>.domain.json(경위도로 되돌릴 수 있는 지면 범위, 원통 도법 세계 지도)이
@@ -186,6 +187,9 @@ def features(layer_id):
     elif mode == 'sized-circles':    # 47쪽 본사 원(지름 ∝ √값, 겹친 원 범례, 지시선 끝 자리 — symbols.sized_circles, U5-3e)
         out['legend'], out['symbols'], rep = S.sized_circles(m, {**cfg, 'id': layer_id}, warnings)
         out['report'].update(rep)
+    elif mode == 'unit-symbols':     # 47쪽 마킬라도라 네모 단위 기호(열 → 주별 칸 묶음, 꺾인 지시선 — symbols.unit_symbols, U5-3f)
+        out['legend'], out['symbols'], rep = S.unit_symbols(m, cfg, warnings)
+        out['report'].update(rep)
     elif mode == 'density-markers':
         mc = cfg['marker']
         out['symbols'] = S.density_markers(m, mc, warnings)
@@ -194,7 +198,8 @@ def features(layer_id):
         raise ValueError(f'{layer_id}: 모르는 mode {mode}')
     for e in out['legend']: e.pop('box', None)
     present = ({p['cls'] for p in out['polys']} | {p['cls'] for part in out.get('parts', []) for p in part['polys']}
-               | {s['cls'] for s in out['symbols']} | {l['cls'] for l in out['lines']})
+               | {s['cls'] for s in out['symbols']} | {l['cls'] for l in out['lines']}
+               | {q['cls'] for s in out['symbols'] for q in s.get('series') or []})   # 네모 단위 기호 칸 묶음의 계열들(U5-3f)
     absent = [e['label'] for e in out['legend'] if e['cls'] not in present and e.get('geometry') is not False]
     if absent: warnings.append(f'도형 없는 범례 분류: {absent}')
     exp = cfg.get('expectLegend')
