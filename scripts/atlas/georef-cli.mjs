@@ -6,6 +6,7 @@
 //   단원: --unit uN(또는 env ATLAS_UNIT, 기본 u2) — 지도 목록은 단원 설정 maps(u2 = maps_u2.json, scripts/atlas/unit.mjs)
 // 기준점: python -I scripts/atlas/extract_vectors.py --controls all 이 쓴 $ATLAS_WORK/vec/<id>.controls.json
 //   (--all 은 controls.json 이 없거나 지도 목록·extract_vectors.py 보다 오래됐으면 먼저 다시 뽑는다)
+// fitFrom {map, dx, dy}(지도 항목, 있을 때만): 같은 바탕 지도를 쪽 안에 되풀이한 지도는 맞추지 않고 그 지도 fit 을 쪽 이동량만큼 옮긴다(shiftFit).
 // 도법 후보: 지도 항목 families → 단원 설정 georef.families → 1단계 8개(georef.familiesFor).
 // ATLAS_WORK 기본값 C:/Users/Public/atlas-work. 지도 목록의 "georef": false 지도는 건너뛴다.
 import fs from 'node:fs';
@@ -16,7 +17,7 @@ import { geoPath } from 'd3-geo';
 import { feature } from 'topojson-client';
 import { fitWithTps, robustFit, applyFit, fitProjection, familiesFor, PT_MM } from './georef.mjs';
 import { stale, WORK, fitPath, loadFit } from './geo_util.mjs';
-import { projectionFromStale, projectionFromOlder } from './projection_from.mjs';
+import { projectionFromStale, projectionFromOlder, shiftFit } from './projection_from.mjs';
 import { resolveUnit, stripUnitArgs } from './unit.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -62,12 +63,37 @@ function fixedFrom(id, who) {
   return { family: f.family, params: f.params };
 }
 
+function fitFromMap(m, done) {
+  const { map } = m.fitFrom;
+  const src = done.get(map);
+  if (!src) throw new Error(`${m.id}: fitFrom ${map} 를 이번에 먼저 맞추지 못함(지도 목록에서 앞에 두고, fitFrom 지도를 다시 빌리지 않음)`);
+  if (src.fitFrom) throw new Error(`${m.id}: fitFrom ${map} 도 fitFrom 지도 — 빌린 지도는 또 빌리지 않음`);
+  const out = shiftFit(src, m.fitFrom, m.id);
+  delete out.resid; delete out.dropped;
+  const own = loadCps(m.id);
+  if (own.length) {
+    const res = own.map((c) => { const p = applyFit(out, [c.lon, c.lat]); return p ? Math.hypot(p[0] - c.xy[0], p[1] - c.xy[1]) : Infinity; });
+    out.own = { n: own.length, rmsPt: r2(Math.sqrt(res.reduce((a, r) => a + r * r, 0) / res.length)), maxPt: r2(Math.max(...res)),
+      resid: own.map((c, i) => ({ name: cpName(c), residPt: r2(res[i]) })) };
+  }
+  return out;
+}
+
 function fitAll() {
   refreshControls();
   fs.mkdirSync(`${WORK}/geo`, { recursive: true });
   const rows = [];
+  const done = new Map();   // 이번에 맞춘 fit(fitFrom 이 빌림)
   for (const m of maps) {
     if (!georefOn(m)) { rows.push([m.id, '(georef: false — 맞추기 없음)']); continue; }
+    if (m.fitFrom) {        // 키가 있을 때만(u2·u3·u4 지도 목록에는 없음 — 옛 길 그대로)
+      const out = fitFromMap(m, done);
+      fs.writeFileSync(fitPath(m.id), JSON.stringify(out, null, 1));
+      done.set(m.id, out);
+      rows.push([m.id, out.family, out.params.map((v) => v.toFixed(1)).join(','), out.rmsPt.toFixed(2), out.rmsMm.toFixed(2), out.meanMm.toFixed(2),
+        `← ${m.fitFrom.map} (${m.fitFrom.dx}, ${m.fitFrom.dy})`, out.own ? `own ${out.own.n} rms ${out.own.rmsPt}` : 0, '', out.approx ? `approx: ${out.approxReason}` : '']);
+      continue;
+    }
     // projectionFrom: 같은 쪽 다른 지도의 도법·매개변수를 그대로 쓰고 닮음 변환만 맞춘다(29쪽 아이슬란드 삽입 — 작은 섬 하나라 원뿔 매개변수가
     // 정해지지 않아 짝 되풀이가 수렴하지 않았음). 그 지도가 목록에서 먼저 맞춰져 있어야 한다.
     const families = m.projectionFrom ? [fixedFrom(m.projectionFrom, m.id)] : familiesFor(m, unitConfig);
@@ -92,6 +118,7 @@ function fitAll() {
     if (cps.length && cps.every((c) => c.approx)) reasons.push('기준점을 눈으로 찍음(모든 기준점 approx)');
     if (reasons.length) { out.approx = true; out.approxReason = reasons.join('; '); }
     fs.writeFileSync(fitPath(m.id), JSON.stringify(out, null, 1));
+    done.set(m.id, out);
     rows.push([m.id, out.family, out.params.map((v) => v.toFixed(1)).join(','), out.rmsPt.toFixed(2), out.rmsMm.toFixed(2), out.meanMm.toFixed(2),
       fit.tps ? `${out.meanTpsMm.toFixed(2)} (LOO ${out.looMeanMm.toFixed(2)})` : '-', cps.length, dropped.length || '', out.approx ? `approx: ${out.approxReason}` : '']);
   }

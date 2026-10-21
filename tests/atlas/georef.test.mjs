@@ -260,3 +260,70 @@ test('projectionFromStale: 본 지도 도법·매개변수가 바뀌었으면 �
   assert.match(projectionFromOlder(inset, parent, { insetMtime: 1, parentMtime: 2 }), /더 새것/);
   assert.equal(projectionFromOlder(inset, parent, {}), null);
 });
+
+// ── Ⅴ 아메리카(u5) fit: 같은 합격 기준 + 40쪽 평사·46쪽 지구본 정사·47쪽 세계 태평양 중심, fitFrom 지도 = 빌린 지도 + 쪽 이동량 ─────
+const U5_MAPS = JSON.parse(readFileSync(new URL('../../scripts/atlas/maps_u5.json', import.meta.url), 'utf8'));
+const u5Fits = U5_MAPS.map((m) => [m.id, `${WORK_DIR}/geo/${m.id}.fit.json`]).filter(([, f]) => existsSync(f));
+test('u5 fit: rmsMm·meanMm ≤ 0.5(approx 제외), p40 평사·p46 지구본 정사, p47-hq 중심 경도 120~180, fitFrom = sim 이동 dx·dy', { skip: u5Fits.length ? false : '작업 폴더에 u5 fit 없음' }, () => {
+  assert.deepEqual(u5Fits.map(([id]) => id), U5_MAPS.map((m) => m.id), 'u5 fit 파일이 지도 목록과 다름');
+  assert.equal(U5_MAPS.length, 28);
+  const fits = Object.fromEntries(u5Fits.map(([id, f]) => [id, JSON.parse(readFileSync(f, 'utf8'))]));
+  for (const [id, fit] of Object.entries(fits)) {
+    if (fit.approx) continue;
+    assert.ok(fit.rmsMm <= 0.5 && fit.meanMm <= 0.5, `${id} rms ${fit.rmsMm} mean ${fit.meanMm}`);
+  }
+  assert.equal(fits['p40-americas'].family, 'stereographic');
+  assert.equal(fits['p41-coloring'].family, 'stereographic');
+  assert.equal(fits['p46-migration'].family, 'orthographic');
+  assert.equal(fits['p42-north'].family, 'conicConformal');
+  assert.equal(fits['p43-south'].family, 'azimuthalEqualArea');
+  assert.equal(fits['p40-central'].family, 'miller');
+  const hq = fits['p47-hq'];
+  assert.ok(['miller', 'equirectangular', 'mercator', 'robinson'].includes(hq.family), hq.family);
+  const lon0 = ((hq.params[0] % 360) + 360) % 360;
+  assert.ok(lon0 >= 120 && lon0 <= 180, `p47-hq 중심 경도 ${hq.params[0]}`);
+  for (const m of U5_MAPS.filter((x) => x.projectionFrom)) {
+    const f = fits[m.id], parent = fits[m.projectionFrom];
+    assert.equal(f.fixed, true, m.id);
+    assert.equal(f.family, parent.family, m.id);
+    assert.deepEqual(f.params, parent.params, m.id);
+  }
+  const fromMaps = U5_MAPS.filter((x) => x.fitFrom);
+  assert.equal(fromMaps.length, 9);
+  for (const m of fromMaps) {
+    const f = fits[m.id], src = fits[m.fitFrom.map];
+    assert.deepEqual(f.fitFrom, m.fitFrom, m.id);
+    assert.equal(f.family, src.family, m.id);
+    assert.deepEqual(f.params, src.params, m.id);
+    assert.ok(Math.abs(f.sim.tx - src.sim.tx - m.fitFrom.dx) < 1e-6 && Math.abs(f.sim.ty - src.sim.ty - m.fitFrom.dy) < 1e-6, m.id);
+    assert.equal(f.sim.a, src.sim.a); assert.equal(f.sim.b, src.sim.b);
+    const ll = [-98, 39];   // 같은 경위도가 정확히 dx·dy 만큼 옮겨짐(TPS 포함)
+    const p = applyFit(src, ll), q = applyFit(f, ll);
+    if (p) assert.ok(Math.abs(q[0] - p[0] - m.fitFrom.dx) < 1e-6 && Math.abs(q[1] - p[1] - m.fitFrom.dy) < 1e-6, m.id);
+  }
+});
+
+test('shiftFit(fitFrom): 합성 fit(TPS 포함)에 쪽 이동량을 주면 모든 경위도가 정확히 dx·dy 만큼 옮겨지고 되돌리기도 같음', async () => {
+  const { shiftFit } = await import('../../scripts/atlas/projection_from.mjs');
+  const P = geoConicEqualArea().rotate([96, 0]).parallels([29.5, 45.5]).scale(700).translate([400, 300]);
+  // 결정적 잡음(±1.5pt)을 넣어 TPS 가 생기게
+  let s = 11; const rnd = () => ((s = (s * 1103515245 + 12345) % 2147483648) / 2147483648 - 0.5) * 3;
+  const cps = [];
+  for (let lon = -124; lon <= -68; lon += 7) for (let lat = 26; lat <= 48; lat += 5) { const [x, y] = P([lon, lat]); cps.push({ xy: [x + rnd(), y + rnd()], lon, lat }); }
+  const src = fitWithTps(cps, { families: ['conicEqualArea'] });
+  assert.ok(src.tps, 'TPS 가 있는 합성 fit');
+  const dx = 237.99, dy = -0.04;
+  const out = shiftFit(src, { map: 'p46-us-european', dx, dy }, 'p46-us-african');
+  assert.equal(out.id, 'p46-us-african');
+  assert.deepEqual(out.fitFrom, { map: 'p46-us-european', dx, dy });
+  const tx0 = src.sim.tx;
+  for (const ll of [[-100, 40], [-120, 30], [-70, 45], [-150, 60], [-80, 25]]) {   // 껍질 안·밖(TPS 가 줄어드는 곳) 모두
+    const p = applyFit(src, ll), q = applyFit(out, ll);
+    assert.ok(Math.abs(q[0] - p[0] - dx) < 1e-6 && Math.abs(q[1] - p[1] - dy) < 1e-6, `${ll}: ${p} → ${q}`);
+    const back = invertFit(out, q);
+    assert.ok(Math.abs(back[0] - ll[0]) < 1e-6 && Math.abs(back[1] - ll[1]) < 1e-6, `${ll} 되돌림 ${back}`);
+  }
+  assert.equal(src.sim.tx, tx0, '빌린 fit 은 그대로');
+  const noTps = shiftFit({ ...src, tps: undefined }, { map: 'a', dx: 1, dy: 2 }, 'b');
+  assert.equal(noTps.tps, undefined);
+});

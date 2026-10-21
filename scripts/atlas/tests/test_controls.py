@@ -170,4 +170,28 @@ class ControlsU4(unittest.TestCase):
             self.assertEqual(c['lon'] % 10, 0); self.assertEqual(c['lat'] % 10, 0)
 
 
+@NEED_PDF
+class ControlsU5(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.maps = {mid: controls_u3(mid, 'u5') for mid in ('p40-americas', 'p42-north', 'p43-south')}
+
+    def test_general_maps_controls(self):
+        # 40·42·43쪽 일반도: 경위선 교차점 + 도시 기호 기준점 ≥ 12, 모두 경위도 범위 안(40쪽은 서유럽·서아프리카 끝 — 리스본·파리·니스까지)
+        for mid, cps in self.maps.items():
+            self.assertGreaterEqual(len(cps), 12, mid)
+            self.assertEqual({c['src'] for c in cps}, {'grid', 'city'}, mid)
+            for c in cps:
+                self.assertTrue(-180 <= c['lon'] <= 180 and -90 <= c['lat'] <= 90)
+                self.assertTrue(-180 <= c['lon'] <= 8 and -65 <= c['lat'] <= 83, (mid, c['lon'], c['lat']))   # places.neBox
+                self.assertEqual(len(c['xy']), 2)
+
+    def test_p40_inset_excluded(self):
+        # 40쪽 본 지도: 삽입 「중앙아메리카」 틀(excludeBoxes) 안의 교차점이 없고, 교차점은 20° 격자(본 지도 눈금 글자)
+        grid = [c for c in self.maps['p40-americas'] if c['src'] == 'grid']
+        self.assertGreaterEqual(len(grid), 30)
+        for c in grid:
+            self.assertFalse(50 <= c['xy'][0] <= 393 and 469 <= c['xy'][1] <= 645, c)
+            self.assertEqual(c['lon'] % 20, 0); self.assertEqual(c['lat'] % 20, 0)
+
 if __name__ == '__main__': unittest.main()

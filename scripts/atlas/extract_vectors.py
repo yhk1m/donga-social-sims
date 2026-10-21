@@ -10,6 +10,8 @@
   - 그 밖의 지도: maps_u2.json 의 controls(손으로 적은 해안 특징점·섬 중심)를 그대로 쓴다.
   - 일반도(p16·p18·p19)는 교차점에 더해 maps_u2.json controls 의 도시 기호 기준점(src:'city', city_controls.mjs 가 Natural Earth 인구
     지점과 짝지어 고른 것)도 쓴다 — 교차점이 지도 안쪽에만 있어 가장자리를 붙잡으려고.
+  - 지도 항목 excludeBoxes([[x0,y0,x1,y1]…], 있을 때만): 그 상자 안의 눈금 글자와 교차점은 버린다 — 틀 안에 든 삽입 지도(40쪽 중앙아메리카)의
+    경위선·글자가 본 지도 선과 짝지어지지 않게(삽입 지도는 자기 항목에서 따로 뽑는다).
   - maps_u2.json 에 "georef": false 인 지도(p22-kashmir): 기준점 없음(양식화된 모식도, 계획서 '실행 중 결정' 참고).
 
 CLI
@@ -194,10 +196,16 @@ def assign_labels(labels, lines):
     return votes, rejected
 
 
+def _in_boxes(c, boxes):
+    return any(b[0] <= c[0] <= b[2] and b[1] <= c[1] <= b[3] for b in boxes)
+
+
 def grid_controls(m, report=None):
     """눈금 글자 + 경위선 → 교차점 기준점 [{xy, lon, lat, src:'grid'}]. report(dict)에 진단 정보를 채운다."""
     lines = grid_lines(m)
     labels = tick_labels(m)
+    ex = m.get('excludeBoxes')   # 지도 틀 안에 든 다른 지도(40쪽 중앙아메리카 삽입)의 눈금 글자·교차점은 그 지도 몫 — 키가 있을 때만
+    if ex: labels = [lab for lab in labels if not _in_boxes(lab['c'], ex)]
     votes, rejected = assign_labels(labels, lines)
     mer, par, ties = [], [], []
     for P, v in zip(lines, votes):
@@ -214,7 +222,7 @@ def grid_controls(m, report=None):
         for lat, Q in par:
             if not _bbox_overlap(P, Q): continue
             for x, y in _intersections(P, Q):
-                if x0 <= x <= x1 and y0 <= y <= y1:
+                if x0 <= x <= x1 and y0 <= y <= y1 and not (ex and _in_boxes((x, y), ex)):
                     groups.setdefault((lon, lat), []).append((x, y))
     out, spread = [], []
     for (lon, lat), pts in sorted(groups.items()):

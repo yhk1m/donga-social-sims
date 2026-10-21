@@ -1,5 +1,6 @@
 // © 2026 김용현
-// scripts/atlas/projection_from.mjs — 지도 목록 projectionFrom(29쪽 아이슬란드 삽입 = 본 지도 도법 고정)의 낡음 검사.
+// scripts/atlas/projection_from.mjs — 지도 목록 projectionFrom(29쪽 아이슬란드 삽입 = 본 지도 도법 고정)의 낡음 검사,
+//   fitFrom(46쪽 미국 4장 — 같은 바탕 지도를 쪽 안 다른 자리에 되풀이)의 쪽 이동 fit(shiftFit, georef-cli 가 씀).
 //   삽입 fit 은 맞출 때의 본 지도 도법·매개변수를 그대로 가진다(fixed: true). 본 지도를 다시 맞춰 매개변수가 바뀌었거나 본 지도 fit 이
 //   더 새것이면 삽입 fit 은 낡은 것 → georef-cli --all 로 다시 맞춰야 한다(georef-cli 는 본 지도를 먼저 맞추고 바로 삽입을 다시 맞춤).
 
@@ -19,4 +20,15 @@ export function projectionFromStale(inset, parent) {
 export function projectionFromOlder(inset, parent, { insetMtime = null, parentMtime = null } = {}) {
   if (insetMtime != null && parentMtime != null && parentMtime > insetMtime) return `${inset.id}: 본 지도 ${parent.id} fit 이 더 새것`;
   return null;
+}
+
+/** fitFrom {map, dx, dy}: 같은 바탕 지도를 쪽 안 다른 자리에 되풀이한 지도(46쪽 미국 4장 × 본토·알래스카·하와이) — 그 지도 fit 을
+ *  쪽 이동량만큼 옮긴 fit(닮음 변환 sim.tx·ty += dx·dy, TPS 는 기준점째 옮김: cx·cy·hull += dx·dy). 맞춤 품질 수치는 그 지도 것을
+ *  그대로 두고(같은 식), 이 지도 자체 기준점이 있으면 옮긴 식과의 잔차만 own 에 적는다. 그 지도는 목록에서 먼저 맞춰져 있어야 한다. */
+export function shiftFit(src, { map, dx, dy }, id) {
+  const p12 = (v) => +v.toPrecision(12);
+  const out = { ...src, id, sim: { ...src.sim, tx: p12(src.sim.tx + dx), ty: p12(src.sim.ty + dy) } };
+  if (src.tps) out.tps = { ...src.tps, cx: src.tps.cx + dx, cy: src.tps.cy + dy, hull: src.tps.hull.map(([x, y]) => [x + dx, y + dy]) };
+  out.fitFrom = { map, dx, dy };
+  return out;
 }
