@@ -275,6 +275,12 @@ test('chartSymbolsLayerJson: 설정 items 의 고리 가운데(지면 pt)를 fit
   assert.throws(() => chartSymbolsLayerJson({ ...layer, items: [{ chart: 'p38-none', centerPt: [1, 1] }] }, charts, cv, { page: 38 }), /p38-none/);
   assert.throws(() => chartSymbolsLayerJson({ ...layer, items: [{ chart: 'p38-bauxite', centerPt: [-1, 1] }] }, charts, cv, { page: 38 }), /되돌릴 수 없음/);
   assert.throws(() => chartSymbolsLayerJson({ ...layer, items: [] }, charts, cv, { page: 38 }), /items/);
+  assert.ok(!('leader' in out.items[0]), 'leaderPt 없으면 leader 키 없음(u4 생성물 그대로)');
+  // U5-3g: leaderPt(교과서 지시선 끝 — 나라 안쪽 점) → fit 으로 되돌린 leader, 고리 자리는 설정 lonlat 그대로
+  const withLeader = { ...layer, items: [{ chart: 'p38-bauxite', centerPt: [150, 200], lonlat: [-30, 5], _why: '바다', leaderPt: [300.04, 100] }] };
+  const o2 = chartSymbolsLayerJson(withLeader, charts, cv, { page: 38 });
+  assert.deepEqual([o2.items[0].lonlat, o2.items[0].leader], [[-30, 5], [10.004, 30]]);
+  assert.throws(() => chartSymbolsLayerJson({ ...layer, items: [{ chart: 'p38-bauxite', centerPt: [150, 200], leaderPt: [-5, 1] }] }, charts, cv, { page: 38 }), /지시선 끝/);
 });
 
 test('disputedLayerJson: FEATURECLA·나라 짝(차례 상관없음)·단원 상자로 고른 Natural Earth 선 → 점선 선 레이어(범례 「미확정 국경」), 짝에 선이 없으면 멈춤', () => {

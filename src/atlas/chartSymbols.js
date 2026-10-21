@@ -9,6 +9,8 @@
 //   hit(xy): 바깥 원 안(가운데 빈 곳 포함) → 그 항목. labelObstacles = 보이는 고리 상자(지명이 피함). 범례 없음.
 //   모양은 CSS 가 아니라 SVG 속성으로(공유 atlas.css 에 넣으면 이 레이어를 안 쓰는 u2·u3 조각도 커짐), 강조는 구멍 테두리 굵기,
 //   키보드 초점은 focus·blur 때 고리 바깥에 그리는 파란 테두리 원(at-ring-focus — CSS :focus-visible 없이도 보임).
+//   항목 leader [lon, lat](U5-3g — 46쪽 민족 고리, 있을 때만): 고리 가장자리 → 그 점까지 검은 점선 + 끝 점 — 그리기는 등록 길(ringHook.leader ←
+//   americasExtra.ringLeader), 등록 안 한 조각에서는 아무것도 안 그림.
 //   layerRef 에 직접 넣지 않고 chartsExtra.installExtraCharts() 가 'chartSymbols' 로 등록한다.
 import { s } from '../shared/dom.js';
 import { classSymbolPx } from './layerStyle.js';
@@ -19,6 +21,8 @@ const INK = '#231f20', FOCUS = '#1a73e8';
 
 /** 고리 기호 지름 규칙(px): 지면 pt × 2 × 확대 배율, 단계 전체 [52, 96] — 가운데 글자 3줄이 들어갈 만큼 */
 export const RING_STYLE = Object.freeze({ pxPerPt: 2, min: 52, max: 96, minTextPx: 30 });
+/** 지시선 고리(U5-3g): americasExtra.installAmericasExtras 가 ringLeader 를 검 — 항목 leader 가 있을 때만 부름(u3·u4 조각엔 그리는 코드 없음) */
+export const ringHook = { leader() {} };
 /** 글자 폭 어림(em): 한글 1, 그 밖 0.58 */
 const emW = (t) => [...String(t)].reduce((a, ch) => a + (/[ㄱ-힣]/.test(ch) ? 1 : 0.58), 0);
 
@@ -78,6 +82,7 @@ export function chartSymbolLayer(id, data, { map = null, onPick = null, layerId 
         x.xy = shown ? q : null;
         x.r = d / 2;
         setAttr(x.el, 'display', shown ? null : 'none');
+        if (x.it.leader) ringHook.leader(x, shown && q, project, root);   // U5-3g 지시선(등록 길 — 키가 있을 때만)
         if (!shown) continue;
         const key = String(round1(d));
         if (key !== x.key) { x.key = key; paint(x, d); }

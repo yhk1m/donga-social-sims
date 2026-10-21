@@ -960,3 +960,12 @@ test('chartSymbolLayer: lonlat·series 없는 항목은 건너뜀(그리기가 �
   L.drawSvg(g, v.project, v.view);
   assert.equal(g.childNodes[0].childNodes.length, 2);
 });
+
+test('chartSymbolLayer 지시선(U5-3g) 등록 전: 항목 leader 가 있어도 그리기·요소 수 그대로(그리는 코드는 americasExtra 등록 길 — ringLeader.test)', () => {
+  const countEls = (el) => (el.childNodes || []).reduce((a, c) => a + 1 + countEls(c), 0);
+  const g0 = document.createElementNS('svg', 'g'), g = document.createElementNS('svg', 'g'); const v = viewOf();
+  chartSymbolLayer('rc', ringData()).drawSvg(g0, v.project, v.view);
+  const d = ringData(); d.items[0].leader = [-10, 14];
+  chartSymbolLayer('rc', d).drawSvg(g, v.project, v.view);
+  assert.equal(countEls(g), countEls(g0));
+});

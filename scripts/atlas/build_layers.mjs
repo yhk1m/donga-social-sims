@@ -459,7 +459,7 @@ export function regionClassLayerJson(layer, cc, m, fit) {
 const chartMap = (c) => (Array.isArray(c) ? Object.fromEntries(c.map((x) => [x.id, x])) : c?.charts ? chartMap(c.charts) : c || {});
 
 /**
- * 지도 위 고리 기호(type 'chartSymbols', U4-3c — 38쪽 자원 7): 설정 items [{chart, centerPt(교과서 고리 가운데 지면 pt), lonlat?(+ _why), sizePt?, title?, center?}]
+ * 지도 위 고리 기호(type 'chartSymbols', U4-3c — 38쪽 자원 7): 설정 items [{chart, centerPt(교과서 고리 가운데 지면 pt), lonlat?(+ _why), sizePt?, title?, center?, leaderPt?(U5-3g 지시선 끝)}]
  * → {type:'chartSymbols', properties, items:[{id, chart, lonlat, title, center, sizePt, ring, series}]}. lonlat = centerPt 를 그 지도 fit 으로 되돌린 자리
  * (고리가 지도 둘레 바다 위라 웹에서도 같은 자리), series·ring 은 그래프 자료(charts — id → spec)에서 옮김(앱 레이어가 그래프 자료 없이 그림).
  */
@@ -473,11 +473,15 @@ export function chartSymbolsLayerJson(layer, charts, cv, m, fit = {}) {
     if (it.lonlat && !it._why) throw new Error(`${layer.id}: ${it.chart} lonlat 에 _why(자리 까닭)가 없음`);
     const ll = it.lonlat || cv.invert(it.centerPt);
     if (!ll) throw new Error(`${layer.id}: ${it.chart} 고리 가운데 ${it.centerPt} 를 경위도로 되돌릴 수 없음`);
+    // U5-3g 지시선: leaderPt(교과서 지시선 끝 — 나라 안쪽 점, 있을 때만) → fit 으로 되돌린 leader
+    const ld = it.leaderPt && cv.invert(it.leaderPt);
+    if (it.leaderPt && !ld) throw new Error(`${layer.id}: ${it.chart} 지시선 끝 ${it.leaderPt} 를 경위도로 되돌릴 수 없음`);
     return {
       id: it.id || it.chart, chart: it.chart, lonlat: [r3(ll[0]), r3(ll[1])], title: it.title || sp.title, center: it.center || sp.center || [],
       // 안쪽 비는 수로 풀어 둠(ring true → donut), 색은 계열 color → colors[0] (앱 chartCore 와 같은 규칙)
       sizePt: it.sizePt || 30, ring: typeof sp.ring === 'number' ? sp.ring : sp.donut ?? 0.6,
       series: sp.series.map((q) => ({ name: q.name, values: [q.values[0]], color: q.color ?? q.colors?.[0] ?? '#cccccc' })),
+      ...(ld && { leader: [r3(ld[0]), r3(ld[1])] }),
     };
   });
   return {

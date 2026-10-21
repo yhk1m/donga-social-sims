@@ -15,11 +15,13 @@
 //     kind:'flow', dashed?}], view?}, features:[{properties:{id, cls, dashed?, width?(pt)}, geometry: LineString|MultiLineString(경위도 — 교과서
 //     곡선을 되돌린 줄, 꼬리 → 화살 끝)}]}. 선 = geoPath(view.projection)(지구본 뒷면·날짜변경선은 투영이 자름), 화살촉 = 마지막 두 점 방향(arrowHead),
 //     굵기 flowWidthPx, 점선(dashed — 노예 이동). 범례는 기존 흐름선 견본(kind 'flow' + dashed)이 그대로 그림.
+//   - 3g 고리 기호 지시선(chartSymbols.ringHook.leader ← ringLeader): 고리 항목 leader [lon, lat] 가 있으면 고리 가장자리 → 그 점 점선 + 끝 점.
 //   단원 main.js: import { installAmericasExtras, globeTools } from '../../src/atlas/americasExtra.js'; installAmericasExtras();  (mountAtlas 전에)
 //                 mountAtlas(…) 뒤 globeTools(root.atlasMap, root.atlasUi.tools.el)(돌려준 함수 = 풀기)
 import { geoStereographic, geoOrthographic, geoDistance, geoPath } from 'd3-geo';
 import { h, s } from '../shared/dom.js';
 import { hatchHook } from './layers.js';
+import { ringHook } from './chartSymbols.js';
 import { registerFamily } from './fitCore.js';
 import { PROJECTIONS } from './projections.js';
 import { graticuleStep } from './lineStyle.js';
@@ -404,6 +406,20 @@ export function hatchTile(ctx, f) {
   return pat;
 }
 
+// ---------- 3g 고리 기호 지시선(46쪽 민족 고리 5 — chartSymbols 항목 leader) ----------
+/**
+ * 지시선 고리(chartSymbols.ringHook.leader): 항목 x(고리 — x.el·x.r(바깥 반지름 px)·x.it.leader [lon, lat]), q = 고리 가운데 화면 점(고리가 안 보이면 false),
+ * root = 고리 묶음 <g>. 고리 가장자리 → 투영한 leader 까지 검은 점선(1px [3 2] — 교과서 검은 점선 0.3pt 꼴) + 끝 점(r 1.5). 고리 아래(<g> 를 고리 앞에 끼움).
+ * 고리가 안 보이거나 끝이 안 보이거나(지구본 뒷면) 고리 안이면 숨김.
+ */
+export function ringLeader(x, q, project, root) {
+  if (x.ln?.parentNode !== root) root.insertBefore(x.ln = s('g', { class: 'at-ring-leader', 'pointer-events': 'none' }), x.el);
+  const e = q && project(x.it.leader), dx = e && e[0] - q[0], dy = e && e[1] - q[1], t = e ? x.r / Math.hypot(dx, dy) : 2;
+  setAttr(x.ln, 'display', t < 1 ? null : 'none');
+  if (t < 1) x.ln.replaceChildren(s('line', { x1: round1(q[0] + dx * t), y1: round1(q[1] + dy * t), x2: round1(e[0]), y2: round1(e[1]), stroke: '#231f20', 'stroke-dasharray': '3 2' }),
+    s('circle', { cx: round1(e[0]), cy: round1(e[1]), r: 1.5, fill: '#231f20' }));
+}
+
 /** 아메리카 단원 조각의 모든 등록(뒤 하위 기능이 여기에 더함). 여러 번 불러도 같음(지구본 회전 상태는 처음 등록 것을 이어 감). */
 export function installAmericasExtras() {
   installAmericasFamilies();
@@ -411,4 +427,5 @@ export function installAmericasExtras() {
   registerLayerType('pathFlow', (id, d, ctx) => pathFlowLayer(id, d, ctx));
   registerLayerType('unitSymbols', (id, d, ctx) => unitSymbolsLayer(id, d, ctx));
   hatchHook.make = hatchTile;
+  ringHook.leader = ringLeader;
 }

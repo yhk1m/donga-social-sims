@@ -270,7 +270,7 @@ $ATLAS_WORK/raw/ne-admin1/ · raw/statcan-cd2016/(선택)                       
   - 앱(registerLayerType): 주 자리에 칸을 교과서처럼 세로 열로 쌓음(한 열 최대 n 칸 — 교과서 최대 열 길이), 두 계열은 나란히, 칸 크기 = 화면 4px 안팎(확대 단계 `barMetrics` 꼴), 누르면 「○○주 · 공장 n칸(×50) · 근로자 n칸(×2만 명)」 말풍선, `labelObstacles` = 칸 묶음 상자, 범례 = 네모 견본 + 글.
   - 바탕: 멕시코 주 경계선(NE 1단계 MEX — 회색 가는 선, 같은 레이어의 선 feature 또는 따로 `area` 선 레이어).
   - 시험: 합성 쪽 열 3개(5·3·2 칸, 두 색) → 계열별 칸 수, 열이 주 경계 밖이면 가장 가까운 주 + 경고, 앱 칸 수 = 자료 칸 수, 확대해도 칸 비 그대로, 등록 전 「모르는 레이어 종류」.
-- [ ] **3g 고리 기호 지시선 `leader`** (46쪽 민족 고리 5 — chartSymbols 재사용):
+- [x] **3g 고리 기호 지시선 `leader`** (46쪽 민족 고리 5 — chartSymbols 재사용):
   - `chartSymbols` 항목에 `leader: [lon, lat]`(있을 때만)이면 고리 가장자리 → 그 점까지 점선(교과서 검은 점선 0.3pt 꼴, 화면 1px [3 2]), 끝에 작은 점. 키가 없으면 지금 그리기 그대로(**u4 조각·화소 그대로** — chartSymbols.js 는 u4 도 쓰는 등록 길 코드라 u4 조각 크기 ±1% 안인지 확인).
   - build_layers `chartSymbols` 설정 `items[].leaderPt`(교과서 지시선 끝 — 나라 안쪽 점) → fit 으로 되돌림, `lonlat`은 U4-4 규칙대로 설정 + `_why`.
   - 시험: leader 있으면 선 1개(끝 = 투영한 leader), 없으면 SVG 요소 수 지금과 같음, 고리를 옮겨 다시 그려도 지시선 끝 고정.
@@ -686,3 +686,16 @@ test('태평양 중심 묶음: 본사·D사 세계 지도', () => assert.ok(by.t
   - **시험** globe.test 10(+1 — 실제 mapTools 상자: 옵션 6·「지구본」, 고르기 → 지구본·중심 경도 숨김·앞 가운데, 「밀러」 → 앞 k·가운데, globeView·되돌리기·pathFlow view 레이어 올림/내림 때 select.value). `npm test` Python 362 OK · Node 604(통과 604, 실패 0).
   - **확인 그림**(합성 틀 `sims/_tmp-dropdown/` — u4 자료 + installAmericasExtras + globeTools + 가짜 pathFlow, swiftshader 1280×800, 지움): `$ATLAS_WORK/units/u5/dropdown/` d0 밀러 → d1 상자 「지구본」(원판·중심 경도 숨김, d1-tools 상자 확대) → d2 「밀러」(**d0 와 화소 차 0**) → d3 pathFlow view 로 지구본(상자 「지구본」) → d4 레이어 내림(**d0 와 화소 차 0**, 상자 「밀러」). 콘솔 오류 0, `log.json`.
   - **회귀**(app-main 에서 다시 찍은 드롭다운 기준선과 대조, 이 클론에서 embed → compare_shots → compare → check): u2 도장만 1 · 41장 화소 차 0 · 0/9/134/24 · u3 도장만 1 · 31장 0 · 0/26/118/42 · u4 도장만 1 · 42장 0 · 0/34/104/41, 대조표 HTML 차이는 클론 경로(`/app-main/` ↔ `/app/`)뿐, 조각 u2 2,112,233 B(main 2,111,830 +403) · u3 1,471,837 B(+401) · u4 1,594,994 B(+405) — atlas-u5 등록 자리(U5-3c·3e·3h) 몫. → 세 단원 기준선을 이 클론에서 다시(`--baseline`) → `--check` 다른 파일 0·화소 0·조각 +0.000%. u2 조각 +1% 관문은 이제 새 기준선(2,112,233 B) 기준.
+- **U5-3g(2026-10-21) 고리 기호 지시선 `leader` — 고리 자리 `ringHook` + 그리기 `americasExtra.ringLeader`** — 가지 atlas-u5(3b7ce60 위)
+  - **앱 — 공유 코드는 고리 자리만**: 처음 판은 chartSymbols.js 안에 지시선 그리기를 넣었더니 u3·u4 조각이 **+371 B · +367 B**(u3 1,471,837 → 1,472,208 · u4 1,594,994 → 1,595,361 — 회귀는 통과, 화소 차 0)라, 3h `hatchHook` 꼴로 바꿈: `chartSymbols.js` 에 `export const ringHook = { leader() {} }`(빈 함수 기본값 — `?.` 는 빌드가 풀어 커짐, 3h 기록) + drawSvg 에서 항목 `leader` 가 있을 때만 `ringHook.leader(x, shown && q, project, root)`. 그리기는 **`americasExtra.ringLeader`**(installAmericasExtras 가 검): 고리 묶음 <g> 안 고리 **앞**에 `<g class="at-ring-leader" pointer-events="none">`(고리 아래에 깔림 — 뿌리를 다시 만들면 다시 끼움) → 고리 가장자리(가운데에서 끝 점 방향 반지름 x.r) → 투영한 leader 까지 검은 #231f20 점선 `<line stroke-dasharray="3 2">`(1px) + 끝 점 `<circle r 1.5>`, 고리가 안 보이거나 끝이 안 보이거나(지구본 뒷면 — project null) 끝이 고리 안이면 숨김. 확대·도법이 바뀌어도 매 그리기 때 끝 = 투영한 leader(고정). 지명 장애물은 고리 상자 그대로(지시선은 넣지 않음 — 지명이 선을 피하지 않음, 교과서도 지시선이 글자 위를 지남).
+  - **파이프라인 `build_layers.chartSymbolsLayerJson`(도장 입력 아님)**: 설정 `items[].leaderPt`(교과서 지시선 끝 — 나라 안쪽 지면 pt, 있을 때만) → 그 지도 fit 으로 되돌린 `leader` [lon, lat](소수 3자리), 되돌릴 수 없으면 멈춤 「지시선 끝 … 를 경위도로 되돌릴 수 없음」. 없으면 키도 없음 — u4 `p38-resource-charts` 를 메모리에서 다시 만들어 저장소 파일과 견줌(파일을 쓰지 않음 — `units/u5/u5-3g/u4same.mjs`) → **바이트 같음**(2,343 B). `lonlat`(고리 자리) 은 U4-4 규칙 그대로(설정 + `_why`).
+  - **시험**: Node `ringLeader.test.mjs` 2(따로 된 프로세스 — 등록 전 leader 있어도 요소 수 같음·선 0 / 등록 뒤 선 하나(끝 = 투영한 leader ±0.06, 시작 = 고리 가장자리 ±0.15, `3 2`)·끝 점·지시선 <g> 가 고리 앞 자리·k 2.2·4·중심 경도 20 에서 끝 고정·없는 항목 요소 수 그대로(+3 = g·선·점)·장애물 = 고리만·화면 밖 고리면 숨김·끝이 고리 안이면 숨김·destroy 뒤 다시 그려도 하나), `atlasLayers.test.mjs` 1(등록 전 요소 수 같음), `layers.test.mjs` chartSymbolsLayerJson 에 leaderPt → leader · 없으면 키 없음 · 되돌릴 수 없으면 멈춤. `npm test` Python 362 OK · Node 607(통과 607, 실패 0).
+  - **확인 캡처**(임시 틀 `sims/_tmp-u5-3g/` — u4 자료 + installExtraCharts + installAmericasExtras + 고리 7 중 4에 합성 leader(기니·니제르·콩고 민주 공화국·남아공 안쪽), vite + 헤드리스 Chrome swiftshader 1280×800, 지움): `$ATLAS_WORK/units/u5/u5-3g/` p1 밀러 처음 보기(점선 4 · 끝 점, 고리 아래) → p2 휠 확대(k 2.82 → 4.90, 끝 점이 나라 안 그대로) → p3 로빈슨(끝 따라감) → p4 지구본(앞면 고리 1만 지시선, 뒷면 고리·끝은 숨김). 콘솔 오류 0, `log.json` 에 장면마다 끝 좌표.
+  - **회귀**(src 고침 — embed → compare_shots → compare → check 차례대로): u2 해시 162개 중 다른 파일 0, 캡처 41장 화소 차 0, 0/9/134/24, 조각 **2,112,233 B(+0.000% — 그대로, chartSymbols 는 u2 에 없음)** · u3 다른 파일 0, 31장 화소 차 0, 0/26/118/42, 조각 1,471,849 B(+12 B, +0.001%) · u4 다른 파일 0, 42장 화소 차 0(38쪽 자원 고리 장면 포함), 0/34/104/41, 조각 1,595,006 B(+12 B, +0.001%) — 셋 다 회귀 없음.
+
+    | 하위 기능 | u2 조각 B | u3 조각 B | u4 조각 B | 이번 공유 B(u3·u4) |
+    |---|---|---|---|---|
+    | 드롭다운 병합 뒤 기준선 | 2,112,233 | 1,471,837 | 1,594,994 | — |
+    | 3g(ringHook 자리) | 2,112,233 | 1,471,849 | 1,595,006 | +12 |
+
+  - **이어서 볼 것**: 46쪽 고리 5 의 `leaderPt`(교과서 점선 끝)·`lonlat`(+`_why`)는 U5-4 레이어 설정에서. 교과서 지시선은 0.3pt 검은 **점선**이라 화면 1px [3 2] 로 옮김 — U5-9 캡처에서 굵기 판단.
