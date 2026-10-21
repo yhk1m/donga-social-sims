@@ -13,6 +13,8 @@
 #   figure(수치 그림 칸 → 글 표). climograph 는 climateBox(제목 둘째 줄 → climate)·climateTable.aliases(표 이름 다른 도시).
 # 2단계 아프리카(U4-7, 모두 설정 키가 있을 때만): donut + valuesOutside(부채꼴 + 흰 구멍 원, 조각 밖 인쇄 %, 레이어 범례 이름 namesFrom),
 #   pyramidRaster(막대가 인라인 그림 — 렌더 화소), bubbleRow(원 크기 줄), climograph barsByMonth(막대 없는 달 = 0), figure 칸 groupBox.
+# 2단계 아메리카(U5-7, 모두 설정 키가 있을 때만): donut + wedges(부채꼴 + 흰 구멍 쐐기, 띠 안 인쇄 % — sliceNames 로 색 ↔ 이름, valueGapEm 으로
+#   붙은 한 자리 수 나눔), stackedLegend(여러 막대 100% 띠 — 칸 이름은 범례 견본에만, 칸에는 수만).
 import math, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -191,7 +193,7 @@ def read_climograph(cid, c, ctx):
 def read_line(cid, c, ctx):
     W = ctx['warnings']; p = c['page']
     out = meta(cid, c)
-    yt = G.hlines(p, c['yTickBox']) if c.get('yTickBox') else None
+    yt = y_ticks(c)   # 가로 곧은 선(+ yTickFillColor 가 있으면 그 색 얇은 채움 — 47쪽 BPO 점선 격자, U5-7). 키가 없으면 옛 hlines 그대로
     xax, _ = axis(cid, c, ctx, c['xAxisBox'], 'x', name='가로', ticks=x_ticks(c), require_snap=c.get('xRequireSnap', False))
     yax, ytoks = axis(cid, c, ctx, c['yAxisBox'], 'y', name='세로', ticks=yt, require_snap=c.get('yRequireSnap', False),
                       scale=opt(c, ctx, 'axisScale'))
@@ -369,7 +371,7 @@ def read_donut(cid, c, ctx):
     잰 % = 그 가운데에서 바깥 호가 쓸어 간 각. 조각 안 인쇄된 수(valueColor) = 값(printed).
     이름은 조각 밖 같은 색 글자(labelColor, legendBox 안)로 확인. 출력 type 'pie' + donut(안쪽/바깥 반지름) — 화면은 원그래프 길.
     설정 ring: true(유럽 v2 코펜하겐)면 출력에도 ring: true — 앱은 donut 비를 안쪽 반지름으로 SVG 고리(chartCore ringRatio). 키가 없으면 옛 출력 그대로."""
-    if c.get('valuesOutside'): return read_donut_outside(cid, c, ctx)   # 2단계 아프리카(U4-7): 조각 밖 인쇄 % — 키가 있을 때만
+    if c.get('valuesOutside') or c.get('wedges'): return read_donut_outside(cid, c, ctx)   # 아프리카(U4-7) 조각 밖 % · 아메리카(U5-7) 띠 안 % — 키가 있을 때만
     W = ctx['warnings']; p = c['page']
     out = meta(cid, c)
     out['type'] = 'pie'
@@ -832,6 +834,7 @@ def read_table(cid, c, ctx):
 
 # ── 2단계 아프리카(U4-7) ────────────────────────────────────────────────────
 OUT_ANG_SCALE = 10.0      # 조각 밖 수 ↔ 조각: 각 10° 를 값 차 1%p 와 같게 친다
+BAND_PAD_PT = 1.0         # 띠 안 수(wedges): 글자 가운데가 바깥 반지름 + 이만큼 안
 MIN_SLICE_PT2 = 5.0       # 고리 조각 넓이 하한(지도 땅 조각 부스러기 #ede9e4 를 뺌 — 가장 작은 조각 0.8% ≈ 15pt²)
 
 
@@ -848,10 +851,20 @@ def _ang_dist(a, b):
     return min(d, 360 - d)
 
 
+def _value_tokens(p, box, font, gap_em=None):
+    """수 낱말. gap_em 이 있으면 그 빈칸(글자 크기 비)에서도 낱말을 나눈다(U5-7 — 키가 없으면 number_tokens 그대로)."""
+    if gap_em is None: return AX.number_tokens(p, box, font=font)
+    return [{**w, 'value': v} for w in AX.words(p, box, gap_em=gap_em)
+            for v in [AX.parse_num(w['text'])] if v is not None and (not font or font in w['font'])]
+
+
 def read_donut_outside(cid, c, ctx):
     """고리(38쪽 자원 7): 조각 = 가운데에서 뻗은 부채꼴 채움(색마다 가장 큰 것), 구멍 = holeColor 원(가운데·안쪽 반지름).
     인쇄된 % 는 조각 **밖**(valuesOutside) — 구멍 밖 수 글자를 각(글자 가운데의 시계 각 ↔ 조각 가운데 각)과 잰 값으로 짝(헝가리안).
     조각 이름: namesFrom {layer, otherColor, otherName} — 그 레이어 설정 legendItems 의 색 ↔ 조각 색(ΔE ≤ namesDE), otherColor = 「기타」.
+    U5-7(46쪽 중남미 민족 고리 5 — 키가 있을 때만): wedges = 구멍도 조각마다 흰 쐐기(가장 큰 흰 쐐기의 호 = 안쪽 반지름)이고 인쇄 % 는
+    띠 **안**(글자 가운데가 안쪽 ~ 바깥 반지름 사이인 수만), sliceNames [{color, name}] = 그래프 범례 「민족(인종)의 비율」(지도 레이어 범례가
+    아님) — 그 색만 조각으로 봄(둘레 지도 면 색을 조각으로 잡지 않게), valueGapEm = 수 낱말을 나누는 빈칸(좁은 조각 둘의 「1」「5」가 한 낱말로 붙음).
     가운데 글자(구멍 안 줄들 — 총량·단위·해)는 인쇄 그대로 center. 출력 type 'pie' + ring(안쪽/바깥 반지름) — 앱은 SVG 고리."""
     W = ctx['warnings']; p = c['page']
     out = meta(cid, c)
@@ -862,12 +875,16 @@ def read_donut_outside(cid, c, ctx):
     hole = max(holes, key=lambda f: (f['rect'][2] - f['rect'][0]) * (f['rect'][3] - f['rect'][1]))
     ha = max(G.arcs(hole['d']), key=lambda a: a['r'])
     center, r_in = (ha['cx'], ha['cy']), ha['r']
-    nf = c['namesFrom']
-    legend = {e['color']: e['label'] for e in ctx['layers'][nf['layer']]['legendItems']}
-    if nf.get('otherColor'): legend[nf['otherColor']] = nf['otherName']
+    if c.get('sliceNames'):
+        legend, src = {e['color']: e['name'] for e in c['sliceNames']}, 'sliceNames'
+    else:
+        nf = c['namesFrom']
+        legend, src = {e['color']: e['label'] for e in ctx['layers'][nf['layer']]['legendItems']}, nf['layer']
+        if nf.get('otherColor'): legend[nf['otherColor']] = nf['otherName']
     big = {}
     for f in G.fills(p, c['bbox'], geom=True):
         if f['color'] == c['holeColor'] or f['geom'].area < MIN_SLICE_PT2: continue
+        if c.get('sliceNames') and color_match(f['color'], list(legend), c.get('namesDE', 0.0)) is None: continue
         if f['color'] not in big or f['geom'].area > big[f['color']]['geom'].area: big[f['color']] = f
     slices = []
     for col, f in big.items():
@@ -877,12 +894,14 @@ def read_donut_outside(cid, c, ctx):
         a0, a1 = _slice_span(outer['pts'], center)
         r = float(np.mean([math.hypot(x - center[0], y - center[1]) for x, y in outer['pts']]))
         name = legend.get(color_match(col, list(legend), c.get('namesDE', 0.0)) or '')
-        if name is None: W.append(f'{cid}: 조각 색 {col} 이 {nf["layer"]} 범례에 없음')
+        if name is None: W.append(f'{cid}: 조각 색 {col} 이 {src} 범례에 없음')
         slices.append({'color': col, 'name': name, 'a0': a0, 'a1': a1, 'pct': 100 * (a1 - a0) / 360, 'r': r})
     slices.sort(key=lambda s: s['a0'])
     if not slices: raise ValueError(f'{cid}: 조각이 없음')
-    toks = [t for t in AX.number_tokens(p, c['labelBox'], font=opt(c, ctx, 'numberFont'))
-            if math.hypot(t['cx'] - center[0], t['cy'] - center[1]) > r_in]
+    rs = [s['r'] for s in slices]
+    r_max = float(np.mean(rs)) + BAND_PAD_PT if c.get('wedges') else math.inf
+    toks = [t for t in _value_tokens(p, c['labelBox'], opt(c, ctx, 'numberFont'), c.get('valueGapEm'))
+            if r_in < math.hypot(t['cx'] - center[0], t['cy'] - center[1]) <= r_max]
     ang = [G.clock_angle((t['cx'], t['cy']), center) for t in toks]
     mid = [(s['a0'] + s['a1']) / 2 for s in slices]
     m = pair(list(range(len(toks))), list(range(len(slices))),
@@ -899,7 +918,6 @@ def read_donut_outside(cid, c, ctx):
         msum += s['pct']
         if v is not None: maxd = max(maxd, abs(v - s['pct']))
         out['series'].append(series_entry(s['name'], [v], 'printed', measured=[rnd(s['pct'], nd)], precision=PRINTED_PREC, color=s['color']))
-    rs = [s['r'] for s in slices]
     if max(rs) - min(rs) > RING_GAP_PT: W.append(f'{cid}: 조각 바깥 반지름이 서로 다름({min(rs):.2f}~{max(rs):.2f})')
     out['ring'] = round(r_in / float(np.mean(rs)), 3)
     hb = [center[0] - r_in, center[1] - r_in, center[0] + r_in, center[1] + r_in]
@@ -1043,8 +1061,71 @@ def read_bubble_row(cid, c, ctx):
     return out
 
 
+# ── 2단계 아메리카(U5-7) ───────────────────────────────────────────────────
+def read_stacked_legend(cid, c, ctx):
+    """여러 막대 100% 띠(46쪽 미국 민족 구성 1990·2020): 칸 이름은 범례(견본 네모 + 오른쪽 글자)에만, 칸에는 인쇄된 수만.
+    작은 칸의 수는 띠 밖 위에 인쇄(「0.9」) — 수는 세로로 가장 가까운 막대에 붙이고, 막대마다 수 ↔ 칸을 값 차·가로 거리로 짝(헝가리안,
+    read_stacked_bar 와 같은 비용). 칸 이름 = 칸 색 ↔ 범례 견본 색. 막대 이름 = categoryBox 안 그 막대 줄 글자(「1990년」).
+    출력은 1단계 stackedBar 꼴(categories·total·stackOrder·series[이름·값·잰 값·색]) — 앱은 여러 막대 SVG(stackedBarsSvg)."""
+    W = ctx['warnings']; p = c['page']
+    out = meta(cid, c)
+    out['type'] = 'stackedBar'
+    total = c.get('total', 100)
+    xax, xtoks = axis(cid, c, ctx, c['xAxisBox'], 'x', name='가로', ticks=x_ticks(c), require_snap=c.get('xRequireSnap', False))
+    lo, hi = xax.pos(0), xax.pos(total)
+    rows = _bar_rows(c, ctx, xax, lo, hi)
+    if not rows: raise ValueError(f'{cid}: 막대가 없음')
+    ign = set(c.get('ignoreColors', []))
+    lw = [w for w in AX.words(p, c['legendBox']) if HANGUL.search(w['text'])]
+    names = {}
+    for f in G.fills(p, c['legendBox']):
+        r = f['rect']
+        if f['color'] in ign: continue
+        right = [w for w in lw if w['bbox'][0] >= r[2] - IN_BAR_PAD and abs(w['cy'] - yc(r)) <= ROW_PT]
+        if not right: W.append(f'{cid}: 범례 견본 {f["color"]} 오른쪽 글자 없음'); continue
+        names[f['color']] = min(right, key=lambda w: w['bbox'][0])['text']
+    cb, pad = c['categoryBox'], c.get('categoryPad', [1.5, 1.5])
+    cats = [text(p, [cb[0], r['y0'] - pad[0], cb[2], r['y1'] + pad[1]]) for r in rows]
+    if c.get('categories') and cats != c['categories']: W.append(f'{cid}: 항목 {cats} ≠ 설정 {c["categories"]}')
+    toks = AX.number_tokens(p, c['valueBox'], font=opt(c, ctx, 'numberFont'))
+    vgap = lambda t, r: max(r['y0'] - t['cy'], 0, t['cy'] - r['y1'])
+    mine = [[] for _ in rows]
+    for t in toks: mine[min(range(len(rows)), key=lambda k: vgap(t, rows[k]))].append(t)
+    prec = AX.precision(xax); nd = AX.decimals_for(prec, cap_from(toks))
+    series_order, values, measured, colors, orders = [], {}, {}, {}, {}
+    maxdiff = 0.0
+    for k, r in enumerate(rows):
+        cat, segs, ts = cats[k], r['segs'], mine[k]
+        if r['report']['gaps']: W.append(f'{cid} {cat}: 칸 사이 틈 {r["report"]["gaps"]}')
+        dx = lambda t, s: max(s['x0'] - t['cx'], 0, t['cx'] - s['x1'])
+        m = pair(list(range(len(ts))), list(range(len(segs))),
+                 lambda i, j: abs(ts[i]['value'] - segs[j]['m']) / c['valueScale'] + dx(ts[i], segs[j]) / c['xScalePt'],
+                 lambda i, j: abs(ts[i]['value'] - segs[j]['m']) <= c['maxDiff'] and dx(ts[i], segs[j]) <= c['maxDxPt'], miss=lambda i: MISS)
+        if len(m) != len(segs) or len(ts) != len(segs):
+            W.append(f'{cid} {cat}: 칸 {len(segs)}·수 {len(ts)}·짝 {len(m)} — 남은 수 {[ts[i]["text"] for i in range(len(ts)) if i not in m]}')
+        orders[cat] = []
+        for i, j in sorted(m.items(), key=lambda t: segs[t[1]]['x0']):
+            sg = segs[j]
+            nm = names.get(sg.get('color'))
+            if nm is None: W.append(f'{cid} {cat}: 칸 색 {sg.get("color")} 이 범례에 없음'); continue
+            if nm not in values: series_order.append(nm); values[nm] = {}; measured[nm] = {}; colors[nm] = {}
+            values[nm][cat] = ts[i]['value']; measured[nm][cat] = rnd(sg['m'], nd); colors[nm][cat] = sg.get('color')
+            maxdiff = max(maxdiff, abs(ts[i]['value'] - sg['m']))
+            orders[cat].append(nm)
+    out['categories'] = cats
+    out['total'] = total
+    out['stackOrder'] = orders
+    out['axes'] = {'x': xax.to_json()}
+    out['series'] = [series_entry(n, [values[n].get(k) for k in cats], 'printed', measured=[measured[n].get(k) for k in cats],
+                                  precision=round(prec, 3), colors=[colors[n].get(k) for k in cats]) for n in series_order]
+    out['check'] = {'maxAbsDiff': round(maxdiff, 3), 'measuredPrecision': round(prec, 3)}
+    if maxdiff > c['warnDiff']: W.append(f'{cid}: 칸 너비와 인쇄 비율 차 최대 {maxdiff:.2f}%p (허용 {c["warnDiff"]})')
+    return out
+
+
 READERS = {'climograph': read_climograph, 'line': read_line, 'bar': read_bar, 'stackedBar': read_stacked_bar,
            'stackedArea': read_stacked_area, 'pyramid': read_pyramid, 'radialBar': read_radial, 'pie': read_pie,
            'stackedPrinted': read_stacked_printed, 'table': read_table,
            'vbar': read_vbar, 'donut': read_donut, 'figure': read_figure,   # 2단계 유럽(U3-7): 세로·묶음 막대, 고리, 수치 그림
-           'pyramidRaster': read_pyramid_raster, 'bubbleRow': read_bubble_row}  # 2단계 아프리카(U4-7): 그림 막대 피라미드, 원 크기 줄
+           'pyramidRaster': read_pyramid_raster, 'bubbleRow': read_bubble_row,   # 2단계 아프리카(U4-7): 그림 막대 피라미드, 원 크기 줄
+           'stackedLegend': read_stacked_legend}   # 2단계 아메리카(U5-7): 범례 이름 100% 띠

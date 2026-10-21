@@ -544,6 +544,114 @@ class ChartsU4(unittest.TestCase):
         self.assertEqual(json.dumps(self.again, ensure_ascii=False, sort_keys=True), json.dumps(self.charts, ensure_ascii=False, sort_keys=True))
 
 
+U5_CONFIG = os.path.join(os.path.dirname(__file__), '..', 'config', 'u5.json')
+U5_RINGS = ('p46-mexico', 'p46-haiti', 'p46-brazil', 'p46-peru', 'p46-argentina')
+
+
+@NEED_PDF
+class ChartsU5(unittest.TestCase):
+    """U5-7 아메리카 그래프 13: 기후 4(표 3·잰 값 1) · 100% 띠 2줄(범례 이름) · 고리 5(띠 안 인쇄 %) · 선 2·막대 1(잰 값)."""
+    @classmethod
+    def setUpClass(cls):
+        import json
+        from unittest import mock
+        import extract_tables as et
+        cls.et = et
+        with open(U5_CONFIG, encoding='utf-8') as f: full = json.load(f)
+        cls.cfg = full['charts']
+        cls.warnings = []
+        et._climate.clear()
+        try:
+            with mock.patch.object(et, 'charts_config', lambda: cls.cfg), mock.patch.object(et, 'unit_config', lambda: full):
+                cls.charts = et.extract_charts(cls.warnings)
+                cls.again = et.extract_charts([])
+                cls.rows = et.climate_table()
+        finally:
+            et._climate.clear()
+
+    def test_count_and_warnings(self):
+        self.assertEqual(len(self.charts), 13)
+        self.assertEqual(set(self.charts), set(self.cfg['items']))
+        self.assertEqual(self.warnings, [])
+        self.assertEqual(self.et.validate(self.charts, self.cfg), [])
+
+    def test_climate(self):
+        want = {'p45-barrow': ('배로', '툰드라', 'printed'), 'p45-newyork': ('뉴욕', '온난 습윤', 'printed'),
+                'p45-bogota': ('보고타', '고산', 'printed'), 'p45-iquitos': ('이키토스', '열대 우림', 'measured')}
+        for cid, (city, zone, method) in want.items():
+            with self.subTest(cid):
+                c = self.charts[cid]
+                self.assertEqual((c['city'], c['climate']), (city, zone))
+                self.assertEqual([len(s['values']) for s in c['series']], [12, 12])
+                for s in c['series']:
+                    self.assertEqual(s['method'], method)
+                    if method == 'measured': self.assertIsInstance(s['precision'], float)
+                if method == 'printed': self.assertLess(c['check']['maxPrecDiff'], 2.0)
+        self.assertEqual(self.charts['p45-barrow']['series'][1]['values'], self.rows['배로']['prec'])
+        self.assertEqual(self.charts['p45-newyork']['series'][0]['values'], self.rows['뉴욕']['temp'])
+        self.assertNotIn('이키토스', self.rows)
+        iq = self.charts['p45-iquitos']['series']
+        self.assertTrue(all(24 < v < 28 for v in iq[0]['values']))                         # 열대 우림 — 기온이 고름(그림에서 보이는 것)
+        self.assertEqual(iq[1]['values'].index(min(iq[1]['values'])), 7)                    # 8월 강수 가장 적음
+
+    def test_stacked_100(self):
+        b = self.charts['p46-us-ethnic']
+        self.assertEqual(b['type'], 'stackedBar')
+        self.assertEqual(b['categories'], ['1990년', '2020년'])
+        self.assertEqual([s['name'] for s in b['series']], ['유럽계', '히스패닉', '아프리카계', '아시아계', '기타'])
+        self.assertEqual([s['values'][0] for s in b['series']], [75.6, 11.7, 9.0, 2.8, 0.9])
+        self.assertEqual([s['values'][1] for s in b['series']], [57.8, 18.7, 12.1, 6.1, 5.3])
+        for k in range(2): self.assertAlmostEqual(sum(s['values'][k] for s in b['series']), 100, delta=0.1)
+        self.assertLess(b['check']['maxAbsDiff'], 0.5)
+
+    def test_rings_sum_100(self):
+        want = {'p46-mexico': {'유럽계': 15, '혼혈': 64, '원주민': 18, '기타': 3}, 'p46-haiti': {'혼혈': 5, '아프리카계': 94, '기타': 1},
+                'p46-brazil': {'유럽계': 48, '혼혈': 43, '아프리카계': 8, '기타': 1}, 'p46-peru': {'유럽계': 12, '혼혈': 32, '원주민': 52, '기타': 4},
+                'p46-argentina': {'유럽계': 86, '혼혈': 7, '원주민': 3, '기타': 4}}
+        for cid in U5_RINGS:
+            with self.subTest(cid):
+                r = self.charts[cid]
+                self.assertEqual(r['type'], 'pie')
+                self.assertEqual({s['name']: s['values'][0] for s in r['series']}, want[cid])
+                self.assertAlmostEqual(r['check']['measuredSum'], 100, delta=0.5)
+                self.assertTrue(0.45 < r['ring'] < 0.5)
+                self.assertEqual(len(r['center']), 2)
+        self.assertEqual(sorted(s['values'][0] for s in self.charts['p46-mexico']['series']), [3, 15, 18, 64])
+        self.assertEqual(self.charts['p46-haiti']['center'], ['아이티', '(1,157)'])
+
+    def test_measured(self):
+        d = self.charts['p47-detroit']['series'][0]
+        self.assertEqual(len(d['values']), 11); self.assertIn('precision', d)
+        self.assertEqual(d['values'].index(max(d['values'])), 3)                            # 1950 이 가장 큼
+        r = self.charts['p47-bpo-revenue']
+        self.assertEqual(r['type'], 'bar'); self.assertEqual(len(r['series'][0]['values']), 16)
+        self.assertEqual(r['colors'], {2021: '#00aaad'})
+        self.assertGreater(r['series'][0]['values'][-1], r['series'][0]['values'][0])
+        j = self.charts['p47-bpo-jobs']['series'][0]['values']
+        self.assertEqual(len(j), 16); self.assertTrue(all(b >= a for a, b in zip(j, j[1:])))  # 고용 인원은 해마다 늚
+
+    def test_deterministic(self):
+        import json
+        self.assertEqual(json.dumps(self.again, ensure_ascii=False, sort_keys=True), json.dumps(self.charts, ensure_ascii=False, sort_keys=True))
+
+
+class ReaderU5Synthetic(unittest.TestCase):
+    """U5-7 새 길의 순수 부분: valueGapEm 이 없으면 number_tokens 그대로, 있으면 그 빈칸에서 낱말을 나눔."""
+    def test_value_tokens(self):
+        from unittest import mock
+        import charts_read as CR
+        sentinel = [{'value': 1}]
+        with mock.patch.object(CR.AX, 'number_tokens', lambda *a, **k: sentinel):
+            self.assertIs(CR._value_tokens(46, [0, 0, 1, 1], 'DIN'), sentinel)
+        got = {}
+        def words(p, box, gap_em=None):
+            got['gap'] = gap_em
+            return [{'text': '1', 'font': 'DINPro'}, {'text': '5', 'font': 'DINPro'}, {'text': '아이티', 'font': 'DINPro'}, {'text': '7', 'font': 'Other'}]
+        with mock.patch.object(CR.AX, 'words', words):
+            self.assertEqual([t['value'] for t in CR._value_tokens(46, [0, 0, 1, 1], 'DIN', 0.05)], [1, 5])
+        self.assertEqual(got['gap'], 0.05)
+
+
 
 class PyramidRasterSynthetic(unittest.TestCase):
     """U4-7 리뷰 후속: read_pyramid_raster 의 화소 길을 PDF 없이 — 만든 배열(막대 길이·틈·가장자리 섞임·색 허용치를 아는 값)로."""

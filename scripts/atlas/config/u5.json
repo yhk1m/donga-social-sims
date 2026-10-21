@@ -2679,10 +2679,775 @@
    "precSumTol": 1.0,
    "precSumRel": 0.002,
    "tempMeanTol": 0.6,
-   "notInTable": {},
-   "_notInTable": "U5-7 에서 채움(45쪽 이키토스 = 97쪽 표에 없음 → 그래프를 잰 값)."
+   "notInTable": {
+    "이키토스": "97쪽 「주요 도시의 기후」 표에 이키토스가 없다(마나우스로 바꾸지 않음) — 45쪽 그래프를 잰 값만 쓴다(method measured). 출처는 『이과연표』(2023)."
+   }
   },
-  "items": []
+  "items": {
+   "p45-barrow": {
+    "page": 45,
+    "type": "climograph",
+    "bbox": [
+     312.01,
+     587.31,
+     382.67,
+     683.48
+    ],
+    "cityBox": [
+     327.0,
+     589.8,
+     368.0,
+     596.6
+    ],
+    "titleBox": [
+     326.0,
+     589.5,
+     368.0,
+     602.5
+    ],
+    "climateBox": [
+     325.1,
+     596.8,
+     369.1,
+     602.6
+    ],
+    "sourceBox": [
+     264.5,
+     676.5,
+     310.0,
+     685.5
+    ],
+    "barsByMonth": true,
+    "tempColor": "#f15a22",
+    "precColor": "#3677bc",
+    "unit": "℃, mm",
+    "tempTol": 0.6,
+    "precTol": 6.0,
+    "_bbox": "45쪽 기후 그래프 4개는 37쪽(아프리카)·29쪽(유럽)과 같은 틀 — 「(℃)」 글자 자리 차(배로 +260.6, +1.0 · 뉴욕 +617.0, −226.2 · 보고타 +617.0, −113.4 · 이키토스 +617.0, +1.0)만큼 37쪽 카이로 상자를 옮겨 씀(도시·기후 이름·눈금 글자 실측으로 확인). 출처 「(『이과연표』, 2023)」는 그래프 왼쪽 아래(사진 설명 칸 끝)라 상자를 따로.",
+    "_barsByMonth": "배로 겨울 강수 막대는 아주 작아(4.6~9.2mm) 막대를 가장 가까운 기온 점(달)에 붙임 — 네 그래프 모두 같은 키(막대가 12개면 옛 길과 같은 값)."
+   },
+   "p45-newyork": {
+    "page": 45,
+    "type": "climograph",
+    "bbox": [
+     668.41,
+     360.11,
+     739.07,
+     456.28
+    ],
+    "cityBox": [
+     683.4,
+     362.6,
+     724.4,
+     369.4
+    ],
+    "titleBox": [
+     682.4,
+     362.3,
+     724.4,
+     375.3
+    ],
+    "climateBox": [
+     681.5,
+     369.6,
+     725.5,
+     375.4
+    ],
+    "sourceBox": [
+     618.0,
+     449.3,
+     663.5,
+     458.3
+    ],
+    "barsByMonth": true,
+    "tempColor": "#f15a22",
+    "precColor": "#3677bc",
+    "unit": "℃, mm",
+    "tempTol": 0.6,
+    "precTol": 6.0
+   },
+   "p45-bogota": {
+    "page": 45,
+    "type": "climograph",
+    "bbox": [
+     668.41,
+     472.91,
+     739.07,
+     569.08
+    ],
+    "cityBox": [
+     683.4,
+     475.4,
+     724.4,
+     482.2
+    ],
+    "titleBox": [
+     682.4,
+     475.1,
+     724.4,
+     488.1
+    ],
+    "climateBox": [
+     681.5,
+     482.4,
+     725.5,
+     488.2
+    ],
+    "sourceBox": [
+     618.0,
+     562.0,
+     663.5,
+     571.0
+    ],
+    "barsByMonth": true,
+    "tempColor": "#f15a22",
+    "precColor": "#3677bc",
+    "unit": "℃, mm",
+    "tempTol": 0.6,
+    "precTol": 6.0
+   },
+   "p45-iquitos": {
+    "page": 45,
+    "type": "climograph",
+    "bbox": [
+     668.41,
+     587.31,
+     739.07,
+     683.48
+    ],
+    "cityBox": [
+     683.4,
+     589.8,
+     724.4,
+     596.6
+    ],
+    "titleBox": [
+     682.4,
+     589.5,
+     724.4,
+     602.5
+    ],
+    "climateBox": [
+     681.5,
+     596.8,
+     725.5,
+     602.6
+    ],
+    "sourceBox": [
+     618.0,
+     676.5,
+     663.5,
+     685.5
+    ],
+    "barsByMonth": true,
+    "tempColor": "#f15a22",
+    "precColor": "#3677bc",
+    "unit": "℃, mm",
+    "tempTol": 0.6,
+    "precTol": 6.0
+   },
+   "p46-us-ethnic": {
+    "page": 46,
+    "type": "stackedLegend",
+    "bbox": [
+     266,
+     362,
+     500,
+     411
+    ],
+    "titleBox": [
+     290,
+     78,
+     433,
+     92
+    ],
+    "sourceBox": [
+     465,
+     402,
+     497.5,
+     410.5
+    ],
+    "unit": "%",
+    "xAxisBox": [
+     284,
+     393,
+     493,
+     401
+    ],
+    "xTickBox": [
+     286,
+     371,
+     498,
+     395
+    ],
+    "xTickColor": "#808285",
+    "xRequireSnap": true,
+    "plotBox": [
+     286,
+     369,
+     498,
+     392
+    ],
+    "barHeight": [
+     7,
+     9
+    ],
+    "ignoreColors": [
+     "#ffffff"
+    ],
+    "legendBox": [
+     286,
+     401,
+     435,
+     410
+    ],
+    "categoryBox": [
+     268,
+     369,
+     290,
+     392
+    ],
+    "categoryPad": [
+     1.5,
+     1.5
+    ],
+    "categories": [
+     "1990년",
+     "2020년"
+    ],
+    "valueBox": [
+     286,
+     362,
+     500,
+     392
+    ],
+    "valueScale": 0.3,
+    "xScalePt": 20,
+    "maxDiff": 1.0,
+    "maxDxPt": 12,
+    "warnDiff": 0.5,
+    "total": 100,
+    "series": [
+     "유럽계",
+     "히스패닉",
+     "아프리카계",
+     "아시아계",
+     "기타"
+    ],
+    "_type": "U5-7 새 읽개 stackedLegend: 1단계 자원·수출 비율 띠(stackedBar)는 칸 곁에 「이름 비율」이 인쇄돼 있지만 이 띠는 칸에 수만 있고 이름은 아래 범례(견본 네모 + 오른쪽 글자)에만 — 칸 색 ↔ 견본 색으로 이름. 작은 칸 「0.9」(1990 기타)는 띠 위에 인쇄(지시선) → 세로로 가장 가까운 막대, 값·가로 거리 헝가리안(1단계와 같은 비용). 제목 = 소제목 ③ 「미국의 민족(인종) 분포 및 구성」(그래프 자체 제목 없음 — U4-7 피라미드와 같음)."
+   },
+   "p46-mexico": {
+    "page": 46,
+    "type": "donut",
+    "wedges": true,
+    "bbox": [
+     38.7,
+     486.1,
+     92.7,
+     540.1
+    ],
+    "labelBox": [
+     41.7,
+     489.1,
+     89.7,
+     537.1
+    ],
+    "titleBox": [
+     52,
+     420,
+     234,
+     434
+    ],
+    "sourceBox": [
+     201,
+     681,
+     259.5,
+     690
+    ],
+    "unit": "%",
+    "category": "멕시코",
+    "holeColor": "#ffffff",
+    "sliceNames": [
+     {
+      "color": "#f3ca3b",
+      "name": "기타"
+     },
+     {
+      "color": "#4fbba9",
+      "name": "유럽계"
+     },
+     {
+      "color": "#866eaa",
+      "name": "혼혈"
+     },
+     {
+      "color": "#8a9cca",
+      "name": "원주민"
+     },
+     {
+      "color": "#ed8571",
+      "name": "아프리카계"
+     }
+    ],
+    "valueGapEm": 0.05,
+    "maxDiff": 1.5,
+    "warnDiff": 1.0,
+    "_wedges": "U5-7: 46쪽 중남미 민족 고리 5 — 조각은 가운데에서 뻗은 부채꼴 채움(lcl), 구멍은 조각마다 덮은 흰 쐐기(가장 큰 흰 쐐기 호 = 안쪽 반지름). 인쇄 % 는 띠 안(정수, DIN Medium 6pt) → 글자 가운데가 안쪽~바깥 반지름인 수만 각·값으로 조각에 짝(read_donut_outside). sliceNames = 지도 아래 그래프 범례 「민족(인종)의 비율(%)」 견본 고리 5조각 색 ↔ 둘레 이름 글자(기타 왼쪽 위·유럽계 오른쪽 위·아프리카계 왼쪽·혼혈 오른쪽·원주민 아래) — 지도 레이어 범례(에스파냐계…)와 다른 색이라 namesFrom 대신. valueGapEm 0.05: 아이티 「1」「5」(빈칸 0.57pt)·브라질 「8」「1」(1.63pt, 0.27em)이 한 낱말로 붙어 읽혀(기본 0.3em) 나눔 — 두 자리 수 안 빈칸은 −0.24pt 라 그대로. bbox = 고리 가운데(레이어 p46-ethnic-rings centerPt) ± 27pt(바깥 반지름 21.6 — 부채꼴 상자는 곡선 조절점까지), labelBox ± 24pt. warnDiff 1.0: 인쇄값이 정수라 반올림 0.5%p + 그림 오차. 제목 = 소제목 ④, 가운데 글자 = 나라 이름·(인구 만 명) 인쇄 그대로."
+   },
+   "p46-haiti": {
+    "page": 46,
+    "type": "donut",
+    "wedges": true,
+    "bbox": [
+     147.95,
+     435.83,
+     201.95,
+     489.83
+    ],
+    "labelBox": [
+     150.95,
+     438.83,
+     198.95,
+     486.83
+    ],
+    "titleBox": [
+     52,
+     420,
+     234,
+     434
+    ],
+    "sourceBox": [
+     201,
+     681,
+     259.5,
+     690
+    ],
+    "unit": "%",
+    "category": "아이티",
+    "holeColor": "#ffffff",
+    "sliceNames": [
+     {
+      "color": "#f3ca3b",
+      "name": "기타"
+     },
+     {
+      "color": "#4fbba9",
+      "name": "유럽계"
+     },
+     {
+      "color": "#866eaa",
+      "name": "혼혈"
+     },
+     {
+      "color": "#8a9cca",
+      "name": "원주민"
+     },
+     {
+      "color": "#ed8571",
+      "name": "아프리카계"
+     }
+    ],
+    "valueGapEm": 0.05,
+    "maxDiff": 1.5,
+    "warnDiff": 1.0
+   },
+   "p46-brazil": {
+    "page": 46,
+    "type": "donut",
+    "wedges": true,
+    "bbox": [
+     201.6,
+     486.3,
+     255.6,
+     540.3
+    ],
+    "labelBox": [
+     204.6,
+     489.3,
+     252.6,
+     537.3
+    ],
+    "titleBox": [
+     52,
+     420,
+     234,
+     434
+    ],
+    "sourceBox": [
+     201,
+     681,
+     259.5,
+     690
+    ],
+    "unit": "%",
+    "category": "브라질",
+    "holeColor": "#ffffff",
+    "sliceNames": [
+     {
+      "color": "#f3ca3b",
+      "name": "기타"
+     },
+     {
+      "color": "#4fbba9",
+      "name": "유럽계"
+     },
+     {
+      "color": "#866eaa",
+      "name": "혼혈"
+     },
+     {
+      "color": "#8a9cca",
+      "name": "원주민"
+     },
+     {
+      "color": "#ed8571",
+      "name": "아프리카계"
+     }
+    ],
+    "valueGapEm": 0.05,
+    "maxDiff": 1.5,
+    "warnDiff": 1.0
+   },
+   "p46-peru": {
+    "page": 46,
+    "type": "donut",
+    "wedges": true,
+    "bbox": [
+     96.19,
+     553.61,
+     150.19,
+     607.61
+    ],
+    "labelBox": [
+     99.19,
+     556.61,
+     147.19,
+     604.61
+    ],
+    "titleBox": [
+     52,
+     420,
+     234,
+     434
+    ],
+    "sourceBox": [
+     201,
+     681,
+     259.5,
+     690
+    ],
+    "unit": "%",
+    "category": "페루",
+    "holeColor": "#ffffff",
+    "sliceNames": [
+     {
+      "color": "#f3ca3b",
+      "name": "기타"
+     },
+     {
+      "color": "#4fbba9",
+      "name": "유럽계"
+     },
+     {
+      "color": "#866eaa",
+      "name": "혼혈"
+     },
+     {
+      "color": "#8a9cca",
+      "name": "원주민"
+     },
+     {
+      "color": "#ed8571",
+      "name": "아프리카계"
+     }
+    ],
+    "valueGapEm": 0.05,
+    "maxDiff": 1.5,
+    "warnDiff": 1.0
+   },
+   "p46-argentina": {
+    "page": 46,
+    "type": "donut",
+    "wedges": true,
+    "bbox": [
+     180.8,
+     622.42,
+     234.8,
+     676.42
+    ],
+    "labelBox": [
+     183.8,
+     625.42,
+     231.8,
+     673.42
+    ],
+    "titleBox": [
+     52,
+     420,
+     234,
+     434
+    ],
+    "sourceBox": [
+     201,
+     681,
+     259.5,
+     690
+    ],
+    "unit": "%",
+    "category": "아르헨티나",
+    "holeColor": "#ffffff",
+    "sliceNames": [
+     {
+      "color": "#f3ca3b",
+      "name": "기타"
+     },
+     {
+      "color": "#4fbba9",
+      "name": "유럽계"
+     },
+     {
+      "color": "#866eaa",
+      "name": "혼혈"
+     },
+     {
+      "color": "#8a9cca",
+      "name": "원주민"
+     },
+     {
+      "color": "#ed8571",
+      "name": "아프리카계"
+     }
+    ],
+    "valueGapEm": 0.05,
+    "maxDiff": 1.5,
+    "warnDiff": 1.0
+   },
+   "p47-detroit": {
+    "page": 47,
+    "type": "line",
+    "bbox": [
+     400,
+     350,
+     575,
+     466
+    ],
+    "titleBox": [
+     410,
+     455,
+     495,
+     465
+    ],
+    "sourceBox": [
+     522,
+     432,
+     569.5,
+     441
+    ],
+    "unitBox": [
+     403,
+     352.5,
+     418,
+     359.5
+    ],
+    "xAxisBox": [
+     416,
+     444.5,
+     568,
+     452
+    ],
+    "xTickBox": [
+     418,
+     440,
+     568,
+     444
+    ],
+    "xTickColor": "#231f20",
+    "xRequireSnap": true,
+    "yAxisBox": [
+     404,
+     358,
+     416,
+     448
+    ],
+    "yTickBox": [
+     416,
+     358,
+     571,
+     445
+    ],
+    "yRequireSnap": true,
+    "plotBox": [
+     416,
+     360,
+     571,
+     444
+    ],
+    "minSegments": 3,
+    "series": [
+     {
+      "name": "인구",
+      "color": "#ed1c24"
+     }
+    ],
+    "categories": {
+     "years": [
+      1920,
+      2020,
+      10
+     ]
+    },
+    "_xAxisBox": "가로 눈금 글자 「2000」「2010」이 한 낱말 「20002010」로 붙어 수로 안 읽힘 → 나머지 9개(눈금선 11개에 붙음)로 축을 맞춤.",
+    "notes": "선 위 점에 값이 인쇄돼 있지 않아 선 높이를 잰 값이다."
+   },
+   "p47-bpo-revenue": {
+    "page": 47,
+    "type": "vbar",
+    "bbox": [
+     575,
+     508,
+     750,
+     578
+    ],
+    "titleBox": [
+     684,
+     510.5,
+     746,
+     518.5
+    ],
+    "sourceBox": [
+     591,
+     520,
+     655,
+     528.5
+    ],
+    "unitBox": [
+     580,
+     510.5,
+     603,
+     517.5
+    ],
+    "yAxisBox": [
+     579,
+     514,
+     590,
+     573
+    ],
+    "yTickBox": [
+     589,
+     516,
+     746,
+     570
+    ],
+    "yTickFillColor": "#808285",
+    "plotBox": [
+     590,
+     517,
+     745,
+     570
+    ],
+    "series": [
+     {
+      "name": "매출액",
+      "color": "#74cee2"
+     }
+    ],
+    "highlightColors": [
+     "#00aaad"
+    ],
+    "highlight": [
+     2021
+    ],
+    "labelMode": "config",
+    "categories": {
+     "years": [
+      2006,
+      2021,
+      1
+     ]
+    },
+    "_labelMode": "가로축 글자는 2006·2010·2015·2021 넷뿐(막대 16개 — 해마다) → 설정 해(2006~2021)를 막대 무리 수로 확인. 2021 막대만 짙은 색 #00aaad(계획 어림 #00a9ac) — 강조(colors).",
+    "notes": "막대 위에 수가 인쇄돼 있지 않아 막대 높이를 잰 값이다."
+   },
+   "p47-bpo-jobs": {
+    "page": 47,
+    "type": "line",
+    "bbox": [
+     575,
+     579,
+     750,
+     648
+    ],
+    "titleBox": [
+     672,
+     581,
+     746,
+     589
+    ],
+    "sourceBox": [
+     591,
+     592,
+     655,
+     600.5
+    ],
+    "unitBox": [
+     580,
+     581,
+     599,
+     588
+    ],
+    "xAxisBox": [
+     590,
+     639.5,
+     745,
+     647.5
+    ],
+    "xTickBox": [
+     590,
+     637.5,
+     745,
+     640.5
+    ],
+    "xTickColor": "#231f20",
+    "xRequireSnap": true,
+    "snapTol": 2.0,
+    "yAxisBox": [
+     579,
+     585,
+     590,
+     643
+    ],
+    "yTickBox": [
+     589,
+     587,
+     746,
+     640.5
+    ],
+    "yTickFillColor": "#808285",
+    "yRequireSnap": true,
+    "plotBox": [
+     590,
+     588,
+     746,
+     640
+    ],
+    "minSegments": 3,
+    "series": [
+     {
+      "name": "고용 인원",
+      "color": "#0066b3"
+     }
+    ],
+    "categories": {
+     "years": [
+      2006,
+      2021,
+      1
+     ]
+    },
+    "_snapTol": "가로 끝 글자 「2021」이 「(년)」에 밀려 눈금선보다 1.51pt 왼쪽 — 기본 1.5 를 2.0 으로(이웃 눈금선은 9.2pt 떨어짐).",
+    "notes": "선 위 점에 값이 인쇄돼 있지 않아 선 높이를 잰 값이다."
+   }
+  }
  },
  "basemap": {
   "_doc": "D2 바탕 지도(build_basemap.mjs). Natural Earth GeoJSON(rawDir, 없으면 sourceUrl 에서 받음) → mapshaper(버전 고정)로 단순화 → TopoJSON 하나(out). 육지(land*)는 나라(countries*)를 녹여(dissolve2) 만들어 해안 호(arc)를 나라와 나눠 쓴다(용량). 10a = 10m 을 단원 범위 상자들(unitBoxes)로 자른 것. 나라 속성은 iso(ADM0_A3)·ko(NAME_KO)만, 하천·호수는 s(scalerank)만. maxBytes 를 넘으면 쓰지 않고 실패.",
