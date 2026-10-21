@@ -427,11 +427,11 @@ test('rank 1~6, kind 목록 안', () => { for (const p of places) { assert.ok(p.
 | `p47-bpo-revenue` | bar | 도형 측정 measured | 2006~2021 16개(십억 달러), 2021 강조 색(#00a9ac — `highlight`), 출처 (한국 콘텐츠 진흥원, 2021) |
 | `p47-bpo-jobs` | line | 도형 측정 measured | 2006~2021 16점(백만 명) |
 
-- [ ] **Step 1:** 기후 4 — `climateTable` 그대로(u4 꼴: 제목 둘째 줄 「(툰드라 기후)」 → climate, 97쪽 표 zone 과 다르면 경고). 45쪽 그래프 틀이 37쪽·29쪽과 같은 자리·꼴인지 먼저 보고 상자 재사용. 97쪽 표 u5 사본 = u2 표와 바이트 같아야 함.
-- [ ] **Step 2:** 100% 띠 — 1단계 자원·수출 비율 `stackedBar`(여러 막대 → svg `barSvg`) 읽개, 칸 값은 인쇄 글자(작은 칸 「0.9」 「2.8」은 띠 밖 위에 인쇄 — 짝은 가로 위치), 합 100±0.1.
-- [ ] **Step 3:** 고리 5 — 먼저 유럽 `read_donut`(조각 안 인쇄 수)으로, 구멍이 흰 원 덮개 + 부채꼴이면 U4-7 `holeColor` 규칙만 빌림. 조각 이름 = 범례 견본색 짝(`namesFrom: {legend: …}` — 범례가 지도 레이어 범례가 아니라 그래프 범례 「민족(인종)의 비율」이면 새 키 대신 설정 `sliceNames [{color, name}]`), 출력에 `ring`·`center`. 점선 지시선 끝(`leaderPt`)은 U5-4 레이어 설정으로 넘김.
-- [ ] **Step 4:** 측정 그래프 3 — 1단계 선·막대 도형 측정(축 눈금 글자 → 값, `measured` + `precision`). BPO 막대의 강조 막대 색은 출력 `highlight: [15]`(유럽 30쪽 강조 막대 꼴).
-- [ ] **Step 5: 테스트** (`test_tables.py` `ChartsU5` — u4 꼴로 u5 설정을 모의)
+- [x] **Step 1:** 기후 4 — `climateTable` 그대로(u4 꼴: 제목 둘째 줄 「(툰드라 기후)」 → climate, 97쪽 표 zone 과 다르면 경고). 45쪽 그래프 틀이 37쪽·29쪽과 같은 자리·꼴인지 먼저 보고 상자 재사용. 97쪽 표 u5 사본 = u2 표와 바이트 같아야 함.
+- [x] **Step 2:** 100% 띠 — 1단계 자원·수출 비율 `stackedBar`(여러 막대 → svg `barSvg`) 읽개, 칸 값은 인쇄 글자(작은 칸 「0.9」 「2.8」은 띠 밖 위에 인쇄 — 짝은 가로 위치), 합 100±0.1.
+- [x] **Step 3:** 고리 5 — 먼저 유럽 `read_donut`(조각 안 인쇄 수)으로, 구멍이 흰 원 덮개 + 부채꼴이면 U4-7 `holeColor` 규칙만 빌림. 조각 이름 = 범례 견본색 짝(`namesFrom: {legend: …}` — 범례가 지도 레이어 범례가 아니라 그래프 범례 「민족(인종)의 비율」이면 새 키 대신 설정 `sliceNames [{color, name}]`), 출력에 `ring`·`center`. 점선 지시선 끝(`leaderPt`)은 U5-4 레이어 설정으로 넘김.
+- [x] **Step 4:** 측정 그래프 3 — 1단계 선·막대 도형 측정(축 눈금 글자 → 값, `measured` + `precision`). BPO 막대의 강조 막대 색은 출력 `highlight: [15]`(유럽 30쪽 강조 막대 꼴).
+- [x] **Step 5: 테스트** (`test_tables.py` `ChartsU5` — u4 꼴로 u5 설정을 모의)
 ```python
 class ChartsU5(unittest.TestCase):
     def test_count_and_warnings(self):
@@ -460,7 +460,7 @@ class ChartsU5(unittest.TestCase):
         r = out['p47-bpo-revenue']['values']; self.assertGreater(r[-1], r[0])
 ```
   (`run_charts`·출력 키 이름은 지금 `test_tables.py` 도우미와 chartCore 가 받는 꼴에 맞춘다 — 100% 띠는 1단계 stackedBar 출력 꼴 그대로.)
-- [ ] **Step 6:** 경고 0으로 `charts-u5.json` + 도장. 대조표 `units/u5/shots/c4/charts-45~47.png` 눈으로. `charts_read.py`를 고쳤으면 u2·u3·u4 `extract_tables` 다시 → `charts-u2|u3|u4.json` 바이트 같음(도장 파일만 정당하게 새 값) + `regress_unit --check` 셋 다. 커밋.
+- [x] **Step 6:** 경고 0으로 `charts-u5.json` + 도장. 대조표 `units/u5/shots/c4/charts-45~47.png` 눈으로. `charts_read.py`를 고쳤으면 u2·u3·u4 `extract_tables` 다시 → `charts-u2|u3|u4.json` 바이트 같음(도장 파일만 정당하게 새 값) + `regress_unit --check` 셋 다. 커밋.
 
 ### Task U5-8: 주제 내용
 
@@ -803,3 +803,27 @@ test('태평양 중심 묶음: 본사·D사 세계 지도', () => assert.ok(by.t
   - **시험**: `tests/atlas/units/u5.photos.test.mjs` 7(주제·쪽별 수, 47쪽 세 카드·출처, 핀 11·번호 숨김 짝·상한, 핀이 아메리카 안·같은 지도 500km 넘게, 대표 핀 나이아가라·뉴욕·보고타 1° 안 + 우유니·앙헬·배로·이키토스·갈라파고스 km·아마존 하류, 글·captionOverride, 파일 크기). `npm test` Python 375 OK · Node 655(통과 655).
   - **회귀**(공유 스크립트 `places.py` — 도장 입력 아님, src 고침 없음, `regress.sh u5-6`): u2 해시 162개 중 다른 파일 0, 캡처 41장 화소 차 0, 0/9/134/24, 조각 +0.000% · u3 다른 파일 0, 31장 화소 차 0, 0/26/118/42, +0.001% · u4 다른 파일 0, 42장 화소 차 0, 0/34/104/41, +0.001% — 셋 다 회귀 없음.
   - **교사 대조표에 올릴 것(U5-10)**: ① A사 삽화 카드에 제목·설명 글·출처가 그림 안에 보임. ② 만화는 설명 대신 소제목. ③ 스팽글리시 사진 설명 = 활동 문항 첫 문장. ④ 사진 카드에 기후 그래프·지도 출처를 넣지 않음. ⑤ 핀 자리는 교과서대로(갈라파고스 핀은 제도 북서쪽 바다, 안데스 원주민 핀은 보고타 북쪽).
+- **U5-7(2026-10-21) 그래프 숫자 13 — 경고 0, `units/u5/tables/charts-u5.json`(18,405 B) + 도장, 고리 레이어 `p46-ethnic-rings` 2.2KB** — 가지 atlas-u5(b43329e 위, 커밋 0c59e71), 대조표 `$ATLAS_WORK/units/u5/shots/c4/charts-45~47.png`(눈으로 봄 — 교과서 그림과 다시 그린 그림이 맞음), 작업 스크립트 `$ATLAS_WORK/units/u5/u5-7/cfg.py`(charts 절만 다시 씀)·dump.py·fills.py·chars.py(지면 조사)
+  - 그래프 표:
+
+    | id | 출력 type(읽개) | 값 출처 | 인쇄 값과 대조 |
+    |---|---|---|---|
+    | p45-barrow · newyork · bogota | climograph | 97쪽 표 printed | 잰 값과 차 기온 0.37·0.38·0.38℃, 강수 0.7·0.9·0.7mm(허용 0.6℃·6mm) |
+    | p45-iquitos | climograph | 도형 측정 measured(notInTable) | 기온 ±0.218℃ · 강수 ±1.089mm, 기온 25.1~26.3℃·8월 강수 최소 177mm |
+    | p46-us-ethnic | stackedBar(새 읽개 stackedLegend) | 칸 인쇄 % printed | 1990 75.6·11.7·9.0·2.8·0.9 / 2020 57.8·18.7·12.1·6.1·5.3 = 계획 값, 칸 너비와 차 최대 0.072%p |
+    | p46-mexico·haiti·brazil·peru·argentina | pie + ring 0.477~0.48(donut wedges) | 띠 안 인쇄 % printed | 멕시코 유럽계 15·혼혈 64·원주민 18·기타 3 / 아이티 혼혈 5·아프리카계 94·기타 1 / 브라질 유럽계 48·혼혈 43·아프리카계 8·기타 1 / 페루 유럽계 12·혼혈 32·원주민 52·기타 4 / 아르헨티나 유럽계 86·혼혈 7·원주민 3·기타 4 — 계획 값 모두, 각과 차 최대 0.24%p, 각 합 100.0 |
+    | p47-detroit | line | 도형 측정 measured | ±0.319만 명, 1920~2020 98.4·156.5·162.4·184.7(1950 최대)·166.1·150.0·120.1·103.7·95.4·71.5·64.3 |
+    | p47-bpo-revenue | bar(vbar — 강조 colors {2021: #00aaad}) | 도형 측정 measured | ±0.069십억 달러, 3.1 → 25.7 |
+    | p47-bpo-jobs | line | 도형 측정 measured | ±0.003백만 명, 0.23 → 1.35(해마다 늚) |
+
+  - **기후 4**: 45쪽 그래프 틀은 37쪽(아프리카)·29쪽(유럽)과 같음 — 「(℃)」 글자 자리 차(배로 +260.6, +1.0 · 뉴욕 +617.0, −226.2 · 보고타 +617.0, −113.4 · 이키토스 +617.0, +1.0)만큼 u4 카이로 상자를 옮겨 씀, 출처 「(『이과연표』, 2023)」는 그래프 왼쪽 아래라 따로. 네 그래프 모두 `barsByMonth`(배로 겨울 막대가 아주 작음 — 막대는 12개 다 있어 noBarMonths []). 이키토스 `notInTable`(97쪽 표 41도시에 없음 — 마나우스로 바꾸지 않음). 97쪽 표 u5 사본 = u2 `tables/climate-world.json` 바이트 같음.
+  - **100% 띠 — 계획과 다름: 새 읽개 `stackedLegend`**(type 키가 있을 때만): 1단계 `stackedBar` 읽개는 칸 곁 「이름 비율」 짝(pair_name_number)·막대 왼쪽 합계 글자(categoryRe)를 전제로 해 쓸 수 없음 — 이 띠는 칸에 수만, 이름은 아래 범례(견본 네모 + 오른쪽 글자)에만. 칸 = `_bar_rows`(1단계 그대로), 칸 이름 = 칸 색 ↔ 견본 색, 수 → 세로로 가장 가까운 막대(「0.9」는 띠 위 — 지시선), 막대마다 값 차·가로 거리 헝가리안(1단계 비용). 출력은 1단계 stackedBar 꼴(categories·total·stackOrder·series 값·잰 값·색) — 앱은 여러 막대 SVG(barPicker, U5-8). 제목 = 소제목 ③(그래프 자체 제목 없음 — U4-7 피라미드 꼴), 출처 「(미국 통계청)」. 계획 시험의 `series_by_row` 키는 없음(1단계 꼴 그대로 — 시험은 막대마다 series 값 합).
+  - **고리 5 — `read_donut_outside` 에 `wedges`·`sliceNames`·`valueGapEm`**(키가 있을 때만): 조각은 가운데에서 뻗은 부채꼴(lcl), 구멍은 흰 원이 아니라 **조각마다 흰 쐐기**(가장 큰 흰 쐐기의 호 = 안쪽 반지름 10.3pt, 바깥 21.6pt). 인쇄 % 는 띠 **안** → 글자 가운데가 안쪽 ~ 바깥 반지름 + 1pt 인 수만 각·값으로 짝. 조각 이름 = 그래프 범례 「민족(인종)의 비율(%)」 견본 고리 색 ↔ 둘레 글자(기타 #f3ca3b · 유럽계 #4fbba9 · 혼혈 #866eaa · 원주민 #8a9cca · 아프리카계 #ed8571 — 지도 레이어 범례와 다른 색이라 namesFrom 대신 `sliceNames`, 그 색만 조각으로 봄). **붙은 한 자리 수**: 아이티 「1」「5」(빈칸 0.57pt)·브라질 「8」「1」(1.63pt = 0.27em, 0.18em 어긋난 높이)이 기본 낱말 나눔(0.3em)으로 「15」「81」 한 낱말 → `valueGapEm 0.05`(두 자리 수 안 빈칸 −0.24pt 라 그대로). 조각 차례 = 12시부터 시계 방향(읽개가 정함 — 계획 표의 값 차례와 다름, 아이티는 혼혈·아프리카계·기타). 가운데 = 구멍 안 줄 그대로(「멕시코」「(12,657)」). 제목 = 소제목 ④, 출처 「(『신상 지리 자료』, 2023)」, category = 나라 이름.
+  - **측정 3**: 디트로이트 선(가로 눈금 「2000」「2010」이 한 낱말 「20002010」 → 나머지 9 글자로 축, 눈금선 11 에 붙임), BPO 매출 = 유럽 30쪽 꼴 vbar(labelMode config — 가로 글자 넷, 막대 16 해마다), 강조 막대 색은 **#00aaad**(계획 어림 #00a9ac), 출력은 계획의 `highlight: [15]` 대신 유럽 꼴 `colors {2021: …}`(앱 barFills 가 읽는 꼴). BPO 고용 선 — 가로 끝 「2021」이 「(년)」에 밀려 눈금선에서 1.51pt → 그래프 `snapTol 2.0`, 세로 점선 격자가 채움 묶음이라 **`read_line` 이 `y_ticks(c)`(yTickFillColor)를 씀** — 키가 없으면 `dedup(sorted(hlines))` = 옛 hlines 그대로(u2 선 그래프 2 바이트 같음으로 확인).
+  - **고리 레이어**: `build_layers --unit u5 p46-ethnic-rings` → `sims/atlas-u5-americas/data/layer-p46-ethnic-rings.json`(2.2KB, 고리 5 — series·ring·center 는 그래프 자료에서, 자리·지시선 끝은 U5-4 설정). u5.layers 시험의 「그래프 자료가 생기면 레이어도」 가지가 이제 돎(통과).
+  - **앱 길 확인(Node `tests/atlas/units/u5.charts.test.mjs` 6 — 작업 폴더 자료가 없으면 건너뜀)**: chartPlan 기후·선 = csat-chart.js 저수준(climate·line), 띠·고리·강조 막대 = SVG, 기후 축 −40~40 · 0~400, 선 눈금 0~200 · 0~1.5, stackCells 막대 2 × 칸 5 끝 100, ringSlices 12시부터 360°·ringRatio ≈ 0.48·가운데 2줄, barFills 2021 만 강조. 실제 화면 캡처는 U5-9 조각 조립 뒤.
+  - **시험**: `test_tables.py` ChartsU5 6(13개·경고 0·validate, 기후 표 값·이키토스 measured·모양, 띠 값·합 100, 고리 이름별 값·ring·가운데, 측정 3 모양·강조 색, 결정성) + ReaderU5Synthetic 1(`_value_tokens` 키 없으면 number_tokens 그대로·있으면 gap 으로 나눔). `npm test` Python 382 OK · Node 661(통과 661, 실패 0).
+  - **u2·u3·u4 바이트**: `extract_tables --unit u2|u3|u4 --climate --charts` → `charts-u2|u3|u4.json`·`climate-world.json` 3벌 md5 전후 같음(도장 `charts-*.stamp.json` 만 코드 해시로 새 값 — 작업 폴더).
+  - **회귀**(공유 스크립트 `charts_read.py` — 도장 입력 아님, src 고침 없음, `regress.sh u5-7`): u2 해시 162개 중 다른 파일 0, 캡처 41장 화소 차 0, 0/9/134/24, 조각 +0.000% · u3 다른 파일 0, 31장 화소 차 0, 0/26/118/42, +0.001% · u4 다른 파일 0, 42장 화소 차 0, 0/34/104/41, +0.001% — 셋 다 회귀 없음.
+  - **교사 대조표에 올릴 것(U5-10)**: ① 이키토스 = 잰 값(97쪽 표에 없음). ② 디트로이트·BPO 매출·고용 = 잰 값(값이 인쇄돼 있지 않음 — ±0.3만 명·±0.07십억 달러·±0.003백만 명). ③ 고리 조각 차례는 교과서 그림 그대로(12시부터 시계 방향). ④ 100% 띠 제목은 소제목 ③.
+  - **이어서 볼 것(U5-8)**: topics 에서 띠 = `barPicker`(1990·2020) + 크게 보기, 고리 5 는 chartSymbols 참조(build_content 계약), 기후 마커 4·디트로이트·BPO 그래프 블록 출처 글.
