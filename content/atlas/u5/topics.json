@@ -1,0 +1,1287 @@
+[
+ {
+  "id": "general",
+  "title": "일반도",
+  "pages": [40],
+  "view": {
+   "map": "p40-americas"
+  },
+  "views": [
+   {
+    "id": "americas",
+    "labelSrc": {
+     "page": 40,
+     "bbox": [120, 193, 183, 214]
+    },
+    "map": "p40-americas",
+    "label": "아메리카"
+   },
+   {
+    "id": "central",
+    "labelSrc": {
+     "page": 40,
+     "bbox": [68, 460, 112, 471]
+    },
+    "_bounds": "U5-3b: 40쪽 삽입 「중앙아메리카」 틀(p40-central)을 그 fit 으로 되돌린 범위 (−94.7, 3.0, −48.3, 26.0) — 틀 가장자리까지(map 키의 frameView 5~95% 범위는 바하마·소앤틸리스 끝을 자름). 교사 Q2 기본값: 따로 창 없이 일반도 바로가기.",
+    "center": [-71.5, 14.5],
+    "bounds": [-94.7, 3.0, -48.3, 26.0],
+    "label": "중앙아메리카"
+   }
+  ],
+  "layers": [],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "map-text",
+    "type": "text",
+    "view": "americas",
+    "titleSrc": {
+     "page": 40,
+     "bbox": [120, 193, 183, 214]
+    },
+    "src": {
+     "page": 40,
+     "bbox": [94, 216, 168, 226]
+    },
+    "title": "아메리카",
+    "text": "입체 투영 도법 1:77,000,000"
+   },
+   {
+    "id": "inset-text",
+    "type": "text",
+    "view": "central",
+    "titleSrc": {
+     "page": 40,
+     "bbox": [68, 460, 112, 471]
+    },
+    "src": {
+     "page": 40,
+     "bbox": [70, 631, 128, 641]
+    },
+    "title": "중앙아메리카",
+    "text": "밀러 도법 43,000,000"
+   },
+   {
+    "id": "page-40",
+    "type": "page",
+    "page": 40
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "coloring",
+  "title": "색칠하기",
+  "pages": [41],
+  "view": {
+   "map": "p41-coloring"
+  },
+  "layers": [],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 41,
+     "bbox": [502, 47, 709, 67],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 지리 정보와 매체를 활용하여 아메리카의 국가와 주요 도시의 위치를 표현할 수 있다."
+   },
+   {
+    "id": "text-1",
+    "type": "text",
+    "titleSrc": {
+     "page": 41,
+     "bbox": [97, 535, 224, 549]
+    },
+    "src": {
+     "page": 41,
+     "bbox": [56, 560, 323, 635]
+    },
+    "title": "아메리카의 국가와 주요 도시",
+    "text": "아메리카 대륙은 지리적으로 파나마 운하를 경계로 북아메리카와 남아메리카로 구분한다. 또한, 문화적으로는 미국과 멕시코의 국경을 이루는 리오그란데강을 경계로 앵글로아메리카와 라틴 아메리카로 구분할 수 있다. 아메리카에는 이주를 통해 유입된 여러 민족(인종)이 어우러져 살면서 서로 다른 문화가 공존하고 결합하면서 새로운 문화가 탄생하는 등 문화적 다양성이 나타난다. 한편, 북아메리카 지역은 미국을 중심으로 세계적인 초국적 기업의 본사가 많이 분포하며, 생산 공장의 이전에 따른 지역 변화가 나타나고 있다."
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "src": {
+     "page": 41,
+     "bbox": [61, 640, 280, 651]
+    },
+    "text": "각 나라에 색칠하여 지도를 완성하고 각 국가명과 도시명을 써넣어 보자."
+   },
+   {
+    "id": "page-41",
+    "type": "page",
+    "page": 41
+   }
+  ],
+  "quiz": {
+   "type": "coloring",
+   "ref": "coloring"
+  }
+ },
+ {
+  "id": "north",
+  "title": "북아메리카",
+  "pages": [42],
+  "view": {
+   "map": "p42-north"
+  },
+  "layers": [
+   {
+    "ref": "layer-p42-korea",
+    "type": "compareOutline",
+    "legend": false,
+    "group": "map"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "map-text",
+    "type": "text",
+    "titleSrc": {
+     "page": 42,
+     "bbox": [83, 570, 157, 590]
+    },
+    "src": {
+     "page": 42,
+     "bbox": [64, 593, 158, 602]
+    },
+    "title": "북아메리카",
+    "text": "람베르트 정각 원뿔 도법 1:25,000,000"
+   },
+   {
+    "id": "outline-text",
+    "type": "text",
+    "src": {
+     "page": 42,
+     "bbox": [138, 345, 172, 370]
+    },
+    "text": "같은 은같은 축척과 척축척과 축 같은 위도의 위도의도의 같같은 위도의 나나 우리나라라"
+   },
+   {
+    "id": "page-42",
+    "type": "page",
+    "page": 42
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "south",
+  "title": "남아메리카",
+  "pages": [43],
+  "view": {
+   "map": "p43-south"
+  },
+  "layers": [
+   {
+    "ref": "layer-p43-korea",
+    "type": "compareOutline",
+    "legend": false,
+    "group": "map"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "map-text",
+    "type": "text",
+    "titleSrc": {
+     "page": 43,
+     "bbox": [618, 570, 691, 590]
+    },
+    "src": {
+     "page": 43,
+     "bbox": [597, 593, 691, 602]
+    },
+    "title": "남아메리카",
+    "text": "람베르트 정적 방위 도법 1:28,000,000"
+   },
+   {
+    "id": "outline-text",
+    "type": "text",
+    "src": {
+     "page": 43,
+     "bbox": [494, 568, 532, 583]
+    },
+    "text": "같은 축척의 우리나라와 대척점"
+   },
+   {
+    "id": "page-43",
+    "type": "page",
+    "page": 43
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "relief",
+  "title": "지형",
+  "pages": [44],
+  "view": {
+   "map": "p44-relief"
+  },
+  "layers": [],
+  "pinNumbers": "hidden",
+  "markers": [
+   {
+    "id": "r-uyuni",
+    "photo": "p44-1"
+   },
+   {
+    "id": "r-galapagos",
+    "photo": "p44-2"
+   },
+   {
+    "id": "r-auyantepui",
+    "photo": "p44-3"
+   },
+   {
+    "id": "r-rocky",
+    "photo": "p44-4"
+   },
+   {
+    "id": "r-niagara",
+    "photo": "p44-5"
+   },
+   {
+    "id": "r-great-plains",
+    "photo": "p44-6"
+   },
+   {
+    "id": "r-amazon",
+    "photo": "p44-7"
+   }
+  ],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 44,
+     "bbox": [57, 33, 363, 50]
+    },
+    "text": "아메리카의 자연환경은 어떤 특색을 지니고 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 45,
+     "bbox": [503, 32, 707, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 지리 정보와 매체를 활용하여 아메리카의 지형과 기후 특색을 지도로 표현할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 44,
+     "bbox": [53, 78, 127, 91]
+    },
+    "creditSrc": {
+     "page": 44,
+     "bbox": [483, 681, 558, 690]
+    },
+    "text": "아메리카의 지형",
+    "credit": "(naturalearthdata.com, 2023)"
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "titleSrc": {
+     "page": 44,
+     "bbox": [36, 345, 70, 355]
+    },
+    "src": {
+     "page": 44,
+     "bbox": [38, 355, 184, 374]
+    },
+    "title": "활동하기 1",
+    "text": "40쪽의 아메리카 지도와 인터넷을 참고하여 사진의 위치를 지도의 빈칸에 표시해 보자."
+   },
+   {
+    "id": "page-44",
+    "type": "page",
+    "page": 44
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "climate",
+  "title": "기후",
+  "pages": [45],
+  "view": {
+   "map": "p45-climate"
+  },
+  "layers": [
+   {
+    "ref": "layer-p45-climate",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 45,
+     "bbox": [281, 564, 389, 572]
+    },
+    "legendTitleSrc": {
+     "page": 45,
+     "bbox": [58, 354, 86, 363]
+    },
+    "credit": "*1991~2020년 평균 (www.gloh2o.org, 2023)",
+    "legendTitle": "기후 구분"
+   },
+   {
+    "ref": "layer-p45-jan",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 45,
+     "bbox": [440, 342, 556, 350]
+    },
+    "legendTitleSrc": {
+     "page": 45,
+     "bbox": [403, 260, 437, 268.5]
+    },
+    "lineLegendTitleSrc": {
+     "page": 45,
+     "bbox": [403, 330, 428, 338.5]
+    },
+    "credit": "*1970~2010년 평균 (www.worldclim.org, 2023)",
+    "legendTitle": "강수량(mm)",
+    "lineLegendTitle": "기온 (°C)"
+   },
+   {
+    "ref": "layer-p45-jul",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 45,
+     "bbox": [630, 342, 746, 350]
+    },
+    "legendTitleSrc": {
+     "page": 45,
+     "bbox": [597, 260, 631, 268.5]
+    },
+    "lineLegendTitleSrc": {
+     "page": 45,
+     "bbox": [597, 330, 622, 338.5]
+    },
+    "credit": "*1970~2010년 평균 (www.worldclim.org, 2023)",
+    "legendTitle": "강수량(mm)",
+    "lineLegendTitle": "기온 (°C)"
+   }
+  ],
+  "pinNumbers": "hidden",
+  "markers": [
+   {
+    "id": "c-barrow",
+    "photo": "p45-1",
+    "chart": "p45-barrow",
+    "lonlatFrom": {
+     "place": "배로",
+     "why": "기후 그래프 도시 위치(교과서 핀은 순록 유목 사진과 함께 배로에서 약 10km — u4 37쪽과 같이 그래프 도시는 늘 옮김, 교과서 핀은 textbookLonlat)"
+    }
+   },
+   {
+    "id": "c-newyork",
+    "photo": "p45-2",
+    "chart": "p45-newyork",
+    "lonlatFrom": {
+     "place": "뉴욕",
+     "why": "기후 그래프 도시 위치(교과서 핀은 센트럴파크 사진과 함께 뉴욕에서 약 57km — u4 37쪽과 같이 그래프 도시는 늘 옮김, 교과서 핀은 textbookLonlat)"
+    }
+   },
+   {
+    "id": "c-bogota",
+    "photo": "p45-3",
+    "chart": "p45-bogota",
+    "lonlatFrom": {
+     "place": "보고타",
+     "why": "기후 그래프 도시 위치(교과서 핀은 안데스 원주민 사진과 함께 보고타에서 약 97km — u4 37쪽과 같이 그래프 도시는 늘 옮김, 교과서 핀은 textbookLonlat)"
+    }
+   },
+   {
+    "id": "c-iquitos",
+    "photo": "p45-4",
+    "chart": "p45-iquitos",
+    "lonlatFrom": {
+     "place": "이키토스",
+     "why": "기후 그래프 도시 위치(교과서 핀은 열대 우림 사진과 함께 이키토스에서 약 48km — u4 37쪽과 같이 그래프 도시는 늘 옮김, 교과서 핀은 textbookLonlat)"
+    }
+   }
+  ],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 44,
+     "bbox": [57, 33, 363, 50]
+    },
+    "text": "아메리카의 자연환경은 어떤 특색을 지니고 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 45,
+     "bbox": [503, 32, 707, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 지리 정보와 매체를 활용하여 아메리카의 지형과 기후 특색을 지도로 표현할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 45,
+     "bbox": [64, 78, 138, 91]
+    },
+    "text": "아메리카의 기후"
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "titleSrc": {
+     "page": 45,
+     "bbox": [48, 517, 82, 527]
+    },
+    "src": {
+     "page": 45,
+     "bbox": [49, 527, 204, 546]
+    },
+    "title": "활동하기 2",
+    "text": "기후 그래프와 사진 설명을 읽고 해당 지역의 위치를 지도에 표시해 보자."
+   },
+   {
+    "id": "page-45",
+    "type": "page",
+    "page": 45
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "migration",
+  "title": "인구 이동과 언어",
+  "pages": [46],
+  "view": {
+   "map": "p46-migration"
+  },
+  "views": [
+   {
+    "id": "flows",
+    "labelSrc": {
+     "page": 46,
+     "bbox": [53, 78, 140, 91]
+    },
+    "map": "p46-migration",
+    "label": "아메리카 인구 이동"
+   },
+   {
+    "id": "canada",
+    "labelSrc": {
+     "page": 46,
+     "bbox": [53, 243, 141, 256]
+    },
+    "map": "p46-canada",
+    "label": "캐나다의 언어 분포"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p46-colonies",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 46,
+     "bbox": [53, 78, 140, 91]
+    },
+    "creditSrc": {
+     "page": 46,
+     "bbox": [33, 210, 109, 218]
+    },
+    "legendTitleSrc": {
+     "page": 46,
+     "bbox": [33, 101, 94, 109]
+    },
+    "label": "아메리카 인구 이동",
+    "credit": "(『세계의 여러 지역 NOW』, 2023)",
+    "legendTitle": "17세기까지의 식민지 지역"
+   },
+   {
+    "ref": "layer-p46-migration-flows",
+    "type": "pathFlow",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 46,
+     "bbox": [53, 78, 140, 91]
+    },
+    "label": "아메리카 인구 이동"
+   },
+   {
+    "ref": "layer-p46-canada",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 46,
+     "bbox": [53, 243, 141, 256]
+    },
+    "creditSrc": {
+     "page": 46,
+     "bbox": [33, 368, 84, 376]
+    },
+    "label": "캐나다의 언어 분포",
+    "credit": "(캐나다 통계청, 2016)"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 46,
+     "bbox": [61, 33, 424, 50]
+    },
+    "text": "아메리카에서는 어떤 민족들이 어떤 문화를 이루며 살아갈까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 46,
+     "bbox": [495, 32, 698, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 민족(인종)으로 구성된 아메리카의 인구 특징을 살펴보고, 사례를 들어 아메리카의 문화 혼종성을 설명할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 46,
+     "bbox": [53, 78, 140, 91]
+    },
+    "text": "아메리카 인구 이동"
+   },
+   {
+    "id": "text-1",
+    "type": "text",
+    "view": "flows",
+    "src": {
+     "page": 46,
+     "bbox": [183, 97, 261, 206]
+    },
+    "text": "원주민이 거주하던 아 메리카에 유럽계 민족 이 이주하면서 식민 지배에 필요한 노 동력을 확보하기 위해 아프리카계 민족을 강제 이 주시킴으로써 아 메리카에는 다양 한 민족이 거주하 게 되었다."
+   },
+   {
+    "id": "page-46-part",
+    "type": "page",
+    "page": 46,
+    "bbox": [30, 75, 265, 222]
+   },
+   {
+    "id": "section-2",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 46,
+     "bbox": [53, 243, 141, 256]
+    },
+    "text": "캐나다의 언어 분포"
+   },
+   {
+    "id": "text-2",
+    "type": "text",
+    "view": "canada",
+    "src": {
+     "page": 46,
+     "bbox": [33, 388, 259, 408]
+    },
+    "text": "캐나다는 영어와 프랑스어를 공용어로 채택하고 있으며, 프랑스계의 정착이 활발했던 퀘벡주는 프랑스어 사용 인구 비율이 상대적으로 높다."
+   },
+   {
+    "id": "page-46",
+    "type": "page",
+    "page": 46
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "ethnicity",
+  "title": "민족 구성과 문화 혼종성",
+  "pages": [46],
+  "view": {
+   "map": "p46-us-european"
+  },
+  "views": [
+   {
+    "id": "european",
+    "labelSrc": {
+     "page": 46,
+     "bbox": [276, 103, 313, 120]
+    },
+    "map": "p46-us-european",
+    "label": "유럽계 인구 비율(%)"
+   },
+   {
+    "id": "african",
+    "labelSrc": {
+     "page": 46,
+     "bbox": [514, 103, 551, 120]
+    },
+    "map": "p46-us-african",
+    "label": "아프리카계 인구 비율(%)"
+   },
+   {
+    "id": "hispanic",
+    "labelSrc": {
+     "page": 46,
+     "bbox": [276, 243, 313, 260]
+    },
+    "map": "p46-us-hispanic",
+    "label": "히스패닉계 인구 비율(%)"
+   },
+   {
+    "id": "asian",
+    "labelSrc": {
+     "page": 46,
+     "bbox": [514, 243, 551, 260]
+    },
+    "map": "p46-us-asian",
+    "label": "아시아계 인구 비율(%)"
+   },
+   {
+    "id": "ethnic",
+    "labelSrc": {
+     "page": 46,
+     "bbox": [53, 420, 233, 434]
+    },
+    "map": "p46-ethnic",
+    "label": "중앙 및 남아메리카의 민족(인종) 다양성"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p46-us-european",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 46,
+     "bbox": [276, 103, 313, 120]
+    },
+    "creditSrc": {
+     "page": 46,
+     "bbox": [432, 219, 479, 226.5]
+    },
+    "legendTitleSrc": {
+     "page": 46,
+     "bbox": [276, 103, 313, 120]
+    },
+    "label": "유럽계 인구 비율(%)",
+    "credit": "(미국 통계청, 2020)",
+    "legendTitle": "유럽계 인구 비율(%)"
+   },
+   {
+    "ref": "layer-p46-us-african",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 46,
+     "bbox": [514, 103, 551, 120]
+    },
+    "creditSrc": {
+     "page": 46,
+     "bbox": [688, 219, 735, 226.5]
+    },
+    "legendTitleSrc": {
+     "page": 46,
+     "bbox": [514, 103, 551, 120]
+    },
+    "label": "아프리카계 인구 비율(%)",
+    "credit": "(미국 통계청, 2020)",
+    "legendTitle": "아프리카계 인구 비율(%)"
+   },
+   {
+    "ref": "layer-p46-us-hispanic",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 46,
+     "bbox": [276, 243, 313, 260]
+    },
+    "creditSrc": {
+     "page": 46,
+     "bbox": [432, 357, 479, 364.5]
+    },
+    "legendTitleSrc": {
+     "page": 46,
+     "bbox": [276, 243, 313, 260]
+    },
+    "label": "히스패닉계 인구 비율(%)",
+    "credit": "(미국 통계청, 2020)",
+    "legendTitle": "히스패닉계 인구 비율(%)"
+   },
+   {
+    "ref": "layer-p46-us-asian",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 46,
+     "bbox": [514, 243, 551, 260]
+    },
+    "creditSrc": {
+     "page": 46,
+     "bbox": [688, 357, 735, 364.5]
+    },
+    "legendTitleSrc": {
+     "page": 46,
+     "bbox": [514, 243, 551, 260]
+    },
+    "label": "아시아계 인구 비율(%)",
+    "credit": "(미국 통계청, 2020)",
+    "legendTitle": "아시아계 인구 비율(%)"
+   },
+   {
+    "ref": "layer-p46-ethnic",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 46,
+     "bbox": [53, 420, 233, 434]
+    },
+    "creditSrc": {
+     "page": 46,
+     "bbox": [202, 682, 259, 689.5]
+    },
+    "noteSrc": {
+     "page": 46,
+     "bbox": [33, 682, 132, 690]
+    },
+    "label": "중앙 및 남아메리카의 민족(인종) 다양성",
+    "credit": "(『신상 지리 자료』, 2023)",
+    "note": "*가로 안의 숫자는 각 국가의 인구(만 명)임."
+   },
+   {
+    "ref": "layer-p46-ethnic-rings",
+    "type": "chartSymbols",
+    "legend": false,
+    "group": "map",
+    "labelSrc": {
+     "page": 46,
+     "bbox": [53, 420, 233, 434]
+    },
+    "label": "중앙 및 남아메리카의 민족(인종) 다양성"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 46,
+     "bbox": [61, 33, 424, 50]
+    },
+    "text": "아메리카에서는 어떤 민족들이 어떤 문화를 이루며 살아갈까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 46,
+     "bbox": [495, 32, 698, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 민족(인종)으로 구성된 아메리카의 인구 특징을 살펴보고, 사례를 들어 아메리카의 문화 혼종성을 설명할 수 있다."
+   },
+   {
+    "id": "section-3",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 46,
+     "bbox": [291, 78, 431, 91]
+    },
+    "text": "미국의 민족(인종) 분포 및 구성"
+   },
+   {
+    "id": "p46-us-ethnic",
+    "type": "chart",
+    "ref": "p46-us-ethnic",
+    "src": {
+     "page": 46,
+     "bbox": [510, 372, 735, 392]
+    },
+    "text": "미국은 시간이 지남에 따라 유럽계의 인구 비율이 감소하고 다른 민족(인종) 인구 비율이 증가하고 있다."
+   },
+   {
+    "id": "section-4",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 46,
+     "bbox": [53, 420, 233, 434]
+    },
+    "text": "중앙 및 남아메리카의 민족(인종) 다양성"
+   },
+   {
+    "id": "section-5",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 46,
+     "bbox": [291, 420, 399, 434]
+    },
+    "text": "아메리카의 문화 혼종성"
+   },
+   {
+    "id": "p46-1",
+    "type": "photo",
+    "ref": "p46-1"
+   },
+   {
+    "id": "p46-2",
+    "type": "photo",
+    "ref": "p46-2"
+   },
+   {
+    "id": "p46-3",
+    "type": "photo",
+    "ref": "p46-3"
+   },
+   {
+    "id": "p46-4",
+    "type": "photo",
+    "ref": "p46-4"
+   },
+   {
+    "id": "p46-5",
+    "type": "photo",
+    "ref": "p46-5"
+   },
+   {
+    "id": "p46-6",
+    "type": "photo",
+    "ref": "p46-6"
+   },
+   {
+    "id": "activity-3",
+    "type": "activity",
+    "titleSrc": {
+     "page": 46,
+     "bbox": [589, 563, 623, 572]
+    },
+    "src": {
+     "page": 46,
+     "bbox": [593, 575, 730, 614]
+    },
+    "title": "활동하기 3",
+    "text": "사진은 미국 남부에서 볼 수 있는 영어와 에스파냐어로 함께 표시한 광고물이다. 이러한 언어는 스팽글리시라고도 불리는데, 스팽글리시가 미국 남부 지역에서 많이 사용되는 이유를 생각해 보자."
+   },
+   {
+    "id": "page-46",
+    "type": "page",
+    "page": 46
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "tnc",
+  "title": "초국적 기업",
+  "pages": [47],
+  "view": {
+   "map": "p47-hq"
+  },
+  "views": [
+   {
+    "id": "hq",
+    "labelSrc": {
+     "page": 47,
+     "bbox": [420, 78, 586, 92]
+    },
+    "map": "p47-hq",
+    "label": "세계 100대 초국적 기업의 본사 위치"
+   },
+   {
+    "id": "supply",
+    "labelSrc": {
+     "page": 47,
+     "bbox": [50, 659, 143, 669]
+    },
+    "map": "p47-agri",
+    "label": "미국에 본사를 둔 농업 회사"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p47-hq",
+    "type": "symbolLabels",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 47,
+     "bbox": [420, 78, 586, 92]
+    },
+    "creditSrc": {
+     "page": 47,
+     "bbox": [682, 266, 748, 275]
+    },
+    "legendTitleSrc": {
+     "page": 47,
+     "bbox": [403, 234, 455, 249]
+    },
+    "label": "세계 100대 초국적 기업의 본사 위치",
+    "credit": "(LANDGEIST 누리집, 2021)",
+    "legendTitle": "기업 규모 (시가 총액, 백억 달러)"
+   },
+   {
+    "ref": "layer-p47-hq-sv",
+    "type": "symbol",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 47,
+     "bbox": [420, 78, 586, 92]
+    },
+    "label": "세계 100대 초국적 기업의 본사 위치"
+   },
+   {
+    "ref": "layer-p47-agri-supply",
+    "type": "countryClass",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 47,
+     "bbox": [50, 659, 143, 669]
+    },
+    "creditSrc": {
+     "page": 47,
+     "bbox": [344, 661, 389, 669]
+    },
+    "label": "미국에 본사를 둔 농업 회사",
+    "credit": "(D사 누리집, 2023)"
+   },
+   {
+    "ref": "layer-p47-agri-sites",
+    "type": "symbolLabels",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 47,
+     "bbox": [50, 659, 143, 669]
+    },
+    "label": "미국에 본사를 둔 농업 회사"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 47,
+     "bbox": [72, 33, 422, 50]
+    },
+    "text": "아메리카의 산업이 발달한 지역은 어떻게 변화하고 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 47,
+     "bbox": [503, 26, 709, 58],
+     "skip": "학습 목표 |"
+    },
+    "text": "초국적 기업의 글로벌 생산 체제에 대한 이해를 바탕으로, 초국적 기업의 아메리카 지역 내 입지와 해외 이전의 이유, 그에 따른 해당 지역의 변화를 설명할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 47,
+     "bbox": [64, 78, 184, 91]
+    },
+    "text": "초국적 기업의 공간적 분업"
+   },
+   {
+    "id": "p47-1",
+    "type": "photo",
+    "ref": "p47-1"
+   },
+   {
+    "id": "page-47-comic",
+    "type": "page",
+    "page": 47,
+    "bbox": [44, 95, 389, 305]
+   },
+   {
+    "id": "section-2",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 47,
+     "bbox": [420, 78, 586, 92]
+    },
+    "text": "세계 100대 초국적 기업의 본사 위치"
+   },
+   {
+    "id": "hq-text",
+    "type": "text",
+    "view": "hq",
+    "src": {
+     "page": 47,
+     "bbox": [401, 282, 748, 302]
+    },
+    "text": "초국적 기업의 본사는 미국, 유럽, 동아시아 등 경제 발달 지역을 중심으로 주로 분포하며 특히, 미국 서부 지역은 실리콘 밸리를 중심으로 첨단 기술 관련 초국적 기업이 집중되어 있다."
+   },
+   {
+    "id": "section-3",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 47,
+     "bbox": [64, 322, 207, 334]
+    },
+    "text": "초국적 기업의 글로벌 생산 체제"
+   },
+   {
+    "id": "text-3",
+    "type": "text",
+    "src": {
+     "page": 47,
+     "bbox": [44, 343, 364, 362]
+    },
+    "text": "초국적 기업은 세계적 차원에서 생산 체제를 갖추고 제품을 생산하고 판매하는 기업이다. 본사는 선진국에 주로 분포하며, 제품 생산 공장은 저렴한 노동력이 풍부한 개발 도상국에 주로 입지한다."
+   },
+   {
+    "id": "p47-2",
+    "type": "photo",
+    "ref": "p47-2"
+   },
+   {
+    "id": "page-47-device",
+    "type": "page",
+    "page": 47,
+    "bbox": [44, 366, 391, 500]
+   },
+   {
+    "id": "agri-text",
+    "type": "text",
+    "view": "supply",
+    "titleSrc": {
+     "page": 47,
+     "bbox": [50, 659, 143, 669]
+    },
+    "src": {
+     "page": 47,
+     "bbox": [44, 670, 389, 690]
+    },
+    "title": "미국에 본사를 둔 농업 회사",
+    "text": "미국 캘리포니아에 본사와 연구소를 둔 D사는 기후 여건이 좋고 노동력이 저렴한 지역에 농장을 두고, 경제 규모가 크고 구매력이 큰 지역에 판매 지점을 운영하고 있다."
+   },
+   {
+    "id": "page-47",
+    "type": "page",
+    "page": 47
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "change",
+  "title": "지역 변화",
+  "pages": [47],
+  "view": {
+   "map": "p47-maquila"
+  },
+  "views": [
+   {
+    "id": "maquila",
+    "labelSrc": {
+     "page": 47,
+     "bbox": [411, 497, 557, 507]
+    },
+    "map": "p47-maquila",
+    "label": "멕시코의 생산 공장 유치에 따른 지역 성장"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p47-maquila",
+    "type": "unitSymbols",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 47,
+     "bbox": [511, 647, 568, 655]
+    },
+    "legendTitleSrc": {
+     "page": 47,
+     "bbox": [405, 620, 476, 628.5]
+    },
+    "noteSrc": {
+     "page": 47,
+     "bbox": [404, 638, 566, 645]
+    },
+    "credit": "(『하크 세계 지도』, 2023)",
+    "legendTitle": "마킬라도라 시설*(2021년)",
+    "note": "*주로 미국 수출을 목적으로 수입한 부품으로 완제품을 생산하는 조립업체"
+   },
+   {
+    "ref": "layer-p47-mex-states",
+    "type": "area",
+    "legend": true,
+    "group": "map"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 47,
+     "bbox": [72, 33, 422, 50]
+    },
+    "text": "아메리카의 산업이 발달한 지역은 어떻게 변화하고 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 47,
+     "bbox": [503, 26, 709, 58],
+     "skip": "학습 목표 |"
+    },
+    "text": "초국적 기업의 글로벌 생산 체제에 대한 이해를 바탕으로, 초국적 기업의 아메리카 지역 내 입지와 해외 이전의 이유, 그에 따른 해당 지역의 변화를 설명할 수 있다."
+   },
+   {
+    "id": "section-4",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 47,
+     "bbox": [421, 322, 586, 334]
+    },
+    "text": "초국적 기업의 이전에 따른 지역 변화"
+   },
+   {
+    "id": "sub-1",
+    "type": "text",
+    "role": "subtitle",
+    "src": {
+     "page": 47,
+     "bbox": [411, 340, 524, 350]
+    },
+    "text": "생산 공장 이전에 따른 지역 쇠퇴"
+   },
+   {
+    "id": "p47-detroit",
+    "type": "chart",
+    "ref": "p47-detroit"
+   },
+   {
+    "id": "p47-3",
+    "type": "photo",
+    "ref": "p47-3"
+   },
+   {
+    "id": "sub-2",
+    "type": "text",
+    "role": "subtitle",
+    "src": {
+     "page": 47,
+     "bbox": [411, 497, 557, 507]
+    },
+    "text": "멕시코의 생산 공장 유치에 따른 지역 성장"
+   },
+   {
+    "id": "maquila-text",
+    "type": "text",
+    "view": "maquila",
+    "src": {
+     "page": 47,
+     "bbox": [401, 660, 567, 690]
+    },
+    "text": "멕시코는 1960년대부터 수출 진흥 정책을 추진하였다. 이후 미국과의 국경 지대에 저임금 노동력을 활용하는 공장과 일자리가 크게 증가하였다."
+   },
+   {
+    "id": "sub-3",
+    "type": "text",
+    "role": "subtitle",
+    "src": {
+     "page": 47,
+     "bbox": [590, 497, 743, 507]
+    },
+    "text": "필리핀의 서비스 산업 유치에 따른 지역 성장"
+   },
+   {
+    "id": "p47-bpo-revenue",
+    "type": "chart",
+    "ref": "p47-bpo-revenue",
+    "src": {
+     "page": 47,
+     "bbox": [580, 650, 748, 690]
+    },
+    "text": "미국을 비롯한 세계 각국의 초국적 기업의 콜센터가 필리핀으로 이전하였다. 필리핀은 저렴한 임금, 뛰어난 영어 구사 능력, 시차 등의 좋은 입지 조건을 갖춘 지역으로 꼽힌다."
+   },
+   {
+    "id": "p47-bpo-jobs",
+    "type": "chart",
+    "ref": "p47-bpo-jobs"
+   },
+   {
+    "id": "page-47",
+    "type": "page",
+    "page": 47
+   }
+  ],
+  "quiz": null
+ }
+]

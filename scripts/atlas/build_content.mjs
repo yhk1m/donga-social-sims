@@ -202,7 +202,8 @@ function resolveLayers(ctx, t, at) {
     const gj = ctx.inp.layerFile(l.ref), where = `${at}.layers.${l.ref}`;
     if (!gj) { ctx.W.push(`${where}: 레이어 파일 없음`); return l; }
     const props = gj.properties ?? {}, type = props.layerType ?? (gj.url ? 'image' : null);
-    if (l.type !== type) ctx.W.push(`${where}: type ${l.type} ≠ 레이어 ${type}`);
+    // 설정 layerTypeAs {주제 type: [레이어 layerType…]}(u5 — 있을 때만): 같은 자료를 다른 앱 종류로 그림(regionClass 면 → area, 기호 + 지면 글자 → symbolLabels)
+    if (l.type !== type && !(ctx.cfg.layerTypeAs?.[l.type] ?? []).includes(type)) ctx.W.push(`${where}: type ${l.type} ≠ 레이어 ${type}`);
     const r = { ...l, label: l.label ?? props.title };
     if (!r.label) ctx.W.push(`${where}: label 없음(레이어에 제목도 없음)`);
     if (props.approx) { r.approx = true; r.approxNote = '위치 근사'; if (props.approxReason) r.approxReason = props.approxReason; }

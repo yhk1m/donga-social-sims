@@ -1,0 +1,588 @@
+{
+ "_doc": "coloring_quiz.mjs 생성물(직접 고치지 말고 고칠 값은 overrides.json). name = 나라 이름(교과서 지명), label = 색칠하기 지도 글자(초성 또는 이름), iso = Natural Earth ADM0_A3, labelIso = 글자가 놓인 다른 나라, capitalFrom = printed(색칠하기 지도에 적힌 수도)·places(일반도 수도 지명)·places+ne(여럿 중 Natural Earth 수도에 가까운 것).",
+ "page": 41,
+ "map": "p41-coloring",
+ "inputsHash": "481cbd5f7f35a4dc55f0ddffed2554ccb8da9f3ef3427657b4f199690607eda1",
+ "countries": [
+  {
+   "name": "아르헨티나",
+   "label": "ㅇㄹㅎㅌㄴ",
+   "iso": "ARG",
+   "neName": "Argentina",
+   "labelLonlat": [
+    -63.7178,
+    -32.3561
+   ],
+   "capital": "부에노스아이레스",
+   "capitalLonlat": [
+    -58.4,
+    -34.57
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "앤티가 바부다",
+   "label": null,
+   "iso": "ATG",
+   "neName": "Antigua and Barb.",
+   "capital": "세인트존스",
+   "capitalLonlat": [
+    -61.82,
+    16.97
+   ],
+   "capitalFrom": "places+ne"
+  },
+  {
+   "name": "바하마",
+   "label": "바하마",
+   "iso": "BHS",
+   "neName": "Bahamas",
+   "labelLonlat": [
+    -71.335,
+    24.3117
+   ],
+   "capital": "나소",
+   "capitalLonlat": [
+    -77.35,
+    25.08
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "벨리즈",
+   "label": "벨리즈",
+   "iso": "BLZ",
+   "neName": "Belize",
+   "labelLonlat": [
+    -88.99,
+    20.3498
+   ],
+   "labelIso": "MEX",
+   "capital": "벨모판",
+   "capitalLonlat": [
+    -88.77,
+    17.25
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "볼리비아",
+   "label": "ㅂㄹㅂㅇ",
+   "iso": "BOL",
+   "neName": "Bolivia",
+   "labelLonlat": [
+    -63.7667,
+    -17.783
+   ],
+   "capital": "라파스",
+   "capitalLonlat": [
+    -68.25,
+    -16.52
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "브라질",
+   "label": "ㅂ ㄹ ㅈ",
+   "iso": "BRA",
+   "neName": "Brazil",
+   "labelLonlat": [
+    -50.9476,
+    -10.32
+   ],
+   "capital": "브라질리아",
+   "capitalLonlat": [
+    -47.92,
+    -15.78
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "바베이도스",
+   "label": "바베이도스",
+   "iso": "BRB",
+   "neName": "Barbados",
+   "labelLonlat": [
+    -55.3941,
+    13.0653
+   ],
+   "capital": "브리지타운",
+   "capitalLonlat": [
+    -59.62,
+    13.1
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "캐나다",
+   "label": "ㅋ ㄴ ㄷ",
+   "iso": "CAN",
+   "neName": "Canada",
+   "labelLonlat": [
+    -111.8254,
+    56.6614
+   ],
+   "capital": "오타와",
+   "capitalLonlat": [
+    -75.7,
+    45.42
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "칠레",
+   "label": "ㅊㄹ",
+   "iso": "CHL",
+   "neName": "Chile",
+   "labelLonlat": [
+    -74.6561,
+    -31.8659
+   ],
+   "capital": "산티아고",
+   "capitalLonlat": [
+    -70.67,
+    -33.48
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "콜롬비아",
+   "label": "ㅋㄹㅂㅇ",
+   "iso": "COL",
+   "neName": "Colombia",
+   "labelLonlat": [
+    -73.1215,
+    2.3402
+   ],
+   "capital": "보고타",
+   "capitalLonlat": [
+    -74.09,
+    4.6
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "코스타리카",
+   "label": "코스타리카",
+   "iso": "CRI",
+   "neName": "Costa Rica",
+   "labelLonlat": [
+    -91.868,
+    8.3059
+   ],
+   "capital": "산호세",
+   "capitalLonlat": [
+    -84.12,
+    10.01
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "쿠바",
+   "label": "쿠바",
+   "iso": "CUB",
+   "neName": "Cuba",
+   "labelLonlat": [
+    -85.4422,
+    24.5753
+   ],
+   "capital": "아바나",
+   "capitalLonlat": [
+    -82.37,
+    23.13
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "도미니카",
+   "label": "도미니카",
+   "iso": "DMA",
+   "neName": "Dominica",
+   "labelLonlat": [
+    -64.8977,
+    15.9531
+   ],
+   "capital": "로조",
+   "capitalLonlat": [
+    -61.39,
+    15.3
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "도미니카 공화국",
+   "label": "도미니카 공화국",
+   "iso": "DOM",
+   "neName": "Dominican Rep.",
+   "labelLonlat": [
+    -66.1084,
+    21.0004
+   ],
+   "capital": "산토도밍고",
+   "capitalLonlat": [
+    -69.89,
+    18.48
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "에콰도르",
+   "label": "ㅇㅋㄷㄹ",
+   "iso": "ECU",
+   "neName": "Ecuador",
+   "labelLonlat": [
+    -84.1901,
+    -0.7138
+   ],
+   "capital": "키토",
+   "capitalLonlat": [
+    -78.49,
+    -0.22
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "그레나다",
+   "label": "그레나다",
+   "iso": "GRD",
+   "neName": "Grenada",
+   "labelLonlat": [
+    -58.5741,
+    11.5715
+   ],
+   "capital": "세인트조지스",
+   "capitalLonlat": [
+    -61.74,
+    12.05
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "그린란드",
+   "label": "그린란드(덴)",
+   "iso": "GRL",
+   "neName": "Greenland",
+   "labelLonlat": [
+    -44.2874,
+    68.0206
+   ],
+   "region": true
+  },
+  {
+   "name": "과테말라",
+   "label": "과테말라",
+   "iso": "GTM",
+   "neName": "Guatemala",
+   "labelLonlat": [
+    -103.7326,
+    14.3775
+   ],
+   "capital": "과테말라시티",
+   "capitalLonlat": [
+    -90.54,
+    14.63
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "기아나",
+   "label": "기아나(프)",
+   "iso": "GUF",
+   "neName": "French Guiana",
+   "labelLonlat": [
+    -51.6318,
+    3.6822
+   ],
+   "labelIso": "BRA",
+   "region": true
+  },
+  {
+   "name": "가이아나",
+   "label": "가이아나",
+   "iso": "GUY",
+   "neName": "Guyana",
+   "labelLonlat": [
+    -58.9652,
+    4.7656
+   ],
+   "capital": "조지타운",
+   "capitalLonlat": [
+    -58.11,
+    6.86
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "온두라스",
+   "label": "온두라스",
+   "iso": "HND",
+   "neName": "Honduras",
+   "labelLonlat": [
+    -83.9274,
+    17.0207
+   ],
+   "capital": "테구시갈파",
+   "capitalLonlat": [
+    -87.22,
+    14.1
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "아이티",
+   "label": "아이티",
+   "iso": "HTI",
+   "neName": "Haiti",
+   "labelLonlat": [
+    -72.4978,
+    16.6929
+   ],
+   "capital": "포르토프랭스",
+   "capitalLonlat": [
+    -72.33,
+    18.53
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "자메이카",
+   "label": "자메이카",
+   "iso": "JAM",
+   "neName": "Jamaica",
+   "labelLonlat": [
+    -76.8499,
+    14.7221
+   ],
+   "capital": "킹스턴",
+   "capitalLonlat": [
+    -76.76,
+    17.95
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "세인트키츠 네비스",
+   "label": "세인트키츠 네비스",
+   "iso": "KNA",
+   "neName": "St. Kitts and Nevis",
+   "labelLonlat": [
+    -57.1771,
+    17.9114
+   ],
+   "capital": "바스테르",
+   "capitalLonlat": [
+    -62.72,
+    17.3
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "세인트루시아",
+   "label": "세인트루시아",
+   "iso": "LCA",
+   "neName": "Saint Lucia",
+   "labelLonlat": [
+    -56.3762,
+    14.9237
+   ],
+   "capital": "캐스트리스",
+   "capitalLonlat": [
+    -60.99,
+    14.01
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "멕시코",
+   "label": "ㅁㅅㅋ",
+   "iso": "MEX",
+   "neName": "Mexico",
+   "labelLonlat": [
+    -101.7906,
+    22.9793
+   ],
+   "capital": "멕시코시티",
+   "capitalLonlat": [
+    -99.12,
+    19.44
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "니카라과",
+   "label": "니카라과",
+   "iso": "NIC",
+   "neName": "Nicaragua",
+   "labelLonlat": [
+    -82.5994,
+    12.6847
+   ],
+   "capital": "마나과",
+   "capitalLonlat": [
+    -86.27,
+    12.16
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "파나마",
+   "label": "ㅍㄴㅁ",
+   "iso": "PAN",
+   "neName": "Panama",
+   "labelLonlat": [
+    -80.371,
+    6.5278
+   ],
+   "capital": "파나마시티",
+   "capitalLonlat": [
+    -79.54,
+    8.97
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "페루",
+   "label": "ㅍㄹ",
+   "iso": "PER",
+   "neName": "Peru",
+   "labelLonlat": [
+    -75.8496,
+    -9.026
+   ],
+   "capital": "리마",
+   "capitalLonlat": [
+    -77.05,
+    -12.05
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "파라과이",
+   "label": "ㅍㄹㄱㅇ",
+   "iso": "PRY",
+   "neName": "Paraguay",
+   "labelLonlat": [
+    -58.061,
+    -23.4695
+   ],
+   "capital": "아순시온",
+   "capitalLonlat": [
+    -57.63,
+    -25.29
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "엘살바도르",
+   "label": "엘살바도르",
+   "iso": "SLV",
+   "neName": "El Salvador",
+   "labelLonlat": [
+    -99.47,
+    12.0198
+   ],
+   "capital": "산살바도르",
+   "capitalLonlat": [
+    -89.22,
+    13.7
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "수리남",
+   "label": "수리남",
+   "iso": "SUR",
+   "neName": "Suriname",
+   "labelLonlat": [
+    -46.9388,
+    5.4283
+   ],
+   "capital": "파라마리보",
+   "capitalLonlat": [
+    -55.17,
+    5.83
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "트리니다드 토바고",
+   "label": "트리니다드 토바고",
+   "iso": "TTO",
+   "neName": "Trinidad and Tobago",
+   "labelLonlat": [
+    -56.2709,
+    9.6826
+   ],
+   "capital": "포트오브스페인",
+   "capitalLonlat": [
+    -61.49,
+    10.6
+   ],
+   "capitalFrom": "places+ne"
+  },
+  {
+   "name": "우루과이",
+   "label": "ㅇㄹㄱㅇ",
+   "iso": "URY",
+   "neName": "Uruguay",
+   "labelLonlat": [
+    -52.063,
+    -35.4696
+   ],
+   "capital": "몬테비데오",
+   "capitalLonlat": [
+    -56.17,
+    -34.84
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "미국",
+   "label": "ㅁ ㄱ",
+   "iso": "USA",
+   "neName": "United States of America",
+   "labelLonlat": [
+    -99.9325,
+    40.3986
+   ],
+   "capital": "워싱턴",
+   "capitalLonlat": [
+    -76.98,
+    38.79
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "세인트빈센트 그레나딘",
+   "label": "세인트빈센트 그레나딘",
+   "iso": "VCT",
+   "neName": "St. Vin. and Gren.",
+   "labelLonlat": [
+    -65.7104,
+    13.0038
+   ],
+   "capital": "킹스타운",
+   "capitalLonlat": [
+    -61.22,
+    13.16
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "베네수엘라 볼리바르",
+   "label": "ㅂㄴㅅㅇㄹ ㅂㄹㅂㄹ",
+   "iso": "VEN",
+   "neName": "Venezuela",
+   "labelLonlat": [
+    -65.2261,
+    6.5864
+   ],
+   "capital": "카라카스",
+   "capitalLonlat": [
+    -66.92,
+    10.5
+   ],
+   "capitalFrom": "printed"
+  }
+ ]
+}

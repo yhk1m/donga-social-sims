@@ -18,6 +18,13 @@
 //     지명에서도 찾고, 출력에 region: true. capitalByNeNear(U4-9 에서 capitalByNe 와 따로 된 키로 — u3 은 capitalByNe 만 씀) = 손글씨 수도가 없는 나라의
 //     면 안에 places 수도가 없으면(라바트 — Natural Earth 10m 해안선이 도시 점보다 안쪽이라 면 밖 2km) 그 나라 Natural Earth 「Admin-0 capital」에서
 //     nearKm 안 가장 가까운 places 수도(places+ne).
+//   u5 41쪽에서 더한 것(역시 설정이 있을 때만):
+//     dropSuffix (정규식 글) = 나라 글자 끝의 소속 표시(「그린란드(덴)」·「기아나(프)」)를 짝짓기·이름 찾기에서 뗌(label 은 지면 글자 그대로),
+//     cutIsos [{from, to, box, name}] = Natural Earth 나라 from 의 다각형 중 경위도 상자 box 안에 다 든 것을 따로 된 나라 to(이름 name)로 떼어 냄
+//     (프랑스령 기아나 GUF — 바탕 지도 basemap.cutIsos 와 같은 상자, 교사 Q5), extraCountries {ADM0_A3: 까닭} = 지면에 이름 글자가 없는 나라를
+//     문제에 넣음(앤티가 바부다 — 교사 Q4, label null · 이름은 places 나라 지명 중 Natural Earth 이름과 같은 것), splitLabels {글자: [이름…]} = 한 글자
+//     덩어리로 붙어 나온 수도 손글씨 여럿을 나눔(상자는 글자 수 몫으로 가로로 나눔 — 「포르토프랭스 산토도밍고」), capitalAlias {손글씨: places 이름}
+//     = 손글씨 수도와 일반도 수도 지명이 다른 이름(「과테말라시티」 ↔ places 「과테말라」) — 자리는 places 에서, 수도 이름은 손글씨 그대로.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -75,9 +82,42 @@ export function countryLabels(list, cfg, W = []) {
   return out;
 }
 
+/** 설정 splitLabels: 붙어 나온 글자 덩어리를 이름 여럿으로(상자는 공백 뺀 글자 수 몫으로 가로 나눔). 없는 글자는 경고. */
+export function splitLabels(list, split, W = []) {
+  if (!split) return list;
+  const out = [];
+  for (const [t] of Object.entries(split)) if (!list.some((l) => key(l.text) === key(t))) W.push(`splitLabels ${t}: 지면에 없음`);
+  for (const l of list) {
+    const parts = split[Object.keys(split).find((t) => key(t) === key(l.text))];
+    if (!parts) { out.push(l); continue; }
+    const n = parts.reduce((a, p) => a + key(p).length, 0), [x0, y0, x1, y1] = l.bbox;
+    let x = x0;
+    for (const p of parts) { const w = (x1 - x0) * key(p).length / n; out.push({ text: p, bbox: [round(x, 2), y0, round(x + w, 2), y1] }); x += w; }
+  }
+  return out;
+}
+
+const inBox = (ring, b) => ring.every(([x, y]) => x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3]);
+/** 설정 cutIsos: from 나라 MultiPolygon 의 다각형 중 상자 안에 다 든 것을 따로 된 나라 to 로. 떼어 낼 다각형이 없으면 경고. 원본 feature 는 그대로(새 목록). */
+export function cutCountries(countries, cuts, W = []) {
+  if (!cuts?.length) return countries;
+  let out = countries;
+  for (const c of cuts) {
+    const f = out.find((g) => g.properties.ADM0_A3 === c.from);
+    const polys = !f ? [] : f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+    const moved = polys.filter((p) => inBox(p[0], c.box)), kept = polys.filter((p) => !inBox(p[0], c.box));
+    if (!moved.length || !kept.length) { W.push(`cutIsos ${c.from} → ${c.to}: 상자 ${c.box} 안에 다 든 다각형 ${moved.length}·밖 ${kept.length}`); continue; }
+    out = out.map((g) => (g !== f ? g : { ...g, geometry: { type: 'MultiPolygon', coordinates: kept } }));
+    out.push({ type: 'Feature', properties: { ADM0_A3: c.to, NAME_KO: c.name ?? c.to, NAME: c.neName ?? c.to }, geometry: { type: 'MultiPolygon', coordinates: moved } });
+  }
+  return out;
+}
+
 /** 문제 자료 만들기. 입력은 모두 메모리 자료 → {countries, warnings}. */
-export function buildColoring({ labels, fit, places, countries, nePlaces, cfg }) {
+export function buildColoring({ labels, fit, places, countries: neCountries, nePlaces, cfg }) {
   const W = [], conv = makeConverter(fit);
+  const countries = cutCountries(neCountries, cfg.cutIsos, W);
+  const suffix = cfg.dropSuffix ? new RegExp(cfg.dropSuffix) : null;
   const centre = (b) => conv.invert([(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]);
   const placeCountries = places.filter((p) => cfg.countryKinds.includes(p.kind));
   const placeCapitals = places.filter((p) => cfg.capitalKinds.includes(p.kind));
@@ -86,7 +126,7 @@ export function buildColoring({ labels, fit, places, countries, nePlaces, cfg })
   const out = [];
   const dist = (g, p) => (contains(g.geometry, p) ? 0 : nearKm(g.geometry, p));
   for (const lab of countryLabels(labels.countries, cfg, W)) {
-    const text = key(lab.text), cho = choseong(text);
+    const text = suffix ? key(lab.text).replace(suffix, '') : key(lab.text), cho = choseong(text);
     const pos = centre(lab.bbox);
     if (!pos) { W.push(`${lab.text}: 경위도 되돌리기 실패`); continue; }
     // ① Natural Earth 한국어 이름(NAME_KO)의 초성이 같은 나라 중 글자에서 가장 가까운 것, ② 없으면 글자 자리의 나라 면
@@ -114,13 +154,23 @@ export function buildColoring({ labels, fit, places, countries, nePlaces, cfg })
     if (isRegion) c.region = true;
     out.push(c);
   }
+  // 지면에 이름 글자가 없는 나라(extraCountries): 이름 = places 나라 지명 중 Natural Earth 이름과 같은 것
+  for (const iso of Object.keys(cfg.extraCountries ?? {})) {
+    const f = countries.find((g) => g.properties.ADM0_A3 === iso);
+    if (!f) { W.push(`extraCountries ${iso}: Natural Earth 에 없음`); continue; }
+    if (out.some((c) => c.iso === iso)) { W.push(`extraCountries ${iso}: 지면 글자로 이미 잡힘`); continue; }
+    const p = placeCountries.find((q) => key(q.name) === key(f.properties.NAME_KO));
+    if (!p) { W.push(`extraCountries ${iso}: places 나라 지명 ${f.properties.NAME_KO} 없음`); continue; }
+    out.push({ name: p.name, label: null, iso, neName: f.properties.NAME, f });
+  }
   // 같은 나라가 두 번 잡히면 경고
   const seen = new Map();
   for (const c of out) { if (seen.has(c.iso)) W.push(`${c.label}·${seen.get(c.iso)}: 같은 나라 ${c.iso}`); seen.set(c.iso, c.label); }
   // 수도
   const printed = new Map();
-  for (const lab of labels.capitals) {
-    const same = placeCapitals.filter((p) => key(p.name) === key(lab.text));
+  for (const lab of splitLabels(labels.capitals, cfg.splitLabels, W)) {
+    const want = cfg.capitalAlias?.[lab.text] ?? lab.text;
+    const same = placeCapitals.filter((p) => key(p.name) === key(want));
     const pos = centre(lab.bbox);
     if (!same.length) { W.push(`수도 글자 ${lab.text}: places 수도 지명 없음`); continue; }
     const p = same.sort((a, b) => km(pos, ll(a)) - km(pos, ll(b)))[0];
@@ -136,8 +186,9 @@ export function buildColoring({ labels, fit, places, countries, nePlaces, cfg })
     c ??= out.find((c) => countryAt(countries, ll(p), cfg.nearKm) === c.f);
     if (!c) { W.push(`수도 글자 ${lab.text}: 나라 없음`); continue; }
     if (printed.has(c.iso)) W.push(`${c.name}: 손글씨 수도 둘(${printed.get(c.iso).name}, ${p.name})`);
-    printed.set(c.iso, p);
+    printed.set(c.iso, want === lab.text ? p : { ...p, name: lab.text });
   }
+  for (const t of Object.keys(cfg.capitalAlias ?? {})) if (!labels.capitals.some((l) => key(l.text) === key(t)) && !Object.values(cfg.splitLabels ?? {}).flat().includes(t)) W.push(`capitalAlias ${t}: 지면에 없음`);
   for (const iso of Object.keys(cfg.regions ?? {})) if (!out.some((c) => c.iso === iso)) W.push(`regions ${iso}: 색칠하기 지도 글자에 없음`);
   for (const c of out) {
     let cap = printed.get(c.iso), how = 'printed';

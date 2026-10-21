@@ -3534,11 +3534,22 @@
     "ethnicity",
     "tnc",
     "change"
-   ]
+   ],
+   "markers": {"relief": 7, "climate": 4},
+   "chartMarkers": {"climate": 4},
+   "coloringCountries": 37,
+   "charts": 13
   },
-  "_expect": "교사 Q1 답: 주제 10(일반도 셋 general·north·south 를 나눔). U5-6·U5-7·U5-8 실측으로 markers(지형 7·기후 4)·chartMarkers(기후 4)·coloringCountries(Q4 답 35)·charts(어림 13)를 더함.",
+  "_expect": "교사 Q1 답: 주제 10(일반도 셋 general·north·south 를 나눔). 실측(U5-6·U5-7·U5-8): 지형 핀 7(번호 숨김), 기후 그래프 마커 4(배로·뉴욕·보고타·이키토스 — 번호 숨김), 41쪽 색칠하기 37 = 나라 35(교사 Q4 — 지면 이름 34 + 이름 칸 없는 앤티가 바부다 extraCountries) + 「지역」 2(그린란드·기아나 — coloring.json 의 region: true), 그래프 13(기후 4 · 100% 띠 1 · 고리 5 — 민족 고리 기호 레이어가 참조 · 디트로이트 선 · BPO 막대·선).",
+  "layerTypeAs": {"area": ["regionClass"], "symbolLabels": ["symbol"]},
+  "_layerTypeAs": "주제 레이어 type ↔ 레이어 자료 layerType 이 다른 것(build_content 검사 예외 — u5 만): 미국 주 4장·멕시코 주 경계는 regionClass 자료(U5-3d)를 앱 면 레이어(area)로, 47쪽 본사·D사 기호는 symbol 자료를 기호 + 지면 글자(americasExtra symbolLabels — 동해·독도·이어도, U5-4)로 그린다.",
   "expectCredits": {
-   "_doc": "40~47쪽에 인쇄된 출처 글(쪽: 목록) — U5-8 에서 채움.",
+   "44": ["(naturalearthdata.com, 2023)"],
+   "45": ["(www.gloh2o.org, 2023)", "(www.worldclim.org, 2023)", "(『이과연표』, 2023)"],
+   "46": ["(『세계의 여러 지역 NOW』, 2023)", "(캐나다 통계청, 2016)", "(미국 통계청, 2020)", "(『신상 지리 자료』, 2023)"],
+   "47": ["(LANDGEIST 누리집, 2021)", "(A사 누리집, 2023)", "(D사 누리집, 2023)", "(미국 통계청, 2020)", "(『하크 세계 지도』, 2023)", "(한국 콘텐츠 진흥원, 2021)"],
+   "_doc": "40~47쪽에 인쇄된 출처 글(쪽: 목록). 생성물 topics.json·charts.json 어딘가에 있어야 한다(공백 무시, tests/atlas/units/u5.content.test.mjs). 40~43쪽에는 출처 글이 없다. 46쪽 100% 띠 출처 「(미국 통계청)」은 해가 없어 출처 꼴(…, 연도) 밖(그래프 자료 source 그대로). 47쪽 마킬라도라 「(『하크 세계 지도』, 2023)」은 printed_credits 가 한 줄로 못 잇는다(여는 괄호·책 이름 글자와 해 글자의 세로 가운데가 다른 줄 — u4 38쪽 태양광과 같은 꼴) — 지면 대조 시험은 빼고 본다(notPrinted).",
+   "notPrinted": ["(『하크 세계 지도』, 2023)"],
    "notCredits": []
   },
   "viewGrid": 20,
@@ -3790,9 +3801,31 @@
     "country"
    ],
    "nearKm": 150,
-   "nameKm": 600,
-   "_nearKm": "나라 찾기: Natural Earth 이름(NAME_KO) 초성이 글자와 같은 나라 중 nameKm 안 가장 가까운 면(바다 위 글자·지시선 글자 — 레바논 225km, 필리핀 170km), 없으면 글자 자리의 면(nearKm 안). 수도 글자도 nearKm.",
-   "_fonts": "countryFont·capitalFont·capitalSize 는 u4 값 복사 — 41쪽도 초성 KCCChassam(12.8pt·8pt)·손글씨 수도 KyoboHandwriting 7.5pt(계획 조사). U5-8 에서 확인. 교사 Q4 답(퀴즈 나라 35 · 그린란드·기아나 지역 · 「알래스카(미)」 무시)은 regions·noCapital·ignoreLabels·joinLabels 로 U5-8 에서."
+   "nameKm": 1600,
+   "_nearKm": "나라 찾기: Natural Earth 이름(NAME_KO) 초성이 글자와 같은 나라 중 nameKm 안 가장 가까운 면, 없으면 글자 자리의 면(nearKm 안). 수도 글자도 nearKm. u5 nameKm 600 → 1600: 41쪽은 중앙아메리카 작은 나라 이름을 태평양 쪽 바다에(과테말라 약 1,400km · 엘살바도르 1,150 · 코스타리카 870), 수리남을 기아나 동쪽 대서양에(약 800km) 늘어놓고 지시선으로 가리킴 — 이름·초성이 같은 나라끼리만 견주므로 넓혀도 다른 나라로 가지 않음(시험).",
+   "_fonts": "41쪽 나라 글자 KCCChassam(초성 12.8pt 10 · 이름·작은 나라 초성 8pt 29 — U5-8 실측 39조각)·수도 손글씨 KyoboHandwriting 7.5pt 16조각(17 이름 — 「포르토프랭스 산토도밍고」가 한 덩어리) — u4 값 그대로 맞음(U5-8 확인).",
+   "joinLabels": [["ㅂㄴㅅㅇㄹ", "ㅂㄹㅂㄹ"], ["세인트빈센트", "그레나딘"]],
+   "_joinLabels": "두 줄로 적힌 한 나라: 「ㅂㄴㅅㅇㄹ / ㅂㄹㅂㄹ」 = 베네수엘라 볼리바르(places 이름 그대로), 「세인트빈센트 / 그레나딘」 = 세인트빈센트 그레나딘 — 두 줄이 쪽 흐름에서 붙어 나오고 지면에서 위아래로 맞닿음(시험 u5.content).",
+   "ignoreLabels": ["알래스카(미)"],
+   "_ignoreLabels": "교사 Q4 답: 「알래스카(미)」는 미국의 일부라 문제가 아님(미국은 「ㅁ ㄱ」).",
+   "dropSuffix": "\\([^()]*\\)$",
+   "_dropSuffix": "「그린란드(덴)」·「기아나(프)」의 소속 표시를 떼고 이름(places 그린란드 — kind island, 기아나 — region)을 찾음.",
+   "regionKinds": ["region", "island"],
+   "_regionKinds": "지역 이름 찾기: 기아나는 places kind region, 그린란드는 island(40·42쪽 지면에서 섬 글자 양식).",
+   "regions": {"GRL": "교사 Q4 답: 그린란드(덴마크령)는 칠할 수 있으나 나라 수(35) 밖 「지역」.", "GUF": "교사 Q4·Q5 답: 기아나(프랑스령)는 「지역」 — Natural Earth 에서는 프랑스 일부라 cutIsos 로 떼어 냄."},
+   "noCapital": {"GRL": "교사 Q4 답: 지역이라 수도 칸 「—」(41쪽에도 수도 ★·이름 없음).", "GUF": "교사 Q4 답: 지역이라 수도 칸 「—」(41쪽에도 수도 ★·이름 없음)."},
+   "cutIsos": [{"from": "FRA", "to": "GUF", "box": [-55, 2, -51, 6], "name": "기아나", "neName": "French Guiana"}],
+   "_cutIsos": "교사 Q5 기본값: 바탕 지도(U5-9 basemap.cutIsos)와 같은 상자로 프랑스령 기아나를 FRA 에서 떼어 GUF 로 — 앱 색칠 층은 바탕 지도 나라 iso 로 칠하므로 문제 iso 도 GUF.",
+   "extraCountries": {"ATG": "교사 Q4 답: 앤티가 바부다는 41쪽에 이름 칸이 없지만(40쪽 일반도에는 있음) 아메리카 독립국 35에 넣음 — 대조표 「알려진 차이」."},
+   "isoByLabel": {"도미니카": "DMA"},
+   "_isoByLabel": "Natural Earth 한국어 이름이 「도미니카 연방」이라 초성(ㄷㅁㄴㅋㅇㅂ)이 글자 「도미니카」와 달라 글자 자리 면으로 떨어짐 — 「도미니카 공화국」(DOM)은 이름이 같아 그대로 짝지어짐(시험).",
+   "capitalByNe": true,
+   "capitalByNeNear": true,
+   "_capitalByNe": "카리브 작은 나라 손글씨 수도·places 수도는 기호를 옮겨 그린 자리라 이웃 바다·이웃 나라에 떨어짐 → Natural Earth 「Admin-0 capital」 나라로(u3·u4 와 같은 키), 면 밖 해안 수도는 capitalByNeNear.",
+   "capitalAlias": {"과테말라시티": "과테말라", "파나마시티": "파나마"},
+   "_capitalAlias": "41쪽 손글씨 수도 이름과 일반도 수도 지명(U5-5 — 40·42쪽 지면 「과테말라」·「파나마」)이 다름 — 자리는 places, 퀴즈 수도 이름은 41쪽 손글씨 그대로.",
+   "splitLabels": {"포르토프랭스 산토도밍고": ["포르토프랭스", "산토도밍고"]},
+   "_splitLabels": "41쪽 손글씨 수도 「포르토프랭스」(아이티)·「산토도밍고」(도미니카 공화국)가 한 글자 덩어리로 나옴 — 글자 수 몫으로 상자를 나눔."
   }
  },
  "insets": [
