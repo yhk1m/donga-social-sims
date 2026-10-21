@@ -516,8 +516,9 @@ export function compareOutlineLayer(id, data, { map = null, layerId = id, z = LA
       if (!root || root.parentNode !== g) build(g);
       const gp = geoPath(view.projection), geo = geometry(), d = gp(geo);
       setAttr(path, 'd', d || null);
-      const b = d && gp.bounds(geo), x = b && round1((b[0][0] + b[1][0]) / 2);
-      text.replaceChildren(...(b ? lines.map((t, i) => s('text', { x, y: round1(b[0][1] - 6 - (lines.length - 1 - i) * 13), 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 600,
+      // 글자 자리: 면 위쪽 가운데 — 대척점(antipode)은 면 아래쪽(43쪽 교과서도 실루엣 아래에 씀 · 위쪽이면 실제 대척점 바로 북쪽의 우루과이·몬테비데오 지명과 겹침, U5-10)
+      const b = d && gp.bounds(geo), x = b && round1((b[0][0] + b[1][0]) / 2), below = P.mode === 'antipode';
+      text.replaceChildren(...(b ? lines.map((t, i) => s('text', { x, y: round1(below ? b[1][1] + 17 + i * 13 : b[0][1] - 6 - (lines.length - 1 - i) * 13), 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 600,
         fill: '#24323d', stroke: 'rgba(255,255,255,.85)', 'stroke-width': 3, 'paint-order': 'stroke' }, t)) : []));
     },
     destroy() { root?.remove(); root = null; btn?.remove(); btn = null; drag = null; },

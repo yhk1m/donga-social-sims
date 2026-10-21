@@ -146,3 +146,22 @@ test('지구본: 뒷면이면 경로가 비고, 윤곽 끌기도 지구본에서
   near(c1[0], want[0], 1e-6); near(c1[1], want[1], 1e-6);
   map.destroy();
 });
+
+test('지면 글자 자리: sameLat 은 면 위쪽, antipode 는 면 아래쪽(43쪽 — 대척점 북쪽 우루과이 지명과 겹치지 않게, U5-10)', () => {
+  const { map, svg } = setupMap();
+  map.flyTo({ center: [-90, 0], zoom: 2 }, 0);
+  const ys = (ref, data) => {
+    const L = layerFromRef({ ref, type: 'compareOutline', legend: false }, { [ref]: data }, { map });
+    map.addLayer(L); dom.flushRaf();
+    const g = walk(svg, (n) => n.getAttribute?.('class') === 'at-outline').at(-1);
+    const nums = (g.childNodes.find((n) => n.tagName === 'path').getAttribute('d').match(/-?\d+(\.\d+)?/g) || []).map(Number);
+    const py = nums.filter((_, i) => i % 2 === 1);
+    const ty = walk(g, (n) => n.tagName === 'text').map((t) => Number(t.getAttribute('y')));
+    return { top: Math.min(...py), bottom: Math.max(...py), ty };
+  };
+  const a = ys('s1', outline('sameLat', [-133.3, 37.8], { label: ['같은 축척과', '같은 위도의 우리나라'] }));
+  assert.ok(a.ty.length === 2 && a.ty.every((y) => y < a.top) && a.ty[0] < a.ty[1], `위쪽 ${JSON.stringify(a)}`);
+  const b = ys('a1', outline('antipode', undefined, { label: ['같은 축척의', '우리나라와 대척점'] }));
+  assert.ok(b.ty.length === 2 && b.ty.every((y) => y > b.bottom) && b.ty[0] < b.ty[1], `아래쪽 ${JSON.stringify(b)}`);
+  map.destroy();
+});

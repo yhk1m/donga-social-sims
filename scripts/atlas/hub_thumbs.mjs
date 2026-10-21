@@ -6,6 +6,7 @@
 //   출력: docs/assets/atlas/hub/<id>.webp (80 KB 넘으면 품질을 낮춰 다시)
 //   헤드리스 Chrome 은 scripts/atlas/cdp.mjs(--disable-gpu + swiftshader + 새 user-data-dir + 캐시 0).
 //   1600×800 창 = 무대 1280×800(사이드바 320) → clip scale 0.5 로 640×400. 지도 도구·축척 막대·범례 칸은 숨기고 찍는다(작은 그림에서 잡음).
+//   단원 표 scripts/atlas/units.json 에 thumbBounds [w, s, e, n] 이 있으면 그 범위로 맞춘 뒤 찍는다(없으면 첫 주제 처음 보기 그대로).
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { SIMS } from '../../src/registry.js';
@@ -23,6 +24,7 @@ if (!ids.length) {
   ids = hubUnits({ sims: SIMS, versions, plan: [] }).map((u) => u.id);
 }
 const W = 1600, H = 800, MAX_BYTES = 80 * 1024;
+const UNITS = JSON.parse(readFileSync(join(ROOT, 'scripts', 'atlas', 'units.json'), 'utf8'));
 mkdirSync(OUT, { recursive: true });
 
 let server = null, base = PAGES_BASE;
@@ -42,6 +44,9 @@ try {
     for (let i = 0; i < 200; i++) { await sleep(100); try { if (await c.evaluate(`!!${R}?.atlasTopic`)) break; } catch { /* 불러오는 중 */ } }
     for (const k of ['atlasRelief', 'atlasTint']) for (let i = 0; i < 100; i++) { if (await c.evaluate(`!!${R}.${k}`)) break; await sleep(100); }
     for (let i = 0; i < 100; i++) { if (!(await c.evaluate(`!!(${R}.atlasMap.options.natural && !${R}.atlasMap.naturalReady)`))) break; await sleep(100); }
+    // 단원 표(units.json)의 thumbBounds 가 있으면 그 범위로(u5 — 썸네일 무대 1280×800 이 일반도 범위보다 가로로 넓어 −180 너머 빈 바탕이 보이던 것, U5-10)
+    const tb = Object.values(UNITS).find((u) => u?.sim === id)?.thumbBounds;
+    if (tb) await c.evaluate(`${R}.atlasMap.fitBounds(${JSON.stringify(tb)}, { ms: 0 })`);
     // 지도가 멈출 때까지(3번 연속 움직임 없음) + 여유
     await c.evaluate(`(async()=>{const m=${R}.atlasMap;let n=0;for(let i=0;i<200&&n<3;i++){await new Promise(r=>setTimeout(r,50));n=m.view.moving?0:n+1;}await new Promise(r=>setTimeout(r,600));})()`);
     await c.evaluate(`(()=>{const s=document.createElement('style');s.textContent='.at-tools,.at-scale,.at-legend-panel{visibility:hidden}';${R}.append(s);})()`);

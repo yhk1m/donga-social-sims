@@ -137,7 +137,12 @@ function mapChecks(mapId, refs, shot, topicId) {
       const present = legend.filter((e) => e.present !== false).length;
       const tbPresent = rep.outputClasses ?? (vec.legend.length - (rep.absent || []).length);
       out.push(eq(`${tag}지도에 있는 분류`, tbPresent, present, (rep.absent || []).length ? `교과서 추출에서 빠진 분류: ${rep.absent.join(', ')}` : ''));
-      if (vec.symbols.length) {
+      if (vec.symbols.length && L.properties?.layerType === 'unitSymbols') { // 네모 단위 기호(u5 47쪽 마킬라도라 — 기호 = 칸 묶음, 칸 수는 계열별)
+        out.push(eq(`${tag}칸 묶음 수(자료)`, vec.symbols.length, L.features.length));
+        const sum = (cls) => L.features.reduce((a, f) => a + (f.properties.series || []).filter((x) => x.cls === cls).reduce((b, x) => b + x.count, 0), 0);
+        for (const e of legend) out.push(eq(`${tag}칸 수 — ${e.label}`, rep.counts?.[e.cls] ?? '추출 없음', sum(e.cls)));
+        out.push(eq(`${tag}한 열 최대 칸`, rep.maxRun ?? '추출 없음', L.properties.maxRun));
+      } else if (vec.symbols.length) {
         const n = L.features.filter((f) => f.properties ? f.properties.type === 'symbol' : f.type === 'symbol').length;
         out.push(eq(`${tag}기호 수(자료)`, vec.symbols.length, n));
         const inset = CHECKS.insetLayers.includes(r.ref);
@@ -152,6 +157,11 @@ function mapChecks(mapId, refs, shot, topicId) {
         out.push(check(`${tag}선 수${isIso ? '(등온선 조각)' : '(흐름선)'}`, vec.lines.length, `${web} (${Object.entries(kinds).map(([k, v]) => `${k} ${v}`).join(', ')})`,
           web === vec.lines.length ? OK : (isIso ? INFO : DIFF), isIso ? '등온선은 같은 값 조각을 이어 붙이므로 개수가 줄 수 있음' : ''));
         if (!isIso && st.flows != null) out.push(eq(`${tag}흐름선(화면)`, vec.lines.length, st.flows));
+        if (L.properties?.layerType === 'pathFlow') { // 경로 화살표(u5 46쪽 지구본 — 교과서 곡선을 되돌린 경로)
+          out.push(eq(`${tag}점선 화살표`, vec.lines.filter((x) => x.dashed).length, L.features.filter((f) => f.properties.dashed).length));
+          const v = L.properties.view;
+          if (v) out.push(check(`${tag}처음 보기`, `${m.projection || '—'}`, `${v.projection === 'globe' ? '지구본' : v.projection} · 회전 가운데 (${-v.rotate[0]}°, ${-v.rotate[1]}°)`, INFO, '묶음을 고르면 레이어 자료 view 로 엶 — 지도 도구에서 평면 도법으로도 바꿈'));
+        }
       }
     } else if (legend) {
       // 추출 산출물이 없는 지도(카슈미르 = 실제 경계 자료, 밀도 = 래스터): 범례 글자를 지면 범례 상자 글과 대조
@@ -176,6 +186,19 @@ function mapChecks(mapId, refs, shot, topicId) {
       if (changed.length) out.push(check(`${tag}분류를 고친 나라`, `표본 분류 ${changed.length}`, list(changed.map((o) => `${o.iso} ${fmt(o.was)}→${fmt(o.cls)}`), 20), KNOWN, '설정 countryOverrides(까닭은 항목마다 — 교사 확인 항목 참고)'));
       const confirmed = ovs.length - changed.length;
       if (confirmed) out.push(check(`${tag}분류를 확인한 나라`, `${confirmed}개`, list(ovs.filter((o) => !changed.includes(o)).map((o) => `${o.iso} ${fmt(o.cls)}`), 20), INFO, '작은 나라·10a 에만 있는 나라를 확대해 하나씩 봄(값은 표본과 같음)'));
+    }
+    if (!isOverlay && L.properties?.layerType === 'regionClass') { // 하위 행정 구역 단계구분(u5 46쪽 미국 주 · 47쪽 멕시코 주 경계)
+      const per = {};
+      for (const f of L.features) per[f.properties.cls] = (per[f.properties.cls] || 0) + 1;
+      out.push(check(`${tag}하위 행정 구역 분류`, '지면 색 표본(구역마다)', `${L.features.length}개 구역 — ${legend.filter((e) => per[e.cls]).map((e) => `${e.label} ${per[e.cls]}`).join(', ')}`, INFO,
+        '구역마다 안쪽 표본점의 지면 색을 범례색과 대조(다수결) — Natural Earth 1단계 행정 구역'));
+    }
+    if (!isOverlay && L.properties?.layerType === 'compareOutline') { // 같은 축척의 우리나라 윤곽(u5 42·43쪽 — 끌어 옮기는 실제 크기 윤곽)
+      const P = L.properties, f2 = (ll) => (ll ? ll.map((x) => x.toFixed(2)).join(', ') : '없음');
+      out.push(check(`${tag}윤곽 처음 자리 ↔ 교과서 실루엣`, `교과서 실루엣 넓이 중심 (${f2(P.textbook)})`, `${P.mode === 'antipode' ? '실제 대척점 거울상' : '교과서 자리'} (${f2(P.home)}) · 차 ${P.offsetKm} km`, P.offsetKm <= 1 ? OK : DIFF));
+      const lab = [].concat(P.label || []).join(' '), c = coverage(lab, page);
+      out.push(check(`${tag}윤곽 글자 ↔ 지면`, '지면 실루엣 글자', `${lab}${c >= 0.99 ? ' · 지면에 있음' : ` (지면과 ${Math.round(c * 100)}%)`}`, c >= 0.99 ? OK : DIFF));
+      out.push(check(`${tag}윤곽 크기`, '교과서 축척으로 그린 실루엣', '실제 크기 — 끌어 옮겨도 대권 거리 그대로(구면 회전), 「교과서 자리로」 단추', INFO));
     }
     if (!isOverlay && L.type === 'chartSymbols') { // 지도 위 고리 기호(u4) — 교과서 수 = 단원 설정 레이어 items(지면 고리 가운데 자리)
       const tbN = cfg.layers?.[r.ref.replace(/^layer-/, '')]?.items?.length ?? '설정 없음';
@@ -314,10 +337,12 @@ for (const t of topics) {
       const own = mapOfRef(g.refs[0].ref);
       const shots = shotsOf((s) => s.topic === t.id && (s.groupIndex === i && s.kind !== 'topic'));
       const main = shots.find((s) => s.proj === 'robinson' && s.kind === 'group');
-      if (!own) {
+      // 우리나라 윤곽(compareOutline, u5 42·43쪽)만 든 묶음은 일반도 위에 덧그린 것 — 아래 지도 없는 묶음처럼 지명·도법·축척 확인 + 레이어 확인(u2~u4 에는 없어 그대로)
+      const outlineOnly = g.refs.every((r) => layerFile(r.ref)?.properties?.layerType === 'compareOutline');
+      if (!own || outlineOnly) {
         // 쪽 지도가 없는 레이어(u4 미확정 국경 — Natural Earth·바탕 지도 자료)만 든 묶음: 주제 대표 지도(checks.mainMap) 위에 덧그린 것으로 보고
         // 바로가기 행처럼 지명·도법 확인 + 레이어 확인(u2·u3 에는 이런 묶음이 없어 그대로)
-        const mapId = MAIN_MAP[t.id];
+        const mapId = own || MAIN_MAP[t.id];
         const m = mapById[mapId];
         if (!m) throw new Error(`${t.id}: 묶음 「${g.label}」의 레이어에 지도가 없음 — checks.mainMap 에 주제 대표 지도를 적으세요`);
         const checks = [check('지도', `${m.title} (${m.page}쪽)`, `${t.title} · 레이어 「${g.label}」를 덧그림`, INFO)];

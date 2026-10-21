@@ -3,5 +3,6 @@
   "u2": { "sim": "atlas-u2-asia", "title": "Ⅱ. 아시아", "pages": [16, 25], "config": "config/u2.json" },
   "u3": { "sim": "atlas-u3-europe", "title": "Ⅲ. 유럽", "pages": [26, 33], "config": "config/u3.json" },
   "u4": { "sim": "atlas-u4-africa", "title": "Ⅳ. 아프리카", "pages": [34, 39], "config": "config/u4.json" },
-  "u5": { "sim": "atlas-u5-americas", "title": "Ⅴ. 아메리카", "pages": [40, 47], "config": "config/u5.json" }
+  "u5": { "sim": "atlas-u5-americas", "title": "Ⅴ. 아메리카", "pages": [40, 47], "config": "config/u5.json",
+    "thumbBounds": [-168, -50.897, 40, 66.982], "_thumbBounds": "모음 썸네일(hub_thumbs — 무대 1280×800, 밀러) 범위: 일반도 범위로는 왼쪽 약 170px(썸네일 85px)가 −180 너머 빈 바탕 → 가운데를 동쪽으로(−180 ~ 약 52°E, U5-10)" }
 }

@@ -173,7 +173,9 @@ function makeContext(inp) {
     if (v.map) {
       const m = inp.mapsById[v.map];
       if (!m) { ctx.W.push(`${where}: 지도 ${v.map} 없음`); return null; }
-      return { map: v.map, ...frameView(inp.fits(v.map), m.bbox, cfg.viewGrid, cfg.viewPercentile) };
+      const fv = frameView(inp.fits(v.map), m.bbox, cfg.viewGrid, cfg.viewPercentile);
+      // map 과 bounds 를 함께 주면 범위만 손 값(u5 40쪽 일반도 — 무대가 범위보다 넓어 −180 너머 빈 바탕이 보이던 것, U5-10). 없으면 옛 길
+      return v.bounds ? { map: v.map, center: v.center || fv.center, bounds: v.bounds } : { map: v.map, ...fv };
     }
     if (v.layer) { const gj = inp.layerFile(v.layer); if (!gj) { ctx.W.push(`${where}: 레이어 ${v.layer} 없음`); return null; } return { layer: v.layer, ...layerView(gj) }; }
     if (v.center && v.bounds) return { center: v.center, bounds: v.bounds };

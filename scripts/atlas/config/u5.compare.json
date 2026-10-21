@@ -1,0 +1,1662 @@
+{
+ "_doc": "교과서 대조표(compare_shots.mjs · compare.mjs --unit u5) 단원 설정 — u4.compare.json 과 같은 꼴. 출력은 단원 작업 폴더 기본값($ATLAS_WORK/units/u5/shots/compare · compare.html). 경로는 작업 폴더 기준. 만든 스크립트: $ATLAS_WORK/units/u5/u5-10/gen_compare.py(+ teacher_items.py)",
+ "fixedNow": 1760918400000,
+ "_fixedNow": "캡처 쪽의 Date.now 고정값(ms, u2·u3·u4 와 같음) — 색칠하기 퀴즈 seed 기본값이 시각이라 캡처마다 문제가 달라지지 않게.",
+ "projections": {
+  "default": "robinson",
+  "extra": {
+   "general": [
+    "equalEarth"
+   ]
+  }
+ },
+ "_projections": "장면 = 주제마다 기본 도법(로빈슨) + 일반도 둘째 도법 이퀄어스(40쪽 평사 도법은 웹 도법에 없음 — 정적 도법 하나를 더 봄), 47쪽 세계 두 장은 교과서와 같은 밀러 태평양 중심(extraScenes tnc-miller), 46쪽 인구 이동은 묶음을 고르면 지구본(레이어 자료 view). 묶음마다 한 장, 묶음이 없으면 주제 한 장 + 바로가기마다 한 장.",
+ "extraScenes": {
+  "general": [
+   {
+    "name": "general-tint-off",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.setOptions({tint:false, natural:false})"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "general-tint-off",
+      "info": {
+       "kind": "extra",
+       "note": "고도 색 끔(같은 보기)"
+      }
+     },
+     {
+      "eval": "{R}.atlasMap.setOptions({tint:true, natural:false})"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "general-tint-on",
+      "info": {
+       "kind": "extra",
+       "note": "고도 색 켬(다시 켬 — 기본)"
+      }
+     }
+    ]
+   }
+  ],
+  "coloring": [
+   {
+    "name": "coloring-quiz",
+    "steps": [
+     {
+      "scrollTo": {
+       "sel": ".at-quiz"
+      }
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "coloring-quiz",
+      "info": {
+       "kind": "extra",
+       "note": "색칠하기 활동(작은 나라 동그라미 · 칠한 수 「나라 0 / 35 · 지역 0 / 2」)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "coloring-small-antilles",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.fitBounds([-80, 16, -71, 27])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "coloring-small-antilles",
+      "info": {
+       "kind": "extra",
+       "note": "작은 나라 확대 — 바하마·자메이카(대앤틸리스)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "coloring-small-central",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.fitBounds([-92, 12, -86, 18.6])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "coloring-small-central",
+      "info": {
+       "kind": "extra",
+       "note": "작은 나라 확대 — 벨리즈·엘살바도르"
+      }
+     }
+    ]
+   },
+   {
+    "name": "coloring-small-lesser",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.fitBounds([-66, 9.8, -58.5, 18.6])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "coloring-small-lesser",
+      "info": {
+       "kind": "extra",
+       "note": "작은 나라 확대 — 소앤틸리스 8(세인트키츠 네비스·앤티가 바부다·도미니카·세인트루시아·세인트빈센트 그레나딘·바베이도스·그레나다·트리니다드 토바고)"
+      }
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([-176.94, -50.516, -8.119, 67.536])"
+     },
+     {
+      "idle": true
+     }
+    ]
+   }
+  ],
+  "north": [
+   {
+    "name": "north-outline",
+    "steps": [
+     {
+      "showGroup": {
+       "ref": "layer-p42-korea"
+      }
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "eval": "(async()=>{const el={R}.querySelector('.at-outline-shape');const r=el.getBoundingClientRect();let x=r.x+r.width/2,y=r.y+r.height/2;for(let fy=0.3;fy<0.9;fy+=0.1)for(let fx=0.3;fx<0.8;fx+=0.1){const px=r.x+r.width*fx,py=r.y+r.height*fy;if(document.elementFromPoint(px,py)===el){x=px;y=py;fy=fx=9;}}const ev=(t,i,b)=>el.dispatchEvent(new PointerEvent(t,{pointerId:1,pointerType:'mouse',isPrimary:true,button:0,buttons:b,clientX:x+240*i/12,clientY:y+-120*i/12,bubbles:true,cancelable:true}));ev('pointerdown',0,1);for(let i=1;i<=12;i++){ev('pointermove',i,1);await new Promise(r=>setTimeout(r,30));}ev('pointerup',12,0);})()"
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "north-outline-dragged",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "우리나라 윤곽을 끎(오른쪽 240·위 120px — 윤곽만 옮겨짐, 위도도 바뀜 · 실제 크기)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('[aria-label=\"교과서 자리로\"]').click()"
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "north-outline-home",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "「교과서 자리로」 — 42쪽 실루엣 자리(태평양 −133.3°, 37.8°)"
+      }
+     }
+    ]
+   }
+  ],
+  "south": [
+   {
+    "name": "south-outline",
+    "steps": [
+     {
+      "showGroup": {
+       "ref": "layer-p43-korea"
+      }
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "eval": "(async()=>{const el={R}.querySelector('.at-outline-shape');const r=el.getBoundingClientRect();let x=r.x+r.width/2,y=r.y+r.height/2;for(let fy=0.3;fy<0.9;fy+=0.1)for(let fx=0.3;fx<0.8;fx+=0.1){const px=r.x+r.width*fx,py=r.y+r.height*fy;if(document.elementFromPoint(px,py)===el){x=px;y=py;fy=fx=9;}}const ev=(t,i,b)=>el.dispatchEvent(new PointerEvent(t,{pointerId:1,pointerType:'mouse',isPrimary:true,button:0,buttons:b,clientX:x+240*i/12,clientY:y+-120*i/12,bubbles:true,cancelable:true}));ev('pointerdown',0,1);for(let i=1;i<=12;i++){ev('pointermove',i,1);await new Promise(r=>setTimeout(r,30));}ev('pointerup',12,0);})()"
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "south-outline-dragged",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "대척점 윤곽을 끎(실제 크기 그대로)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('[aria-label=\"교과서 자리로\"]').click()"
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "south-outline-home",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "「교과서 자리로」 — 실제 대척점(−52.5°, −38.5°) · 글자는 윤곽 아래"
+      }
+     }
+    ]
+   }
+  ],
+  "relief": [
+   {
+    "name": "relief-base-tint",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.setOptions({tint:true, natural:false})"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "relief-base-tint",
+      "info": {
+       "kind": "extra",
+       "note": "바탕 고도 색(같은 보기)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "relief-base-none",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.setOptions({tint:false, natural:false})"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "relief-base-none",
+      "info": {
+       "kind": "extra",
+       "note": "바탕 색 없음(같은 보기)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "relief-base-natural",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.setOptions({tint:false, natural:true})"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "relief-base-natural",
+      "info": {
+       "kind": "extra",
+       "note": "바탕 자연색(기본으로 되돌림)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "relief-pins",
+    "steps": [
+     {
+      "scrollTo": {
+       "sel": ".at-reveal-btn"
+      }
+     },
+     {
+      "take": "relief-pins-hidden",
+      "info": {
+       "kind": "extra",
+       "note": "핀 번호 숨김(처음)"
+      }
+     },
+     {
+      "eval": "{R}.atlasTopic.pins.reveal({R}.atlasTopic.pins.markers[4].id)"
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "take": "relief-pins-one",
+      "info": {
+       "kind": "extra",
+       "note": "핀 하나 번호 보임(나이아가라 폭포)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-reveal-btn').click()"
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "take": "relief-pins-all",
+      "info": {
+       "kind": "extra",
+       "note": "번호 모두 보기"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-reveal-btn').click()"
+     },
+     {
+      "sleep": 200
+     }
+    ]
+   }
+  ],
+  "climate": [
+   {
+    "name": "climate-charts",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "scrollTo": {
+       "sel": ".at-reveal-btn"
+      }
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "eval": "{R}.querySelector('.at-reveal-btn').click()"
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "take": "climate-pins-all",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "기후 그래프 핀 번호 모두 보기(배로·뉴욕·보고타·이키토스 — 그래프 도시 자리)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-reveal-btn').click()"
+     },
+     {
+      "sleep": 200
+     }
+    ]
+   }
+  ],
+  "migration": [
+   {
+    "name": "migration-globe",
+    "steps": [
+     {
+      "showGroup": {
+       "ref": "layer-p46-migration-flows"
+      }
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "(async()=>{const el={R}.querySelector('svg.at-overlay');const r=el.getBoundingClientRect();const x=r.x+r.width/2,y=r.y+r.height/2;const ev=(t,i,b)=>el.dispatchEvent(new PointerEvent(t,{pointerId:1,pointerType:'mouse',isPrimary:true,button:0,buttons:b,clientX:x+180*i/10,clientY:y+80*i/10,bubbles:true,cancelable:true}));ev('pointerdown',0,1);for(let i=1;i<=10;i++){ev('pointermove',i,1);await new Promise(r=>setTimeout(r,30));}ev('pointerup',10,0);})()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "take": "migration-globe-dragged",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "지구본 끌어 돌림(오른쪽 180·아래 80px — 화살표·식민지 면이 따라 돎)"
+      }
+     },
+     {
+      "eval": "(()=>{const s={R}.querySelector('select.at-tools-select');s.value=\"miller\";s.dispatchEvent(new Event('change',{bubbles:true}));})()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "migration-globe-miller",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "지도 도구 도법 「밀러」 — 평면으로(교사 Q6 기본값: 평면 도법 5개도 됨)"
+      }
+     },
+     {
+      "eval": "(()=>{const s={R}.querySelector('select.at-tools-select');s.value=\"globe\";s.dispatchEvent(new Event('change',{bubbles:true}));})()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "eval": "{R}.querySelector('[aria-label=\"세계 전체 보기\"]').click()"
+     },
+     {
+      "sleep": 700
+     },
+     {
+      "idle": true
+     },
+     {
+      "take": "migration-globe-home",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "다시 「지구본」 + 세계 전체 보기"
+      }
+     }
+    ]
+   },
+   {
+    "name": "migration-canada-french",
+    "steps": [
+     {
+      "showGroup": {
+       "ref": "layer-p46-canada"
+      }
+     },
+     {
+      "idle": true
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"프랑스어 75% 이상\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "migration-canada-french",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "캐나다 범례 「프랑스어 75% 이상」 고름(퀘벡)"
+      }
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"프랑스어 75% 이상\")).click()"
+     },
+     {
+      "idle": true
+     }
+    ]
+   },
+   {
+    "name": "migration-page",
+    "steps": [
+     {
+      "eval": "[...{R}.querySelectorAll('.at-page-btn')].filter(b=>b.textContent.includes('부분'))[0].click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "take": "migration-page-globe",
+      "info": {
+       "kind": "extra",
+       "note": "46쪽 지구본 원본 쪽 보기(부분)"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   }
+  ],
+  "ethnicity": [
+   {
+    "name": "ethnicity-legend",
+    "steps": [
+     {
+      "showGroup": {
+       "ref": "layer-p46-ethnic"
+      }
+     },
+     {
+      "idle": true
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"혼혈\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "ethnicity-legend-mixed",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "중남미 범례 「혼혈」 고름(분홍 가로 줄 면)"
+      }
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"혼혈\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"아프리카계\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "ethnicity-legend-african",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "중남미 범례 「아프리카계」 고름(검은 45° 빗금 — 카리브·브라질 북동 해안)"
+      }
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"아프리카계\")).click()"
+     },
+     {
+      "idle": true
+     }
+    ]
+   },
+   {
+    "name": "ethnicity-ring",
+    "steps": [
+     {
+      "showGroup": {
+       "ref": "layer-p46-ethnic-rings"
+      }
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "eval": "(()=>{const e=[...{R}.querySelectorAll('.at-ring')].find(x=>x.getAttribute('aria-label')?.includes('브라질'));e.focus();e.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));})()"
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "scrollTo": {
+       "sel": ".at-card:not([hidden])"
+      }
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "take": "ethnicity-ring-card",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "민족 고리 5(점선 지시선) · 브라질 고리 누름 → 카드 고리 그래프",
+       "chart": "p46-brazil"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-card:not([hidden]) .at-expand')?.click()"
+     },
+     {
+      "sleep": 800
+     },
+     {
+      "take": "ethnicity-ring-expand",
+      "info": {
+       "kind": "extra",
+       "note": "고리 그래프 크게 보기(시험지 양식 SVG 고리 — 12시부터 시계 방향)",
+       "chart": "p46-brazil"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   },
+   {
+    "name": "ethnicity-bar",
+    "steps": [
+     {
+      "scrollTo": {
+       "sel": ".at-chart[data-chart=p46-us-ethnic]"
+      }
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "ethnicity-bar",
+      "info": {
+       "kind": "extra",
+       "note": "미국 민족 구성 100% 띠(1990·2020 고르기)",
+       "chart": "p46-us-ethnic"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-chart[data-chart=p46-us-ethnic]').closest('.at-card-chart').querySelector('.at-expand').click()"
+     },
+     {
+      "sleep": 800
+     },
+     {
+      "take": "ethnicity-bar-expand",
+      "info": {
+       "kind": "extra",
+       "note": "100% 띠 크게 보기(막대 둘 모두)",
+       "chart": "p46-us-ethnic"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   }
+  ],
+  "tnc": [
+   {
+    "name": "tnc-pages",
+    "steps": [
+     {
+      "eval": "[...{R}.querySelectorAll('.at-page-btn')].filter(b=>b.textContent.includes('부분'))[0].click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "take": "tnc-page-comic",
+      "info": {
+       "kind": "extra",
+       "note": "47쪽 만화 원본 쪽 보기(부분)"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-page-btn')].filter(b=>b.textContent.includes('부분'))[1].click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "take": "tnc-page-device",
+      "info": {
+       "kind": "extra",
+       "note": "47쪽 A사 기기 그림 원본 쪽 보기(부분)"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   },
+   {
+    "name": "tnc-miller",
+    "open": {
+     "proj": "miller"
+    },
+    "steps": [
+     {
+      "showGroup": {
+       "ref": "layer-p47-hq"
+      }
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "tnc-miller-hq",
+      "info": {
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "group",
+       "note": "교과서와 같은 밀러 · 태평양 중심 150 · 실리콘 밸리 확대 창(원 15)"
+      }
+     },
+     {
+      "showGroup": {
+       "ref": "layer-p47-agri-supply"
+      }
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "tnc-miller-agri",
+      "info": {
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "group",
+       "note": "밀러 · 태평양 중심 150 — D사 원료 공급 국가·기호(본사·농장·창고·공장·판매 지사 값)"
+      }
+     }
+    ]
+   }
+  ],
+  "change": [
+   {
+    "name": "change-maquila-tip",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "hover": {
+       "sel": ".at-unit-item",
+       "index": 0
+      }
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "change-maquila-tip",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "마킬라도라 칸 묶음 말풍선"
+      }
+     },
+     {
+      "mouse": [
+       5,
+       5
+      ]
+     }
+    ]
+   },
+   {
+    "name": "change-charts",
+    "steps": [
+     {
+      "scrollTo": {
+       "sel": ".at-chart[data-chart=p47-detroit]"
+      }
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "change-detroit",
+      "info": {
+       "kind": "extra",
+       "note": "디트로이트 인구 그래프(잰 값 — 주석)",
+       "chart": "p47-detroit"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-chart[data-chart=p47-detroit]').closest('.at-card-chart').querySelector('.at-expand').click()"
+     },
+     {
+      "sleep": 800
+     },
+     {
+      "take": "change-detroit-expand",
+      "info": {
+       "kind": "extra",
+       "note": "디트로이트 그래프 크게 보기",
+       "chart": "p47-detroit"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTo": {
+       "sel": ".at-chart[data-chart=p47-bpo-revenue]"
+      }
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "change-bpo",
+      "info": {
+       "kind": "extra",
+       "note": "필리핀 BPO 매출·고용 그래프(잰 값 — 주석, 2021 강조 막대)",
+       "chart": "p47-bpo-revenue"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-chart[data-chart=p47-bpo-revenue]').closest('.at-card-chart').querySelector('.at-expand').click()"
+     },
+     {
+      "sleep": 800
+     },
+     {
+      "take": "change-bpo-expand",
+      "info": {
+       "kind": "extra",
+       "note": "BPO 매출 그래프 크게 보기",
+       "chart": "p47-bpo-revenue"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   }
+  ]
+ },
+ "checks": {
+  "_doc": "compare.mjs 의 단원 고유 확인(u4.compare.json checks 와 같은 키). coloringLabels = 41쪽 색칠하기 지면 글자(작업 폴더 기준), mainMap = 묶음·바로가기가 없는 주제의 대표 지도, insetLayers = 확대 창 레이어(화면 기호 수는 창 안 기호), centerChecks = 47쪽 세계 두 장 중심 경도.",
+  "coloringLabels": "units/u5/text/p41-labels.json",
+  "insetLayers": [
+   "layer-p47-hq-sv"
+  ],
+  "noScreenSymbols": [],
+  "centerChecks": [
+   {
+    "ref": "layer-p47-hq",
+    "tb": "밀러, 태평양 중심(146.8°E — 동해·독도·이어도 글자)",
+    "web": "묶음을 고르면 중심 경도 150 · 범위 경도 한 바퀴(−32° ~ −34°) · 떠나면 0 으로"
+   },
+   {
+    "ref": "layer-p47-agri-supply",
+    "tb": "밀러, 태평양 중심(본사 지도와 같은 식 — projectionFrom)",
+    "web": "묶음을 고르면 중심 경도 150 · 본사와 같은 범위"
+   }
+  ],
+  "mainMap": {
+   "general": "p40-americas",
+   "coloring": "p41-coloring",
+   "north": "p42-north",
+   "south": "p43-south",
+   "relief": "p44-relief"
+  },
+  "_known": "자동 확인의 「다름」 중 결정 기록에 까닭이 있는 것 → 「알려진 차이」(주제·항목 이름 + tb/web/webIncludes/pct 가 맞을 때만 — 값이 바뀌면 다시 「다름」). pct = 그 항목(webIncludes 바로 뒤)의 글 일치율 % 를 고정.",
+  "known": [
+   {
+    "topic": "general",
+    "map": "p40-americas",
+    "item": "지면 지명(이름 종류)",
+    "webIncludes": "없음 1: 맥켄지산맥",
+    "note": "U5-5 ③: 40쪽 지면 「맥켄지산맥」을 찾아보기·42쪽 표기 「매켄지산맥」으로 합침(places.spellAs)"
+   },
+   {
+    "topic": "coloring",
+    "item": "색칠하기 나라 수",
+    "tb": 39,
+    "web": 37,
+    "note": "U5-8·교사 Q4: 41쪽 나라 글자 39 = 나라 이름 36조각(두 줄 이름 「ㅂㄴㅅㅇㄹ / ㅂㄹㅂㄹ」·「세인트빈센트 / 그레나딘」 둘째 줄 2 포함) + 그린란드·기아나(지역) 2 + 「알래스카(미)」(무시) 1 · 웹 = 나라 35(앤티가 바부다 더함) + 지역 2"
+   },
+   {
+    "topic": "coloring",
+    "item": "수도",
+    "webIncludes": "지면 글자 17",
+    "note": "U5-8: 손글씨 수도 16조각 = 이름 17(「포르토프랭스 산토도밍고」 한 덩어리를 splitLabels 로 둘)"
+   },
+   {
+    "topic": "north",
+    "item": "글 일치(본문·제목·설명, 펼침면)",
+    "webIncludes": "블록 outline-text",
+    "pct": 0,
+    "note": "U5-8 고침 ①: 윤곽 안내 글은 곡선 낱자라 PDF 글자 차례가 뒤섞임 — overrides 로 「같은 축척과 같은 위도의 우리나라」(글자 그대로)"
+   },
+   {
+    "topic": "north",
+    "map": "p42-north",
+    "item": "윤곽 글자 ↔ 지면",
+    "webIncludes": "같은 위도의 우리나라 (지면과",
+    "pct": 0,
+    "note": "U5-8 고침 ①과 같은 곡선 낱자 — 지면에 있으나 글자 차례가 달라 일치율 0%"
+   },
+   {
+    "topic": "south",
+    "map": "p43-south",
+    "item": "윤곽 처음 자리 ↔ 교과서 실루엣",
+    "webIncludes": "차 514 km",
+    "note": "U5-3i·교사 Q3 답 「대척점 거울상」: 처음 자리 = 실제 대척점 — 교과서는 동쪽으로 514km 옮겨 바다에 그림(교사 확인 ★)"
+   },
+   {
+    "topic": "migration",
+    "map": "p46-migration",
+    "item": "지도 제목",
+    "tb": "아메리카 인구 이동(지구본)",
+    "note": "지도 목록 제목의 「(지구본)」은 구별용 덧붙임 — 묶음 이름 = 지면 제목 「아메리카 인구 이동」"
+   },
+   {
+    "topic": "ethnicity",
+    "map": "p46-us-european",
+    "item": "지도 제목",
+    "tb": "미국의 유럽계 인구 비율",
+    "note": "U5-8 ⑤: 46쪽 미국 4장은 지도 제목이 없어 묶음 이름 = 범례 제목(labelSrc)"
+   },
+   {
+    "topic": "ethnicity",
+    "map": "p46-us-african",
+    "item": "지도 제목",
+    "tb": "미국의 아프리카계 인구 비율",
+    "note": "U5-8 ⑤: 46쪽 미국 4장은 지도 제목이 없어 묶음 이름 = 범례 제목(labelSrc)"
+   },
+   {
+    "topic": "ethnicity",
+    "map": "p46-us-hispanic",
+    "item": "지도 제목",
+    "tb": "미국의 히스패닉계 인구 비율",
+    "note": "U5-8 ⑤: 46쪽 미국 4장은 지도 제목이 없어 묶음 이름 = 범례 제목(labelSrc)"
+   },
+   {
+    "topic": "ethnicity",
+    "map": "p46-us-asian",
+    "item": "지도 제목",
+    "tb": "미국의 아시아계 인구 비율",
+    "note": "U5-8 ⑤: 46쪽 미국 4장은 지도 제목이 없어 묶음 이름 = 범례 제목(labelSrc)"
+   },
+   {
+    "topic": "tnc",
+    "map": "p47-hq",
+    "item": "[p47-hq-sv] 범례 분류 수",
+    "tb": 3,
+    "web": 0,
+    "note": "U5-3e hideLegend: 실리콘 밸리 확대 창 레이어는 자료 범례를 비움(사이드바·창 아래 범례가 본사 레이어 것과 겹치지 않게 — 범례는 본사 레이어 하나)"
+   },
+   {
+    "topic": "tnc",
+    "map": "p47-hq",
+    "item": "[p47-hq-sv] 범례 글자",
+    "webIncludes": "다름: 200, 100, 10",
+    "note": "U5-3e hideLegend(위와 같음)"
+   },
+   {
+    "topic": "tnc",
+    "map": "p47-hq",
+    "item": "[p47-hq-sv] 지도에 있는 분류",
+    "tb": 3,
+    "web": 0,
+    "note": "U5-3e hideLegend(위와 같음)"
+   },
+   {
+    "topic": "tnc",
+    "map": "p47-agri",
+    "item": "지도 제목",
+    "tb": "미국에 본사를 둔 농업 회사(D사)",
+    "note": "지도 목록 제목의 「(D사)」는 구별용 덧붙임 — 묶음 이름 = 지면 제목"
+   },
+   {
+    "topic": "change",
+    "item": "글 일치(본문·제목·설명, 펼침면)",
+    "webIncludes": "지면과 다름 3: 블록 p47-detroit 주석",
+    "pct": 0,
+    "note": "U5-8 고침 ③~⑤: 잰 값 그래프 셋(디트로이트·BPO 매출·고용)의 블록 주석은 교과서에 없는 글(overrides from null)"
+   },
+   {
+    "topic": "change",
+    "map": "p47-maquila",
+    "item": "[p47-maquila] 출처",
+    "webIncludes": "(『하크 세계 지도』, 2023)",
+    "note": "U5-8: 지면에 인쇄돼 있으나 책 이름 글자와 해 글자의 세로 가운데가 반올림으로 다른 줄이라 인쇄 출처 읽기가 못 이음(notPrinted — 아프리카 38쪽 꼴)"
+   },
+   {
+    "topic": "change",
+    "map": "p47-maquila",
+    "item": "[p47-mex-states] 범례 글자 ↔ 지면 범례",
+    "webIncludes": "지면에 없는 글자: 주 경계",
+    "note": "U5-4·U5-8 ⑦: 멕시코 주 경계 바탕 레이어(regionClass 윤곽)의 분류 이름 — 교과서 범례에 없음(교사 확인 ★)"
+   }
+  ],
+  "_teacher": "교사 확인 항목(계획 「실행 중 결정」 U5-2~U5-9 의 「교사 대조표에 올릴 것」·남은 것 + 교사 Q1~Q7 답 반영 상태 + issues.md 4) — 그 행에 노랑(known)·회색(info) 「교사 확인 ·」 줄 + 대조표 머리 쪽별 목록. page = 목록 묶음 이름, map 이 없으면 주제 확인 행. 항목 이름 앞 ★ = 교사 판단이 필요한 것(note 에 기본값).",
+  "teacher": [
+   {
+    "page": "40쪽 일반도",
+    "topic": "general",
+    "map": "p40-americas",
+    "item": "일반도 세 장 = 주제 셋, 지명 한 벌(Q1)",
+    "tb": "40·42·43쪽 일반도 각각",
+    "web": "목차 「일반도」·「북아메리카」·「남아메리카」 · 지명 742(네 지도 출현 1,040을 합침 — 42 → 43 → 삽입 → 40쪽 자리 우선)",
+    "status": "info",
+    "note": "교사 답 Q1 기본값대로"
+   },
+   {
+    "page": "40쪽 일반도",
+    "topic": "general",
+    "map": "p40-central",
+    "item": "「중앙아메리카」 = 일반도 바로가기(Q2)",
+    "tb": "40쪽 삽입 지도(밀러)",
+    "web": "따로 창 없이 바로가기 단추 — 삽입 지도 범위(−94.7~−48.3°, 3~26°)로 날아감, 삽입 지명은 일반도 지명에 합침",
+    "status": "info",
+    "note": "교사 Q2 기본값"
+   },
+   {
+    "page": "40쪽 일반도",
+    "topic": "general",
+    "map": "p40-americas",
+    "item": "★ 수도·도시 기호를 실제 자리로 옮김(snapped)",
+    "tb": "교과서가 좁은 자리·이웃 때문에 옮겨 그린 기호",
+    "web": "Natural Earth 자리 — 수도 8(카리브 바스테르 17km·캐스트리스 15·킹스타운 24·세인트조지스 7 · 아순시온 24 · 다카르 30 · 리마 46 · 보고타 35) + 도시 10(바카바우 85 · 네이바 60 · 빅토리아 59 · 멕시칼리 53 · 포트넬슨 49 · 싯카·애버츠퍼드·노갤러스 39 · 엥카르나시온 38 · 버펄로 34km)",
+    "note": "기본값: 실제 자리(아시아·유럽·아프리카와 같은 규칙). 세인트존스(앤티가 바부다)는 캐나다 세인트존스와 동명이라 교과서 자리(17km) — 교과서 자리로 되돌릴지"
+   },
+   {
+    "page": "40쪽 일반도",
+    "topic": "general",
+    "map": "p40-americas",
+    "item": "40쪽 래스터에 가려진 지명 뺌",
+    "tb": "인쇄면에 안 보이는 도시 이름·기호 약 210조각(고도 색 조각·음영 밑 — 마라카이보·클리블랜드·콜럼버스·수크레 등)",
+    "web": "지명에서 뺌(42·43쪽에 보이는 것은 그쪽 자리로 있음)",
+    "note": "PDF 안에는 있으나 덮여 보이지 않는 글자 — 교과서 인쇄면대로"
+   },
+   {
+    "page": "40쪽 일반도",
+    "topic": "general",
+    "map": "p40-americas",
+    "item": "「맥켄지산맥」 → 「매켄지산맥」",
+    "tb": "40쪽 지면 「맥켄지산맥」 · 찾아보기·42쪽 「매켄지산맥」",
+    "web": "「매켄지산맥」 한 이름",
+    "note": "찾아보기 표기로 합침(대조표 지면 지명 확인의 「없음 1」)"
+   },
+   {
+    "page": "40쪽 일반도",
+    "topic": "general",
+    "map": "p40-americas",
+    "item": "페레이라·산타크루스는 43쪽 자리",
+    "tb": "40쪽은 이웃 기호(칼리·수크레) 옆에 이름",
+    "web": "43쪽 자리(제자리)",
+    "status": "info",
+    "note": "40쪽 지면에서 가려진 이웃의 기호를 단 이름이라"
+   },
+   {
+    "page": "40쪽 일반도",
+    "topic": "general",
+    "map": "p40-americas",
+    "item": "찾아보기 격자 칸 차이 4",
+    "tb": "인디애나폴리스 40E2 · 캄페체 42H6 · 필라델피아 42J4 · 포르투알레그리 43F5",
+    "web": "모두 위선 바로 아래(0.25° 안) — 찾아보기는 위 칸",
+    "status": "info",
+    "note": "469줄 중 465줄은 칸이 맞음 — 지명 오류 아님"
+   },
+   {
+    "page": "40쪽 일반도",
+    "topic": "general",
+    "map": "p40-americas",
+    "item": "붉은 국립 공원·유적 글자·소속 표시 뺌",
+    "tb": "붉은 글자(40쪽 100 · 42쪽 42 · 43쪽 45조각) · (미)(영)(프) 등",
+    "web": "지명에 넣지 않음(아프리카 Q8 과 같음)",
+    "status": "info",
+    "note": "기아나(프)는 지역 이름 「기아나」"
+   },
+   {
+    "page": "40쪽 일반도",
+    "topic": "general",
+    "map": "p40-americas",
+    "item": "일반도 처음 보기 서쪽 범위",
+    "tb": "40쪽 틀(알류샨 −180° 까지)",
+    "web": "범위 서쪽 −170.5°(1440 밀러 왼쪽 끝 −179.7°) — −180 너머 빈 바탕(회색 띠)이 보이지 않게",
+    "status": "info",
+    "note": "U5-10: 1440 무대가 범위보다 가로로 넓어 왼쪽 약 28px 가 빈 바탕이었음 · 모음 썸네일은 따로 범위(units.json thumbBounds — 가운데를 동쪽으로)"
+   },
+   {
+    "page": "40쪽 일반도",
+    "topic": "general",
+    "map": "p40-central",
+    "item": "40쪽 삽입 축척 「1:」 없음(교과서 문제)",
+    "tb": "「밀러 도법 43,000,000」",
+    "web": "원문 그대로",
+    "note": "issues.md ① — 600dpi 확인, 「1:43,000,000」로 고칠지"
+   },
+   {
+    "page": "40쪽 일반도",
+    "topic": "general",
+    "item": "작은 지도 도법 고정·이동(projectionFrom·fitFrom)",
+    "tb": "알래스카·하와이 삽입 ← 미국 유럽계, 47쪽 농업 ← 본사 · 미국 아프리카계·히스패닉계·아시아계 9장 = 유럽계 식 + 쪽 이동량",
+    "web": "28장 모두 평균 잔차 ≤ 0.37mm(approx 없음)",
+    "status": "info",
+    "note": "자유 맞춤이 엉뚱한 식으로 가거나 기준점이 모자라 본 지도 식을 빌림"
+   },
+   {
+    "page": "40쪽 일반도",
+    "topic": "general",
+    "item": "1024×768 화면의 범례 칸",
+    "tb": "—",
+    "web": "범례 칸이 지도 오른쪽 아래를 가림(접기·끌기 가능)",
+    "status": "info",
+    "note": "아시아·유럽·아프리카와 같은 공용 화면"
+   },
+   {
+    "page": "41쪽 색칠하기",
+    "topic": "coloring",
+    "item": "앤티가 바부다 = 이름 칸 없는 문제(Q4)",
+    "tb": "41쪽에 앤티가 바부다 이름 없음(40쪽에는 있음)",
+    "web": "퀴즈 나라 35(앤티가 바부다 포함)",
+    "note": "교사 Q4 답 — 지면 글자 39 = 나라 이름 36조각(두 줄 이름 둘째 줄 2 포함) + 그린란드·기아나 + 알래스카(미) → 대조표 「색칠하기 나라 수 39 / 37」"
+   },
+   {
+    "page": "41쪽 색칠하기",
+    "topic": "coloring",
+    "item": "그린란드·기아나 = 「지역」(수도 「—」)",
+    "tb": "「그린란드(덴)」·「기아나(프)」",
+    "web": "나라 35 밖 「지역」 · 칠한 수 「나라 n / 35 · 지역 n / 2」",
+    "note": "교사 Q4 기본값(아프리카 서사하라와 같은 길)"
+   },
+   {
+    "page": "41쪽 색칠하기",
+    "topic": "coloring",
+    "item": "기아나를 프랑스에서 잘라 냄(Q5)",
+    "tb": "40·41·43쪽 모두 「기아나(프)」 따로",
+    "web": "바탕 지도 GUF(상자 [−55, 2, −51, 6]) — 누르면 「기아나」, D사 원료 공급 국가에서 회색",
+    "note": "Natural Earth 는 기아나가 프랑스 일부"
+   },
+   {
+    "page": "41쪽 색칠하기",
+    "topic": "coloring",
+    "item": "손글씨 수도 이름 그대로",
+    "tb": "41쪽 「과테말라시티」·「파나마시티」 · 일반도 「과테말라」·「파나마」",
+    "web": "퀴즈 이름 = 손글씨 그대로(자리는 일반도 지명)",
+    "note": "issues.md ④ — 교과서 안 표기 차이"
+   },
+   {
+    "page": "41쪽 색칠하기",
+    "topic": "coloring",
+    "item": "카리브 작은 나라 동그라미",
+    "tb": "표시 없음(이름만)",
+    "web": "넓이 기준 16px 동그라미 — 처음 보기 소앤틸리스 8개가 50px 안에 겹침(누르기는 가장 가까운 중심이라 맞음, 확대하면 풀림)",
+    "status": "info",
+    "note": "확대 창은 두지 않음(아프리카와 같은 판단, 덧붙임 캡처 coloring-small-*)"
+   },
+   {
+    "page": "41쪽 색칠하기",
+    "topic": "coloring",
+    "item": "110m 세계 보기에 섬나라 7 윤곽 없음",
+    "tb": "—",
+    "web": "그레나다·세인트빈센트·바베이도스·세인트루시아·도미니카·앤티가·세인트키츠 윤곽이 확대해야 보임",
+    "status": "info",
+    "note": "칠하기·누르기는 50m·10a 라 처음부터 됨"
+   },
+   {
+    "page": "42쪽 북아메리카",
+    "topic": "north",
+    "map": "p42-north",
+    "item": "우리나라 윤곽 자유 끌기(Q3)",
+    "tb": "같은 축척과 같은 위도의 우리나라(태평양 약 133°W)",
+    "web": "어디로든 끎(위도도 바뀜 — 메르카토르에서 북쪽으로 끌면 커 보임, 실제 크기는 그대로) · 방향키 1° · 「교과서 자리로」",
+    "status": "info",
+    "note": "교사 Q3 답(덧붙임 캡처 north-outline-*)"
+   },
+   {
+    "page": "42쪽 북아메리카",
+    "topic": "north",
+    "map": "p42-north",
+    "item": "42쪽 실루엣 모양 차",
+    "tb": "동서로 더 넓고 북한 쪽이 큰 실루엣",
+    "web": "실제 우리나라 모양·크기(교과서 자리에 놓으면 넓이 비 1.063, 겹침 IoU 0.67)",
+    "note": "교과서 실루엣은 다른 도법의 우리나라 모양을 붙인 것으로 보임 — 웹은 실제 모양(43쪽은 넓이 비 1.014·IoU 0.73 으로 맞음)"
+   },
+   {
+    "page": "42쪽 북아메리카",
+    "topic": "north",
+    "map": "p42-north",
+    "item": "윤곽 안내 글 곡선 글자 고침",
+    "tb": "곡선 낱자(채움·테두리 두 번 — 읽으면 「같은 은같은 축척과 척…」)",
+    "web": "「같은 축척과 같은 위도의 우리나라」",
+    "status": "info",
+    "note": "overrides.json ① — 글자 그대로(대조표 글 일치 0% 는 PDF 글자 차례 때문)"
+   },
+   {
+    "page": "43쪽 남아메리카",
+    "topic": "south",
+    "map": "p43-south",
+    "item": "★ 대척점 윤곽 자리: 실제 대척점 vs 교과서 자리",
+    "tb": "실제 대척점보다 동쪽으로 514km 옮겨 바다에 그림(−46.6°, −38.7°)",
+    "web": "실제 대척점 거울상(−52.5°, −38.5°) — 우루과이 앞바다·라플라타강 하구에 걸침, 「교과서 자리로」도 실제 대척점",
+    "note": "기본값: 실제 대척점(교사 Q3 답 「대척점 거울상」을 이렇게 풀었음) — 처음 자리를 교과서 자리로 둘지(모양·크기는 같음)"
+   },
+   {
+    "page": "43쪽 남아메리카",
+    "topic": "south",
+    "map": "p43-south",
+    "item": "대척점 윤곽 글자를 윤곽 아래로",
+    "tb": "실루엣 왼쪽 아래 글자",
+    "web": "윤곽 아래 가운데(위쪽이면 우루과이·몬테비데오 지명과 겹침)",
+    "status": "info",
+    "note": "U5-10 고침(덧붙임 캡처 south-outline-*)"
+   },
+   {
+    "page": "44쪽 지형",
+    "topic": "relief",
+    "item": "핀 자리 교과서대로",
+    "tb": "교과서 핀",
+    "web": "그대로 — 갈라파고스 핀은 제도 북서쪽 바다, 우유니는 도시 짝(소금 사막 가운데 약 50km), 아우얀테푸이는 앙헬 폭포 짝, 아마존강은 강가 도시 산타렝 짝",
+    "status": "info",
+    "note": "핀 번호 숨김 짝은 places 지명(덧붙임 캡처 relief-pins-*)"
+   },
+   {
+    "page": "45쪽 기후",
+    "topic": "climate",
+    "item": "기후 그래프 마커 4 → 그래프 도시",
+    "tb": "교과서 핀(배로 10km · 뉴욕 57 · 보고타 97 · 이키토스 48 떨어짐)",
+    "web": "그래프 도시 자리(교과서 핀 자리는 자료에 남김)",
+    "note": "아시아·유럽·아프리카와 같음(덧붙임 캡처 climate-pins-all)"
+   },
+   {
+    "page": "45쪽 기후",
+    "topic": "climate",
+    "item": "이키토스 그래프 잰 값",
+    "tb": "숫자 없음(97쪽 표 41도시에 없음)",
+    "web": "그림에서 잰 값(기온 ±0.2℃ · 강수 ±1.1mm) — 마커 카드라 주석 칸 없음",
+    "note": "배로·뉴욕·보고타는 97쪽 표 값"
+   },
+   {
+    "page": "45쪽 기후",
+    "topic": "climate",
+    "item": "사진 카드에 그래프 출처 안 넣음",
+    "tb": "사진 옆 「(『이과연표』, 2023)」",
+    "web": "출처는 그래프에만",
+    "status": "info",
+    "note": "그 출처는 기후 그래프의 것"
+   },
+   {
+    "page": "45쪽 기후",
+    "topic": "climate",
+    "item": "기후 면 단순화",
+    "tb": "—",
+    "web": "북극 제도 해안 꼭짓점을 줄임(기후 셋 758.9KB → 243.9KB) — 크게 확대하면 해안이 거칠어 보임",
+    "status": "info",
+    "note": "레이어 크기 예산"
+   },
+   {
+    "page": "46쪽 인구 이동과 언어",
+    "topic": "migration",
+    "map": "p46-migration",
+    "item": "지구본 처음 + 평면 도법 5개(Q6)",
+    "tb": "끌어 돌리는 지구본(대서양 가운데)",
+    "web": "묶음을 고르면 지구본(회전 가운데 −30.3°, 9.2°) · 지도 도구 도법 고르기 「지구본」 + 평면 5개",
+    "status": "info",
+    "note": "교사 Q6 기본값(덧붙임 캡처 migration-globe-*)"
+   },
+   {
+    "page": "46쪽 인구 이동과 언어",
+    "topic": "migration",
+    "map": "p46-migration",
+    "item": "★ 지구본 묶음 범례 칸이 아프리카를 덮음",
+    "tb": "—",
+    "web": "1440 에서 범례 칸이 아프리카 서해안(노예 이동 화살표 시작)을 가림 — 범례 칸 접기·지구본 끌기로 봄",
+    "note": "기본값: 공용 범례 칸 그대로(고치면 아시아·유럽·아프리카 조각이 바뀜) — 지구본 묶음에서 처음부터 접어 둘지"
+   },
+   {
+    "page": "46쪽 인구 이동과 언어",
+    "topic": "migration",
+    "map": "p46-migration",
+    "item": "화살표 = 교과서 곡선 그대로",
+    "tb": "교과서 곡선 화살표 10(노예 이동 점선 4)",
+    "web": "곡선을 되돌린 경로(대권으로 바꾸지 않음) · 갈래 둘(에스파냐 카리브 → 콜롬비아, 포르투갈 대서양 → 브라질 북부)은 꼬리가 바다",
+    "status": "info",
+    "note": "식민지 면 가는 조각 2는 화살표 아님(경고)"
+   },
+   {
+    "page": "46쪽 인구 이동과 언어",
+    "topic": "migration",
+    "map": "p46-migration",
+    "item": "지구본 「세계 전체 보기」 = 그때 회전",
+    "tb": "—",
+    "web": "평면으로 갔다 지구본으로 돌아오면 「세계 전체 보기」가 교과서 회전이 아니라 그때 회전",
+    "status": "info",
+    "note": "묶음을 다시 고르면 교과서 회전"
+   },
+   {
+    "page": "46쪽 인구 이동과 언어",
+    "topic": "migration",
+    "map": "p46-migration",
+    "item": "지구본 가장자리 지명",
+    "tb": "—",
+    "web": "원판 가장자리에서 지명이 원판 밖으로 조금 넘침",
+    "status": "info",
+    "note": "U5-11 성능·마무리 때 볼 것"
+   },
+   {
+    "page": "46쪽 인구 이동과 언어",
+    "topic": "migration",
+    "map": "p46-canada",
+    "item": "캐나다 = 교과서 구역 도형 되돌림",
+    "tb": "센서스 구역별 언어 색",
+    "web": "교과서 채움 면을 경위도로 되돌림(캐나다 통계청 자료 안 받음) — 해안은 Natural Earth",
+    "status": "info",
+    "note": "확대하면 구역 경계가 조금 거침(약 40km)"
+   },
+   {
+    "page": "46쪽 민족 구성과 문화 혼종성",
+    "topic": "ethnicity",
+    "map": "p46-us-african",
+    "item": "DC = 메릴랜드 값",
+    "tb": "DC 를 따로 칠하지 않음(DC 표본이 네 장 모두 메릴랜드 분류)",
+    "web": "DC 를 메릴랜드 분류로(sameAs)",
+    "note": "실제 DC 아프리카계 약 41% — 교과서대로 둠"
+   },
+   {
+    "page": "46쪽 민족 구성과 문화 혼종성",
+    "topic": "ethnicity",
+    "map": "p46-us-european",
+    "item": "알래스카·하와이 = 실제 자리",
+    "tb": "삽입 틀 2(본토 옆)",
+    "web": "실제 경위도 자리(삽입 아님) — 확대·이동으로 봄",
+    "status": "info",
+    "note": "삽입 지도 fit 으로 분류한 주를 실제 자리에 그림"
+   },
+   {
+    "page": "46쪽 민족 구성과 문화 혼종성",
+    "topic": "ethnicity",
+    "map": "p46-us-european",
+    "item": "미국 4장 묶음 이름 = 범례 제목",
+    "tb": "지도 제목 없음(범례 제목만)",
+    "web": "「유럽계 인구 비율(%)」 등",
+    "note": "지도 목록 제목 「미국의 … 인구 비율」과 달라 대조표 「지도 제목」 알려진 차이"
+   },
+   {
+    "page": "46쪽 민족 구성과 문화 혼종성",
+    "topic": "ethnicity",
+    "map": "p46-us-european",
+    "item": "옅은 단계 화면 색 보정 3",
+    "tb": "유럽계 「50 미만」 #fff1e2 · 히스패닉계 「10 미만」 #f1f7e8 · 아시아계 「5 미만」 #feeceb",
+    "web": "#ffe4c7 · #e8f2d8 · #fde2e1(위 단계 쪽으로 40%)",
+    "note": "웹 육지색과 거의 같아 안 보여서(인쇄 색은 printColor)"
+   },
+   {
+    "page": "46쪽 민족 구성과 문화 혼종성",
+    "topic": "ethnicity",
+    "map": "p46-ethnic",
+    "item": "혼혈·아프리카계 무늬",
+    "tb": "혼혈 분홍 가로 줄 · 아프리카계 검은 사선 빗금",
+    "web": "같은 각도·색의 줄 무늬 면 + 면 색 가는 윤곽선(교과서는 윤곽 없음)",
+    "status": "info",
+    "note": "덧붙임 캡처 ethnicity-legend-*"
+   },
+   {
+    "page": "46쪽 민족 구성과 문화 혼종성",
+    "topic": "ethnicity",
+    "map": "p46-ethnic",
+    "item": "★ 1024 화면에서 아르헨티나 고리가 범례 칸에 가림",
+    "tb": "고리 5 를 바다 위에 그리고 점선 지시선",
+    "web": "1440 은 범례 칸까지 91px 여유 · 1024 는 아르헨티나 고리가 48px 가림(위쪽 조각으로는 누를 수 있음)",
+    "note": "기본값: 교과서 자리 그대로 + 범례 칸 접기에 맡김. 대안: 고리를 칠레 서쪽 태평양(약 −90°, −40°)으로 옮김(교과서 자리와 다름)"
+   },
+   {
+    "page": "46쪽 민족 구성과 문화 혼종성",
+    "topic": "ethnicity",
+    "map": "p46-ethnic",
+    "item": "고리 자리 둘 옮김·아이티 지시선 끝",
+    "tb": "멕시코 고리 (−107.5°, 8.8°) · 아이티 (−63.8°, 28.7°) · 아이티 지시선 끝은 되돌리면 도미니카 공화국 안",
+    "web": "멕시코 (−104°, 8°) · 아이티 (−67.5°, 26.5°) · 아이티 지시선 끝 = 아이티 안쪽(−72.5°, 19.0°)",
+    "note": "고리 원판이 다른 땅(클리퍼턴섬·버뮤다)에 닿지 않게"
+   },
+   {
+    "page": "46쪽 민족 구성과 문화 혼종성",
+    "topic": "ethnicity",
+    "map": "p46-ethnic",
+    "item": "고리 지시선·조각 차례",
+    "tb": "0.3pt 검은 점선 · 고리 조각",
+    "web": "화면 1px [3 2] 점선 + 끝 점 · 조각 차례 12시부터 시계 방향(교과서 그림 그대로)",
+    "status": "info",
+    "note": "고리 조각 이름은 그래프 범례 색으로 붙임(덧붙임 캡처 ethnicity-ring-*)"
+   },
+   {
+    "page": "46쪽 민족 구성과 문화 혼종성",
+    "topic": "ethnicity",
+    "item": "100% 띠 제목 = 소제목",
+    "tb": "그래프 자체 제목 없음",
+    "web": "소제목 ③을 제목으로",
+    "status": "info",
+    "note": "아프리카 피라미드와 같은 처리(덧붙임 캡처 ethnicity-bar*)"
+   },
+   {
+    "page": "46쪽 민족 구성과 문화 혼종성",
+    "topic": "ethnicity",
+    "map": "p46-ethnic",
+    "item": "46쪽 각주 「*가로 안의 숫자」(교과서 문제)",
+    "tb": "「*가로 안의 숫자는 각 국가의 인구(만 명)임.」",
+    "web": "원문 그대로",
+    "note": "issues.md ② — 「괄호」의 오기로 보임, 고칠지"
+   },
+   {
+    "page": "46쪽 민족 구성과 문화 혼종성",
+    "topic": "ethnicity",
+    "item": "스팽글리시 사진 설명",
+    "tb": "제목 없음 · 활동 문항",
+    "web": "설명 = 문항 첫 문장(「미국 남부에서 볼 수 있는 영어와 에스파냐어로 함께 표시한 광고물이다.」)",
+    "status": "info",
+    "note": "문항 전체는 활동하기 3 블록"
+   },
+   {
+    "page": "47쪽 초국적 기업",
+    "topic": "tnc",
+    "map": "p47-hq",
+    "item": "본사 원 실제 자리 + 반투명 겹침(Q7)",
+    "tb": "겹치는 원을 옆으로 비켜 그리고 검은 지시선",
+    "web": "실제 본사 자리(지시선 끝)에 큰 원부터 반투명 · 확대하면 풀림 · 원 99(교과서 「100대」와 1 차이 — 가려진 원)",
+    "status": "info",
+    "note": "교사 Q7 기본값"
+   },
+   {
+    "page": "47쪽 초국적 기업",
+    "topic": "tnc",
+    "map": "p47-hq",
+    "item": "실리콘 밸리 확대 창",
+    "tb": "삽입 지도(원 15)",
+    "web": "확대 창(너비 440px) — 1440 에서 유럽 본사 원을 덮음(창 닫기·「확대 창」 상자로 다시 열기)",
+    "status": "info",
+    "note": "덧붙임 캡처 tnc-miller-hq"
+   },
+   {
+    "page": "47쪽 초국적 기업",
+    "topic": "tnc",
+    "map": "p47-agri",
+    "item": "★ 지게차·건물 그림 → 작은 네모",
+    "tb": "판매 지사 지게차 그림 · 본사 건물 그림",
+    "web": "판매 지사 값 줄 아이콘 = 작은 검은 네모, 본사 = 네모 기호 + 「본사」 상자",
+    "note": "기본값: 네모(그림 아이콘을 넣으면 공용 코드라 아시아 조각이 커짐 — 약 +200 B) — 그림이 꼭 필요한지"
+   },
+   {
+    "page": "47쪽 초국적 기업",
+    "topic": "tnc",
+    "map": "p47-agri",
+    "item": "D사 원료 공급 국가 고친 나라",
+    "tb": "지면 색 표본",
+    "web": "볼리비아·몰타·페로 제도·올란드 = 분류 없음(회색), 안도라·모나코·산마리노·바티칸·레소토 = 둘레 나라 값, 기아나 = 회색",
+    "note": "600~1500dpi 확대로 하나씩 봄 — 볼리비아는 페루 경계 어긋남 표본"
+   },
+   {
+    "page": "47쪽 초국적 기업",
+    "topic": "tnc",
+    "map": "p47-agri",
+    "item": "숙성 창고·농장·공장 흰 테두리",
+    "tb": "흰 테두리 없음",
+    "web": "흰 테두리(지명 수도 기호 붉은 네모와 구별)",
+    "status": "info",
+    "note": "U5-3j"
+   },
+   {
+    "page": "47쪽 초국적 기업",
+    "topic": "tnc",
+    "item": "A사 삽화·만화 카드",
+    "tb": "A사 삽화 안 제목·설명 글 · 만화(제목 없음)",
+    "web": "A사 카드 = 그림 안 글·출처 그대로 · 만화 설명 = 소제목 ①",
+    "status": "info",
+    "note": "덧붙임 캡처 tnc-page-*"
+   },
+   {
+    "page": "47쪽 지역 변화",
+    "topic": "change",
+    "map": "p47-maquila",
+    "item": "★ 마킬라도라 묶음 「주 경계」 범례 블록",
+    "tb": "범례에 없음(주 경계선만)",
+    "web": "범례 칸에 「마킬라도라 시설(2021년)」 블록이 둘(칸 + 「주 경계」) — 「주 경계」는 고르기 꺼짐",
+    "note": "기본값: 그대로(블록을 숨기려면 공용 topic.js 를 고쳐야 해 아시아 조각이 바뀜) — 공용 코드를 고칠지"
+   },
+   {
+    "page": "47쪽 지역 변화",
+    "topic": "change",
+    "map": "p47-maquila",
+    "item": "칸 묶음 지시선 = 곧은 선",
+    "tb": "꺾인 지시선 2(과나후아토·멕시코주)",
+    "web": "칸 묶음 상자에서 주 안 끝 점까지 곧은 선 + 점",
+    "status": "info",
+    "note": "칸 수·묶음 자리는 교과서 그대로(229칸 = 공장 99 · 근로자 130, 묶음 16)"
+   },
+   {
+    "page": "47쪽 지역 변화",
+    "topic": "change",
+    "map": "p47-maquila",
+    "item": "바하칼리포르니아 칸 묶음이 바다",
+    "tb": "칸이 칼리포르니아만에 걸침",
+    "web": "교과서 자리 그대로(넓이 중심 185km 바하칼리포르니아에 붙임)",
+    "status": "info",
+    "note": "덧붙임 캡처 change-maquila-tip"
+   },
+   {
+    "page": "47쪽 지역 변화",
+    "topic": "change",
+    "item": "디트로이트·BPO 그래프 잰 값 + 주석",
+    "tb": "점·막대 위 값 인쇄 없음",
+    "web": "그림에서 잰 값(±0.3만 명 · ±0.07십억 달러 · ±0.003백만 명) + 블록 주석 「* … 잰 값이다」(교과서에 없는 글)",
+    "note": "대조표 글 일치의 주석 3줄 = 알려진 차이"
+   },
+   {
+    "page": "47쪽 지역 변화",
+    "topic": "change",
+    "item": "디트로이트 파산 연도(교과서 문제)",
+    "tb": "「2014년에는 도시 파산을 선언」",
+    "web": "원문 그대로",
+    "note": "issues.md ③ — 파산 신청은 2013년 7월(파산 확정 2014년 말) — 확인 필요"
+   }
+  ]
+ },
+ "notes": {
+  "_doc": "대조표 「알려진 차이」·「참고」 줄의 단원 고유 설명.",
+  "viewProjection": "로빈슨(기본) · 둘째 캡처 이퀄어스(정적 도법)",
+  "viewProjectionNote": "웹은 세계 도법 5종 + 지구본(평사·정적 방위·원뿔 도법 없음)"
+ }
+}
