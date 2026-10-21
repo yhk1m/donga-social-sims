@@ -493,6 +493,31 @@ export function chartSymbolsLayerJson(layer, charts, cv, m, fit = {}) {
 }
 
 /**
+ * 같은 축척의 우리나라 윤곽(type 'compareOutline', U5-3i — 42쪽 「같은 축척과 같은 위도의 우리나라」·43쪽 「같은 축척의 우리나라와 대척점」, 교사 §8 Q3):
+ * 설정 {mode: 'sameLat' | 'antipode', homePt(교과서 실루엣 넓이 중심 지면 pt), label?(지면 글자 — 문자열 또는 줄 배열), outline?:{source, tol, minArea}},
+ * outline = korea_outline.py 결과 Feature(KOR+PRK 합친 MultiPolygon — 실제 경위도). → FeatureCollection {properties:{id, map, page, title, kind,
+ * layerType:'compareOutline', mode, home, textbook, offsetKm, label, approx, source, legend:[]}, features:[{properties:{name}, geometry}]}.
+ * textbook = homePt 를 그 지도 fit 으로 되돌린 자리. home(앱 처음·「교과서 자리로」 자리) = sameLat 은 textbook, antipode 는 **실제 대척점**
+ * (우리나라 넓이 중심의 대척점 — 교사 답 「대척점 거울상」) 이고 교과서 자리와의 차를 offsetKm 로 기록. 도형은 실제 경위도 그대로(거울상·회전은 앱 compareOutlineLayer).
+ */
+export function koreaOutlineLayerJson(layer, outline, cv, m, fit = {}) {
+  if (layer.mode !== 'sameLat' && layer.mode !== 'antipode') throw new Error(`${layer.id}: compareOutline mode 는 sameLat · antipode (${layer.mode})`);
+  if (!layer.homePt) throw new Error(`${layer.id}: compareOutline 에 교과서 실루엣 넓이 중심 homePt 가 없음`);
+  const tb = cv.invert(layer.homePt);
+  if (!tb) throw new Error(`${layer.id}: 실루엣 넓이 중심 ${layer.homePt} 를 경위도로 되돌릴 수 없음`);
+  const c = geoCentroid(outline.geometry);
+  const home = layer.mode === 'antipode' ? [((c[0] + 360) % 360) - 180, -c[1]] : tb;
+  const rr = (p) => [r3(p[0]), r3(p[1])];
+  return {
+    type: 'FeatureCollection',
+    properties: { id: layer.id, map: layer.map, page: m.page, title: layer.title || m.title, kind: m.kind, layerType: 'compareOutline', mode: layer.mode,
+      home: rr(home), textbook: rr(tb), offsetKm: Math.round(geoDistance(home, tb) * 6371), label: layer.label ?? null, approx: !!fit.approx,
+      source: `Natural Earth 10m 대한민국·북한(독도·울릉도 포함) — 교과서 ${m.page}쪽 실루엣 자리(경위도 맞추기: ${fit.family})`, legend: [] },
+    features: [{ type: 'Feature', properties: { name: outline.properties?.name || '우리나라' }, geometry: outline.geometry }],
+  };
+}
+
+/**
  * 네모 단위 기호(type 'unitSymbols', U5-3f — 47쪽 마킬라도라): features.py mode 'unit-symbols' 결과(feat — 지면 pt 칸 묶음 symbols [{xy(밑 칸 가운데),
  * series:[{cls, count}], maxRun, leaderPt?}], legend [{cls, label, color, unit, short?, unitText?}]) → FeatureCollection
  * {properties:{id, map, page, title, kind, layerType:'unitSymbols', approx, source, maxRun, legend[present]}, features:[{properties:{id(주 key), name, label,
@@ -690,7 +715,7 @@ function main(argv) {
   fs.mkdirSync(`${WORK}/geo`, { recursive: true });
   // 나라 단위 단계구분도는 도형을 옮기지 않는다(country_class.py → 나라별 분류만). 고리 기호·미확정 국경도 PDF 도형을 뽑지 않음(U4-3c·f)
   const cc = todo.filter((l) => l.type === 'countryClass' || l.type === 'regionClass');   // regionClass = 하위 행정 구역판(U5-3d, 설정 units)
-  const special = (l) => l.type === 'chartSymbols' || l.source === 'ne-disputed' || l.type === 'unitSymbols';
+  const special = (l) => l.type === 'chartSymbols' || l.source === 'ne-disputed' || l.type === 'unitSymbols' || l.type === 'compareOutline';
   const geo = todo.filter((l) => l.type !== 'countryClass' && l.type !== 'regionClass' && !special(l));
   const byId = new Map();
   const units = todo.filter((l) => l.type === 'unitSymbols');   // 네모 단위 기호(U5-3f): PDF 칸 묶음은 features.py 가 뽑고, 주 붙이기·경위도는 여기서
@@ -702,6 +727,13 @@ function main(argv) {
       const fit = loadFit(l.map);
       const { out, warnings } = unitSymbolsLayerJson(l, feat, converter(l, fit), maps[l.map], fit, states);
       byId.set(l.id, { ...writeLayer(l, out, { legend: out.properties.legend.length, classes: out.properties.legend.filter((e) => e.present).length, features: out.features.length }), warnings });
+    } else if (l.type === 'compareOutline') {   // 우리나라 윤곽(U5-3i): NE 10m KOR+PRK → korea_outline.py(합치기·단순화) → 교과서 자리
+      const o = l.outline || {}, out = `${WORK}/geo/${l.id}.outline.json`;
+      process.stdout.write(run([path.join(here, 'korea_outline.py'), path.join(WORK, o.source || 'raw/ne/ne_10m_admin_0_countries.geojson'), out,
+        ...(o.tol != null ? ['--tol', String(o.tol)] : []), ...(o.minArea != null ? ['--min-area', String(o.minArea)] : [])]));
+      const fit = loadFit(l.map);
+      const res = koreaOutlineLayerJson(l, JSON.parse(fs.readFileSync(out, 'utf8')), converter(l, fit), maps[l.map], fit);
+      byId.set(l.id, writeLayer(l, res, { features: 1 }));
     } else if (l.type === 'chartSymbols') {
       const cf = path.join(WORK, config.content.charts);
       if (!fs.existsSync(cf)) {   // 그래프 자료(extract_tables --charts)가 아직 없으면 이 레이어만 건너뜀 — 있는데 그래프가 빠졌으면 chartSymbolsLayerJson 이 멈춤

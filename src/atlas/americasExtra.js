@@ -16,10 +16,12 @@
 //     곡선을 되돌린 줄, 꼬리 → 화살 끝)}]}. 선 = geoPath(view.projection)(지구본 뒷면·날짜변경선은 투영이 자름), 화살촉 = 마지막 두 점 방향(arrowHead),
 //     굵기 flowWidthPx, 점선(dashed — 노예 이동). 범례는 기존 흐름선 견본(kind 'flow' + dashed)이 그대로 그림.
 //   - 3g 고리 기호 지시선(chartSymbols.ringHook.leader ← ringLeader): 고리 항목 leader [lon, lat] 가 있으면 고리 가장자리 → 그 점 점선 + 끝 점.
+//   - 3i 같은 축척의 우리나라 윤곽(registerLayerType('compareOutline') — 42쪽 sameLat · 43쪽 antipode 거울상): 끌기 = 구면 회전(moveTo — 실제 크기,
+//     도착지에서 북쪽이 위), 윤곽 위에서만 잡음(지도 옮기기와 섞이지 않음), 화살표 1°, 「교과서 자리로」 = 지도 도구 확대·축소 묶음의 단추.
 //   단원 main.js: import { installAmericasExtras, globeTools } from '../../src/atlas/americasExtra.js'; installAmericasExtras();  (mountAtlas 전에)
 //                 mountAtlas(…) 뒤 globeTools(root.atlasMap, root.atlasUi.tools.el)(돌려준 함수 = 풀기)
-import { geoStereographic, geoOrthographic, geoDistance, geoPath } from 'd3-geo';
-import { h, s } from '../shared/dom.js';
+import { geoStereographic, geoOrthographic, geoDistance, geoPath, geoRotation, geoCentroid } from 'd3-geo';
+import { h, s, icon } from '../shared/dom.js';
 import { hatchHook } from './layers.js';
 import { ringHook } from './chartSymbols.js';
 import { registerFamily } from './fitCore.js';
@@ -420,6 +422,107 @@ export function ringLeader(x, q, project, root) {
     s('circle', { cx: round1(e[0]), cy: round1(e[1]), r: 1.5, fill: '#231f20' }));
 }
 
+// ---------- 3i 같은 축척의 우리나라 윤곽(42쪽 같은 위도 · 43쪽 대척점 — 교사 §8 Q3 답) ----------
+/** 대척점(λ+180, −φ). 꼭짓점마다 쓰면 거울상(구면에서 방향이 뒤집혀 고리 차례를 뒤집어야 작은 면 그대로 — mapGeom rev). */
+export const antipodeOf = (ll) => [wrapLon(ll[0] + 180), -ll[1]];
+/**
+ * c → p 회전(d3 geoRotation 두 번 — c 를 (0°, 0°) 으로, (0°, 0°) 을 p 로): 대권 거리 그대로(실제 크기), c 가 p 로, 도착지에서 북쪽이 위
+ * (교과서 실루엣처럼 — 대권 최단 축 회전이면 멀리 옮길수록 기울어짐). 같은 위도끼리면 극축 회전이라 모든 점의 위도 그대로.
+ */
+export function moveTo(c, p) {
+  const a = geoRotation([-c[0], -c[1]]), b = geoRotation([-p[0], -p[1]]);
+  return (ll) => b.invert(a(ll));
+}
+const mapGeom = (g, f, rev) => {
+  const ring = (r) => (rev ? r.map(f).reverse() : r.map(f));
+  return { type: g.type, coordinates: g.type === 'Polygon' ? g.coordinates.map(ring) : g.coordinates.map((pg) => pg.map(ring)) };
+};
+/** 윤곽 바탕: 자료 첫 면(우리나라 — 실제 경위도), mode 'antipode' 면 대척점 거울상. → {geom, c0(넓이 중심 — d3 geoCentroid)} */
+export function outlineBase(data) {
+  const g0 = featuresOf(data)[0].geometry;
+  const geom = data.properties?.mode === 'antipode' ? mapGeom(g0, antipodeOf, true) : g0;
+  return { geom, c0: geoCentroid(geom) };
+}
+const findCls = (el, c) => (el?.classList?.contains(c) ? el : [...(el?.childNodes || [])].reduce((a, n) => a || findCls(n, c), null));
+const OUTLINE_KEYS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] };
+
+/**
+ * 같은 축척의 우리나라 윤곽 레이어(SVG, type 'compareOutline'). 자료 = FeatureCollection {properties:{layerType:'compareOutline', mode:'sameLat'|'antipode',
+ * home?:[lon, lat](처음·「교과서 자리로」 자리 — 없으면 바탕 넓이 중심), label(지면 글자 — 문자열 또는 줄 배열), legend:[]}, features:[{geometry: MultiPolygon(우리나라 실제 경위도)}]}.
+ * 그림 = 바탕을 moveTo(c0, 지금 자리)로 돌린 면(회색 반투명 + 테두리 — 어느 도법에서든 실제 크기, 지구본 뒷면은 투영이 자름) + 면 위쪽 글자.
+ * 끌기: 윤곽 위에서만 잡음(pointerdown 을 멈춰 zoomer 가 받지 않음 — 지도 옮기기와 섞이지 않음, 포인터 잡기) → 한 걸음마다 앞 손가락 경위도 → 새 경위도
+ * 회전을 지금 자리에 적용(잡은 점이 손가락을 따라감). 키보드: 윤곽에 초점 → 화살표 1°(경도·위도, 무대 화살표 옮기기 막음).
+ * 「교과서 자리로」: 지도 도구 확대·축소 묶음(.at-tools-zoom)에 선 아이콘 단추 하나(레이어가 있는 동안만 — destroy 때 지움, 공유 코드 없음).
+ * 지명 장애물 없음(교과서도 바다 위 실루엣이 지명을 가리지 않음), 맞히기 없음(누르기는 윤곽이 멈춤 — 밑 나라를 고르지 않음), 범례 없음.
+ */
+export function compareOutlineLayer(id, data, { map = null, layerId = id, z = LAYER_Z.symbol } = {}) {
+  const { geom, c0 } = outlineBase(data);
+  const P = data.properties || {}, home = P.home || c0, lines = [].concat(P.label || []);
+  const name = lines.join(' ') || '우리나라 윤곽';
+  let at = home.slice(), shape = null, root = null, path = null, text = null, svg = null, btn = null, drag = null;
+  const geometry = () => shape || (shape = mapGeom(geom, moveTo(c0, at)));
+  const go = (p) => { at = p; shape = null; map?.refreshLayer(layerId); };
+  const local = (e) => { const r = svg.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  const stop = (e) => { e.stopPropagation(); e.preventDefault(); };
+  const ring = (on) => { setAttr(path, 'stroke', on ? '#1a73e8' : '#3c4f5e'); setAttr(path, 'stroke-width', on ? 2.5 : 1); };
+
+  function build(g) {
+    for (svg = g; svg && svg.tagName !== 'svg';) svg = svg.parentNode;
+    path = s('path', { class: 'at-outline-shape', fill: 'rgba(76,96,112,.5)', stroke: '#3c4f5e', 'stroke-width': 1, 'stroke-linejoin': 'round',
+      style: { cursor: 'grab', touchAction: 'none' },
+      on: {
+        pointerdown(e) {
+          if (e.button || !map) return;
+          stop(e);
+          drag = { id: e.pointerId, last: map.invert(local(e)) };
+          try { path.setPointerCapture(e.pointerId); } catch { /* 이미 놓인 포인터 */ }
+        },
+        pointermove(e) {
+          if (drag?.id !== e.pointerId) return;
+          stop(e);
+          const ll = map.invert(local(e));
+          if (!ll) return;
+          if (drag.last) go(moveTo(drag.last, ll)(at));
+          drag.last = ll;
+        },
+        pointerup(e) { if (drag?.id === e.pointerId) { stop(e); drag = null; } },
+        pointercancel() { drag = null; },
+        click: stop,
+      } });
+    text = s('g', { class: 'at-outline-label', 'pointer-events': 'none' });
+    root = s('g', { class: 'at-outline', tabindex: 0, 'aria-label': `${name} — 끌거나 방향키로 옮김`, style: { outline: 'none' },
+      on: {
+        keydown(e) {
+          const d = OUTLINE_KEYS[e.key];
+          if (!d) return;
+          stop(e);
+          go([wrapLon(at[0] + d[0]), Math.max(-89, Math.min(89, at[1] + d[1]))]);
+        },
+        focus: () => ring(true), blur: () => ring(false),
+      } }, s('title', {}, name), path, text);
+    g.append(root);
+    const zoom = btn ? null : findCls(svg?.parentNode, 'at-tools-zoom');
+    if (zoom) zoom.append(btn = h('button', { class: 'ds-btn at-tools-btn', type: 'button', 'aria-label': '교과서 자리로', title: `${name}을 교과서 자리로`, on: { click: () => go(home.slice()) } }, icon('reset')));
+  }
+
+  return {
+    id, z, meta: metaOf(data), features: [],
+    labelObstacles: () => [],
+    hit: () => null,
+    geometry,
+    home: () => home.slice(),
+    drawSvg(g, project, view) {
+      if (!root || root.parentNode !== g) build(g);
+      const gp = geoPath(view.projection), geo = geometry(), d = gp(geo);
+      setAttr(path, 'd', d || null);
+      const b = d && gp.bounds(geo), x = b && round1((b[0][0] + b[1][0]) / 2);
+      text.replaceChildren(...(b ? lines.map((t, i) => s('text', { x, y: round1(b[0][1] - 6 - (lines.length - 1 - i) * 13), 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 600,
+        fill: '#24323d', stroke: 'rgba(255,255,255,.85)', 'stroke-width': 3, 'paint-order': 'stroke' }, t)) : []));
+    },
+    destroy() { root?.remove(); root = null; btn?.remove(); btn = null; drag = null; },
+  };
+}
+
 /** 아메리카 단원 조각의 모든 등록(뒤 하위 기능이 여기에 더함). 여러 번 불러도 같음(지구본 회전 상태는 처음 등록 것을 이어 감). */
 export function installAmericasExtras() {
   installAmericasFamilies();
@@ -428,4 +531,5 @@ export function installAmericasExtras() {
   registerLayerType('unitSymbols', (id, d, ctx) => unitSymbolsLayer(id, d, ctx));
   hatchHook.make = hatchTile;
   ringHook.leader = ringLeader;
+  registerLayerType('compareOutline', (id, d, ctx) => compareOutlineLayer(id, d, ctx));
 }

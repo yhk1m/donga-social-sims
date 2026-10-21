@@ -3,6 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, statSync } from 'node:fs';
+import { geoCentroid, geoDistance } from 'd3-geo';
 import { convertPath, alignHole, countryClassLayerJson, regionClassLayerJson, decorateLegend } from '../../scripts/atlas/build_layers.mjs';
 
 const DIR = 'sims/atlas-u2-asia/data';
@@ -250,7 +251,7 @@ test('snapSymbols: 이름(끝 「(연도)」 뺌)이 Natural Earth 에 하나뿐
 });
 
 // ── U4-3a·c·f 파이프라인: multiFill 넘김 · 고리 기호 레이어 · 미확정 국경 ─────────────────
-const { chartSymbolsLayerJson, disputedLayerJson, clipLineToBox } = await import('../../scripts/atlas/build_layers.mjs');
+const { chartSymbolsLayerJson, disputedLayerJson, clipLineToBox, koreaOutlineLayerJson } = await import('../../scripts/atlas/build_layers.mjs');
 
 test('countryClassLayerJson: multiFill(country_class 설정 multi) 은 그대로 넘기고, 없으면 키도 없음(u3 생성물 그대로)', () => {
   const cc = { legend: [{ cls: 'c1', color: '#3a9a48', label: '아랍어', kind: 'fill' }, { cls: 'c2', color: '#a7a9ac', label: '기타', kind: 'fill' }], classes: { MAR: ['c1', 'c2'], EGY: 'c1' } };
@@ -281,6 +282,30 @@ test('chartSymbolsLayerJson: 설정 items 의 고리 가운데(지면 pt)를 fit
   const o2 = chartSymbolsLayerJson(withLeader, charts, cv, { page: 38 });
   assert.deepEqual([o2.items[0].lonlat, o2.items[0].leader], [[-30, 5], [10.004, 30]]);
   assert.throws(() => chartSymbolsLayerJson({ ...layer, items: [{ chart: 'p38-bauxite', centerPt: [150, 200], leaderPt: [-5, 1] }] }, charts, cv, { page: 38 }), /지시선 끝/);
+});
+
+test('koreaOutlineLayerJson(U5-3i): sameLat home = 교과서 실루엣 넓이 중심을 fit 으로 되돌린 자리, antipode home = 실제 대척점(교과서 자리와 차 km 기록), mode·homePt 없으면 멈춤', () => {
+  const cv = { invert: ([x, y]) => (x < 0 ? null : [x / 10 - 150, 50 - y / 10]) };
+  const outline = { type: 'Feature', properties: { name: '우리나라', parts: 2 }, geometry: { type: 'MultiPolygon', coordinates: [
+    [[[124, 38], [129, 43], [130, 42], [129, 35], [126, 34], [124, 38]]], [[[131.85, 37.24], [131.87, 37.25], [131.87, 37.23], [131.85, 37.24]]]] } };
+  const m = { page: 42, title: '북아메리카', kind: 'general' };
+  const o = koreaOutlineLayerJson({ id: 'p42-korea', map: 'p42-north', type: 'compareOutline', mode: 'sameLat', homePt: [166.7, 121.6], label: ['같은 축척과', '같은 위도의 우리나라'] }, outline, cv, m, { family: 'lambertConformalConic' });
+  assert.equal(o.type, 'FeatureCollection');
+  assert.deepEqual([o.properties.layerType, o.properties.mode, o.properties.page], ['compareOutline', 'sameLat', 42]);
+  assert.deepEqual(o.properties.home, [-133.33, 37.84]);
+  assert.deepEqual(o.properties.textbook, [-133.33, 37.84]);
+  assert.equal(o.properties.offsetKm, 0);
+  assert.deepEqual(o.properties.label, ['같은 축척과', '같은 위도의 우리나라']);
+  assert.deepEqual(o.properties.legend, []);
+  assert.deepEqual(o.features[0].geometry, outline.geometry, '도형은 실제 경위도 그대로(거울상·회전은 앱이)');
+  const a = koreaOutlineLayerJson({ id: 'p43-korea', map: 'p43-south', type: 'compareOutline', mode: 'antipode', homePt: [1035, 885] }, outline, cv, { page: 43 }, {});
+  const c = geoCentroid(outline.geometry);
+  assert.deepEqual(a.properties.home, [Math.round((c[0] - 180) * 1000) / 1000, Math.round(-c[1] * 1000) / 1000]);
+  assert.deepEqual(a.properties.textbook, [-46.5, -38.5]);
+  assert.ok(Math.abs(a.properties.offsetKm - Math.round(geoDistance(a.properties.home, [-46.5, -38.5]) * 6371)) <= 1);
+  assert.throws(() => koreaOutlineLayerJson({ id: 'x', mode: 'east', homePt: [1, 1] }, outline, cv, m), /mode/);
+  assert.throws(() => koreaOutlineLayerJson({ id: 'x', mode: 'sameLat' }, outline, cv, m), /homePt/);
+  assert.throws(() => koreaOutlineLayerJson({ id: 'x', mode: 'sameLat', homePt: [-1, 1] }, outline, cv, m), /되돌릴 수 없음/);
 });
 
 test('disputedLayerJson: FEATURECLA·나라 짝(차례 상관없음)·단원 상자로 고른 Natural Earth 선 → 점선 선 레이어(범례 「미확정 국경」), 짝에 선이 없으면 멈춤', () => {
