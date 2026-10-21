@@ -165,7 +165,7 @@ def _node(s):
 
 def _same_style(a, b):
     return (a['s']['rule'] is b['s']['rule'] and a['s']['font'] == b['s']['font'] and a['s']['color'] == b['s']['color']
-            and abs(a['size'] - b['size']) <= 0.35)
+            and abs(a['size'] - b['size']) <= _chain().get('sizeTol', 0.35))   # sizeTol(u5 만): 43쪽 「야 노 / 스」 5.9·6.9pt
 
 
 def _chain():
@@ -349,11 +349,101 @@ def group(spans, keys=frozenset(), notes=None):
 def _ops(d): return ''.join(it[0][0] for it in d['items'])
 
 
-def symbols(pno, m, cfg):
-    """지도 안 점 기호 → [{xy, cls, size}] (겹친 동심 도형은 하나로: 가장 큰 도형 중심, 분류는 classes 순서가 앞선 것)."""
-    sc = cfg['symbols']; lo, hi = sc['sizeRange']; excl = excluded_boxes(m)
-    cand = []
+@functools.lru_cache(maxsize=None)
+def _paint_order(pno, min_area, page_tol):
+    """쪽 그리기 차례(get_bboxlog 번호 하나로 맞춤 — texttrace·get_drawings 의 seqno 는 서로·bboxlog 와 셈이 달라 섞어 쓸 수 없다).
+    → (큰 래스터 ((번호, bbox), …), 글자 묶음 seqno → 번호, drawings(pno) 차례별 번호).
+    큰 래스터 = 넓이 ≥ min_area pt², 상자가 쪽 ±page_tol 안(쪽 밖으로 크게 삐친 그림은 덧붙인 지도 틀에 잘려 그려진 것이라
+    상자로 덮음을 판정할 수 없어 뺌). 글자: 묶음 seqno 차례 = bboxlog fill-text 차례. 도형: 차례대로 걸으며 상자가 맞는
+    fill/stroke-path 를 찾고(못 찾으면 앞 도형 바로 뒤로 봄)."""
+    pg = pdfkit.doc()[pno - 1]; W, H = pg.rect.x1, pg.rect.y1
+    bl = pg.get_bboxlog()
+    imgs = tuple((i, tuple(b)) for i, (t, b) in enumerate(bl)
+                 if 'image' in t and (b[2] - b[0]) * (b[3] - b[1]) >= min_area
+                 and b[0] >= -page_tol and b[1] >= -page_tol and b[2] <= W + page_tol and b[3] <= H + page_tol)
+    ft = [i for i, (t, _b) in enumerate(bl) if t == 'fill-text']
+    text = dict(zip(sorted({t['seqno'] for t in pg.get_texttrace()}), ft))
+    P = [(i, b) for i, (t, b) in enumerate(bl) if t in ('fill-path', 'stroke-path')]
+    draw, j, last = [], 0, -1
     for d in drawings(pno):
+        r = d['rect']; tol = 1 + (d.get('width') or 0); k = j
+        while k < min(len(P), j + 60) and max(abs(r.x0 - P[k][1][0]), abs(r.y0 - P[k][1][1]),
+                                               abs(r.x1 - P[k][1][2]), abs(r.y1 - P[k][1][3])) > tol: k += 1
+        if k < min(len(P), j + 60): last = P[k][0]; j = k + 1; draw.append(last)
+        else: draw.append(last + 0.5)
+    return imgs, text, tuple(draw)
+
+
+def _covered(pos, x, y, imgs):
+    return any(i > pos and b[0] - 0.5 <= x <= b[2] + 0.5 and b[1] - 0.5 <= y <= b[3] + 0.5 for i, b in imgs)
+
+
+def _hidden_cfg(cfg):
+    h = cfg.get('hidden')
+    return (h.get('minImagePt2', 400), h.get('pageTol', 10)) if h else None
+
+
+@functools.lru_cache(maxsize=None)
+def _text_ink(pno, dpi):
+    """쪽을 글자째 그린 것과 글자를 모두 지우고(redaction — 그림·도형은 그대로) 그린 것의 화소 차 → (차 있음 bool 배열, 배율).
+    글자가 인쇄면에 보이는지 = 그 글자 자리에서 두 그림이 다른지(래스터·음영·면 어느 것이 덮든 같게 판정)."""
+    import fitz, numpy as np
+    tmp = fitz.open(); tmp.insert_pdf(pdfkit.doc(), from_page=pno - 1, to_page=pno - 1)
+    def arr(pg):
+        px = pg.get_pixmap(dpi=dpi, alpha=False)
+        return np.frombuffer(px.samples, dtype=np.uint8).reshape(px.h, px.w, px.n).astype(np.int16)
+    a = arr(tmp[0])
+    tmp[0].add_redact_annot(tmp[0].rect)
+    tmp[0].apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE, graphics=fitz.PDF_REDACT_LINE_ART_NONE, text=fitz.PDF_REDACT_TEXT_REMOVE)
+    d = np.abs(a - arr(tmp[0])).max(axis=2) > 24
+    tmp.close()
+    return d, dpi / 72
+
+
+def hidden_spans(pno, spans, cfg):
+    """설정 places.hidden 이 있을 때만: 인쇄면에 보이지 않는 글자 조각의 번호 집합. 조각 상자 안 글자(texttrace)를 묶음(seqno)별로
+    모아 조각 글자와 같은 묶음을 찾고(같은 자리에 보이는 같은 글자가 따로 있으면 그 조각은 보임 — 40쪽 키토), 그 묶음이
+    ① 쪽 흐름에서 뒤에 그린 큰 래스터가 글자를 모두 덮거나(_paint_order) ② 글자째/글자 없이 그린 화소가 (글자 상자 가운데 60% 에서)
+    inkMin 몫 이상 다른 글자가 inkShare 몫보다 적으면(_text_ink — 뒤에 그린 음영·면이 덮은 것: 40쪽 브라질 동해안·뉴질랜드) 가려짐.
+    ①은 보이는 다른 글자와 겹쳐 ②가 잉크를 보는 것(40쪽 콜럼버스 ↔ 디트로이트, 볼티모어 ↔ 워싱턴)을 잡는다."""
+    h = cfg.get('hidden')
+    if not h: return set()
+    imgs, tpos, _d = _paint_order(pno, h.get('minImagePt2', 400), h.get('pageTol', 10))
+    ink, k = _text_ink(pno, h.get('dpi', 150))
+    H, W = ink.shape; frac = h.get('inkMin', 0.15); share = h.get('inkShare', 0.5)
+    def inked(cb):
+        cx, cy, hw, hh = (cb[0] + cb[2]) / 2, (cb[1] + cb[3]) / 2, (cb[2] - cb[0]) * 0.3, (cb[3] - cb[1]) * 0.3
+        x0, x1 = max(0, int((cx - hw) * k)), min(W, int((cx + hw) * k) + 1)
+        y0, y1 = max(0, int((cy - hh) * k)), min(H, int((cy + hh) * k) + 1)
+        return x1 > x0 and y1 > y0 and float(ink[y0:y1, x0:x1].mean()) >= frac
+    chars = []
+    for t in pdfkit.doc()[pno - 1].get_texttrace():
+        if t['type'] == 3: continue
+        latin = any(f in t['font'] for f in pdfkit.LATIN_FONTS)
+        for u, gid, _o, cb in t['chars']:
+            x, y = (cb[0] + cb[2]) / 2, (cb[1] + cb[3]) / 2
+            chars.append((t['seqno'], pdfkit._glyph_char(u, gid, latin), x, y, (_covered(tpos[t['seqno']], x, y, imgs), inked(cb))))
+    def gone(v): return all(c for _, (c, _i) in v) or sum(i for _, (_c, i) in v) < share * len(v)
+    out = set()
+    for n, s in enumerate(spans):
+        b = s['bbox']; want = s['text'].replace(' ', '')
+        by = {}
+        for sq, ch, x, y, f in chars:
+            if ch.strip() and b[0] - 0.2 <= x <= b[2] + 0.2 and b[1] - 0.2 <= y <= b[3] + 0.2: by.setdefault(sq, []).append((ch, f))
+        same = [v for v in by.values() if ''.join(c for c, _ in v) == want]
+        if not same and by: same = [max(by.values(), key=lambda v: sum(c in want for c, _ in v))]
+        if same and all(gone(v) for v in same): out.add(n)
+    return out
+
+
+def symbols(pno, m, cfg):
+    """지도 안 점 기호 → [{xy, cls, size}] (겹친 동심 도형은 하나로: 가장 큰 도형 중심, 분류는 classes 순서가 앞선 것).
+    설정 places.hidden 이 있으면 래스터 밑에 깔려 보이지 않는 기호(쪽 흐름에서 그 뒤에 그린 큰 그림이 덮음)는 뺀다."""
+    sc = cfg['symbols']; lo, hi = sc['sizeRange']; excl = excluded_boxes(m)
+    hc = _hidden_cfg(cfg); imgs, _t, dpos = _paint_order(pno, *hc) if hc else ((), None, None)
+    cand = []
+    for n, d in enumerate(drawings(pno)):
+        if imgs and _covered(dpos[n], (d['rect'].x0 + d['rect'].x1) / 2, (d['rect'].y0 + d['rect'].y1) / 2, imgs): continue
         r = d['rect']; w, h = r.width, r.height
         if not (lo <= w <= hi and lo <= h <= hi): continue
         b = [r.x0, r.y0, r.x1, r.y1]
@@ -450,8 +540,11 @@ def extract(map_id, keys=None):
     # 순서 주의: glue 는 양식 표(style_of, ignore 단계)보다 먼저 돈다. u3 의 낱자 숫자 규칙(textRe ^[0-9]$, 기울여 한 글자씩 놓은
     # 산 높이 1|8|9|5)은 이 순서에 기댄다 — 잇기 전의 한 자리 숫자 조각은 산 높이 규칙에 안 맞아 무시·양식 표에 없음으로 빠지므로,
     # glue 를 ignore 뒤로 옮기면 1895 가 사라진다.
-    for s in glue_spans(pdfkit.page_spans(pno), cfg.get('glue', [])):
+    gspans = glue_spans(pdfkit.page_spans(pno), cfg.get('glue', []))
+    hid = hidden_spans(pno, gspans, cfg)
+    for k, s in enumerate(gspans):
         b = s['bbox']
+        if k in hid: dropped.append({'text': s['text'], 'why': cfg['hidden'].get('why', '래스터 밑에 가려진 글자')}); continue
         if not _in_box(b, m['bbox']): dropped.append({'text': s['text'], 'why': '지도 틀 밖'}); continue
         if any(_in_box(b, e) for e in excl): dropped.append({'text': s['text'], 'why': '범례·제목 상자'}); continue
         what, r = style_of(s, cfg, map_id)
@@ -494,10 +587,19 @@ def extract(map_id, keys=None):
     # 기호
     syms = symbols(pno, m, cfg)
     pen = sc['mismatchPenaltyEm']
-    pr = pair(pts, syms,
+    forced = {}                                                      # symbolFix(u5 만): {지도 id: {이름: {pt: [x, y], why}}} — 짝 고정
+    for name, fx in cfg.get('symbolFix', {}).get(map_id, {}).items():
+        li = [i for i, L in enumerate(pts) if L['name'] == name]
+        sj = min(range(len(syms)), key=lambda j: math.dist(syms[j]['xy'], fx['pt']), default=None)
+        if len(li) != 1 or sj is None or math.dist(syms[sj]['xy'], fx['pt']) > 1.0:
+            warnings.append(f'{map_id}: symbolFix 「{name}」 — 지명 {len(li)}개·1pt 안 기호 없음'); continue
+        forced[li[0]] = sj
+    ri = [i for i in range(len(pts)) if i not in forced]; rj = [j for j in range(len(syms)) if j not in forced.values()]
+    sub = pair([pts[i] for i in ri], [syms[j] for j in rj],
                lambda L, s: _anchor_dist(s['xy'], L) + (0 if (s['cls'] == 'mountain') == ('elev' in L) else pen * L['size']),
                lambda L, s: _anchor_dist(s['xy'], L) <= sc['pairMaxEm'] * L['size'],
                lambda L: sc['pairMaxEm'] * L['size'] * 2)
+    pr = {**{ri[a]: rj[b] for a, b in sub.items()}, **forced}
     for i, L in enumerate(pts):
         if i in pr: L['symbol'] = {'xy': syms[pr[i]]['xy'], 'cls': syms[pr[i]]['cls'], 'd': round(_anchor_dist(syms[pr[i]]['xy'], L) / L['size'], 2)}
         else: warnings.append(f'{map_id}: 점 지명 「{L["name"]}」 옆에 기호가 없음 → 글자 중심을 씀')

@@ -63,8 +63,9 @@ const family = (kind) => PC.mergeFamily[kind] || kind;
  *  출현: {name, kind, point(점 지명: 도시·수도·산 봉우리), ll, size, page, map, scale, overview, symbol?, path?, angle?, en?, alt?, elev?} */
 export function merge(occ, { dedupKm = PC.dedupKm, rankAdjust = PC.rankAdjust, penalty = PC.regionalRankPenalty,
   overviewKinds = PC.overviewKinds, overviewMinSize = PC.overviewMinSize, priority = PC.mergePriority, mergeKm = PC.mergeKm ?? 30,
-  rankBySize = PC.rankBySize, rankBySizeMaps = PC.rankBySizeMaps || {} } = {}) {
-  if (priority) return mergeByPriority(occ, { priority, mergeKm, dedupKm, rankAdjust, rankBySize, rankBySizeMaps });
+  rankBySize = PC.rankBySize, rankBySizeMaps = PC.rankBySizeMaps || {}, mergeKmMaps = PC.mergeKmMaps || {},
+  areaKmByName = PC.areaKmByName || {} } = {}) {
+  if (priority) return mergeByPriority(occ, { priority, mergeKm, dedupKm, rankAdjust, rankBySize, rankBySizeMaps, mergeKmMaps, areaKmByName });
   const groups = [];
   const lim = (x, o) => (!o.point ? dedupKm.area : x.symbol && o.symbol ? dedupKm.point : dedupKm.pointNoSymbol);
   for (const o of occ) {
@@ -98,14 +99,17 @@ export function merge(occ, { dedupKm = PC.dedupKm, rankAdjust = PC.rankAdjust, p
  *  dedupKm.area 안이면 하나로. 위치·글자 크기·쪽·rank 는 mergePriority 앞 지도 출현 하나(같은 지도 안에서는 기호 → 큰 축척 → 큰 글자),
  *  rank = 그 글자 크기 단계(지도별 표 rankBySizeMaps[지도] — 없으면 rankBySize) + rankAdjust[종류]. en·alt·elev 는 앞 지도부터 처음 있는 것.
  *  from = 합친 지도 id(우선 차례). 목록에 없는 지도는 맨 뒤. */
-function mergeByPriority(occ, { priority, mergeKm, dedupKm, rankAdjust, rankBySize, rankBySizeMaps }) {
+function mergeByPriority(occ, { priority, mergeKm, dedupKm, rankAdjust, rankBySize, rankBySizeMaps, mergeKmMaps = {}, areaKmByName = {} }) {
   const pi = (o) => { const i = priority.indexOf(o.map); return i < 0 ? priority.length : i; };
   const names = (o) => [key(o.name), ...(o.alt ? [key(o.alt)] : [])];
-  const lim = (o) => (o.point ? mergeKm : dedupKm.area);
+  // 점 지명: 두 출현 지도의 mergeKmMaps[지도](없으면 mergeKm) 중 큰 값 — 작은 축척 지도(u5 40쪽 1:77,000,000)는 교과서가 옮겨 그린
+  // 기호가 수십~수백 km 어긋남. 면·선 지명: areaKmByName[이름](같은 이름 다른 지물 — 콜로라도강 미국·아르헨티나), 없으면 dedupKm.area.
+  const lim = (o, x) => (o.point ? Math.max(mergeKmMaps[o.map] ?? mergeKm, mergeKmMaps[x.map] ?? mergeKm)
+    : areaKmByName[o.name] ?? dedupKm.area);
   const groups = [];
   for (const o of [...occ].sort((a, b) => pi(a) - pi(b))) {       // 앞 지도부터(안정 정렬 — 같은 지도 안 차례 그대로)
     const fam = `${family(o.kind)}/${o.point ? 'pt' : 'area'}`, ks = names(o);
-    const g = groups.find((G) => G.fam === fam && ks.some((k) => G.keys.has(k)) && G.items.some((x) => km(x.ll, o.ll) <= lim(o)));
+    const g = groups.find((G) => G.fam === fam && ks.some((k) => G.keys.has(k)) && G.items.some((x) => km(x.ll, o.ll) <= lim(o, x)));
     if (g) { g.items.push(o); for (const k of ks) g.keys.add(k); } else groups.push({ fam, keys: new Set(ks), items: [o] });
   }
   return groups.map(({ items }) => {
@@ -154,6 +158,7 @@ function main(argv) {
   const spell = new Map();                                    // 열쇠 → 찾아보기 표기(16~19쪽 우선)
   for (const r of [...mapRows, ...index]) if (!spell.has(key(r.name))) spell.set(key(r.name), r.name);
   for (const n of Object.keys(PC.extraNames || {})) if (!spell.has(key(n))) spell.set(key(n), n);
+  for (const [n, v] of Object.entries(PC.spellAs || {})) if (!n.startsWith('_')) spell.set(key(n), v.name);   // spellAs(u5 만): 지면 표기 → 찾아보기 표기
   const occ = [];
   for (const id of PC.maps) {
     const m = maps[id];
@@ -237,8 +242,10 @@ const neKey = (name, alias = PC.neAlias || {}) => key(alias[name]?.name ?? name)
  *  「트리폴리」가 리비아·레바논·그리스 셋) 교과서 자리(p.lon/lat)에서 가장 가까운 지점 하나만 남긴다. */
 export function neCands(p, by, alias = PC.neAlias || {}) {
   const m = by.get(neKey(p.name, alias));
-  if (!m || !alias[p.name]?.nearest || m.length < 2) return m;
-  return [m.reduce((a, b) => (km([b.lon, b.lat], [p.lon, p.lat]) < km([a.lon, a.lat], [p.lon, p.lat]) ? b : a))];
+  if (!m || !alias[p.name]?.nearest || (m.length < 2 && alias[p.name].maxKm === undefined)) return m;
+  const near = m.reduce((a, b) => (km([b.lon, b.lat], [p.lon, p.lat]) < km([a.lon, a.lat], [p.lon, p.lat]) ? b : a));
+  // maxKm(u5 만): 가장 가까운 것도 그보다 멀면 짝 없음 — Natural Earth 에 없는 같은 이름 작은 도시(42쪽 멕시코 로사리오)
+  return alias[p.name].maxKm !== undefined && km([near.lon, near.lat], [p.lon, p.lat]) > alias[p.name].maxKm ? undefined : [near];
 }
 
 /** 옮겨 그린 기호 바로잡기: 점 지명(도시·수도·산 봉우리) 중 Natural Earth 에 이름이 똑같은 지점이 하나뿐이고 places 에도 그 이름의

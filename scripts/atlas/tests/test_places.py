@@ -104,6 +104,17 @@ class Group(unittest.TestCase):
             self.assertEqual(sorted(L['name'] for L in PL.group(spans)), ['백나일강', '청나일강'])
 
 
+    def test_size_tol_joins_mixed_size_glyphs_only_with_key(self):
+        # 43쪽 「야 노」 5.9pt + 「스」 6.9pt(같은 상자 글자, 기운 줄): chain.sizeTol(u5 설정)이 있을 때만 한 지명
+        d = (0.75, -0.662)
+        spans = [_sp('야', 302.2, 101.0, 5.9, d), _sp('노', 309.0, 95.0, 5.9, d), _sp('스', 316.8, 88.2, 6.9, d)]
+        base = dict(PL.places_config()['chain'])
+        base.pop('sizeTol', None)
+        with mock.patch.object(PL, '_chain', return_value=base):
+            self.assertEqual(sorted(L['name'] for L in PL.group(spans)), ['스', '야노'])
+        with mock.patch.object(PL, '_chain', return_value={**base, 'sizeTol': 1.05}):
+            self.assertEqual([L['name'] for L in PL.group(spans)], ['야노스'])
+
 def _gs(text, x, y, font='HelveticaNeue-Roman', size=5.0, w=None, d=(1.0, 0.0), color='#231f20'):
     w = w if w is not None else 0.5 * size * len(text)
     return {'text': text, 'size': size, 'font': font, 'color': color, 'dir': list(d), 'bbox': [x, y, x + w, y + size]}
@@ -240,6 +251,64 @@ class Pdf(unittest.TestCase):
             self.assertNotRegex(L['name'], bad)
         self.assertNotIn('아시아', self.by)       # 제목 상자
         self.assertNotIn('육지높이', self.by)
+
+
+U5_CFG = os.path.join(os.path.dirname(__file__), '..', 'config', 'u5.json')
+
+
+@NEED_PDF
+class HiddenU5(unittest.TestCase):
+    """U5-5 places.hidden(키가 있을 때만): 인쇄면에 안 보이는 글자·기호 빼기 — 40쪽 고도 색 래스터 밑에 깔린 도시 이름·기호."""
+    @classmethod
+    def setUpClass(cls):
+        import json
+        with open(U5_CFG, encoding='utf-8') as f: cls.cfg = json.load(f)['places']
+        cls.spans = PL.glue_spans(pdfkit.page_spans(40), cls.cfg.get('glue', []))
+        cls.hid = PL.hidden_spans(40, cls.spans, cls.cfg)
+
+    def _state(self, text, x0):
+        k = [i for i, s in enumerate(self.spans) if s['text'] == text and abs(s['bbox'][0] - x0) < 0.5]
+        self.assertEqual(len(k), 1, text)
+        return k[0] in self.hid
+
+    def test_hidden_and_visible_text(self):
+        self.assertTrue(self._state('마라카이보', 466.4))           # 래스터 밑(쪽 흐름 앞)
+        self.assertTrue(self._state('콜럼버스', 401.2))             # 래스터 밑 + 보이는 「디트로이트」와 겹침(잉크로는 못 가림)
+        self.assertTrue(self._state('주앙페소아', 660.3))           # 뒤에 그린 음영·면이 덮음(큰 래스터 아님 — 잉크 차로)
+        self.assertFalse(self._state('카라카스', 484.0))            # 쪽 밖으로 삐친 삽입 래스터 상자 안이지만 보임
+        self.assertFalse(self._state('Caracas', 488.0))
+        self.assertFalse(self._state('디트로이트', 401.7))
+        self.assertGreater(len(self.hid), 150)
+
+    def test_without_key_nothing_hidden(self):
+        cfg = {k: v for k, v in self.cfg.items() if k != 'hidden'}
+        self.assertEqual(PL.hidden_spans(40, self.spans, cfg), set())
+
+    def test_hidden_symbols_dropped(self):
+        m = {'bbox': [0, 0, 779.5, 722.8]}
+        cfg = {k: v for k, v in self.cfg.items() if k != 'hidden'}
+        a = PL.symbols(40, m, self.cfg); b = PL.symbols(40, m, cfg)
+        near = lambda S, x, y: any(abs(s['xy'][0] - x) < 0.3 and abs(s['xy'][1] - y) < 0.3 for s in S)
+        self.assertTrue(near(b, 417.06, 244.66) and not near(a, 417.06, 244.66))   # 가려진 클리블랜드 쪽 기호(옛 길에서 디트로이트와 짝)
+        self.assertTrue(near(a, 415.46, 233.38))                                    # 보이는 디트로이트 기호
+        self.assertLess(len(a), len(b) - 150)
+
+
+class SymbolFix(unittest.TestCase):
+    def test_forced_pair_before_hungarian(self):
+        """U5-5 symbolFix: 거리 비용으로 맞바뀌는 두 지명(42쪽 워싱턴 ↔ 볼티모어)을 지면 자리로 먼저 짝짓는다."""
+        cfg = {'symbols': {'sizeRange': [1, 7], 'concentricPt': 0.9, 'pairMaxEm': 2.4, 'mismatchPenaltyEm': 2.5, 'elevMaxEm': 2.0, 'classes': []},
+               'ignore': [], 'styles': [{'role': 'city', 'font': '^F$', 'point': True, 'joinEm': 0.4}], 'exclude': [], 'kinds': {'city': [['', 'city']]},
+               'altMaxEm': 2.0, 'kindBySymbol': {'capital': 'capital'}, 'chain': PL.places_config()['chain']}
+        spans = [{'text': '볼티모어', 'size': 5.7, 'font': 'F', 'color': '#000000', 'dir': [1, 0], 'bbox': [555.3, 370.1, 576.3, 382.1]},
+                 {'text': '워싱턴', 'size': 7.1, 'font': 'F', 'color': '#000000', 'dir': [1, 0], 'bbox': [580.3, 368.9, 600.7, 382.0]}]
+        syms = [{'xy': [577.8, 379.21], 'cls': 'capital', 'size': 3}, {'xy': [578.61, 373.74], 'cls': 'city', 'size': 2}]
+        def run(c):
+            with mock.patch.object(PL, 'places_config', return_value=c), mock.patch.object(PL, 'maps', return_value={'m': {'page': 42, 'bbox': [0, 0, 800, 800]}}),                  mock.patch.object(PL.pdfkit, 'page_spans', return_value=spans), mock.patch.object(PL, 'symbols', return_value=syms):
+                return {L['name']: L['symbol']['cls'] for L in PL.extract('m', frozenset())['labels']}
+        self.assertEqual(run(cfg), {'볼티모어': 'capital', '워싱턴': 'city'})     # 옛 길: 맞바뀜
+        fix = {**cfg, 'symbolFix': {'m': {'워싱턴': {'pt': [577.8, 379.21], 'why': 'w'}, '볼티모어': {'pt': [578.6, 373.7], 'why': 'w'}}}}
+        self.assertEqual(run(fix), {'볼티모어': 'city', '워싱턴': 'capital'})
 
 
 if __name__ == '__main__':

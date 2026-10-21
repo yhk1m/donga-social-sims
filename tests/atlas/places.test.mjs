@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, statSync, existsSync } from 'node:fs';
-import { neCheck, neIndex, relocate, merge } from '../../scripts/atlas/build_places.mjs';
+import { neCheck, neIndex, relocate, merge, neCands } from '../../scripts/atlas/build_places.mjs';
 import { key, km } from '../../scripts/atlas/geo_util.mjs';
 import { resolveUnit } from '../../scripts/atlas/unit.mjs';
 
@@ -198,4 +198,22 @@ test('mergePriority 가 없으면 옛 합치기(축척 큰 지도 자리, from �
   const [p] = merge([occ('b', '덴버', [-105.0, 39.7]), occ('a', '덴버', [-105.1, 39.75], { scale: 1e6 })], { priority: undefined });
   assert.deepEqual([p.lon, p.lat], [-105.1, 39.75]);
   assert.equal(p.from, undefined);
+});
+test('mergePriority U5-5: mergeKmMaps(작은 축척 지도는 넓게 — 두 출현 중 큰 값)·areaKmByName(같은 이름 다른 지물)', () => {
+  const far = [occ('a', '매캘런', [-98.23, 26.2]), occ('b', '매캘런', [-97.54, 25.89])];       // 77km
+  assert.equal(merge(far, PRI).length, 2, '키 없으면 mergeKm 30 → 둘');
+  const m = merge(far, { ...PRI, mergeKmMaps: { b: 300 } });
+  assert.equal(m.length, 1); assert.deepEqual([m[0].lon, m[0].lat, m[0].from], [-98.23, 26.2, ['a', 'b']]);
+  assert.equal(merge([occ('a', '보고타', [-74.07, 4.91]), occ('c', '보고타', [-74.07, 4.51])], { ...PRI, mergeKmMaps: { b: 300 } }).length, 2, 'a·c 끼리는 mergeKm 그대로');
+  const riv = (map, ll) => occ(map, '콜로라도강', ll, { point: false, kind: 'river', symbol: undefined });
+  const rs = [riv('a', [-109.1, 39.0]), riv('c', [-66.3, -37.8])];
+  assert.equal(merge(rs, { ...PRI, dedupKm: { area: 20000 } }).length, 1, '옛 면 지명 규칙: 이름만으로 하나');
+  assert.equal(merge(rs, { ...PRI, dedupKm: { area: 20000 }, areaKmByName: { 콜로라도강: 2000 } }).length, 2);
+});
+test('neCands U5-5: nearest 별칭의 maxKm — 가장 가까운 것도 멀면 짝 없음(후보가 하나여도)', () => {
+  const ne = new Map([['로사리오', [{ lon: -60.67, lat: -32.95 }]]]);
+  const mx = { name: '로사리오', lon: -115.68, lat: 30.11 }, ar = { name: '로사리오', lon: -60.66, lat: -32.92 };
+  assert.equal(neCands(mx, ne, { 로사리오: { nearest: true } }).length, 1, 'maxKm 없으면 옛 동작');
+  assert.equal(neCands(mx, ne, { 로사리오: { nearest: true, maxKm: 150 } }), undefined);
+  assert.deepEqual(neCands(ar, ne, { 로사리오: { nearest: true, maxKm: 150 } }), [{ lon: -60.67, lat: -32.95 }]);
 });
