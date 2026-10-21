@@ -230,9 +230,6 @@ class ManualLegend(unittest.TestCase):
         with self.assertRaises(ValueError): LG.manual_legend([{'color': '#000000'}])
 
 
-if __name__ == '__main__': unittest.main()
-
-
 class Units(unittest.TestCase):
     """U5-3d 하위 행정 구역판(regionClass — 레이어 설정 units): 「주」 면마다 그 면이 든 지도(본토 · insets 로 고른 삽입) fit 으로 표본."""
     # 본토 「쪽」 = 위 proj_pt·FRAME·ZONES, 삽입 「쪽」: 경위도 → (5·lon − 100, 300 − 5·lat), 틀 [0, 250, 60, 300], c2 로 칠함
@@ -273,3 +270,6 @@ class Units(unittest.TestCase):
         # units 키가 없으면 build 는 나라 길(classify_countries) — 함수가 그대로 있고 units 길과 섞이지 않음
         classes, rep = cc.classify_countries([('AAA', box(0, 0, 8, 8)), ('BBB', box(10, 0, 18, 8))], project, ZONES, ORDER, FRAME)
         self.assertEqual(classes, {'AAA': 'c1', 'BBB': 'c2'})
+
+
+if __name__ == '__main__': unittest.main()

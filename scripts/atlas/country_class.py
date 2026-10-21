@@ -329,6 +329,7 @@ def unit_features(units, classes, tol, min_area=0.0):
     """분류된 구역 면 → GeoJSON feature 목록(구역 차례) — 넓이 min_area(°²) 아래 조각(작은 섬)은 버리되 구역마다 가장 큰 조각은 남기고,
     이웃 경계를 함께 단순화(coverage_simplify, tol °), 0.001° 격자, 바깥 고리 시계 방향(d3), 늘 MultiPolygon. properties {key, name, cls}."""
     import shapely
+    assert tuple(int(v) for v in shapely.__version__.split('.')[:2]) >= (2, 1), 'shapely ≥ 2.1 필요(coverage_simplify)'
     from shapely.geometry import mapping, MultiPolygon
     from atlas_common import flat_polygons
     def drop_small(g):
