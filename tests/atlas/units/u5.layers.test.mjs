@@ -131,6 +131,47 @@ test('p47 마킬라도라: 두 계열, 칸 수가 조사 수(파랑 99 · 주황
   assert.deepEqual(out, ['MX-BCN']);
 });
 
+test('p47 D사: 원료 공급 국가 1분류(나라 37 — 볼리비아·몰타 고침), 기호 5분류(농장 24·창고 5·공장 5·본사 1·판매 지사 4 + 값), 동해·독도 글자', () => {
+  const cc = read('p47-agri-supply');
+  assert.equal(cc.legend.length, 1);
+  const on = new Set(Object.keys(cc.classes));
+  for (const iso of ['USA', 'CAN', 'MEX', 'GRL', 'HND', 'BRA', 'ARG', 'CHL', 'PER', 'ECU', 'IND', 'LKA', 'ZAF', 'GBR', 'FRA', 'ESP', 'ITA', 'DEU', 'POL', 'SWE', 'ISL']) assert.ok(on.has(iso), iso);
+  for (const iso of ['BOL', 'COL', 'VEN', 'GTM', 'NOR', 'FIN', 'CHN', 'JPN', 'AUS', 'MLT']) assert.ok(!on.has(iso), iso);
+  assert.equal(cc.classes.BOL, undefined);
+  const s = read('p47-agri-sites');
+  const n = (label) => s.features.filter((f) => f.properties.type === 'symbol' && f.properties.kind === label).length;
+  assert.deepEqual(['해외 농장', '숙성 창고', '샐러드 공장', '본사', '판매 지사'].map(n), [24, 5, 5, 1, 4]);
+  const sales = Object.fromEntries(s.features.filter((f) => f.properties.kind === '판매 지사').map((f) => [f.properties.name, f.properties.values.map((v) => v.text).join()]));
+  assert.deepEqual(sales, { 유럽: '112개', 북아메리카: '34개', '중앙 및 남아메리카': '7개', '기타 지역': '9개' });
+  assert.equal(s.properties.nameInBox, true);
+  assert.deepEqual(s.properties.valueLegend, [{ icon: 'forklift', label: '판매 지사 수(지역별)' }]);
+  const hq = s.features.find((f) => f.properties.kind === '본사').geometry.coordinates;
+  assert.ok(hq[0] > -125 && hq[0] < -115 && hq[1] > 33 && hq[1] < 40, `본사(캘리포니아) ${hq}`);
+  const names = s.features.filter((f) => f.properties.type === 'label').map((f) => f.properties.text);
+  for (const t of ['동해', '독도', '이어도 종합 해양 과학 기지']) assert.ok(names.includes(t), t);
+});
+
+test('p46 고리 5: 설정 — 지시선 끝(지면 pt)이 그 나라 안으로 되돌려짐, 고리 자리는 lonlat + _why(바다), 그래프 자료가 생기면 레이어도', async () => {
+  const cfg = JSON.parse(readFileSync('scripts/atlas/config/u5.json', 'utf8')).layers['p46-ethnic-rings'];
+  assert.equal(cfg.items.length, 5);
+  const box = { 'p46-mexico': [-118, 14, -86, 33], 'p46-haiti': [-74.5, 18, -71.6, 20.1], 'p46-brazil': [-74, -34, -34, 5.3], 'p46-peru': [-81.4, -18.4, -68.6, -0.03], 'p46-argentina': [-73.6, -55, -53.6, -21.8] };
+  const { makeConverter } = await import('../../../scripts/atlas/georef.mjs');
+  const { WORK } = await import('../../../scripts/atlas/geo_util.mjs');
+  const fit = `${WORK}/geo/p46-ethnic.fit.json`;
+  for (const it of cfg.items) {
+    assert.ok(it._why && it.lonlat && it.leaderPt, it.chart);
+    assert.ok(it.lonlat[0] > -130 && it.lonlat[0] < -20, it.chart);
+    if (!existsSync(fit)) continue;
+    const ll = makeConverter(JSON.parse(readFileSync(fit, 'utf8'))).invert(it.leaderPt);
+    const [w, s, e, n] = box[it.chart];
+    assert.ok(ll[0] > w && ll[0] < e && ll[1] > s && ll[1] < n, `${it.chart} 지시선 끝 ${ll}`);
+  }
+  if (existsSync(`${D}/layer-p46-ethnic-rings.json`)) {
+    const C = read('p46-ethnic-rings'); assert.equal(C.items.length, 5);
+    for (const it of C.items) { assert.ok(it.leader, it.id); assert.ok(it.lonlat[0] > -130 && it.lonlat[0] < -20, it.id); }
+  }
+});
+
 test('p42·p43 우리나라 윤곽: sameLat 처음 = 교과서 자리, antipode 처음 = 실제 대척점(교과서 514km 동쪽), 지면 글자', () => {
   const a = read('p42-korea'), b = read('p43-korea');
   assert.equal(a.properties.mode, 'sameLat'); assert.equal(b.properties.mode, 'antipode');

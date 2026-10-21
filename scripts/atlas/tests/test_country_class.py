@@ -1,7 +1,7 @@
 # © 2026 김용현
 # scripts/atlas/tests/test_country_class.py — 나라 단위 단계구분도(country_class.py) 검사: 합성 쪽(사각형 나라 + 범례색 면)
 import os, sys, unittest
-from shapely.geometry import box
+from shapely.geometry import box, Point
 
 HERE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.insert(0, HERE)
@@ -140,6 +140,18 @@ class Levels(unittest.TestCase):
         # 날짜변경선을 넘는 틀(되돌린 고리 경도 170°E … −170°)은 아직 다루지 않음 → ValueError
         with self.assertRaises(ValueError): cc.check_lon_span([(170, 60), (179, 62), (-179, 62), (-170, 60)])
         cc.check_lon_span([(-30, 30), (70, 30), (70, 75), (-30, 75)])   # 유럽 틀(폭 100°)은 통과
+
+    def test_fold_window_dateline(self):
+        # U5-4: 날짜변경선을 넘는 틀은 경도를 이어 붙여 [-180, 180] 안으로 접음 — 170°E…−170°(=190°) 틀은 두 조각, 태평양 중심 세계 지도는 띠 전체(틀 끝 경선 둘레만 틈)
+        g = cc.fold_window([(170, 60), (179, 62), (-179, 62), (-170, 60), (-170, 50), (170, 50)])
+        self.assertEqual(len(getattr(g, 'geoms', [g])), 2)
+        self.assertAlmostEqual(g.area, 20 * 10 + (20 + 2) / 2 * 2, places=6)   # 네모 + 위 사다리꼴
+        self.assertTrue(g.contains(Point(175, 55)) and g.contains(Point(-175, 55)) and not g.contains(Point(0, 55)))
+        lo, hi = -33.2 + 0.01, 326.8 - 0.01
+        ring = [(lo + (hi - lo) * i / 40, 80) for i in range(41)] + [(hi - (hi - lo) * i / 40, -60) for i in range(41)]
+        w = cc.fold_window([((x + 180) % 360) - 180, y] for x, y in ring)
+        for p in [(-33.5, 0), (-32.9, 0), (146.8, 70), (179.9, -50), (-179.9, 10)]: self.assertTrue(w.contains(Point(*p)), p)
+        self.assertFalse(w.contains(Point(-33.2, 0)))   # 틀 끝 경선(그린란드를 두 조각으로 나눔)
 
     def test_override_needs_exactly_one_of_cls_label(self):
         with self.assertRaises(ValueError): cc.apply_overrides({}, {'AAA': {'cls': 'c1', 'label': '80~100', 'why': 'x'}}, LEGEND)

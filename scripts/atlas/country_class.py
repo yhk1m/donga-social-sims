@@ -408,7 +408,8 @@ def ne_countries(path=NE_COUNTRIES):
 
 
 def check_lon_span(ll):
-    """되돌린 틀 고리 [(lon, lat)]의 경도 폭이 180° 를 넘으면(날짜변경선을 넘는 틀 — 경도가 ±180 에서 접혀 면이 지구 반대쪽을 덮음) ValueError."""
+    """되돌린 틀 고리 [(lon, lat)]의 경도 폭이 180° 를 넘으면(날짜변경선을 넘는 틀 — 경도가 ±180 에서 접혀 면이 지구 반대쪽을 덮음) ValueError.
+    (frame_window 는 U5-4 부터 넘는 틀을 fold_window 로 접는다 — 이 검사는 접기를 쓰지 않는 곳용)"""
     lons = [p[0] for p in ll]
     if lons and max(lons) - min(lons) > 180:
         raise ValueError(f'frame_window: 틀이 날짜변경선을 넘음(경도 {min(lons):.1f}~{max(lons):.1f}) — 아직 다루지 않음')
@@ -423,11 +424,29 @@ def frame_window(fit, bbox, n=40):
             [[x1 - (x1 - x0) * u, y1] for u in t] + [[x0, y1 - (y1 - y0) * u] for u in t])
     ll = [p for p in node([{'op': 'invert', 'fit': fit, 'pts': ring}])[0] if p]
     if len(ll) < 4: return None
-    # 날짜변경선을 넘는 틀은 다루지 않는다(되돌린 경도가 ±180 에서 접혀 면이 지구 반대쪽을 덮음) — 유럽·아시아 지도는 해당 없음.
-    # 오세아니아(Ⅵ)처럼 넘는 지도가 나오면 경도를 이어 붙이고 접기(clip_land.fold)를 더할 것.
-    check_lon_span(ll)
+    lons = [q[0] for q in ll]
+    if max(lons) - min(lons) > 180: return fold_window(ll)   # 날짜변경선을 넘는 틀(U5-4 — 47쪽 태평양 중심 세계 지도)
     from shapely.geometry import Polygon
     return polygonal(Polygon(ll).buffer(0))
+
+
+def fold_window(ll):
+    """날짜변경선을 넘는 틀 고리 [(lon, lat)] → 경도를 앞 점에 이어 붙인(±360) 면을 [-180, 180] 안으로 접은 면(조각들의 합).
+    태평양 중심 세계 지도(47쪽 — 밀러 146.8°E)는 틀 왼쪽·오른쪽 끝이 같은 경선(−33.2°) 근처라 그 둘레에 아주 가는 틈이 남아, 그 경선에 걸친
+    나라(그린란드)는 window 와 겹친 두 조각으로 나뉘어 각각 지면에 투영된다(한 덩어리로 투영하면 지도 너비를 가로지름)."""
+    from shapely.geometry import Polygon, box
+    from shapely.affinity import translate
+    from shapely.ops import unary_union
+    u, prev = [], None
+    for lon, lat in ll:
+        if prev is not None:
+            while lon - prev > 180: lon -= 360
+            while lon - prev < -180: lon += 360
+        u.append((lon, lat)); prev = lon
+    g = Polygon(u).buffer(0)
+    world = box(-180, -90, 180, 90)
+    parts = [translate(g, 360 * k).intersection(world) for k in (-1, 0, 1)]
+    return polygonal(unary_union([q for q in parts if not q.is_empty]))
 
 
 def project_countries(fit, countries):

@@ -187,9 +187,16 @@ def features(layer_id):
                 out['legend'].append({'cls': ckey, 'color': cc['legendColor'], 'kind': 'flow', 'label': cc['label'],
                                       'values': [lab for _, lab in widths], 'widths': [w for w, _ in widths], 'unit': unit})
     elif mode == 'symbols':
-        leg = LG.legend(m, cfg, max_area=cfg.get('legendMaxArea'))
+        leg = LG.manual_legend(cfg['legendItems']) if cfg.get('legendItems') else LG.legend(m, cfg, max_area=cfg.get('legendMaxArea'))
         out['legend'] = leg
-        out['symbols'], rep = S.symbols(m, leg, cfg, warnings)
+        manual = cfg.get('manualPoints') or []   # 손 기호(U5-4 — 47쪽 D사 본사 건물·판매 지사 지게차 그림: 여러 조각 그림이라 색으로 못 셈) — 그 분류는 색으로 찾지 않음
+        only = {q['label'] for q in manual}
+        out['symbols'], rep = S.symbols(m, [e for e in leg if e['label'] not in only], cfg, warnings)
+        for q in manual:
+            e = next((e for e in leg if e['label'] == q['label']), None)
+            if e is None: raise ValueError(f"{layer_id}: manualPoints 분류 {q['label']} 가 범례에 없음")
+            out['symbols'].append({'xy': [float(q['xy'][0]), float(q['xy'][1])], 'cls': e['cls'], 'kind': e['label'], 'color': e['color'],
+                                   'size': q.get('size', 3.0), **({'label': q['name']} if q.get('name') else {})})
         out['report'].update(rep)
     elif mode == 'raster-circles':   # 30쪽 도시 인구 원(렌더 화소에서 찾음 — symbols.raster_circles) + 사례 도시
         out['legend'], out['symbols'], rep = S.raster_circles(m, cfg, warnings)
