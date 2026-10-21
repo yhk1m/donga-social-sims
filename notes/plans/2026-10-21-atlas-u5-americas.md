@@ -274,7 +274,7 @@ $ATLAS_WORK/raw/ne-admin1/ · raw/statcan-cd2016/(선택)                       
   - `chartSymbols` 항목에 `leader: [lon, lat]`(있을 때만)이면 고리 가장자리 → 그 점까지 점선(교과서 검은 점선 0.3pt 꼴, 화면 1px [3 2]), 끝에 작은 점. 키가 없으면 지금 그리기 그대로(**u4 조각·화소 그대로** — chartSymbols.js 는 u4 도 쓰는 등록 길 코드라 u4 조각 크기 ±1% 안인지 확인).
   - build_layers `chartSymbols` 설정 `items[].leaderPt`(교과서 지시선 끝 — 나라 안쪽 점) → fit 으로 되돌림, `lonlat`은 U4-4 규칙대로 설정 + `_why`.
   - 시험: leader 있으면 선 1개(끝 = 투영한 leader), 없으면 SVG 요소 수 지금과 같음, 고리를 옮겨 다시 그려도 지시선 끝 고정.
-- [ ] **3h 빗금 각도·색 `hatch.angle`·`hatch.color`** (46쪽 중남미 「혼혈」 가로 분홍 줄, 「아프리카계」 사선 검은 빗금):
+- [x] **3h 빗금 각도·색 `hatch.angle`·`hatch.color`** (46쪽 중남미 「혼혈」 가로 분홍 줄, 「아프리카계」 사선 검은 빗금):
   - 파이프라인: 빗금 범례 항목에 `angle`(도, 0 = 가로)·`color`(교과서 줄 색 — #ef5aa0 0.36pt 등)를 레이어 설정에서 넘김(zones `hatch`·features). 줄 면은 1단계 `hatch`(윤곽 선 → 면) 또는 U4-4 `hatch.clips`(잘라 그리기 경로) 중 지면에 맞는 길.
   - 앱: `layers.js` 빗금 패턴이 범례 항목 `angle`·`color`를 보고 타일을 만듦(없으면 지금 45°·지금 색 — u2 고산 기후·u4 사헬 빗금 화소 그대로). 범례 견본도 같은 각도·색.
   - 시험: angle 0 → 가로 줄 타일, 없으면 지금 타일 바이트 같음, 견본 CSS 각도.
@@ -666,3 +666,18 @@ test('태평양 중심 묶음: 본사·D사 세계 지도', () => assert.ok(by.t
     | 3f(americasExtra 등록 길) | 2,111,309 | 0 | 547 |
 
   - **이어서 볼 것**: 멕시코 주 경계선 바탕(회색 가는 선)은 U5-4 레이어 설정(NE 1단계 MEX 를 면·선 레이어로 — 같은 묶음 둘째 레이어). 교과서 꺾인 지시선을 곧은 선으로 바꾼 것은 대조표 「알려진 차이」 후보.
+- **U5-3h(2026-10-21) 빗금 각도·색 — 빗금 고리 `hatchHook` + 줄 무늬 면 `hatch.lines`** — 가지 atlas-u5(b949108 위)
+  - **앱 — 공유 코드 +29 B**: `layers.js` 에 고리 자리 `export const hatchHook = { make: () => null }` + 빗금 채움 `hatchHook.make(ctx, f) || 옛 45° 타일`(처음 `?.` 로 썼더니 빌드가 `(C=M.make)==null?void 0:C.call(…)` 로 풀어 +84 B → 빈 함수 기본값으로 +55 B 줄임), `ui.js` 범례 견본 CSS 각도 `${e.angle != null ? 180 - e.angle : 45}deg`(angle 없으면 옛 45deg 그대로). 타일 만들기는 **`americasExtra.hatchTile`**(installAmericasExtras 가 `hatchHook.make` 에 검): 면 자료 `properties.angle`(°, 0 = 가로, 반시계)이 있으면 5px 가로 줄 타일(색 = 면 color = 범례 줄 색, 굵기 1.2px, 색별 캐시)을 무늬 `setTransform(DOMMatrix.rotateSelf(−angle))` 로 돌림(0·180° 는 돌리지 않음), 없으면 null → 옛 타일. 「hatch.color」 는 새 키가 아니라 **기존 hatch 설정 `color`**(범례·면 색 = 교과서 줄 색 — 아프리카계 #231f20, 혼혈 #ef5ba1). 확인 캡처 `units/u5/u5-3h/shots/h1-hatch.png`(합성 사각 셋 — 혼혈 가로 분홍 줄 · 아프리카계 45° 「/」 검은 빗금 · 각도 없는 고산 옛 「/」 타일, 범례 견본 가로 줄·「/」; 옛 45deg 견본은 「\」 로 그려지는 것을 확인 — 1단계부터의 견본·지도 방향 차이, 고치지 않음(u2 화소 그대로)). 콘솔 오류 0.
+  - **파이프라인(도장 입력 아님)**: `features.py` 설정 `hatch` 가 **목록이면 빗금 여럿**(범례 항목마다 `angle`, 면은 범례 빗금 항목 차례 = 설정 차례로 짝 — 옛 dict 길(`leg[-1]`)은 그대로), dict 에도 `angle` 이 있으면 범례·면에 붙임, 면 polys 에 `angle` → build_layers 면 properties `angle`. `zones.hatch_zone` 새 키 **`lines`(줄 색) + `linesWidth`(굵기 ±0.05)**: `stroke_clip_areas` — 그 색 줄을 감싼 잘라 그리기 경로 중 가장 안쪽의 **네모 아닌** 경로(무늬 칸 네모·지도 틀 네모 건너뜀, scissor 가 틀 안이고 덮개 상자·견본 안이 아닌 것)들의 합집합. 그런 경로가 없는 줄(지시선·틀 선)은 버림(처음 판은 가장 안쪽 틀 안 경로로 물러나 범례 견본 줄 때문에 지도 틀 전체가 잡혔다).
+  - **46쪽 시험 돌림**(`units/u5/u5-3h/trial.py` — 범례 견본 상자 7 을 legend 상자 안 네모로 찾아 이름 읽기: 에스파냐계·포르투갈계·프랑스계·혼혈·아프리카계·원주민·기타 모두 맞음): 혼혈 = 분홍 #ef5ba1 0.36pt 가로 줄(무늬 칸 — PyMuPDF 가 칸 그림을 다른 좌표로 내놓음, 지역 모양은 level-2 잘라 그리기 경로) → **면 19조각 3,911pt²**, 아프리카계 = 검은 #231f20 0.2pt 사선(계획 조사의 #242021 은 다른 작은 기호) → **6조각 745pt²**(카리브 섬·기아나 해안·브라질 북동 해안). 확인 그림 `units/u5/u5-3h/check_hatch_zones.png`(왼쪽 교과서 · 가운데 혼혈(파랑) · 오른쪽 아프리카계(초록) — 교과서 줄 무늬 위). U5-4 설정 꼴: `hatch: [{swatch:[39.0, 589.3, 49.3, 595.5], stroke: null, lines:'#ef5ba1', linesWidth: 0.36, color:'#ef5ba1', angle: 0}, {swatch:[39.0, 598.2, 49.3, 604.5], stroke: null, lines:'#231f20', linesWidth: 0.2, color:'#231f20', angle: 45}]`.
+  - **시험**: Python `test_zones.py` StrokeClipAreas 1(합성 PDF — 삼각형(안에 무늬 칸 네모 경로)·오각형 분홍 + 네모 검은 경로 → 분홍 둘의 합 넓이·조각 2, 모르는 색 None, 틀 밖 경로 버림), Node `hatchAngle.test.mjs` 3(따로 된 프로세스 — 등록 전 angle 있어도 옛 45° 8px 타일·빈 고리 null / 등록 뒤 angle 0 가로 줄(줄 색 = 면 색, 돌림 없음)·45 → rotate −45·90 → −90·angle 없는 면 옛 타일·타일 나눠 씀 / 견본 180deg·135deg·옛 45deg). **u2·u4 빗금 레이어 다시**(`build_layers --unit u2 p21-climate`·`--unit u4 p37-climate p39-desert --extract`) → git 차이 0(바이트 같음). `npm test` Python 362 OK · Node 603(통과 603, 실패 0).
+  - **회귀**: u2 도장만 2, 41장 화소 차 0(고산 빗금 장면 포함), 0/9/134/24, 조각 **2,111,338 B(+0.975%)** · u3 도장만 1, 31장 화소 차 0, 0/26/118/42, 1,470,932 B(+0.027%) · u4 도장만 1, 42장 화소 차 0(사헬 빗금 포함), 0/34/104/41, 1,594,089 B(+0.025%) — 셋 다 회귀 없음.
+
+    | 하위 기능 | u2 조각 B | 이번 공유 B | +1% 까지 남음 B |
+    |---|---|---|---|
+    | 3c 뒤(시작) | 2,111,286 | — | 570 |
+    | 3e(inset.js rDeg) | 2,111,309 | +23 | 547 |
+    | 3f(등록 길만) | 2,111,309 | 0 | 547 |
+    | 3h(hatchHook + 견본 각도) | 2,111,338 | +29 | **518** |
+
+  - **이어서 볼 것**: 빗금 면 테두리(옛 길 — 면 색 0.6px 윤곽)는 혼혈·아프리카계에도 그려짐(교과서는 윤곽 없음 — U5-9 캡처로 판단, 바꾸려면 고리에 윤곽 끄기). 확인용 임시 틀 `sims/_tmp-u5-check/` 는 지움.

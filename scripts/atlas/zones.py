@@ -251,6 +251,9 @@ def hatch_zone(m, hcfg):
         if not overlaps(r, m['bbox']) or any(inside(r, b) for b in ex): continue
         gs += [g for g in (polygonal(Polygon(R)) for R in rings(d)) if g is not None]
     gs += clip_areas(m['page'], hcfg.get('clips') or [])
+    if hcfg.get('lines'):   # 줄 색을 감싼 잘라 그리기 경로(U5-3h — 46쪽 「혼혈」·「아프리카계」, 있을 때만)
+        g = stroke_clip_areas(m['page'], hcfg['lines'], m['bbox'], ex=ex, width=hcfg.get('linesWidth'))
+        if g is not None: gs.append(g)
     return polygonal(unary_union(gs).intersection(box(*m['bbox']))) if gs else None
 
 
@@ -267,6 +270,42 @@ def clip_areas(pno, boxes, tol=0.6):
         if g is None: raise ValueError(f'hatch.clips: 상자 {b} 경로가 면이 아님')
         out.append(g)
     return out
+
+
+def _is_box(c):
+    """잘라 그리기 경로가 축에 나란한 네모 하나인가(무늬 칸 경로)."""
+    R = rings(c)
+    if len(R) != 1: return False
+    P = np.asarray(R[0], float)
+    if len(P) > 1 and np.allclose(P[0], P[-1]): P = P[:-1]
+    if len(P) != 4: return False
+    xs, ys = np.unique(np.round(P[:, 0], 3)), np.unique(np.round(P[:, 1], 3))
+    return len(xs) == 2 and len(ys) == 2
+
+
+def stroke_clip_areas(pno, stroke, bbox, tol=1.0, ex=(), width=None):
+    """설정 hatch.lines(U5-3h — 46쪽 중남미 「혼혈」 가로 분홍 줄: 줄이 무늬 칸으로 그려지고 지역 모양은 잘라 그리기 경로) → 그 색(stroke) 줄을
+    감싼 잘라 그리기 경로들의 합집합 면(없으면 None). 줄마다 감싼 경로 중 가장 안쪽의 네모 아닌 경로(무늬 칸·지도 틀 네모 경로는 건너뜀)이고
+    scissor 가 지도 틀 bbox 안(tol)이고 덮개 상자 ex(범례 견본 등) 안이 아닌 것 — 그런 경로가 없는 줄(지시선·틀 선 등)은 버림.
+    width 를 주면 그 굵기(±0.05pt) 줄만(46쪽 「아프리카계」 = 검은 0.2pt — 같은 색 다른 선과 가름)."""
+    ds = pdfkit.doc()[pno - 1].get_drawings(extended=True)
+    stack, picked = {}, {}
+    ok = lambda c: (c['scissor'][0] < c['scissor'][2] and c['scissor'][1] < c['scissor'][3] and inside(c['scissor'], bbox, tol)
+                    and not any(inside(c['scissor'], b, 0) for b in ex))
+    for d in ds:
+        lv = d.get('level', 0)
+        if d.get('type') == 'clip':
+            for k in [k for k in stack if k >= lv]: del stack[k]
+            stack[lv] = d
+            continue
+        if d.get('type') == 'group' or d.get('color') is None or hexc(d['color']) != stroke: continue
+        if width is not None and abs((d.get('width') or 0) - width) > 0.05: continue
+        enc = [stack[k] for k in sorted(stack, reverse=True) if k < lv and stack[k].get('items')]
+        cand = [c for c in enc if ok(c)]
+        c = next((c for c in cand if not _is_box(c)), None)
+        if c is not None: picked[id(c)] = c
+    gs = [g for c in picked.values() for g in (polygonal(Polygon(R)) for R in rings(c)) if g is not None]
+    return polygonal(unary_union(gs)) if gs else None
 
 
 def dots_area(centers, spacing, fr=None, min_area=None):

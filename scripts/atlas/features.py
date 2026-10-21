@@ -108,7 +108,12 @@ def area_polys(m, leg, cfg, warnings, report):
         dc = next(e['cls'] for e in leg if e.get('pattern') == 'dots')
         if dz is None: warnings.append(f"{m['id']}: 점무늬 점이 없음")
         else: zones[dc] = dz.segmentize(cfg['densifyPt'])
-    if cfg.get('hatch'):
+    if isinstance(cfg.get('hatch'), list):   # 빗금 여럿(U5-3h): 범례의 빗금 항목 차례 = 설정 차례
+        for hc, e in zip(cfg['hatch'], [e for e in leg if e.get('pattern') == 'hatch']):
+            hz = Z.hatch_zone(m, hc)
+            if hz is None: warnings.append(f"{m['id']}: 빗금 분류 {e['label']} 윤곽이 없음")
+            else: zones[e['cls']] = hz.segmentize(cfg['densifyPt'])
+    elif cfg.get('hatch'):
         hz = Z.hatch_zone(m, cfg['hatch'])
         if hz is None: warnings.append(f"{m['id']}: 빗금 분류 윤곽이 없음" if m['id'] != cfg['map'] else '빗금 분류 윤곽이 없음')
         else: zones[leg[-1]['cls']] = hz.segmentize(cfg['densifyPt'])
@@ -118,6 +123,7 @@ def area_polys(m, leg, cfg, warnings, report):
         if g is None: continue
         p = {'cls': e['cls'], 'color': e['color'], 'label': e['label'], 'polygons': poly_coords(g)}
         if e.get('pattern'): p['pattern'] = e['pattern']
+        if e.get('angle') is not None: p['angle'] = e['angle']   # 빗금 각도(U5-3h — 있을 때만)
         polys.append(p)
     return polys
 
@@ -136,8 +142,15 @@ def features(layer_id):
         leg = LG.manual_legend(cfg['legendItems']) if cfg.get('legendItems') else LG.legend(m, cfg)
         if cfg.get('dots'):   # 점무늬(설정 dots {color, swatch, spacingPt} — U4-3b): 빗금보다 앞(빗금은 leg 끝이어야 함), 그리는 차례 채움 → 점무늬 → 빗금
             d = LG.hatch_legend(m, cfg['dots'], 'dots'); d['cls'] = f'c{len(leg) + 1}'; leg.append(d)
-        if cfg.get('hatch'):
-            h = LG.hatch_legend(m, cfg['hatch']); h['cls'] = f'c{len(leg) + 1}'; leg.append(h)
+        if isinstance(cfg.get('hatch'), list):   # 빗금 여럿(U5-3h — 46쪽 「혼혈」 가로 분홍 줄·「아프리카계」 사선 검은 빗금): 항목마다 angle(°, 0 = 가로)
+            for hc in cfg['hatch']:
+                h = LG.hatch_legend(m, hc); h['cls'] = f'c{len(leg) + 1}'
+                if hc.get('angle') is not None: h['angle'] = hc['angle']
+                leg.append(h)
+        elif cfg.get('hatch'):
+            h = LG.hatch_legend(m, cfg['hatch']); h['cls'] = f'c{len(leg) + 1}'
+            if cfg['hatch'].get('angle') is not None: h['angle'] = cfg['hatch']['angle']
+            leg.append(h)
         if cfg.get('extraLegend'): extra_legend(leg, cfg['extraLegend'])
         if cfg.get('legendOnly'): mark_legend_only(leg, cfg['legendOnly'])
         if multi:

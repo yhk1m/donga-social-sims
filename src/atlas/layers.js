@@ -47,6 +47,8 @@ const LABEL_FONT = '700 10px "Pretendard", "Malgun Gothic", sans-serif';
 export const labelPx = (p) => Math.round(Math.min(22, Math.max(10, (p.size || 6) * ({ name: 2.7, country: 2.2, region: 2.4 }[p.role] ?? 2.2))));
 
 // ---------- 빗금(고산 기후) ----------
+/** 빗금 고리(U5-3h): 단원 등록(americasExtra)이 make(ctx, f) → 무늬|null 을 걸면 그것 먼저 — 없거나 null 이면 아래 45° 타일 */
+export const hatchHook = { make: () => null };
 const hatchTiles = new Map();
 /** 빗금 무늬(오프스크린 캔버스 8px 타일 → createPattern). data: 주소를 쓰지 않는다. */
 function hatchPattern(ctx, color) {
@@ -241,7 +243,7 @@ export function areaLayer(id, geojson, { legend = null, map = null, layerId = id
       for (const f of hatches) {
         const g = clip(f, rect);
         ctx.globalAlpha = alphaOf(legend, f.properties.cls, dimAlpha);
-        ctx.fillStyle = hatchPattern(ctx, colorOf(f)) || colorOf(f);
+        ctx.fillStyle = hatchHook.make(ctx, f) || hatchPattern(ctx, colorOf(f)) || colorOf(f);
         ctx.beginPath(); path(g); ctx.fill();
         ctx.strokeStyle = colorOf(f); ctx.lineWidth = 0.6; ctx.globalAlpha *= 0.7; ctx.stroke();
       }

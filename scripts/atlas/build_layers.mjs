@@ -127,6 +127,7 @@ function convert(layer, feat, fit) {
     if (!polys.length) continue;
     const props = { type: 'area', cls: p.cls, label: p.label, color: p.color };
     if (p.pattern) props.pattern = p.pattern;
+    if (p.angle != null) props.angle = p.angle; // 빗금 각도(°, 0 = 가로 — U5-3h, 있을 때만): 앱 빗금 고리(americasExtra)가 읽음
     if (p.style) props.style = p.style; // 테두리만 분류(파다니아 지역 띠) — clip_land 덮개 밖
     features.push({ type: 'Feature', properties: props, geometry: { type: 'MultiPolygon', coordinates: polys } });
   }

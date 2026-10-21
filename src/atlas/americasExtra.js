@@ -17,7 +17,8 @@
 //   단원 main.js: import { installAmericasExtras, globeTools } from '../../src/atlas/americasExtra.js'; installAmericasExtras();  (mountAtlas 전에)
 //                 mountAtlas(…) 뒤 globeTools(root.atlasMap, root.atlasUi.tools.el)(돌려준 함수 = 풀기)
 import { geoStereographic, geoOrthographic, geoDistance, geoPath } from 'd3-geo';
-import { s } from '../shared/dom.js';
+import { h, s } from '../shared/dom.js';
+import { hatchHook } from './layers.js';
 import { registerFamily } from './fitCore.js';
 import { PROJECTIONS } from './projections.js';
 import { graticuleStep } from './lineStyle.js';
@@ -376,10 +377,37 @@ export function unitSymbolsLayer(id, data, { legend = null, map = null, layerId 
   return layer;
 }
 
+// ---------- 3h 빗금 각도·색(46쪽 중남미 「혼혈」 가로 분홍 줄 · 「아프리카계」 사선 검은 빗금) ----------
+/** 빗금 줄 규칙: 타일 한 변(px — 줄 간격), 줄 굵기(px). */
+export const HATCH_LINE = Object.freeze({ tile: 5, width: 1.2 });
+const lineTiles = new Map();
+/**
+ * 빗금 고리(layers.hatchHook.make): 면 자료 properties.angle(°, 0 = 가로, 반시계)이 있으면 가로 줄 타일(색 = properties.color — 범례 줄 색)을 그 각만큼 돌린
+ * 무늬, 없으면 null(옛 45° 타일 — u2 고산·u4 사헬 그대로). 돌림 = 무늬 setTransform(캔버스 y 아래라 rotate(−angle)), 0·180° 는 돌리지 않음.
+ */
+export function hatchTile(ctx, f) {
+  const a = f.properties?.angle;
+  if (a == null) return null;
+  const color = f.properties.color || '#231f20';
+  let tile = lineTiles.get(color);
+  if (!tile) {
+    tile = h('canvas'); tile.width = tile.height = HATCH_LINE.tile;
+    const c = tile.getContext('2d');
+    c.strokeStyle = color; c.lineWidth = HATCH_LINE.width;
+    c.beginPath(); c.moveTo(0, HATCH_LINE.tile / 2); c.lineTo(HATCH_LINE.tile, HATCH_LINE.tile / 2); c.stroke();
+    lineTiles.set(color, tile);
+  }
+  const pat = ctx.createPattern(tile, 'repeat');
+  const r = ((a % 180) + 180) % 180;
+  if (r && pat?.setTransform && typeof DOMMatrix !== 'undefined') pat.setTransform(new DOMMatrix().rotateSelf(-r));
+  return pat;
+}
+
 /** 아메리카 단원 조각의 모든 등록(뒤 하위 기능이 여기에 더함). 여러 번 불러도 같음(지구본 회전 상태는 처음 등록 것을 이어 감). */
 export function installAmericasExtras() {
   installAmericasFamilies();
   if (!PROJECTIONS.globe) registerProjection('globe', globeProjection());
   registerLayerType('pathFlow', (id, d, ctx) => pathFlowLayer(id, d, ctx));
   registerLayerType('unitSymbols', (id, d, ctx) => unitSymbolsLayer(id, d, ctx));
+  hatchHook.make = hatchTile;
 }
