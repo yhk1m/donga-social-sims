@@ -3,13 +3,35 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
-import { geoContains, geoDistance } from 'd3-geo';
+import { geoContains, geoDistance, geoBounds } from 'd3-geo';
 
 const D = 'sims/atlas-u5-americas/data';
 const read = (id) => JSON.parse(readFileSync(`${D}/layer-${id}.json`, 'utf8'));
 const clsOf = (gj, name) => gj.features.find((f) => f.properties.name === name)?.properties.cls;
 const label = (gj, cls) => (gj.properties?.legend || gj.legend).find((x) => x.cls === cls)?.label;
 const legendOf = (gj) => gj.properties?.legend || gj.legend;
+
+test('p45 기후 구분: 범례 14(묶음 5 + 고산), 면 경위도가 아메리카, 고산 빗금 면(로키·안데스)', () => {
+  const gj = read('p45-climate'); assert.equal(legendOf(gj).length, 14);
+  for (const f of gj.features) { const [lon, lat] = f.properties.centroid; assert.ok(lon > -170 && lon < -20 && lat > -56 && lat < 84, f.properties.label); }
+  assert.deepEqual([...new Set(legendOf(gj).map((e) => e.group).filter(Boolean))], ['열대', '건조', '온대', '냉대', '한대']);
+  const alp = gj.features.find((f) => f.properties.pattern === 'hatch');
+  assert.equal(alp.properties.label, '고산 기후');
+  assert.ok(geoContains(alp, [-106.8, 38.9]), '콜로라도 로키');
+  const andes = alp.geometry.coordinates.map((poly) => geoBounds({ type: 'Polygon', coordinates: poly })).find(([[w, s], [e, n]]) => w > -82 && e < -60 && s < -25 && n > -5);
+  assert.ok(andes, '안데스 띠(잘라 그리기 경로 clips — 콜롬비아~칠레 북부)');
+  assert.ok(gj.features.some((f) => f.properties.label === '빙설 기후' && geoContains(f, [-40, 75])), '그린란드 빙설');
+});
+
+test('p45 1월·7월: 강수 7 + 등온선, 등온선 조각마다 값(1월 −30~20, 7월 −10~30)', () => {
+  for (const [id, lo, hi] of [['p45-jan', -30, 20], ['p45-jul', -10, 30]]) {
+    const gj = read(id); assert.equal(legendOf(gj).length, 8, id);
+    const iso = gj.features.filter((f) => f.properties.type === 'isotherm');
+    assert.ok(iso.length >= 10, id);
+    for (const f of iso) assert.ok(Number.isInteger(f.properties.value) && f.properties.value >= lo && f.properties.value <= hi, `${id} ${f.properties.value}`);
+    assert.deepEqual([...new Set(iso.map((f) => f.properties.value))].sort((a, b) => a - b).at(0), lo, id);
+  }
+});
 
 test('p46 미국 주: 4장 모두 범례 5, 주 50 + DC, 알래스카·하와이 분류 있음, DC = 메릴랜드', () => {
   for (const id of ['p46-us-european', 'p46-us-african', 'p46-us-hispanic', 'p46-us-asian']) {
