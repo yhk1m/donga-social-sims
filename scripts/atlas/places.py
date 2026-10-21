@@ -53,7 +53,8 @@ def kind_of(role, name, sym_cls, cfg):
 
 
 # ── 양식 → 역할 ──────────────────────────────────────────────────────────
-def _match(rule, s):
+def _match(rule, s, map_id=None):
+    if 'maps' in rule and map_id not in rule['maps']: return False     # 지도별 양식(U5-3b — 축척이 다른 일반도 여럿), 없으면 모든 지도
     if 'font' in rule and not re.search(rule['font'], s['font']): return False
     if 'color' in rule and rule['color'] != s['color']: return False
     if 'size' in rule and not (rule['size'][0] <= s['size'] <= rule['size'][1]): return False
@@ -61,12 +62,12 @@ def _match(rule, s):
     return True
 
 
-def style_of(s, cfg):
-    """→ ('ignore', 규칙) | ('style', 규칙) | (None, None)."""
+def style_of(s, cfg, map_id=None):
+    """→ ('ignore', 규칙) | ('style', 규칙) | (None, None). 규칙에 maps(지도 id 목록)가 있으면 그 지도(map_id)에서만 맞는다."""
     for r in cfg['ignore']:
-        if _match(r, s): return 'ignore', r
+        if _match(r, s, map_id): return 'ignore', r
     for r in cfg['styles']:
-        if _match(r, s): return 'style', r
+        if _match(r, s, map_id): return 'style', r
     return None, None
 
 
@@ -453,7 +454,7 @@ def extract(map_id, keys=None):
         b = s['bbox']
         if not _in_box(b, m['bbox']): dropped.append({'text': s['text'], 'why': '지도 틀 밖'}); continue
         if any(_in_box(b, e) for e in excl): dropped.append({'text': s['text'], 'why': '범례·제목 상자'}); continue
-        what, r = style_of(s, cfg)
+        what, r = style_of(s, cfg, map_id)
         if what == 'ignore':
             if r.get('elevation'): elevs.append(s)
             else: dropped.append({'text': s['text'], 'why': r['why']})

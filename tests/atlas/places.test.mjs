@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, statSync, existsSync } from 'node:fs';
-import { neCheck, neIndex, relocate } from '../../scripts/atlas/build_places.mjs';
+import { neCheck, neIndex, relocate, merge } from '../../scripts/atlas/build_places.mjs';
 import { key, km } from '../../scripts/atlas/geo_util.mjs';
 import { resolveUnit } from '../../scripts/atlas/unit.mjs';
 
@@ -156,4 +156,46 @@ test('relocate: 없는 이름·같은 이름 면 지명 둘 이상은 오류, �
   assert.throws(() => relocate(mk(), { B: { path: [[0, 0], [1, 0]], why: 'w' } }), /2개/);
   assert.throws(() => relocate(mk(), { C: { path: [[0, 0], [1, 0]], why: 'w' } }), /없음/, '점 지명은 대상 아님');
   assert.throws(() => relocate(mk(), { A: { path: [[0, 0]], why: 'w' } }), /path/);
+});
+
+// U5-3b 여러 일반도 지명 합치기(places.mergePriority — 있을 때만): 앞 지도 자리·rank 하나, from 기록, 영문은 어느 지도든
+const occ = (map, name, ll, extra = {}) => ({ name, kind: 'city', point: true, ll, size: 5.8, page: { a: 42, b: 40, c: 43 }[map], map,
+  scale: { a: 25e6, b: 77e6, c: 28e6 }[map], overview: map === 'b', symbol: true, ...extra });
+const PRI = { priority: ['a', 'c', 'b'], mergeKm: 30 };
+test('mergePriority: 같은 이름 10km 차 → 하나(앞 지도 자리·from), 50km 차 → 둘', () => {
+  const near1 = merge([occ('b', '덴버', [-105.0, 39.7]), occ('a', '덴버', [-105.1, 39.75])], PRI);
+  assert.equal(near1.length, 1);
+  assert.deepEqual([near1[0].lon, near1[0].lat, near1[0].page], [-105.1, 39.75, 42]);
+  assert.deepEqual(near1[0].from, ['a', 'b']);
+  // 앞 지도가 축척이 더 작아도(분모 큼) 앞 지도 자리
+  const pri2 = merge([occ('a', '덴버', [-105.0, 39.7], { scale: 9e7 }), occ('b', '덴버', [-105.1, 39.75], { scale: 1e6 })], PRI);
+  assert.deepEqual([pri2[0].lon, pri2[0].lat], [-105.0, 39.7]);
+  const far = merge([occ('b', '산호세', [-121.9, 37.3]), occ('a', '산호세', [-121.9, 37.75])], PRI);
+  assert.equal(far.length, 2, '50km 차는 다른 곳');
+  const sj = merge([occ('a', '산호세', [-121.9, 37.3]), occ('b', '산호세', [-84.1, 9.9])], PRI);
+  assert.equal(sj.length, 2, '산호세 둘(미국·코스타리카)은 그대로');
+});
+test('mergePriority: 다른 종류(산 ↔ 도시)는 둘, alt 로도 같은 이름, 영문은 어느 지도든', () => {
+  const two = merge([occ('a', '샤스타', [-122.2, 41.4]), occ('b', '샤스타', [-122.2, 41.41], { kind: 'mountain', elev: 4322 })], PRI);
+  assert.equal(two.length, 2);
+  const alt = merge([occ('a', '멕시코시티', [-99.13, 19.43]), occ('b', '멕시코 시티', [-99.1, 19.4], { name: '시우다드데멕시코', alt: '멕시코시티', en: 'Mexico City' })], PRI);
+  assert.equal(alt.length, 1);
+  assert.equal(alt[0].name, '멕시코시티');
+  assert.equal(alt[0].en, 'Mexico City', '영문은 뒤 지도에만 있어도 붙음');
+  assert.deepEqual(alt[0].from, ['a', 'b']);
+});
+test('mergePriority: rank = 앞 지도 글자 크기 단계(지도별 표 rankBySizeMaps 가 있으면 그 표) + rankAdjust', () => {
+  const opt = { ...PRI, rankAdjust: { capital: -1 }, rankBySize: [[9, 2], [5.8, 5], [0, 6]], rankBySizeMaps: { a: [[5.5, 3], [0, 6]] } };
+  const [p] = merge([occ('b', '덴버', [-105, 39.7], { size: 9 }), occ('a', '덴버', [-105, 39.7], { size: 5.8 })], opt);
+  assert.equal(p.rank, 3, '앞 지도 a 의 지도별 표');
+  const [q] = merge([occ('c', '리마', [-77, -12], { size: 5.8, kind: 'capital' })], opt);
+  assert.equal(q.rank, 4, '공통 표 5 + 수도 −1');
+  const [r] = merge([occ('a', '아마존강', [-60, -3], { point: false, kind: 'river', symbol: undefined }),
+    occ('c', '아마존강', [-55, -2], { point: false, kind: 'river', symbol: undefined })], opt);
+  assert.deepEqual(r.from, ['a', 'c'], '면·선 지명은 dedupKm.area 안이면 하나');
+});
+test('mergePriority 가 없으면 옛 합치기(축척 큰 지도 자리, from 없음)', () => {
+  const [p] = merge([occ('b', '덴버', [-105.0, 39.7]), occ('a', '덴버', [-105.1, 39.75], { scale: 1e6 })], { priority: undefined });
+  assert.deepEqual([p.lon, p.lat], [-105.1, 39.75]);
+  assert.equal(p.from, undefined);
 });

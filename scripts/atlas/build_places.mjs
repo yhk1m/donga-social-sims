@@ -8,13 +8,14 @@
 //      역변환이 안 되는 지명은 빼고 경고로 남긴다.
 //   3. 이름: 공백만 다른 찾아보기 지명이 있으면 찾아보기 표기(16~19쪽 항목 우선)를 쓴다.
 //   4. 합치기: 같은 이름·같은 종류 묶음(수도·도시는 한 묶음)이 dedupKm(점 point / 그 밖 area) 안이면 하나로.
+//      (설정 mergePriority 가 있으면(u5) 다른 규칙 — mergeByPriority: 앞 지도 자리·rank, mergeKm, alt 도 같은 이름, from 기록)
 //      위치 = 가장 큰 축척 지도(점은 기호 있는 것 우선, 나라·큰 지물은 개관도), rank = 개관도(overview) 글자 크기 단계 + rankAdjust,
 //      개관도에 없으면 지역도 단계 + regionalRankPenalty (1~6으로 자름). size·page 는 위치를 준 글자.
 //   4b. 옮겨 그린 기호 바로잡기(snapToNe): 바탕 지도가 실제 지리라, 교과서가 겹치지 않게 옮겨 그린 도시 기호(에르데네트·냐짱 등)는
 //      Natural Earth 위치로 옮기고 snapped: {from, km} 로 남긴다(설정 snapKm, keepTextbookPosition). NAME_KO 가 다른 도시인 이름은 neAlias 로 짝짓는다.
 //   4c. 면 지명 옮기기(relocate): 교과서가 땅 밖에 쓴 나라 이름(대한민국·미국)을 본토 위로(설정 relocate, moved: {from}).
 //   5. inIndex = 찾아보기에 16~19쪽 참조가 있는 지명. 찾아보기의 16~19쪽 지명이 없으면(indexExclude 제외) 누락 목록을 출력.
-//   출력 항목: {name, lon, lat, rank, kind, size, page, symbol?: [lon,lat], path?: [[lon,lat]...], angle?, en?, alt?, elev?, snapped?, moved?, inIndex}
+//   출력 항목: {name, lon, lat, rank, kind, size, page, symbol?: [lon,lat], path?: [[lon,lat]...], angle?, en?, alt?, elev?, from?(mergePriority), snapped?, moved?, inIndex}
 //   --verify: 지명을 같은 fit 으로 지면에 되돌려 교과서 렌더와 겹친 그림 $ATLAS_WORK/shots/c2/<map>.png
 import fs from 'node:fs';
 import path from 'node:path';
@@ -61,7 +62,9 @@ const family = (kind) => PC.mergeFamily[kind] || kind;
 /** 지명 출현(지도별 한 글자 묶음) 목록 → 합친 지명 목록.
  *  출현: {name, kind, point(점 지명: 도시·수도·산 봉우리), ll, size, page, map, scale, overview, symbol?, path?, angle?, en?, alt?, elev?} */
 export function merge(occ, { dedupKm = PC.dedupKm, rankAdjust = PC.rankAdjust, penalty = PC.regionalRankPenalty,
-  overviewKinds = PC.overviewKinds, overviewMinSize = PC.overviewMinSize } = {}) {
+  overviewKinds = PC.overviewKinds, overviewMinSize = PC.overviewMinSize, priority = PC.mergePriority, mergeKm = PC.mergeKm ?? 30,
+  rankBySize = PC.rankBySize, rankBySizeMaps = PC.rankBySizeMaps || {} } = {}) {
+  if (priority) return mergeByPriority(occ, { priority, mergeKm, dedupKm, rankAdjust, rankBySize, rankBySizeMaps });
   const groups = [];
   const lim = (x, o) => (!o.point ? dedupKm.area : x.symbol && o.symbol ? dedupKm.point : dedupKm.pointNoSymbol);
   for (const o of occ) {
@@ -86,6 +89,38 @@ export function merge(occ, { dedupKm = PC.dedupKm, rankAdjust = PC.rankAdjust, p
     if (!best.point && best.path) p.path = best.path;
     if (!best.point && best.angle !== undefined && Math.abs(best.angle) >= 3) p.angle = Math.round(best.angle);
     for (const f of ['en', 'alt', 'elev']) { const v = pick(f); if (v !== undefined) p[f] = v; }
+    return p;
+  });
+}
+
+/** 여러 일반도 지명 합치기(설정 places.mergePriority [지도 id …] — 있을 때만, U5-3b: 아메리카 40·40 삽입·42·43쪽 한 벌).
+ *  같은 이름(alt 포함 — 한쪽 이름이 다른 쪽 alt 여도)·같은 묶음(family + 점/면)이고 점 지명은 서로 mergeKm(기본 30) 안, 면·선 지명은
+ *  dedupKm.area 안이면 하나로. 위치·글자 크기·쪽·rank 는 mergePriority 앞 지도 출현 하나(같은 지도 안에서는 기호 → 큰 축척 → 큰 글자),
+ *  rank = 그 글자 크기 단계(지도별 표 rankBySizeMaps[지도] — 없으면 rankBySize) + rankAdjust[종류]. en·alt·elev 는 앞 지도부터 처음 있는 것.
+ *  from = 합친 지도 id(우선 차례). 목록에 없는 지도는 맨 뒤. */
+function mergeByPriority(occ, { priority, mergeKm, dedupKm, rankAdjust, rankBySize, rankBySizeMaps }) {
+  const pi = (o) => { const i = priority.indexOf(o.map); return i < 0 ? priority.length : i; };
+  const names = (o) => [key(o.name), ...(o.alt ? [key(o.alt)] : [])];
+  const lim = (o) => (o.point ? mergeKm : dedupKm.area);
+  const groups = [];
+  for (const o of [...occ].sort((a, b) => pi(a) - pi(b))) {       // 앞 지도부터(안정 정렬 — 같은 지도 안 차례 그대로)
+    const fam = `${family(o.kind)}/${o.point ? 'pt' : 'area'}`, ks = names(o);
+    const g = groups.find((G) => G.fam === fam && ks.some((k) => G.keys.has(k)) && G.items.some((x) => km(x.ll, o.ll) <= lim(o)));
+    if (g) { g.items.push(o); for (const k of ks) g.keys.add(k); } else groups.push({ fam, keys: new Set(ks), items: [o] });
+  }
+  return groups.map(({ items }) => {
+    const sorted = [...items].sort((a, b) => pi(a) - pi(b) || cmp(!!b.symbol, !!a.symbol) || cmp(a.scale, b.scale) || cmp(b.size, a.size));
+    const best = sorted[0];
+    const strong = Object.keys(PC.mergeFamily);
+    const kind = strong.find((k) => items.some((x) => x.kind === k)) || best.kind;
+    const rank = Math.max(RANK_MIN, Math.min(RANK_MAX, sizeRank(best.size, rankBySizeMaps[best.map] || rankBySize) + (rankAdjust[kind] || 0)));
+    const p = { name: best.name, lon: best.ll[0], lat: best.ll[1], rank, kind, size: best.size, page: best.page };
+    if (best.symbol) p.symbol = [best.ll[0], best.ll[1]];
+    if (!best.point && best.path) p.path = best.path;
+    if (!best.point && best.angle !== undefined && Math.abs(best.angle) >= 3) p.angle = Math.round(best.angle);
+    for (const f of ['en', 'alt', 'elev']) { const x = sorted.find((y) => y[f] !== undefined); if (x) p[f] = x[f]; }
+    if (p.alt !== undefined && key(p.alt) === key(p.name)) delete p.alt;  // 뒤 지도의 alt 가 앞 지도 이름과 같으면 뺌
+    p.from = [...new Set(sorted.map((x) => x.map))];
     return p;
   });
 }

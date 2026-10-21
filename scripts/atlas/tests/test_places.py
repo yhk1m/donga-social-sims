@@ -35,6 +35,18 @@ class Names(unittest.TestCase):
         self.assertEqual(PL.kind_of('city', '부산', 'city', cfg), 'city')
         self.assertEqual(PL.kind_of('country', '중국', None, cfg), 'country')
 
+    def test_style_maps_condition(self):
+        """U5-3b: 양식 표 항목의 maps(지도 id 목록)는 그 지도에서만 맞는다 — 없으면 모든 지도(옛 동작)."""
+        cfg = {'ignore': [{'font': '^X$', 'maps': ['p42-north'], 'why': 'w'}],
+               'styles': [{'role': 'city', 'font': '^F$', 'size': [5, 6], 'maps': ['p42-north']}, {'role': 'landform', 'font': '^F$'}]}
+        s = {'text': '덴버', 'font': 'F', 'size': 5.8, 'color': '#000000'}
+        self.assertEqual(PL.style_of(s, cfg, 'p42-north')[1]['role'], 'city')
+        self.assertEqual(PL.style_of(s, cfg, 'p40-americas')[1]['role'], 'landform')
+        self.assertEqual(PL.style_of(s, cfg)[1]['role'], 'landform')
+        x = {'text': '1', 'font': 'X', 'size': 5.8, 'color': '#000000'}
+        self.assertEqual(PL.style_of(x, cfg, 'p42-north')[0], 'ignore')
+        self.assertEqual(PL.style_of(x, cfg, 'p43-south'), (None, None))
+
 
 def _sp(text, x, y, size=6.0, d=(1.0, 0.0), role='landform', joinEm=2.6, w=None):
     w = w if w is not None else size * len(text.replace(' ', ''))

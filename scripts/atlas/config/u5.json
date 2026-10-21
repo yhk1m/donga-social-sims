@@ -490,6 +490,9 @@
    "pointNoSymbol": 150,
    "area": 20000
   },
+  "mergePriority": ["p42-north", "p43-south", "p40-central", "p40-americas"],
+  "mergeKm": 30,
+  "_mergePriority": "U5-3b(교사 Q1·Q2 답 — 일반도 세 장 + 40쪽 삽입 지명 한 벌): 키가 있으면 build_places 가 옛 합치기(dedupKm·개관도 rank) 대신 mergeByPriority — 같은 이름(alt 포함)·같은 묶음(mergeFamily + 점/면)이고 점 지명은 서로 mergeKm 안, 면·선 지명은 dedupKm.area 안이면 앞 지도(축척 큰 42·43쪽 → 40쪽 삽입 밀러 1:43,000,000 → 40쪽 1:77,000,000)의 자리·글자 크기·rank 하나만, from = 합친 지도. en(영문)·alt·elev 는 어느 지도에 있든 붙임. 다른 자리의 같은 이름(산호세 둘)은 그대로. 지도별 rank 표가 필요하면 rankBySizeMaps {지도 id: [[최소 크기, 등급]…]}(없으면 rankBySize), 지도별 글자 양식은 styles·ignore 항목의 maps [지도 id…](places.py — 없으면 모든 지도). 면·선 지명이 다른 대륙의 동명(콜로라도강 — 미국·아르헨티나)이면 dedupKm.area 를 줄이는 것은 U5-5 에서.",
   "decimals": 2,
   "neFile": "raw/ne/ne_10m_populated_places.geojson",
   "neBox": [
