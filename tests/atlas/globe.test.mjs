@@ -18,6 +18,7 @@ const { createZoomer } = await import('../../src/atlas/zoomer.js');
 const { invertGrid } = await import('../../src/atlas/relief.js');
 const { createMap } = await import('../../src/atlas/renderer.js');
 const AX = await import('../../src/atlas/americasExtra.js');
+const { mapTools } = await import('../../src/atlas/ui.js');
 const basemap = readJson(path.join(REPO, 'sims/atlas-u2-asia/data/basemap.json'));
 test.after(() => dom.restore());
 
@@ -36,7 +37,7 @@ const flowData = (extra = {}) => ({
   ],
 });
 
-test('등록 전: 지구본은 모르는 도법, pathFlow 는 모르는 레이어 종류, 도법 단추 5개', () => {
+test('등록 전: 지구본은 모르는 도법, pathFlow 는 모르는 레이어 종류, 도법 5개', () => {
   assert.deepEqual(Object.keys(PROJECTIONS), ['miller', 'mercator', 'robinson', 'goode', 'equalEarth']);
   assert.throws(() => makeProjection('globe', { width: 800, height: 600 }), /모르는 도법/);
   assert.throws(() => layerFromRef({ ref: 'layer-x', type: 'pathFlow' }, flowData()), /모르는 레이어 종류/);
@@ -269,6 +270,51 @@ test('pathFlow 자료 view = 지구본: 만들 때 지구본(회전 그대로), 
   map.removeLayer('flows');
   assert.equal(map.view.key, 'robinson');
   near(map.view.k, 2, 1e-9); near(map.view.center[0], -80, 1e-6);
+  map.destroy();
+  await tick();
+});
+
+// 지도 도구 도법 고르기 상자(<select aria-label=도법> — 2026-10-21 단추 5개 대신): 상자는 mapTools 때 PROJECTIONS 로 한 번 만든다
+const walk = (n, ok, out = []) => { if (ok(n)) out.push(n); for (const c of n.childNodes || []) walk(c, ok, out); return out; };
+test('도법 고르기 상자 + 지구본: 6번째 옵션 「지구본」 · 고르면 지구본(중심 경도 숨김) · 평면 고르면 앞 보기 · globeView·pathFlow view 로 바뀌어도 되돌려도 상자 값이 따라감', async () => {
+  const { stage, map } = setupMap();
+  const tools = mapTools(stage, map);
+  const sel = walk(tools.el, (n) => n.tagName === 'select')[0];
+  assert.equal(sel.getAttribute('aria-label'), '도법');
+  const opts = walk(sel, (n) => n.tagName === 'option');
+  assert.deepEqual(opts.map((o) => o.getAttribute('value')), ['miller', 'mercator', 'robinson', 'goode', 'equalEarth', 'globe']);
+  assert.equal(opts.at(-1).textContent, '지구본');
+  const centerSeg = walk(tools.el, (n) => n.getAttribute?.('aria-label') === '중심 경도')[0];
+  assert.ok(centerSeg);
+  tools.el.querySelector = (q) => (q.includes('중심 경도') ? centerSeg : null); // 가짜 DOM 에 없는 querySelector
+  const off = AX.globeTools(map, tools.el);
+  assert.equal(sel.value, 'miller'); assert.equal(centerSeg.hidden, false);
+  map.flyTo({ center: [100, 30], zoom: 4 }, 0);
+  const pick = (k) => { sel.value = k; sel.dispatch('change'); };
+  pick('globe');
+  assert.equal(map.view.key, 'globe'); assert.equal(sel.value, 'globe');
+  assert.equal(centerSeg.hidden, true, '지구본 → 중심 경도 단추 숨김');
+  await tick();
+  assert.deepEqual(AX.globeCenter(PROJECTIONS.globe.rot).map((x) => Math.round(x * 1e6) / 1e6), [100, 30], '앞 화면 가운데 = 원판 가운데');
+  pick('miller');
+  assert.equal(map.view.key, 'miller'); assert.equal(sel.value, 'miller'); assert.equal(centerSeg.hidden, false);
+  await tick();
+  near(map.view.k, 4, 1e-9, '앞 평면 확대'); near(map.view.center[0], 100, 1e-6); near(map.view.center[1], 30, 1e-6);
+  // 코드가 바꿈(globeView) → 상자 「지구본」, 되돌리기 → 「밀러」
+  const restore = AX.globeView(map, { rotate: [30, -20] });
+  assert.equal(sel.value, 'globe'); assert.equal(centerSeg.hidden, true);
+  restore();
+  assert.equal(sel.value, 'miller'); assert.equal(centerSeg.hidden, false);
+  near(map.view.k, 4, 1e-9);
+  // 레이어 자료 view(pathFlow) 로 열고 레이어를 내리면 되돌림 — 상자도 따라감
+  pick('robinson');
+  const L = layerFromRef({ ref: 'flows', type: 'pathFlow' }, flowData({ view: { projection: 'globe', rotate: [30.3, -9.2] } }), { map });
+  map.addLayer(L);
+  assert.equal(sel.value, 'globe');
+  await tick();
+  map.removeLayer('flows');
+  assert.equal(map.view.key, 'robinson'); assert.equal(sel.value, 'robinson'); assert.equal(centerSeg.hidden, false);
+  off(); tools.destroy();
   map.destroy();
   await tick();
 });

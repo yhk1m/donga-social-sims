@@ -3,7 +3,8 @@
 //   (fitCore.registerFamily 등 등록 자리에 등록 — 부르지 않는 u2·u3·u4 조각은 코드도 크기도 그대로. chartsExtra.js 와 같은 길).
 //   - 3a 평사(stereographic — 40·41쪽 입체 투영)·정사(orthographic — 46쪽 지구본) 도법: installAmericasFamilies()
 //     파이프라인(scripts/atlas/georef.mjs)은 불러올 때 이것만 늘 부른다(Node 라 크기 상관없음). u2 지도 후보는 PHASE1_FAMILIES 고정이라 안 들어감.
-//   - 3c 지구본 보기(registerProjection('globe') — projections.PROJECTIONS 에 넣음, 지도 도구 「도법」에 「지구본」 단추가 생김)
+//   - 3c 지구본 보기(registerProjection('globe') — projections.PROJECTIONS 에 넣음, 지도 도구 「도법」 고르기 상자에 6번째 옵션 「지구본」이 생김 —
+//     상자는 mapTools 때 PROJECTIONS 로 한 번 만들므로 mountAtlas 전에 등록. 상자 값은 mapTools update() 가 viewchange 로 맞춤(globeView·되돌리기도))
 //     = geoOrthographic().clipAngle(90), 상태 rot = d3 rotate [λ, φ](화면 가운데 = (−λ, −φ)), 원판 지름 = 무대 짧은 변 × GLOBE.fill.
 //     렌더러 등록 자리(renderer.js): 끌기 → def.pan(회전, φ ±GLOBE.maxLat) → map.rebase(), project 는 뒷면(hidden)이면 null, 경위선 step(k)(처음 15°),
 //     지구본 ↔ 평면은 보간하지 않음. globeTools(map, toolsEl) = 바꿀 때 짧은 페이드 · 대서양/태평양 단추 숨김 · 「세계 전체 보기」·0 = 처음 회전·크기 ·
@@ -73,7 +74,7 @@ export function globeProjection({ rotate = [0, 0] } = {}) {
   return def;
 }
 
-/** 등록 도법: projections.PROJECTIONS 에 넣는다(makeProjection·viewProjection·지도 도구 단추가 함께 봄). */
+/** 등록 도법: projections.PROJECTIONS 에 넣는다(makeProjection·viewProjection·지도 도구 도법 고르기 상자가 함께 봄). */
 export function registerProjection(name, def) { PROJECTIONS[name] = def; }
 
 const globeDef = () => PROJECTIONS.globe;
@@ -111,7 +112,7 @@ export function globeView(map, { rotate = null } = {}) {
  *   - 도법이 지구본 ↔ 평면으로 바뀌면 바탕 캔버스 짧은 페이드(보간 대신 — 설계 §6.1-1 극 보기와 같은 규칙)
  *   - 지구본이면 「중심 경도」(대서양·태평양) 단추 숨김
  *   - 지구본에서 「세계 전체 보기」 단추·0 키 = 처음 회전(home)·확대 1(평면은 도구 그대로)
- *   - 평면 → 지구본(도구 단추): 앞 화면 가운데를 원판 가운데로, 확대 1 / 지구본 → 평면: 앞 평면 보기(가운데·확대)로 되돌림
+ *   - 평면 → 지구본(도구 도법 고르기 상자): 앞 화면 가운데를 원판 가운데로, 확대 1 / 지구본 → 평면: 앞 평면 보기(가운데·확대)로 되돌림
  * → 풀기 함수.
  */
 export function globeTools(map, toolsEl) {
