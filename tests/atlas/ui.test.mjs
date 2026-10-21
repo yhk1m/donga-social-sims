@@ -83,11 +83,25 @@ test('mapTools: 도법·중심 경도·옵션·확대 버튼, 축척 막대 갱�
     assert.ok(base.getAttribute('aria-label'));
     assert.equal(overlay.getAttribute('role'), 'group');
     const segBtns = findAll(t.el, byClass('at-tools-seg-btn'));
-    assert.equal(segBtns.length, 10, '도법 5 · 중심 경도 2 · 바탕 색 3');
-    assert.equal(segBtns.find((b) => b.getAttribute('data-v') === 'miller').getAttribute('aria-pressed'), 'true');
-    segBtns.find((b) => b.getAttribute('data-v') === 'goode').dispatch('click');
+    assert.equal(segBtns.length, 5, '중심 경도 2 · 바탕 색 3(도법은 고르기 상자)');
+    // 도법 고르기 상자: <select aria-label=도법> + 옵션 5, 보이는 이름표 「도법」(감싼 label), 바꾸면 setProjection, view 가 바뀌면 값이 따라감
+    const sels = findAll(t.el, (n) => n.tagName === 'select');
+    assert.equal(sels.length, 1);
+    const sel = sels[0];
+    assert.equal(sel.getAttribute('aria-label'), '도법');
+    assert.equal(sel.parentNode.parentNode.tagName, 'label');
+    assert.equal(find(sel.parentNode.parentNode, byClass('at-tools-label')).textContent, '도법');
+    const optsEl = findAll(sel, (n) => n.tagName === 'option');
+    assert.deepEqual(optsEl.map((o) => o.getAttribute('value')), ['miller', 'mercator', 'robinson', 'goode', 'equalEarth']);
+    assert.deepEqual(optsEl.map((o) => o.textContent), ['밀러', '메르카토르', '로빈슨', '구드', '이퀄어스']);
+    assert.equal(sel.value, 'miller');
+    sel.value = 'goode';
+    sel.dispatch('change');
     assert.deepEqual(map.calls.at(-1), ['setProjection', 'goode']);
-    assert.equal(segBtns.find((b) => b.getAttribute('data-v') === 'goode').getAttribute('aria-pressed'), 'true');
+    assert.equal(sel.value, 'goode');
+    map.setView({ key: 'robinson' });
+    assert.equal(sel.value, 'robinson', '다른 곳에서 도법을 바꾸면(view) 상자가 따라감');
+    assert.ok(find(sel.parentNode, (n) => n.tagName === 'svg'), '선 SVG 꺾쇠');
     segBtns.find((b) => b.getAttribute('data-v') === '150').dispatch('click');
     assert.deepEqual(map.calls.at(-1), ['setCenterLon', 150]);
     // 도구 버튼마다 aria-label·title

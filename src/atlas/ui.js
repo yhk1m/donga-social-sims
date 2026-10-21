@@ -3,7 +3,7 @@
 // 주제를 바꿀 때 destroy() 하고 다시 만들면 된다 — 지도·범례 구독, 무대 키 입력 등 붙인 것은 destroy 가 모두 푼다.
 //
 //   topicNav(panel, topics, onSelect, { current })  목차(세로 목록, 지금 주제 강조, 쪽 표시) — update(id)
-//   mapTools(stage, map, { relief, tint })           무대 오른쪽 위 도구(도법 5·대서양/태평양·경위선/지명/음영·바탕 색 없음/고도 색/자연색·확대/축소/전체) + 왼쪽 아래 축척 막대,
+//   mapTools(stage, map, { relief, tint })           무대 오른쪽 위 도구(도법 고르기 상자·대서양/태평양·경위선/지명/음영·바탕 색 없음/고도 색/자연색·확대/축소/전체) + 왼쪽 아래 축척 막대,
 //                                                    무대 키보드(무대에 초점이 있을 때만: +/− 확대·축소, 방향키 이동, 0 전체) — update()
 //   legendBlock(panel, legend, items, opts)          범례(색 견본 + 이름, 누르면 legend.toggle) + 제목·출처·위치 근사·이미지 실패 알림
 //   legendPanel(stage)                               무대 오른쪽 아래 떠 있는 범례 칸(머리 「범례」·접기 단추·머리 끌어 옮기기·두 번 누르면 제자리) — body 에 범례를 담음
@@ -74,13 +74,15 @@ export function topicNav(panel, topics, onSelect, { current = null } = {}) {
 }
 
 // ---------- 지도 도구 ----------
-/** 지도 도구 고르기 단추(도법·중심 경도) — seg.js segButtons, 지금 값은 update() 가 view 로 맞춘다 */
+/** 지도 도구 고르기 단추(중심 경도) — seg.js segButtons, 지금 값은 update() 가 view 로 맞춘다 */
 const seg = (items, label, onPick) => segButtons(items, { label, onPick, className: 'at-tools-seg', btnClass: 'at-tools-seg-btn' });
 
 const PROJ_SHORT = { miller: '밀러', mercator: '메르카토르', robinson: '로빈슨', goode: '구드', equalEarth: '이퀄어스' };
 
 export function mapTools(stage, map, { relief = true, tint = true } = {}) {
-  const proj = seg(Object.keys(PROJECTIONS).map((k) => [k, PROJ_SHORT[k] || PROJECTIONS[k].label, `${PROJECTIONS[k].label} 도법`]), '도법', (k) => { map.setProjection(k); update(); });
+  // 도법: 고르기 상자(<select> — 교사 요청 2026-10-21, 단추 5개 대신). 키보드는 브라우저 기본, 바꾸면 setProjection, 지금 값은 update() 가 view 로 맞춘다
+  const projSel = h('select', { class: 'at-tools-select', 'aria-label': '도법', on: { change: (e) => { map.setProjection(e.target.value); update(); } } },
+    Object.keys(PROJECTIONS).map((k) => h('option', { value: k }, PROJ_SHORT[k] || PROJECTIONS[k].label)));
   const center = seg([[0, '대서양', '대서양 중심(경도 0°)'], [150, '태평양', '태평양 중심(경도 150°)']], '중심 경도', (c) => { map.setCenterLon(c); update(); });
   const opts = { graticule: true, labels: true, relief };
   // 바탕 색(없음·고도 색·자연색) 한 묶음 — 렌더러 옵션 tint·natural 두 개를 함께 바꾼다
@@ -110,7 +112,8 @@ export function mapTools(stage, map, { relief = true, tint = true } = {}) {
   const btn = (name, text, fn) => h('button', { class: 'ds-btn at-tools-btn', type: 'button', 'aria-label': text, title: text, on: { click: fn } }, icon(name));
   const el = h('div', { class: 'at-tools', role: 'toolbar', 'aria-label': '지도 도구' },
     h('div', { class: 'at-tools-card' },
-      proj.el,
+      h('label', { class: 'at-tools-row' }, h('span', { class: 'at-tools-label' }, '도법'),
+        h('span', { class: 'at-tools-select-wrap' }, projSel, icon('chevron'))),
       h('div', { class: 'at-tools-row' }, center.el,
         check('graticule', '경위선'), check('labels', '지명'), relief ? check('relief', '음영') : null),
       base ? h('div', { class: 'at-tools-row' }, h('span', { class: 'at-tools-label' }, '바탕'), base.el) : null,
@@ -149,7 +152,8 @@ export function mapTools(stage, map, { relief = true, tint = true } = {}) {
   function update() {
     const v = map.view;
     if (!v) return;
-    proj.set(v.key); center.set(v.centerLon);
+    if (projSel.value !== v.key) projSel.value = v.key;
+    center.set(v.centerLon);
     const sp = scaleBarSpec(v.kmPerPx, { maxPx: 110 });
     scale.hidden = !sp;
     if (sp) { barLine.style.width = `${Math.round(sp.px)}px`; barText.textContent = sp.label; }
