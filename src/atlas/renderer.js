@@ -6,6 +6,8 @@
 //   const map = createMap(stage, { basemap, places, unitBoxes });   // unitBoxes 없으면 unitBounds 또는 basemap.meta.unitBoxes
 //   map.setProjection('robinson', { animate: true })   // 0.6초 보간(110m 육지만), 화면 가운데 경위도·k 유지
 //   map.setCenterLon(150)                              // 대서양(0)·태평양(150) — 애니메이션 없이, 가운데 경위도·k 유지
+//   map.rebase()                                       // 등록 도법의 상태(지구본 회전 — americasExtra)를 바꾼 뒤: 기준 투영을 다시 만들고 움직이는 프레임 → 멈추면 다시 그림
+//     (등록 도법 규칙: make() 가 붙인 hidden(ll) 이 참이면 project 가 null(뒷면)이고 그 도법과는 보간 없이 바꿈, step(k) 이 있으면 경위선 간격, def.setup 이 회전·맞춤, def.pan 이 있으면 끌기 = pan)
 //   map.flyTo({ center: [lon, lat], zoom } | { bounds }, ms = 700)   // bounds = [w,s,e,n] 또는 [[w,s],[e,n]]
 //   map.fitBounds(bounds, { ms = 700, pad = 24, offset })  // 투영할 수 없는 가운데·범위면 console.warn 한 번, 보기는 그대로
 //                                                      offset = [dx, dy] 화면 px — 범위 가운데를 무대 가운데에서 그만큼 옮김(확대 창이 가리는 쪽을 피할 때)
@@ -203,7 +205,8 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   // ---------- 확대·이동 ----------
   // 확대하면(k ≥ 2) 화면의 30% 까지 지도 밖 빈 곳 허용 — 구드·로빈슨에서 아시아를 가운데에 둘 수 있게. k=1 은 세계 전체 고정.
   const slack = (k) => { const f = Math.min(1, Math.max(0, k - 1)) * SLACK; return [f * W, f * H]; };
-  const zb = createZoomer(svg, { scaleExtent: [K_MIN, K_MAX], slack, onStart: onZoomStart, onZoom, onEnd: onZoomEnd });
+  // 끌기: 등록 도법이 pan 을 가지면(지구본 — americasExtra) 옮기는 대신 그 도법 상태(회전)를 바꾸고 기준 투영을 다시 만든다(rebase 는 undefined → !rebase() 참)
+  const zb = createZoomer(svg, { scaleExtent: [K_MIN, K_MAX], slack, onStart: onZoomStart, onZoom, onEnd: onZoomEnd, pan: (dx, dy) => PROJECTIONS[key].pan?.(dx, dy, T.k) && !rebase() });
   const local = (e) => { const r = svg.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   svg.addEventListener('click', onClick);
   svg.addEventListener('pointermove', onPointerMove);
@@ -220,6 +223,12 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     base = b;
     baseId++;
     zb.extent([[0, 0], [W, H]]).translateExtent(translateExtentOf(b));
+  }
+  /** 같은 도법·중심 경도로 기준 투영을 다시 만들고(등록 도법의 상태 — 지구본 회전 — 가 바뀌었을 때) 변환은 그대로 움직이는 프레임 → 멈추면 다시 그림 */
+  function rebase() {
+    setBase(makeProjection(key, { centerLon: cLon, width: W, height: H, pad: PAD }));
+    snapT = labelT = null; // 회전은 스냅숏 옮기기·지명 따라 옮기기로 못 나타냄
+    onZoom(T);
   }
   function updateVP() {
     vp = viewProjection(base, T, { width: W, height: H });
@@ -387,7 +396,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     strokeGeo(path, C(L.bordersIdx), STYLE.border, bw);
     mark('borders');
     // 경위선
-    if (opts.graticule) strokeGeo(path, C(graticuleOf(graticuleStep(k))), STYLE.graticule, 0.5);
+    if (opts.graticule) strokeGeo(path, C(graticuleOf((vp.step || graticuleStep)(k))), STYLE.graticule, 0.5);
     mark('graticule');
     // 해안선 강조
     const cw = coastWidth(k);
@@ -451,7 +460,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   }
   /** 보기가 실제로 바뀌었을 때만 viewchange(레이어·옵션만 바뀐 다시 그리기는 내지 않음) */
   function emitView() {
-    const sig = `${key}|${cLon}|${T.k}|${T.x}|${T.y}|${W}|${H}|${detail}|${mode !== 'idle'}`;
+    const sig = `${key}|${cLon}|${baseId}|${T.k}|${T.x}|${T.y}|${W}|${H}|${detail}|${mode !== 'idle'}`;
     if (sig === lastViewSig) return;
     lastViewSig = sig;
     emit('viewchange', viewState());
@@ -542,7 +551,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   function project(ll) {
     if (!vp || !ll) return null;
     const q = vp(ll);
-    return q && Number.isFinite(q[0]) && Number.isFinite(q[1]) ? q : null;
+    return q && Number.isFinite(q[0]) && Number.isFinite(q[1]) && !vp.hidden?.(ll) ? q : null; // hidden: 지구본 뒷면
   }
   function invert(xy) { return vp ? invertChecked(vp, xy) : null; }
 
@@ -563,7 +572,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
     setBase(nb);
     const nt = keepView(nb, center, T.k);
     const to = viewProjection(nb, nt, { width: W, height: H });
-    if (!animate) { setTransform(nt); settle(); return; }
+    if (!animate || nb.hidden || from.hidden) { setTransform(nt); settle(); return; } // 지구본 ↔ 평면은 보간하지 않음
     // 보간: 110m 육지만 프레임마다
     const interp = interpolateProjection(from, to);
     setMode('morph');
@@ -759,7 +768,7 @@ export function createMap(stage, { basemap, places = [], unitBoxes, unitBounds, 
   resize();
 
   return {
-    setProjection, setCenterLon, flyTo, fitBounds, addLayer, removeLayer, clearLayers, project, invert, invalidate, refreshLayer,
+    setProjection, setCenterLon, flyTo, fitBounds, rebase, addLayer, removeLayer, clearLayers, project, invert, invalidate, refreshLayer,
     get view() { return viewState(); },
     get layers() { return sortLayers(layers.map((x) => x.layer)); },
     get stats() { return stats; },

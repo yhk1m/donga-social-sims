@@ -42,7 +42,8 @@ export function makeProjection(key, { centerLon = 0, width, height, pad = 12 }) 
   if (!def) throw new Error(`모르는 도법: ${key}`);
   const p = def.make().rotate([-centerLon, 0]).precision(0.2);
   const ext = [[pad, pad], [width - pad, height - pad]];
-  if (key === 'mercator') {
+  if (def.setup) def.setup(p, width, height); // 등록 도법(지구본 — americasExtra)은 회전·맞춤을 스스로
+  else if (key === 'mercator') {
     p.fitExtent(ext, mercatorFrame(centerLon));
     const [x0, y0] = p([centerLon - 180, MERCATOR_MAX_LAT]), [x1, y1] = p([centerLon + 180, -MERCATOR_MAX_LAT]);
     p.clipExtent([[Math.min(x0, x1), y0], [Math.max(x0, x1), y1]]);

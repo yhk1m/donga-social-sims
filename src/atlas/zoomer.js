@@ -66,11 +66,12 @@ export function flyInterpolator(a, b, width, height) {
 
 /**
  * el(지도 위 SVG)에 확대·이동 조작을 건다.
- * opts: { scaleExtent:[1,40], slack(k) → [sx, sy], onStart(src), onZoom(t, src), onEnd(src) } — src: 'drag' | 'pinch' | 'wheel' | 'dblclick' | 'fly'
+ * opts: { scaleExtent:[1,40], slack(k) → [sx, sy], onStart(src), onZoom(t, src), onEnd(src), pan?(dx, dy) } — src: 'drag' | 'pinch' | 'wheel' | 'dblclick' | 'fly'
+ *   pan: 한 손가락·마우스 끌기 한 걸음(px)을 먼저 받아 참을 돌려주면 옮기지 않는다(지구본 = 끌어 돌리기 — 렌더러가 보기 종류에 따라 정함)
  * 반환: { get(), set(t)(이벤트 없음), extent([[0,0],[w,h]]), translateExtent(te), constrain(t), flyTo(t, ms), interrupt(), destroy() }
  * 끌기·두 손가락은 Pointer Events(touch-action: none 필요), 끌기가 시작될 때만 포인터를 잡는다(그냥 누르면 레이어 요소의 click 이 그대로 감).
  */
-export function createZoomer(el, { scaleExtent = [1, 40], slack = () => [0, 0], onStart = () => {}, onZoom = () => {}, onEnd = () => {} } = {}) {
+export function createZoomer(el, { scaleExtent = [1, 40], slack = () => [0, 0], onStart = () => {}, onZoom = () => {}, onEnd = () => {}, pan } = {}) {
   let T = { k: 1, x: 0, y: 0 };
   let ext = [[0, 0], [1, 1]], tex = [[-Infinity, -Infinity], [Infinity, Infinity]];
   const pointers = new Map(); // id → [x, y]
@@ -136,8 +137,8 @@ export function createZoomer(el, { scaleExtent = [1, 40], slack = () => [0, 0], 
       gesture.src = 'pinch';
       apply(pinchTransform(T, ids.map((id) => prev.get(id)), ids.map((id) => pointers.get(id))), 'pinch');
     } else {
-      const q = prev.get(e.pointerId);
-      apply({ k: T.k, x: T.x + p[0] - q[0], y: T.y + p[1] - q[1] }, 'drag');
+      const q = prev.get(e.pointerId), dx = p[0] - q[0], dy = p[1] - q[1];
+      pan?.(dx, dy) || apply({ k: T.k, x: T.x + dx, y: T.y + dy }, 'drag');
     }
   }
   function onPointerUp(e) {
