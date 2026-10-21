@@ -165,7 +165,9 @@ class MapsU5(unittest.TestCase):
                     x0, y0, x1, y1 = m['bbox']
                     self.assertTrue(x0 <= c['xy'][0] <= x1 and y0 <= c['xy'][1] <= y1, c['xy'])
                     if not m['kind'].startswith('tnc-') and m['kind'] != 'globe-migration':
-                        self.assertTrue(-180 <= c['lon'] <= 20 and -60 <= c['lat'] <= 85, (c['lon'], c['lat']))
+                        # 알류샨 열도는 날짜변경선을 넘음(44쪽 래트 제도 179.6°E — U5-2)
+                        west = -180 <= c['lon'] <= 20 or (c['lon'] >= 170 and c['lat'] >= 50)
+                        self.assertTrue(west and -60 <= c['lat'] <= 85, (c['lon'], c['lat']))
 
     def test_unit_config_paths(self):
         # 단원 설정 뼈대: 지도 목록·출력·사진·작업 파일 자리가 u5 것(앞 단원 산출물을 덮어쓰지 않음)
@@ -180,7 +182,8 @@ class MapsU5(unittest.TestCase):
         text = json.dumps({k: v for k, v in c.items() if not k.startswith('_')}, ensure_ascii=False)
         for bad in ('units/u4/', 'content/atlas/u4', 'atlas-u4-africa', 'docs/assets/atlas/u4', 'charts-u4', 'p35-'):
             self.assertNotIn(bad, text)
-        self.assertEqual(c['basemap']['unitBoxes'], [[-93, 7, -59, 28]])
+        self.assertEqual(c['basemap']['unitBoxes'], [[-95, 3, -48, 28]])   # U5-2: p40-central 틀을 되돌린 범위(북쪽은 바하마까지 28°N)
+        self.assertEqual(c['places']['neBox'], [-180, -65, 8, 83])           # U5-2: 40쪽 틀을 되돌린 범위
         lv10a = [lv for lv in c['basemap']['levels'] if lv['id'] == '10a'][0]
         self.assertNotIn('simplifyByIso', lv10a)
         self.assertEqual(c['content']['coloring']['map'], 'p41-coloring')
