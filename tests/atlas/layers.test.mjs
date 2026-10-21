@@ -251,7 +251,7 @@ test('snapSymbols: 이름(끝 「(연도)」 뺌)이 Natural Earth 에 하나뿐
 });
 
 // ── U4-3a·c·f 파이프라인: multiFill 넘김 · 고리 기호 레이어 · 미확정 국경 ─────────────────
-const { chartSymbolsLayerJson, disputedLayerJson, clipLineToBox, koreaOutlineLayerJson } = await import('../../scripts/atlas/build_layers.mjs');
+const { chartSymbolsLayerJson, disputedLayerJson, clipLineToBox, koreaOutlineLayerJson, pathFlowLayerJson } = await import('../../scripts/atlas/build_layers.mjs');
 
 test('countryClassLayerJson: multiFill(country_class 설정 multi) 은 그대로 넘기고, 없으면 키도 없음(u3 생성물 그대로)', () => {
   const cc = { legend: [{ cls: 'c1', color: '#3a9a48', label: '아랍어', kind: 'fill' }, { cls: 'c2', color: '#a7a9ac', label: '기타', kind: 'fill' }], classes: { MAR: ['c1', 'c2'], EGY: 'c1' } };
@@ -306,6 +306,23 @@ test('koreaOutlineLayerJson(U5-3i): sameLat home = 교과서 실루엣 넓이 �
   assert.throws(() => koreaOutlineLayerJson({ id: 'x', mode: 'east', homePt: [1, 1] }, outline, cv, m), /mode/);
   assert.throws(() => koreaOutlineLayerJson({ id: 'x', mode: 'sameLat' }, outline, cv, m), /homePt/);
   assert.throws(() => koreaOutlineLayerJson({ id: 'x', mode: 'sameLat', homePt: [-1, 1] }, outline, cv, m), /되돌릴 수 없음/);
+});
+
+test('pathFlowLayerJson(U5-4): 화살표 가운데 선(지면 pt) → 경위도 LineString(꼬리 → 끝), 범례 kind flow·dashed·present, view, 되돌릴 수 없는 점이면 멈춤', () => {
+  const cv = { invert: ([x, y]) => (x < 0 ? null : [x / 10 - 50, 20 - y / 10]) };
+  const feat = {
+    legend: [{ cls: 'spain', color: '#faa619', kind: 'flow', label: '에스파냐인의 이동' }, { cls: 'slave', color: '#231f20', kind: 'flow', label: '노예', dashed: true }, { cls: 'x', color: '#000000', kind: 'flow', label: '없음' }],
+    lines: [{ cls: 'spain', points: [[100, 100], [50, 120], [10, 130]], dashed: false, widthPt: 0.59 }, { cls: 'slave', points: [[200, 300], [100, 250]], dashed: true, widthPt: 0.5 }],
+  };
+  const o = pathFlowLayerJson({ id: 'p46-migration-flows', map: 'p46-migration', expectLegend: 3, view: { projection: 'globe', rotate: [30.3, -9.2] } }, feat, cv, { page: 46, title: '지구본', kind: 'globe-migration' }, { family: 'orthographic' });
+  assert.equal(o.properties.layerType, 'pathFlow');
+  assert.deepEqual(o.properties.view, { projection: 'globe', rotate: [30.3, -9.2] });
+  assert.deepEqual(o.properties.legend.map((e) => [e.cls, e.present, !!e.dashed]), [['spain', true, false], ['slave', true, true], ['x', false, false]]);
+  assert.deepEqual(o.features[0].geometry.coordinates, [[-40, 10], [-45, 8], [-49, 7]]);
+  assert.deepEqual(o.features[0].properties, { id: 'spain-1', cls: 'spain', label: '에스파냐인의 이동', width: 0.59 });
+  assert.equal(o.features[1].properties.dashed, true);
+  assert.throws(() => pathFlowLayerJson({ id: 'y' }, { ...feat, lines: [{ cls: 'spain', points: [[-1, 0], [5, 5]] }] }, cv, { page: 46 }), /되돌릴 수 없음/);
+  assert.throws(() => pathFlowLayerJson({ id: 'y' }, { ...feat, lines: [{ cls: 'q', points: [[1, 0]] }] }, cv, { page: 46 }), /범례에 없는 계열/);
 });
 
 test('disputedLayerJson: FEATURECLA·나라 짝(차례 상관없음)·단원 상자로 고른 Natural Earth 선 → 점선 선 레이어(범례 「미확정 국경」), 짝에 선이 없으면 멈춤', () => {

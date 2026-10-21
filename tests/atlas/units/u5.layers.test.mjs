@@ -51,6 +51,45 @@ test('p46 미국 주: 4장 모두 범례 5, 주 50 + DC, 알래스카·하와이
   assert.equal(legendOf(eu).find((e) => e.label === '50 미만').printColor, '#fff1e2');
 });
 
+test('p46 캐나다: 범례 8, 퀘벡 남부는 프랑스어 75% 이상, 온타리오 남부는 영어', () => {
+  const gj = read('p46-canada'); assert.equal(legendOf(gj).length, 8);
+  const at = (p) => gj.features.find((f) => geoContains(f, p))?.properties.label;
+  for (const p of [[-73.6, 45.5], [-72, 48.5]]) assert.equal(at(p), '프랑스어 75% 이상', `${p}`);   // 몬트리올·사그네
+  assert.match(at([-80.5, 43.5]), /^영어/);              // 온타리오 남부
+  assert.equal(at([-95, 62]), '원주민 언어');            // 누나부트 키발리크
+  assert.ok(gj.features.some((f) => f.properties.label === '프랑스어 50% 이하'), '가장 작은 분류도 남음(minArea)');
+});
+
+test('p46 중남미 민족: 범례 7, 혼혈은 가로 줄(angle 0)·아프리카계는 빗금(45°), 멕시코 = 에스파냐계 + 혼혈', () => {
+  const gj = read('p46-ethnic'); assert.equal(legendOf(gj).length, 7);
+  const L = legendOf(gj);
+  assert.equal(L.find((x) => x.label === '혼혈').angle, 0);
+  assert.equal(L.find((x) => x.label === '혼혈').pattern, 'hatch');
+  assert.equal(L.find((x) => x.label === '아프리카계').pattern, 'hatch');
+  assert.equal(L.find((x) => x.label === '아프리카계').angle, 45);
+  const at = (p) => gj.features.filter((f) => geoContains(f, p)).map((f) => f.properties.label).sort();
+  assert.deepEqual(at([-102, 24]), ['에스파냐계', '혼혈']);
+  assert.deepEqual(at([-70, -30]), ['에스파냐계']);   // 칠레·아르헨티나 경계 안데스
+  assert.ok(gj.features.find((f) => f.properties.label === '아프리카계').properties.angle === 45);
+});
+
+test('p46 지구본: 식민지 3 · 이동 4(화살표 10 — 에스파냐·포르투갈·프랑스 2씩, 노예 이동 점선 4), 지구본으로 여는 view', () => {
+  const C = read('p46-colonies'); assert.equal(legendOf(C).length, 3);
+  assert.deepEqual(legendOf(C).map((e) => e.label), ['에스파냐', '포르투갈', '프랑스']);
+  const F = read('p46-migration-flows'); assert.equal(F.properties.legend.length, 4); // pathFlow = FeatureCollection(U5-3c 결정)
+  assert.deepEqual(F.properties.view, { projection: 'globe', rotate: [30.3, -9.2] }); // p46-migration 정사 중심 −30.3°, 9.2°
+  const n = (c) => F.features.filter((f) => f.properties.cls === c).length;
+  assert.deepEqual(['spain', 'portugal', 'france', 'slave'].map(n), [2, 2, 2, 4]);
+  assert.ok(F.features.filter((f) => f.properties.cls === 'slave').every((f) => f.properties.dashed));
+  // 화살 끝은 아메리카(경도 −100 ~ −34), 꼬리는 그보다 동쪽(유럽·아프리카 — 갈래 화살표 둘은 대서양·카리브에서 갈라짐)
+  for (const f of F.features) {
+    const c = f.geometry.coordinates, head = c.at(-1), tail = c[0];
+    assert.ok(head[0] > -100 && head[0] < -34, `${f.properties.id} 끝 ${head}`);
+    assert.ok(tail[0] > head[0], `${f.properties.id} 꼬리 ${tail}`);
+  }
+  assert.equal(F.features.filter((f) => f.geometry.coordinates[0][0] > -20).length, 8, '유럽·아프리카에서 떠나는 화살표 8');
+});
+
 test('p47 본사: 원 99(본 지도 84 + 실리콘 밸리 15), 동해·독도·이어도 글자, 지름 ∝ √값, 큰 원부터', () => {
   const gj = read('p47-hq'), sv = read('p47-hq-sv');
   const pts = gj.features.filter((f) => f.properties.value), sp = sv.features.filter((f) => f.properties.value);

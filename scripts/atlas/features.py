@@ -203,6 +203,10 @@ def features(layer_id):
     elif mode == 'unit-symbols':     # 47쪽 마킬라도라 네모 단위 기호(열 → 주별 칸 묶음, 꺾인 지시선 — symbols.unit_symbols, U5-3f)
         out['legend'], out['symbols'], rep = S.unit_symbols(m, cfg, warnings)
         out['report'].update(rep)
+    elif mode == 'path-flow':        # 46쪽 지구본 인구 이동 화살표(채운 화살대·점선 토막 + 화살촉 → 가운데 선 — lines.path_flows, U5-4)
+        out['legend'] = [{'cls': fc['cls'], 'color': fc['fill'], 'kind': 'flow', 'label': fc['label'], **({'dashed': True} if fc.get('dashed') else {})} for fc in cfg['flows']]
+        out['lines'], rep = LN.path_flows(m, cfg, warnings)
+        out['report']['flows'] = rep
     elif mode == 'density-markers':
         mc = cfg['marker']
         out['symbols'] = S.density_markers(m, mc, warnings)

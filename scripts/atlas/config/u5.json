@@ -122,6 +122,129 @@
    },
    "_doc": "u4 37쪽 1월·7월과 같은 꼴: 강수량 래스터 7단계 + 등온선(자홍 #ed1064 — 글자 −30~30 에서 값)"
   },
+  "p46-colonies": {
+   "map": "p46-migration",
+   "type": "area",
+   "mode": "vector",
+   "tol": 0.15,
+   "minArea": 0.3,
+   "expectLegend": 3,
+   "title": "17세기까지의 식민지 지역",
+   "legendItems": [
+    {
+     "color": "#faa619",
+     "label": "에스파냐"
+    },
+    {
+     "color": "#0dab69",
+     "label": "포르투갈"
+    },
+    {
+     "color": "#ef3f60",
+     "label": "프랑스"
+    }
+   ],
+   "_legendItems": "46쪽 지구본 범례 「17세기까지의 식민지 지역」(지도 틀 왼쪽 밖 x 35~60 — legendBbox 없음) 견본색·이름 그대로. 같은 색 이동 화살표(채운 화살대·화살촉)는 작아 minArea 로 빠지고, 남는 조각은 면 덮개(clip_land)가 바다에서 자름 — 화살표는 p46-migration-flows"
+  },
+  "p46-migration-flows": {
+   "map": "p46-migration",
+   "type": "pathFlow",
+   "mode": "path-flow",
+   "stepPt": 0.5,
+   "expectLegend": 4,
+   "shaftWidthPt": [
+    0.45,
+    0.75
+   ],
+   "headAreaPt2": [
+    2.4,
+    3.2
+   ],
+   "headNearPt": 5,
+   "strokeWidthPt": 0.6,
+   "title": "아메리카 인구 이동",
+   "flows": [
+    {
+     "cls": "spain",
+     "fill": "#faa619",
+     "label": "에스파냐인의 이동"
+    },
+    {
+     "cls": "portugal",
+     "fill": "#0dab69",
+     "label": "포르투갈인의 이동"
+    },
+    {
+     "cls": "france",
+     "fill": "#ef3f60",
+     "label": "프랑스인의 이동"
+    },
+    {
+     "cls": "slave",
+     "fill": "#231f20",
+     "label": "아프리카계 노예들의 이동(1471~1870년)",
+     "dashed": true
+    }
+   ],
+   "expectFlows": {
+    "spain": 2,
+    "portugal": 2,
+    "france": 2,
+    "slave": 4
+   },
+   "view": {
+    "projection": "globe",
+    "rotate": [
+     30.3,
+     -9.2
+    ]
+   },
+   "_doc": "U5-3c pathFlow 자료: 교과서 화살표는 선(stroke)이 아니라 채운 가는 띠(화살대) + 채운 화살촉, 노예 이동 넷은 채운 토막 점선 둘(북아메리카·브라질) + 점선 획(0.6pt [3 2]) 둘(카리브·브라질 — 브라질 쪽은 화살촉이 없고 다른 점선의 화살촉으로 모임 → 그 화살촉을 나눠 씀) — lines.path_flows 가 화살대 가운데 선(0.5pt 간격)을 화살촉 끝까지 이어 fit 으로 되돌림. 이름은 범례 글자(지면 「아프리카계 노예들의 이동(1471~1870년)」 두 줄을 한 줄로). 화살대는 모두 너비 0.56~0.59pt·화살촉은 넓이 2.78pt²(같은 모양)라 shaftWidthPt [0.45, 0.75]·headAreaPt2 [2.4, 3.2] 로 같은 색 식민지 면의 가는 조각(퀘벡 너비 1.17·노바스코샤 화살촉 크기 조각 등)과 가름. headNearPt 5: 점선 화살대는 끝 토막 넓이 중심이 화살촉 넓이 중심에서 4.3pt(토막 길이 약 3pt 의 반 + 틈). view = 지구본으로 열기(p46-migration 정사 중심 −30.3°, 9.2° → rotate [30.3, −9.2])"
+  },
+  "p46-canada": {
+   "map": "p46-canada",
+   "type": "area",
+   "mode": "vector",
+   "tol": 0.15,
+   "minArea": 0.02,
+   "expectLegend": 8,
+   "legendItems": [
+    {
+     "color": "#d71920",
+     "label": "영어 75% 이상"
+    },
+    {
+     "color": "#f68b1e",
+     "label": "영어 50~75"
+    },
+    {
+     "color": "#fecf8d",
+     "label": "영어 50% 이하"
+    },
+    {
+     "color": "#134e8c",
+     "label": "프랑스어 75% 이상"
+    },
+    {
+     "color": "#1568b3",
+     "label": "프랑스어 50~75"
+    },
+    {
+     "color": "#6dcff6",
+     "label": "프랑스어 50% 이하"
+    },
+    {
+     "color": "#89c765",
+     "label": "원주민 언어"
+    },
+    {
+     "color": "#bcbec0",
+     "label": "기타"
+    }
+   ],
+   "_legendItems": "46쪽 「캐나다의 언어 분포」 범례(지도 틀 왼쪽 밖 x 35~80 — legendBbox 없음): 견본 8 색 그대로, 이름은 묶음 글자(영어·프랑스어) + 단계 글자(「75% 이상」·「50~75」·「50% 이하」 — 두 묶음에 같은 단계 글자가 있어 앞에 묶음 이름을 붙임)",
+   "_doc": "교과서 채움(센서스 구역 약 158 조각) 되돌림(U5-D 기본값 — 통계청 구역 경계 받지 않음). 구역 경계(#6d6e71 0.1pt)는 그리지 않고 면 사이 경계로. minArea 0.02°²: 「프랑스어 50% 이하」(#6dcff6)는 지면에 0.36pt²(약 0.04°²) 한 조각뿐(오타와강 가 — 몬트리올 서쪽)이라 더 크면 분류가 사라짐"
+  },
   "p46-us-european": {
    "map": "p46-us-european",
    "type": "regionClass",
@@ -303,6 +426,43 @@
      "why": "가장 옅은 단계 #feeceb(ΔE 6.0 — 웹 바탕 육지 #f2efe9 위에서 묻힘, u4 비거주지 기준 7.5 아래) → 바로 위 단계 색 쪽으로 40% 섞은 색(바탕과 ΔE 9.5~15, 위 단계와 6~15 — 단계 차례·색상 그대로). 인쇄 색은 printColor"
     }
    }
+  },
+  "p46-ethnic": {
+   "map": "p46-ethnic",
+   "type": "area",
+   "mode": "vector",
+   "tol": 0.12,
+   "minArea": 0.1,
+   "expectLegend": 7,
+   "hatch": [
+    {
+     "swatch": [
+      39.0,
+      589.3,
+      49.3,
+      595.5
+     ],
+     "stroke": null,
+     "lines": "#ef5ba1",
+     "linesWidth": 0.36,
+     "color": "#ef5ba1",
+     "angle": 0
+    },
+    {
+     "swatch": [
+      39.0,
+      598.2,
+      49.3,
+      604.5
+     ],
+     "stroke": null,
+     "lines": "#231f20",
+     "linesWidth": 0.2,
+     "color": "#231f20",
+     "angle": 45
+    }
+   ],
+   "_hatch": "U5-3h: 혼혈 = 분홍 #ef5ba1 0.36pt 가로 줄(angle 0), 아프리카계 = 검은 #231f20 0.2pt 사선 빗금(angle 45) — 둘 다 무늬 칸을 잘라 그리기 경로로 자른 그림이라 줄 색을 감싼 경로(lines)를 면으로, 바탕 분류 면 위에 겹침(채움 → 빗금 차례)"
   },
   "p47-hq": {
    "type": "symbol",

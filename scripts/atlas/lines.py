@@ -1,11 +1,11 @@
 # © 2026 김용현
-# scripts/atlas/lines.py — 선 레이어(지면 pt): 등온선(값 붙은 선), 교역 흐름선(상대국 끝점 → 우리나라)
+# scripts/atlas/lines.py — 선 레이어(지면 pt): 등온선(값 붙은 선), 교역 흐름선(상대국 끝점 → 우리나라), 경로 화살표(채운 화살대 + 화살촉 → 가운데 선, U5-4)
 import heapq, re
 import numpy as np
 import shapely
 from shapely.geometry import LineString, Point
 from shapely.ops import unary_union
-from atlas_common import drawings, spans, yc, hexc, stroke_paths, drawing_geom, inside, overlaps, excluded_boxes, in_map, rect
+from atlas_common import drawings, spans, yc, hexc, stroke_paths, drawing_geom, inside, overlaps, excluded_boxes, in_map, rect, rings
 
 ISOTHERM_PASSES = 5   # 글자 없는 등온선 조각이 이웃 조각 값을 물려받는 되풀이 수
 FLOW_CENTER_COST = 6.0   # 자기 방향 띠 안 화소 비용 = 1 + 이 값/(1 + 가장자리까지 거리) → 띠 가운데가 가장 싸다
@@ -123,4 +123,118 @@ def flows(m, fc, legend_widths, densify_pt, warnings):
                         'value': legend_widths[ki][1], 'valueRank': ki + 1, 'width': legend_widths[ki][0], 'lengthPt': round(float(L), 1)})
             rows.append({'partner': name, 'widthPt': round(width, 2), 'value': legend_widths[ki][1], 'snapPt': round(gap, 2)})
         rep[ckey] = rows
+    return out, rep
+
+
+PATH_FLOW_SHAFT_W = (0.3, 1.2)   # 화살대(채운 가는 띠)의 평균 너비(2 × 넓이 / 둘레) 범위 pt — 같은 색 식민지 면 조각과 가름(설정 shaftWidthPt 로 좁힘)
+PATH_FLOW_SHAFT_MIN_L = 6.0   # 화살대 길이(둘레 / 2) 하한 pt — 화살촉(약 5pt)보다 길게
+PATH_FLOW_HEAD_AREA = (1.0, 15.0)   # 화살촉 넓이 범위 pt²(설정 headAreaPt2 로 좁힘)
+PATH_FLOW_HEAD_NEAR = 3.5     # 화살대 끝 ↔ 화살촉 넓이 중심 거리 상한 pt(설정 headNearPt)
+PATH_FLOW_DASH_MAX = 3.5      # 점선 화살대 한 토막의 긴 변 상한 pt(토막 4개 이상인 그리기 하나 = 점선 화살대)
+
+
+def _resample(P, n):
+    P = np.asarray(P, float)
+    d = np.r_[0, np.cumsum(np.hypot(*np.diff(P, axis=0).T))]
+    t = np.linspace(0, d[-1], n)
+    return np.c_[np.interp(t, d, P[:, 0]), np.interp(t, d, P[:, 1])]
+
+
+def band_centerline(R, step=0.5):
+    """채운 가는 띠(화살대 — 한 고리) → (가운데 선 점 배열(한 끝 → 다른 끝), 평균 너비 pt — 2 × 넓이 / 둘레, 긴 띠에서 정확).
+    두 끝 = 고리에서 서로 가장 먼 두 점(첫 점에서 가장 먼 점 → 그 점에서 가장 먼 점), 고리를 두 끝에서 두 변으로 나눠 길이 비로 짝지어 평균."""
+    P = np.asarray(R, float)
+    if len(P) > 1 and np.allclose(P[0], P[-1]): P = P[:-1]
+    i = int(np.argmax(np.hypot(*(P - P[0]).T))); j = int(np.argmax(np.hypot(*(P - P[i]).T)))
+    i, j = min(i, j), max(i, j)
+    a = P[i:j + 1]; b = np.r_[P[j:], P[:i + 1]][::-1]
+    L = max(np.hypot(*np.diff(a, axis=0).T).sum(), np.hypot(*np.diff(b, axis=0).T).sum())
+    n = max(3, int(np.ceil(L / step)) + 1)
+    A, B = _resample(a, n), _resample(b, n)
+    area = abs(np.dot(P[:, 0], np.roll(P[:, 1], -1)) - np.dot(P[:, 1], np.roll(P[:, 0], -1))) / 2
+    per = float(np.hypot(*(np.roll(P, -1, axis=0) - P).T).sum())
+    return (A + B) / 2, float(2 * area / per)   # 너비 = 2 × 넓이 / 둘레(끝이 뾰족해도 치우치지 않음)
+
+
+def dash_centerline(pieces, tip_hint):
+    """점선 화살대 토막(고리들) → 토막 넓이 중심을 이웃 차례로 이은 선. 시작 = tip_hint(화살촉 쪽 끝)에서 가장 먼 토막."""
+    C = np.array([np.asarray(R, float).mean(axis=0) for R in pieces])
+    k = int(np.argmax(np.hypot(*(C - np.asarray(tip_hint, float)).T)))
+    order, left = [k], set(range(len(C))) - {k}
+    while left:
+        q = min(left, key=lambda t: float(np.hypot(*(C[t] - C[order[-1]]))))
+        order.append(q); left.discard(q)
+    return C[order]
+
+
+def path_flows(m, cfg, warnings):
+    """46쪽 지구본 인구 이동 화살표(U5-4, mode 'path-flow'): 설정 flows [{cls, fill, label, dashed?}] — 계열마다 그 채움 색 도형 중
+    가는 띠(화살대 — 너비 shaftWidthPt 범위, 길이 ≥ PATH_FLOW_SHAFT_MIN_L)·점선 토막 묶음(dashed — 작은 토막 4개 이상인 그리기 하나)·점선 획(dashed — 획 색 = fill, 화살촉을 나눠 써도 됨)을 화살대로, 화살대 끝 가까운 작은 도형을
+    화살촉으로 짝지어 → [{cls, points(꼬리 → 화살 끝, stepPt 간격 지면 pt), dashed, widthPt, tip}]. 같은 색 식민지 면(굵은 면)은 너비로, 가는 면 조각은
+    화살촉이 없어 걸러짐(경고). 설정 expectFlows {cls: 수} 와 다른 수는 멈춤."""
+    from shapely.geometry import Polygon
+    from atlas_common import polygonal
+    step = cfg.get('stepPt', 0.5)
+    sw, ha = cfg.get('shaftWidthPt') or PATH_FLOW_SHAFT_W, cfg.get('headAreaPt2') or PATH_FLOW_HEAD_AREA
+    near = cfg.get('headNearPt') or PATH_FLOW_HEAD_NEAR
+    ex = excluded_boxes(m)
+    out, rep = [], {}
+    for fc in cfg['flows']:
+        shafts, small = [], []
+        for d in drawings(m['page']):
+            if fc['fill'] not in (hexc(d.get('fill')), hexc(d.get('color')) if fc.get('dashed') else None) or not in_map(d, m) or any(inside(d['rect'], b) for b in ex): continue
+            rs = [np.asarray(R, float) for R in rings(d) if len(R) >= 3]
+            if fc.get('dashed') and d['type'] == 's' and d.get('dashes') and d['dashes'] != '[] 0':   # 점선 획 화살대(노예 이동 넷 중 둘)
+                shafts += [{'line': np.asarray(P, float)} for P in stroke_paths(d) if len(P) >= 2]; continue
+            if fc.get('dashed') and len(rs) >= 4 and all(max(np.ptp(R[:, 0]), np.ptp(R[:, 1])) <= PATH_FLOW_DASH_MAX for R in rs):
+                shafts.append({'dash': rs}); continue
+            for R in rs:
+                g = polygonal(Polygon(R).buffer(0))
+                if g is None: continue
+                w, L = 2 * g.area / g.length, g.length / 2
+                if not fc.get('dashed') and sw[0] <= w <= sw[1] and L >= PATH_FLOW_SHAFT_MIN_L: shafts.append({'ring': R})   # 화살촉(길이 약 5pt)은 길이로 빠짐
+                elif ha[0] <= g.area <= ha[1]: small.append(g)
+        # 화살대마다 가운데 선·두 끝 → (끝 ↔ 화살촉 넓이 중심) 거리가 짧은 짝부터 차례로(화살대·화살촉 한 번씩) — 가까운 식민지 면 가는 조각이 남의 화살촉을 가져가지 않게
+        for sh in shafts:
+            if 'line' in sh:
+                sh['P'], sh['w'] = sh['line'], None
+                sh['ends'] = [sh['P'][0], sh['P'][-1]]
+            elif 'ring' in sh:
+                sh['P'], sh['w'] = band_centerline(sh['ring'], step)
+                sh['ends'] = [sh['P'][0], sh['P'][-1]]
+            else:
+                C = np.array([R.mean(axis=0) for R in sh['dash']])
+                D = np.hypot(C[:, None, 0] - C[None, :, 0], C[:, None, 1] - C[None, :, 1])
+                i, j = np.unravel_index(int(np.argmax(D)), D.shape)
+                sh['P'], sh['ends'] = None, [C[i], C[j]]
+                sh['w'] = float(np.median([2 * g.area / g.length for g in (Polygon(R).buffer(0) for R in sh['dash'])]))
+        cand = sorted((float(np.hypot(*(np.asarray(g.centroid.coords[0]) - e))), si, hi, ei)
+                      for si, sh in enumerate(shafts) for hi, g in enumerate(small) for ei, e in enumerate(sh['ends']))
+        pair, used = {}, set()
+        for dd, si, hi, ei in cand:
+            if dd > near: break
+            if si in pair or hi in used or 'line' in shafts[si]: continue   # 점선 획은 아래에서(나눠 쓰기)
+            pair[si] = (hi, ei); used.add(hi)
+        for dd, si, hi, ei in cand:   # 점선 획 화살대는 화살촉을 다른 화살표와 나눠 써도 됨(46쪽 브라질 — 두 점선이 한 화살촉으로 모임)
+            if dd <= near and si not in pair and 'line' in shafts[si]: pair[si] = (hi, ei)
+        rows = []
+        for si, sh in enumerate(shafts):
+            if si not in pair:   # 화살촉이 없는 가는 띠 = 같은 색 식민지 면의 가는 조각(화살표 수는 expectFlows 로 확인)
+                warnings.append(f"{fc['label']}: 화살촉 없는 가는 띠 {np.round(sh['ends'], 1).tolist()} — 화살표 아님(식민지 면 조각)"); continue
+            hi, ei = pair[si]
+            head, end, P, w = small[hi], sh['ends'][ei], sh['P'], sh['w']
+            if w is None:   # 점선 획: 획 굵기
+                w = float(cfg.get('strokeWidthPt', 0.6))
+            if P is None: P = dash_centerline(sh['dash'], end)
+            elif ei == 0: P = P[::-1]
+            H = np.asarray(head.exterior.coords)
+            tip = H[int(np.argmax(np.hypot(*(H - P[-1]).T)))]
+            line = LineString(np.r_[P, [tip]])
+            pts = np.round(np.asarray(shapely.segmentize(line, step).coords), 3).tolist()
+            out.append({'points': pts, 'cls': fc['cls'], 'kind': fc['label'], 'color': fc['fill'], 'dashed': bool(fc.get('dashed')),
+                        'widthPt': round(w, 2), 'tip': [round(float(tip[0]), 2), round(float(tip[1]), 2)]})
+            rows.append({'from': [round(float(v), 1) for v in P[0]], 'tip': out[-1]['tip'], 'lengthPt': round(line.length, 1), 'widthPt': round(w, 2)})
+        exp = (cfg.get('expectFlows') or {}).get(fc['cls'])
+        if exp is not None and len(rows) != exp: raise ValueError(f"{m['id']}: {fc['label']} 화살표 {len(rows)}개 ≠ expectFlows {exp}")
+        rep[fc['cls']] = rows
     return out, rep

@@ -568,6 +568,37 @@ export function unitSymbolsLayerJson(layer, feat, cv, m = {}, fit = {}, states =
 }
 
 /**
+ * 경로 화살표(type 'pathFlow', U5-4 — 46쪽 지구본 인구 이동, 앱 americasExtra.pathFlowLayer): features.json lines(mode 'path-flow' —
+ * [{cls, points(지면 pt, 꼬리 → 화살 끝), dashed, widthPt}]) → 경위도 FeatureCollection {properties:{id, map, page, title, kind, layerType:'pathFlow',
+ * approx, source, view?(설정 view — 지구본으로 여는 길), legend:[{cls, label, color, kind:'flow', dashed?, present}]}, features:[{properties:{id, cls,
+ * label, dashed?, width(pt)}, geometry: LineString}]}. 되돌릴 수 없는 점이 하나라도 있으면 멈춤(지구본 원판 안 화살표).
+ */
+export function pathFlowLayerJson(layer, feat, cv, m, fit = {}) {
+  const leg = new Map(feat.legend.map((e) => [e.cls, e]));
+  const n = new Map();
+  const features = feat.lines.map((l) => {
+    const e = leg.get(l.cls);
+    if (!e) throw new Error(`${layer.id}: 범례에 없는 계열 ${l.cls}`);
+    const [o, d] = convertPath(cv, l.points);
+    if (d) throw new Error(`${layer.id}: ${e.label} 화살표 점 ${d}/${l.points.length} 를 경위도로 되돌릴 수 없음`);
+    n.set(l.cls, (n.get(l.cls) || 0) + 1);
+    return { type: 'Feature', properties: { id: `${l.cls}-${n.get(l.cls)}`, cls: l.cls, label: e.label, ...(l.dashed ? { dashed: true } : {}), width: l.widthPt },
+      geometry: { type: 'LineString', coordinates: o.map(([x, y]) => [r3(x), r3(y)]) } };
+  });
+  if (layer.expectLegend != null && leg.size !== layer.expectLegend) throw new Error(`${layer.id}: 범례 ${leg.size} ≠ expectLegend ${layer.expectLegend}`);
+  return {
+    type: 'FeatureCollection',
+    properties: {
+      id: layer.id, map: layer.map, page: m.page, title: layer.title || m.title, kind: m.kind, layerType: 'pathFlow', approx: !!fit.approx,
+      source: `교과서 22개정 중학 사회과 부도 ${m.page}쪽 (화살표 가운데 선 — 경위도 맞추기: ${fit.family})`,
+      ...(layer.view ? { view: layer.view } : {}),
+      legend: feat.legend.map((e) => ({ ...e, present: n.has(e.cls) })),
+    },
+    features,
+  };
+}
+
+/**
  * 미확정 국경(source 'ne-disputed', U4-3f — 34쪽 서사하라·할라이브·일레미 붉은 점선, 교사 Q2): Natural Earth 10m 육지 국경선
  * (raw/ne/ne_10m_admin_0_boundary_lines_land) 중 FEATURECLA ∈ disputed.featurecla 이고, disputed.pairs([[나라, 나라]] — ADM0_LEFT·RIGHT
  * 차례 상관없음)가 있으면 그 짝인 선을, 단원 상자(basemap.unitBoxes) 안 것만 → 점선 선 레이어(1단계 선 레이어 그대로 — 주제 항목 type 'area').
@@ -716,10 +747,10 @@ function main(argv) {
   fs.mkdirSync(`${WORK}/geo`, { recursive: true });
   // 나라 단위 단계구분도는 도형을 옮기지 않는다(country_class.py → 나라별 분류만). 고리 기호·미확정 국경도 PDF 도형을 뽑지 않음(U4-3c·f)
   const cc = todo.filter((l) => l.type === 'countryClass' || l.type === 'regionClass');   // regionClass = 하위 행정 구역판(U5-3d, 설정 units)
-  const special = (l) => l.type === 'chartSymbols' || l.source === 'ne-disputed' || l.type === 'unitSymbols' || l.type === 'compareOutline';
+  const special = (l) => l.type === 'chartSymbols' || l.source === 'ne-disputed' || l.type === 'unitSymbols' || l.type === 'compareOutline' || l.type === 'pathFlow';
   const geo = todo.filter((l) => l.type !== 'countryClass' && l.type !== 'regionClass' && !special(l));
   const byId = new Map();
-  const units = todo.filter((l) => l.type === 'unitSymbols');   // 네모 단위 기호(U5-3f): PDF 칸 묶음은 features.py 가 뽑고, 주 붙이기·경위도는 여기서
+  const units = todo.filter((l) => l.type === 'unitSymbols' || l.type === 'pathFlow');   // 네모 단위 기호(U5-3f)·경로 화살표(U5-4): PDF 에서는 features.py 가 뽑고, 경위도(주 붙이기)는 여기서
   if (units.length) prepare(units, { extract: flags.has('--extract') });
   for (const l of todo.filter(special)) {
     if (l.type === 'unitSymbols') {
@@ -728,6 +759,11 @@ function main(argv) {
       const fit = loadFit(l.map);
       const { out, warnings } = unitSymbolsLayerJson(l, feat, converter(l, fit), maps[l.map], fit, states);
       byId.set(l.id, { ...writeLayer(l, out, { legend: out.properties.legend.length, classes: out.properties.legend.filter((e) => e.present).length, features: out.features.length }), warnings });
+    } else if (l.type === 'pathFlow') {
+      const feat = JSON.parse(fs.readFileSync(`${WORK}/vec/${l.id}.features.json`, 'utf8'));
+      const fit = loadFit(l.map);
+      const out = pathFlowLayerJson(l, feat, converter(l, fit), maps[l.map], fit);
+      byId.set(l.id, { ...writeLayer(l, out, { legend: out.properties.legend.length, classes: out.properties.legend.filter((e) => e.present).length, features: out.features.length }), warnings: feat.report.warnings || [] });
     } else if (l.type === 'compareOutline') {   // 우리나라 윤곽(U5-3i): NE 10m KOR+PRK → korea_outline.py(합치기·단순화) → 교과서 자리
       const o = l.outline || {}, out = `${WORK}/geo/${l.id}.outline.json`;
       process.stdout.write(run([path.join(here, 'korea_outline.py'), path.join(WORK, o.source || 'raw/ne/ne_10m_admin_0_countries.geojson'), out,
