@@ -2,7 +2,7 @@
 # scripts/atlas/symbols.py — 점 기호(지면 pt): 범례색 작은 도형, 지시선으로 붙인 이름, 인구 막대 기호
 import os, re
 import numpy as np
-from atlas_common import drawings, spans, hexc, rings, stroke_paths, match_color, overlaps, excluded_boxes, in_map, rect
+from atlas_common import drawings, spans, hexc, rings, stroke_paths, match_color, overlaps, excluded_boxes, in_map, rect, inside
 
 MIN_GLYPH_PT = 1.0         # 이보다 작은 도형은 기호가 아님(테두리 조각 등)
 DUP_PT = 0.8               # 같은 분류 기호 중심이 이 안이면 한 기호(채움 + 테두리 두 번 그림)
@@ -343,3 +343,114 @@ def labelled_points(m, cfg, warnings):
             else: warnings.append(f"{t['text']}: 값 {cfg['valueCount']}개를 못 읽음")
     legend = [{'cls': 'c1', 'color': cfg['color'], 'label': cfg['legendLabel'], 'kind': 'symbol'}]
     return legend, syms, {'points': len(pts), 'names': len(names), 'labelled': sum(1 for s_ in syms if s_.get('label'))}
+
+
+# ── 크기 비례 원(U5-3e — 47쪽 세계 100대 초국적 기업 본사: 분홍 원 지름 ∝ √시가 총액, 겹친 원 범례, 검은 지시선 끝 = 본사 자리) ──────────
+def sqrt_scale(diams, values):
+    """범례 겹친 원 지름(pt)과 값 → (k, 지수, 최대 상대 오차). 지름 = k·√값 의 최소 제곱 k, 지수 = log 지름 대 log 값 기울기(√ 이면 0.5)."""
+    d, v = np.asarray(diams, float), np.asarray(values, float)
+    k = float((d * np.sqrt(v)).sum() / v.sum())
+    lv, ld = np.log(v), np.log(d)
+    expo = float(((lv - lv.mean()) * (ld - ld.mean())).sum() / ((lv - lv.mean()) ** 2).sum()) if len(v) > 1 else 0.5
+    err = float(np.max(np.abs(k * np.sqrt(v) - d) / d))
+    return k, expo, err
+
+
+def size_class(value, values):
+    """값 → 범례 단계 번호(값 큰 차례 values 의 0..n-1): 이웃 범례 값의 기하 평균을 경계로(200·100·10 → 141 이상 0, 31.6 이상 1, 나머지 2)."""
+    vs = sorted(values, reverse=True)
+    for i in range(len(vs) - 1):
+        if value >= (vs[i] * vs[i + 1]) ** 0.5: return i
+    return len(vs) - 1
+
+
+def thin_ends(P, max_w):
+    """채움 도형(굵은 선을 채움으로 그린 지시선 — 네모 끝 사각형이든 둥근 끝이든)의 두 끝 또는 None.
+    점들의 주축(SVD) 방향 길이·가로 폭을 재어 폭 ≤ max_w 이고 길이 > max_w 면 주축 위 양 끝(가운데 ± 길이/2)."""
+    P = np.asarray(P, float)
+    if len(P) > 1 and np.allclose(P[0], P[-1]): P = P[:-1]   # 닫는 점(첫 점 되풀이)은 주축을 기울이므로 뺌
+    if len(P) < 4: return None
+    c = (P.max(0) + P.min(0)) / 2
+    _, _, vt = np.linalg.svd(P - P.mean(0), full_matrices=False)
+    u, w = vt[0], vt[1]
+    a, b = (P - c) @ u, (P - c) @ w
+    if b.max() - b.min() > max_w or a.max() - a.min() <= max_w: return None
+    m = c + u * (a.max() + a.min()) / 2 + w * (b.max() + b.min()) / 2
+    h = (a.max() - a.min()) / 2
+    return m - u * h, m + u * h
+
+
+def leader_targets(circles, segs, dots, near):
+    """지시선 짝: circles [(cx, cy, r)], segs [(A, B)], dots [(x, y, r)] → (원마다 지시선 끝 점 자리 [(x, y)|None], 쓴 선 수).
+    선 한 끝이 원 안(가운데에서 r + near)이고 다른 끝이 점 기호(점 반지름 + near 안)면 그 점 가운데가 원의 자리(여러 원이 한 점을 가리켜도 됨).
+    한 원에 선이 여럿이면 원 가운데에서 가장 먼 점을 쓴다."""
+    out, best, used = [None] * len(circles), [0.0] * len(circles), 0
+    if not circles or not dots: return out, used
+    for A, B in segs:
+        for p, q in ((A, B), (B, A)):
+            dd, dot = min(((float(np.hypot(q[0] - x, q[1] - y)) - r, (x, y)) for x, y, r in dots), key=lambda t: t[0])
+            if dd > near: continue
+            dc, i = min(((float(np.hypot(p[0] - cx, p[1] - cy)) - r, i) for i, (cx, cy, r) in enumerate(circles)), key=lambda t: t[0])
+            if dc > near: continue
+            L = float(np.hypot(dot[0] - circles[i][0], dot[1] - circles[i][1]))
+            if L > best[i]: best[i], out[i] = L, (round(float(dot[0]), 2), round(float(dot[1]), 2))
+            used += 1
+            break
+    return out, used
+
+
+def sized_circles(m, cfg, warnings):
+    """크기 비례 원 → (legend, symbols, report).
+    설정 cfg['circles'] {fill, sizePt:[최소, 최대], dupPt?(0.8)}, cfg['legendValues'] [200, 100, 10](범례 겹친 원 값),
+    cfg['legendStroke'](범례 원 테두리 색 — 지도 cfg['legendMap'](없으면 map)의 legendBbox 안 테두리만 그린 원),
+    cfg['leaders'] {fill(지시선·끝 점 채움 색), maxWidthPt(선 굵기 한계), dotPt:[최소, 최대](끝 점 지름), nearPt(끝 맞춤 여유)}(없으면 원 가운데),
+    cfg['alpha'](0~1 — 반투명: 색 끝 두 자리 #rrggbbaa), cfg['circleStroke']?(원 테두리 색 — 범례 항목 stroke), cfg['labelFormat']?(말풍선 글 — '{v}' 자리에 반올림 값, 기본 '{v}').
+    지름 → 값 = (지름 / k)²(k = 범례 원 √ 최소 제곱). 기호 xy = 지시선 끝(없으면 원 가운데), at = 원 가운데(지면 pt), size = 교과서 지름(pt), value.
+    범례 항목 size = k·√값(겹친 원 비가 정확히 √). 큰 원부터(작은 원이 위에 그려짐). 범례 단계(cls)는 size_class."""
+    from atlas_common import maps as _maps
+    cc = cfg['circles']; lo, hi = cc['sizePt']; dup = cc.get('dupPt', 0.8)
+    alpha = cfg.get('alpha')
+    color = cc['fill'] + (f'{round(alpha * 255):02x}' if alpha is not None else '')
+    found = []
+    for d in drawings(m['page']):
+        if hexc(d.get('fill')) != cc['fill'] or not in_map(d, m): continue
+        r = d['rect']
+        size = max(r.width, r.height) - ((d.get('width') or 0) if d['type'] == 'fs' else 0)
+        if not lo <= size <= hi: continue
+        c = ((r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2)
+        if any(abs(f[0] - c[0]) < dup and abs(f[1] - c[1]) < dup for f in found): continue
+        found.append((c[0], c[1], size))
+    lm = _maps()[cfg['legendMap']] if cfg.get('legendMap') else m
+    L = lm['legendBbox']
+    legd = sorted({round(max(d['rect'].width, d['rect'].height) - (d.get('width') or 0), 2) for d in drawings(lm['page'])
+                   if d['type'] == 's' and hexc(d.get('color')) == cfg['legendStroke'] and inside(d['rect'], L)
+                   and any(it[0] == 'c' for it in d['items']) and abs(d['rect'].width - d['rect'].height) < 0.3}, reverse=True)
+    vals = sorted(cfg['legendValues'], reverse=True)
+    if len(legd) != len(vals): raise ValueError(f"{cfg['id']}: 범례 겹친 원 {len(legd)}개 {legd} ≠ legendValues {len(vals)}개")
+    k, expo, err = sqrt_scale(legd, vals)
+    if abs(expo - 0.5) > 0.1: warnings.append(f'범례 원 지름이 √값 에 비례하지 않음(지수 {expo:.2f})')
+    targets, used = [None] * len(found), 0
+    if cfg.get('leaders'):
+        lc = cfg['leaders']; dlo, dhi = lc['dotPt']
+        segs, dots = [], []
+        for d in drawings(m['page']):
+            if hexc(d.get('fill')) != lc['fill'] or not inside(d['rect'], m['bbox'], 0) or any(overlaps(d['rect'], b) for b in excluded_boxes(m)): continue
+            r = d['rect']
+            if all(it[0] == 'c' for it in d['items']) and dlo <= max(r.width, r.height) <= dhi and abs(r.width - r.height) < 0.3:
+                dots.append(((r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2, max(r.width, r.height) / 2)); continue
+            for R in rings(d):
+                e = thin_ends(R, lc['maxWidthPt'])
+                if e: segs.append(e)
+        targets, used = leader_targets([(x, y, s / 2) for x, y, s in found], segs, dots, lc['nearPt'])
+    stroke = cfg.get('circleStroke')
+    legend = [{'cls': f'c{i + 1}', 'color': color, 'label': f'{v:,}', 'kind': 'symbol', 'shape': 'circle', 'size': round(k * v ** 0.5, 2), 'value': v,
+               'measuredPt': legd[i], **({'stroke': stroke} if stroke else {})} for i, v in enumerate(vals)]
+    syms = []
+    for (x, y, s), t in zip(found, targets):
+        v = (s / k) ** 2
+        e = legend[size_class(v, vals)]
+        syms.append({'xy': list(t) if t else [round(x, 2), round(y, 2)], 'at': [round(x, 2), round(y, 2)], 'cls': e['cls'],
+                     'kind': cfg.get('labelFormat', '{v}').format(v=f'{round(v):,}'), 'color': color, 'size': round(s, 2), 'value': round(v, 1), **({'anchor': 'leader'} if t else {})})
+    syms.sort(key=lambda q: -q['size'])
+    return legend, syms, {'circles': len(found), 'leaders': sum(1 for t in targets if t), 'leaderSegments': used,
+                          'sqrt': {'k': round(k, 4), 'exponent': round(expo, 3), 'maxRelErr': round(err, 3), 'legendPt': legd}}

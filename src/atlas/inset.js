@@ -5,7 +5,7 @@
 //
 //   symbolInset(stage, { outline, points, legend, legendItems, title, credit, approx, approxNote, tip, onClose })
 //     outline = 바탕 GeoJSON(inset_outline.py — 교과서 지도 육지(Polygon)·도로(LineString {kind: expressway|road})를 같은 fit 으로 되돌린 것), points = 기호 레이어 자료(Point Feature 들, properties
-//     {cls, color, label, name?}), legend = 그 레이어의 legendState(범례 블록과 같은 것 — 고르면 창의 기호도 흐려짐), tip = ui.tooltip(무대 말풍선).
+//     {cls, color, label, name?, rDeg?(교과서 원 반지름 °— 있으면 창 축척 rDeg × px/° 로, 47쪽 실리콘 밸리 크기 비례 원 U5-3e)}), legend = 그 레이어의 legendState(범례 블록과 같은 것 — 고르면 창의 기호도 흐려짐), tip = ui.tooltip(무대 말풍선).
 //     → { el, open, show(), hide(), destroy() }. 창은 absolute(무대 왼쪽 위), z 16(말풍선 17 아래 — 창 기호 말풍선이 창 위에 뜸, 원본 쪽 보기 20 아래), 닫기 단추·Esc.
 //   insetBoxLayer(id, bounds, { onClick }) → 렌더러 레이어(SVG 사각형 + 「확대 창」 글자, z 90). 누르면 onClick(창 다시 열기).
 //   locatorInset(stage, { countries, highlight, bounds, names, title }) → 무대 오른쪽 아래 작은 위치도(교과서 22쪽 카슈미르 지도의 인도 위치도, E2 대조).
@@ -70,7 +70,7 @@ export function symbolInset(stage, { outline, points, legend = null, legendItems
     const label = f.properties.label || f.properties.name || '';
     const kind = f.properties.kind && f.properties.kind !== label ? ` (${f.properties.kind})` : '';
     const c = s('circle', {
-      class: 'at-inset-sym', cx: x.toFixed(1), cy: y.toFixed(1), r: R, fill: f.properties.color || '#555', 'data-cls': f.properties.cls || '',
+      class: 'at-inset-sym', cx: x.toFixed(1), cy: y.toFixed(1), r: f.properties.rDeg * P.k || R, fill: f.properties.color || '#555', 'data-cls': f.properties.cls || '',
       on: {
         pointerenter: (e) => showTip(e, `${label}${kind}`),
         pointermove: (e) => showTip(e, `${label}${kind}`),

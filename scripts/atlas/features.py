@@ -7,7 +7,8 @@
 #    labels?:[{xy,text,size,color}](설정 labels — 지역 이름 글자),
 #    report:{..., warnings:[...]}}
 # mode: vector(zones.vector_zones) | raster(zones.raster_zones) | symbols(symbols.symbols) | density-markers(symbols.density_markers)
-#   | raster-circles(symbols.raster_circles — 렌더 화소에서 찾는 크기 단계 원) | labelled-points(symbols.labelled_points — 이름 붙은 점).
+#   | raster-circles(symbols.raster_circles — 렌더 화소에서 찾는 크기 단계 원) | labelled-points(symbols.labelled_points — 이름 붙은 점)
+#   | sized-circles(symbols.sized_circles — 지름 ∝ √값 원 + 겹친 원 범례 + 지시선 끝 자리, U5-3e 47쪽 본사).
 # 부가: hatch(빗금 분류), isotherm(lines.isotherms), flows(lines.flows), extraLegend(범례에 없는 칠한 분류), outlineFills(띠로 그린 지역 경계 →
 #   테두리만 분류 style 'outline'), labels(지역 이름 글자 → Point {type:'label'}).
 # domain: build_layers.mjs 가 쓰는 $ATLAS_WORK/geo/<map>.domain.json(경위도로 되돌릴 수 있는 지면 범위, 원통 도법 세계 지도)이
@@ -181,6 +182,9 @@ def features(layer_id):
         out['report'].update(rep)
     elif mode == 'labelled-points':  # 31쪽 녹색 수도(그림자 + 「도시(연도)」)·리스본(점 + 지시선 + 이름표 아래 값) — symbols.labelled_points
         out['legend'], out['symbols'], rep = S.labelled_points(m, cfg, warnings)
+        out['report'].update(rep)
+    elif mode == 'sized-circles':    # 47쪽 본사 원(지름 ∝ √값, 겹친 원 범례, 지시선 끝 자리 — symbols.sized_circles, U5-3e)
+        out['legend'], out['symbols'], rep = S.sized_circles(m, {**cfg, 'id': layer_id}, warnings)
         out['report'].update(rep)
     elif mode == 'density-markers':
         mc = cfg['marker']

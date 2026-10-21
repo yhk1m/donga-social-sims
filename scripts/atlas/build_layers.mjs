@@ -18,6 +18,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { mesh as topoMesh } from 'topojson-client';
+import { geoDistance } from 'd3-geo';
 import { makeConverter } from './georef.mjs';
 import { WORK, loadFit as loadFitRaw, fitPath, neIndex, key, km } from './geo_util.mjs';
 import { projectionFromStale, projectionFromOlder, fitFromStale } from './projection_from.mjs';
@@ -137,6 +138,8 @@ function convert(layer, feat, fit) {
     const props = { type: 'symbol', cls: s.cls, kind: s.kind, label: s.label ?? s.kind, color: s.color, size: s.size };
     if (s.label != null) props.name = s.label;
     for (const k of ['value', 'anchor']) if (s[k] != null) props[k] = s[k];
+    // 확대 창 원(U5-3e 실리콘 밸리 — 설정 insetRadius): 교과서 원 반지름을 경위도 거리(°)로 — symbolInset 이 창 축척으로 그림(rDeg × 창 px/°)
+    if (layer.insetRadius && s.at) props.rDeg = r3(circleRadiusDeg(cv, s.at, s.size));
     // 값 붙은 기호(지면 이름표 아래 값 글자 — labelled-points): 설정 valueIcons 차례로 아이콘을 붙임(31쪽 리스본: 충전소·사람)
     if (Array.isArray(s.values)) {
       const icons = layer.valueIcons || [];
@@ -170,6 +173,27 @@ function convert(layer, feat, fit) {
     throw new Error(`${layer.id}: 역변환 실패 점 ${dropped}/${total} > ${layer.maxDroppedFrac * 100}%`);
   }
   return { features, dropped, total };
+}
+
+/**
+ * 교과서 원(가운데 at 지면 pt, 지름 sizePt)의 반지름을 경위도 거리(°, 대권)로: 가운데에서 상하좌우 반지름만큼 떨어진 네 점을 되돌린 거리의 평균.
+ * 되돌릴 수 없는 점은 빼고, 하나도 없으면 멈춘다.
+ */
+export function circleRadiusDeg(cv, at, sizePt) {
+  const c = cv.invert(at);
+  const r = sizePt / 2;
+  const ds = [[r, 0], [-r, 0], [0, r], [0, -r]].map(([dx, dy]) => cv.invert([at[0] + dx, at[1] + dy])).filter(Boolean).map((q) => geoDistance(c, q) * (180 / Math.PI));
+  if (!c || !ds.length) throw new Error(`원 ${at} 반지름을 경위도로 되돌릴 수 없음`);
+  return ds.reduce((a, b) => a + b, 0) / ds.length;
+}
+
+/**
+ * 크기 비례 원(mode 'sized-circles', U5-3e) 마무리: 큰 원부터(작은 원이 위에 그려짐 — 같은 크기는 자료 차례 그대로) 제자리 정렬.
+ * 앱은 sizeBy 'class' 길(classSymbolPx — 범례 단계 size 전체에 배율 하나)로 그려 확대해도 지름 비 = 교과서 지름 비(√값 비).
+ */
+export function sortSizedCircles(features) {
+  const idx = new Map(features.map((f, i) => [f, i]));
+  return features.sort((a, b) => (b.properties.size ?? 0) - (a.properties.size ?? 0) || idx.get(a) - idx.get(b));
 }
 
 /** 지면 상자 [x0, y0, x1, y1] 둘레를 n 등분해 fit 으로 되돌린 경위도 고리(닫힘). 되돌릴 수 없는 점이 있으면 멈춘다. */
@@ -337,6 +361,8 @@ function finish(layer, meta) {
   const { legend, colorOfCls } = decorateLegend(layer, meta.legend);
   for (const f of features) if (colorOfCls.has(f.properties.cls)) f.properties = { ...f.properties, color: colorOfCls.get(f.properties.cls) };
   const sizes = applySymbolSizes(layer, legend, features);
+  const sized = layer.mode === 'sized-circles';
+  if (sized) sortSizedCircles(features);
   applySymbolValues(layer, features);
   if (layer.snapKm) {
     const ne = neIndex(`${WORK}/raw/ne/ne_10m_populated_places.geojson`, layer.snapBox || [-180, -90, 180, 90]);
@@ -352,11 +378,13 @@ function finish(layer, meta) {
     source: ne ? 'Natural Earth' : meta.source, ...(ne ? { sourceDetail: meta.source, note: meta.note } : {}),
     winding: 'cw', // 면 바깥 고리 시계 방향(d3-geo 규약), 구멍 반시계
     ...(layer.symbolStyle ? { symbolStyle: layer.symbolStyle } : {}), // 기호 크기 배율·최소/최대 지름(px) — symbolLayer 가 읽음
-    ...(Object.keys(sizes).length ? { sizeBy: 'class' } : {}),          // 크기 단계 기호(symbolLayer 가 단계 비를 지킴)
+    ...(Object.keys(sizes).length || sized ? { sizeBy: 'class' } : {}), // 크기 단계 기호(symbolLayer 가 단계 비를 지킴) — 크기 비례 원도 같은 길
+    ...(sized ? { sizeRule: 'sqrt' } : {}),                           // 크기 비례 원: 지름 ∝ √값(범례 size = k·√값, 기호 size = 교과서 지름 — 기록용)
     ...(layer.legendStyle ? { legendStyle: layer.legendStyle } : {}),  // 범례 견본 모양('nested-circles' = 겹친 원 — ui.js legendBlock)
     ...(layer.valueLegend ? { valueLegend: layer.valueLegend } : {}),  // 값 붙은 기호의 아이콘 설명 [{icon, label}]
     ...(layer.nameInBox ? { nameInBox: true } : {}),                  // 값 상자 맨 위에 기호 이름(없으면 이름만 든 상자) — symbolLayer 가 읽음
-    legend: legend.map((e) => ({ ...e, present: present.has(e.cls) })),
+    // 설정 hideLegend(U5-3e — 실리콘 밸리 확대 창 레이어: 범례는 본 지도 레이어 것 하나만 — 사이드바 범례 블록·창 아래 범례 줄이 겹치지 않게)
+    legend: layer.hideLegend ? [] : legend.map((e) => ({ ...e, present: present.has(e.cls) })),
   };
   fs.mkdirSync(OUT, { recursive: true });
   const file = path.join(OUT, `layer-${layer.id}.json`);
