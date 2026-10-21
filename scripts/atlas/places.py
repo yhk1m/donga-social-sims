@@ -362,7 +362,10 @@ def _paint_order(pno, min_area, page_tol):
                  if 'image' in t and (b[2] - b[0]) * (b[3] - b[1]) >= min_area
                  and b[0] >= -page_tol and b[1] >= -page_tol and b[2] <= W + page_tol and b[3] <= H + page_tol)
     ft = [i for i, (t, _b) in enumerate(bl) if t == 'fill-text']
-    text = dict(zip(sorted({t['seqno'] for t in pg.get_texttrace()}), ft))
+    seqnos = sorted({t['seqno'] for t in pg.get_texttrace()})
+    if len(seqnos) != len(ft):   # zip 이 말없이 잘라 차례가 어긋나지 않게(1:1 이 깨지면 가려짐 판정을 믿을 수 없음)
+        raise ValueError(f'{pno}쪽: 글자 묶음 seqno {len(seqnos)}개 ≠ bboxlog fill-text {len(ft)}개 — 그리기 차례를 맞출 수 없음(places.hidden)')
+    text = dict(zip(seqnos, ft))
     P = [(i, b) for i, (t, b) in enumerate(bl) if t in ('fill-path', 'stroke-path')]
     draw, j, last = [], 0, -1
     for d in drawings(pno):

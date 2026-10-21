@@ -294,6 +294,29 @@ class HiddenU5(unittest.TestCase):
         self.assertLess(len(a), len(b) - 150)
 
 
+class PaintOrderCount(unittest.TestCase):
+    """_paint_order: 글자 묶음 seqno 수와 bboxlog fill-text 수가 다르면 zip 으로 말없이 자르지 않고 멈춘다(가짜 쪽)."""
+    def _run(self, seqnos, n_ft):
+        class Page:
+            rect = type('R', (), {'x1': 100, 'y1': 100})()
+            def get_bboxlog(self): return [('fill-text', (0, 0, 1, 1))] * n_ft
+            def get_texttrace(self): return [{'seqno': s} for s in seqnos]
+        PL._paint_order.cache_clear()
+        try:
+            with mock.patch.object(pdfkit, 'doc', lambda: [Page()]), mock.patch.object(PL, 'drawings', lambda pno: []):
+                return PL._paint_order(1, 400, 10)
+        finally:
+            PL._paint_order.cache_clear()
+
+    def test_equal_counts_map_in_order(self):
+        _imgs, text, _d = self._run([5, 2, 9, 2], 3)
+        self.assertEqual(text, {2: 0, 5: 1, 9: 2})
+
+    def test_count_mismatch_raises(self):
+        with self.assertRaisesRegex(ValueError, 'seqno 2개 ≠ bboxlog fill-text 3개'):
+            self._run([1, 2], 3)
+
+
 class SymbolFix(unittest.TestCase):
     def test_forced_pair_before_hungarian(self):
         """U5-5 symbolFix: 거리 비용으로 맞바뀌는 두 지명(42쪽 워싱턴 ↔ 볼티모어)을 지면 자리로 먼저 짝짓는다."""
