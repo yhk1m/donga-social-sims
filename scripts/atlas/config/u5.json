@@ -950,6 +950,7 @@
      "scripts/atlas/coloring_quiz.mjs",
      "scripts/atlas/georef.mjs",
      "src/atlas/fitCore.js",
+     "src/atlas/americasExtra.js",
      "scripts/atlas/geo_util.mjs"
     ],
     "sections": [

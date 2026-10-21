@@ -5,13 +5,13 @@
 // 이미지 레이어(교과서 투영으로 그려진 밀도 음영)를 화면 투영으로 다시 그릴 때 쓴다: 화면 화소 → (화면 투영 invert) 경위도 → 이 함수 → 지면 pt → 이미지 화소.
 // fit 은 scripts/atlas/pt2lonlat.mjs browserFit 이 만드는 {family, params, sim, tps?} — 생성물(overlay-*.json)의 fit 칸.
 // georef.mjs 를 그대로 끌어오지 않는 까닭: 맞추기(최소제곱·LU) 코드가 조각에 딸려 오지 않게.
-import { FAMILIES, applySim, tpsDelta } from './fitCore.js';
+import { familyOf, applySim, tpsDelta } from './fitCore.js';
 
 const finite2 = (p) => !!p && Number.isFinite(p[0]) && Number.isFinite(p[1]);
 
 /** fit → (lonlat → [x, y] 지면 pt | null). 투영할 수 없으면 null. 모르는 도법 이름은 오류. */
 export function makeFitForward(fit) {
-  const mk = FAMILIES[fit?.family];
+  const mk = familyOf(fit?.family);
   if (!mk) throw new Error(`모르는 교과서 도법: ${fit?.family}`);
   const proj = mk(fit.params).scale(1).translate([0, 0]);
   const sim = fit.sim, tps = fit.tps || null;

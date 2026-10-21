@@ -2,6 +2,7 @@
 // src/atlas/fitCore.js — 교과서 지도 투영식(fit)의 공통 핵심(순수 함수). 추출 파이프라인(scripts/atlas/georef.mjs)과 앱(src/atlas/fitProject.js)이
 // 같은 이 모듈을 써서 둘의 값이 늘 같다(구성상 일치).
 //   FAMILIES[family](params) → 회전·표준위선까지 정한 d3 투영(배율 1·이동 0 은 부르는 쪽이)
+//   registerFamily(name, fn) / familyOf(name)  단원 전용 도법 등록(U5-3a) · 고정 → 등록 차례로 찾기(없으면 undefined)
 //   applySim(sim, [u, v]) / invertSim(sim, [x, y])  투영 단위 ↔ 지면 pt 닮음 변환
 //   tpsDelta(tps, p) → TPS 보정량(지면 pt): 기준점 볼록 껍질 안은 TPS 그대로, 밖은 껍질까지 거리에 따라 0 으로(3t²−2t³)
 //   tpsKernel(r²) = r² log r, inHull(H, p), nearestOnHull(H, p)
@@ -20,6 +21,10 @@ export const FAMILIES = Object.freeze({
   equirectangular: (p) => geoEquirectangular().rotate([-p[0], -(p[1] || 0)]), // p[1]: 작은 지역 지도의 중심 위도(사각 회전)
   mercator: (p) => geoMercator().rotate([-p[0], 0]),
 });
+// 단원 전용 도법(평사·정사 — americasExtra.installAmericasFamilies 가 등록). 고정 8개는 그대로, familyOf 가 고정 → 등록 차례로 찾는다.
+const EXTRA_FAMILIES = {};
+export const registerFamily = (name, fn) => { EXTRA_FAMILIES[name] = fn; };
+export const familyOf = (name) => FAMILIES[name] || EXTRA_FAMILIES[name];
 
 export const applySim = (s, [u, v]) => [s.a * u - s.b * v + s.tx, s.b * u + s.a * v + s.ty];
 export const invertSim = ({ a, b, tx, ty }, [x, y]) => {

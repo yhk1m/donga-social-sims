@@ -11,10 +11,15 @@
 //   fitProjection(fit)        d3 geoPath 용 투영 객체(잘라내기·재표본 포함)
 //
 // fit 객체는 만든 뒤 바꾸지 않는다(변환기를 객체별로 캐시하므로). 바꾸려면 새 객체를 만든다.
-import { FAMILIES, applySim, invertSim, tpsKernel as U, inHull, nearestOnHull, tpsRaw, tpsDelta } from '../../src/atlas/fitCore.js';
+import { FAMILIES, familyOf, applySim, invertSim, tpsKernel as U, inHull, nearestOnHull, tpsRaw, tpsDelta } from '../../src/atlas/fitCore.js';
+import { installAmericasFamilies } from '../../src/atlas/americasExtra.js';
+
+// 단원 전용 도법(평사·정사 — U5-3a)을 늘 등록한다. 기본 후보(FAMILY_NAMES·PHASE1_FAMILIES)는 고정 8개 그대로라 u2~u4 fit 은 바뀌지 않고,
+// 지도 항목·단원 설정 families 에 이름을 적은 지도만 후보로 쓴다.
+installAmericasFamilies();
 
 // 후보 도법(FAMILIES)·닮음 변환·TPS 계산은 앱과 같은 공통 모듈(src/atlas/fitCore.js)에서 — 앱(fitProject.js)과 구성상 같은 값.
-const INIT = { azimuthalEqualArea: [100, 40], azimuthalEquidistant: [100, 40], conicEqualArea: [100, 25, 50], conicConformal: [100, 25, 50], miller: [100], robinson: [100], equirectangular: [100], mercator: [100] };
+const INIT = { azimuthalEqualArea: [100, 40], azimuthalEquidistant: [100, 40], conicEqualArea: [100, 25, 50], conicConformal: [100, 25, 50], miller: [100], robinson: [100], equirectangular: [100], mercator: [100], stereographic: [100, 40], orthographic: [100, 40] };
 export const FAMILY_NAMES = Object.keys(FAMILIES);
 /** 1단계(아시아) 도법 후보 8개 — 차례도 그대로(같은 rms 일 때 고르는 차례가 차례에 기댐). fitCore.FAMILIES 에 후보를 더해도
  *  u2 지도의 fit 이 바뀌지 않게 단원·지도가 후보를 따로 정하지 않으면 이것을 쓴다(2단계 설계 §7). */
@@ -22,12 +27,14 @@ export const PHASE1_FAMILIES = Object.freeze(['azimuthalEqualArea', 'azimuthalEq
 /** 지도 하나의 도법 후보: 지도 항목 families → 단원 설정 georef.families → 1단계 8개. */
 export function familiesFor(mapEntry, unitConfig) {
   const fams = mapEntry?.families ?? unitConfig?.georef?.families ?? PHASE1_FAMILIES;
-  for (const f of fams) if (!FAMILIES[f]) throw new Error(`${mapEntry?.id ?? '?'}: 모르는 도법 후보 ${f} (fitCore.FAMILIES: ${FAMILY_NAMES.join(', ')})`);
+  for (const f of fams) if (!familyOf(f)) throw new Error(`${mapEntry?.id ?? '?'}: 모르는 도법 후보 ${f} (fitCore.FAMILIES: ${FAMILY_NAMES.join(', ')})`);
   return [...fams];
 }
 export const PT_MM = 0.3528;
 // 모양을 정하는 실제 매개변수 수(중심 경도처럼 닮음 변환이 흡수하는 것은 빼고) — 비슷하면 적은 쪽을 고른다
-const PARAMS = { azimuthalEqualArea: 2, azimuthalEquidistant: 2, conicEqualArea: 2, conicConformal: 1, miller: 0, robinson: 1, equirectangular: 0, mercator: 0 };
+const PARAMS = { azimuthalEqualArea: 2, azimuthalEquidistant: 2, conicEqualArea: 2, conicConformal: 1, miller: 0, robinson: 1, equirectangular: 0, mercator: 0, stereographic: 2, orthographic: 2 };
+// 중심 [λ, φ] 를 맞추는 방위 도법(중심 위도 -90~90 으로 정리)
+const AZIMUTHAL = new Set(['azimuthalEqualArea', 'azimuthalEquidistant', 'stereographic', 'orthographic']);
 
 const norm180 = (v) => ((v + 540) % 360) - 180;
 const finite2 = (p) => !!p && Number.isFinite(p[0]) && Number.isFinite(p[1]);
@@ -39,7 +46,7 @@ function lonMean(lons) {
 }
 
 /** 맞춘 식의 d3 투영(배율 1, 이동 0). 지면 좌표 = sim(이 투영). 부를 때마다 새로 만든다 — 반복 변환에는 makeConverter. */
-export function rawProjection(fit) { return FAMILIES[fit.family](fit.params).scale(1).translate([0, 0]); }
+export function rawProjection(fit) { return familyOf(fit.family)(fit.params).scale(1).translate([0, 0]); }
 
 // 투영 단위 좌표 → 지면 pt: 닮음 변환(배율·회전·이동)을 최소제곱으로 닫힌 해로 구한다
 function similarity(src, dst) {
@@ -57,7 +64,7 @@ function similarity(src, dst) {
 function evaluate(family, params, cps) {
   if (!params.every(Number.isFinite)) return { rms: Infinity };
   if (family.startsWith('conic') && Math.abs(params[1] + params[2]) < 1e-3) return { rms: Infinity };
-  const proj = FAMILIES[family](params).scale(1).translate([0, 0]);
+  const proj = familyOf(family)(params).scale(1).translate([0, 0]);
   const src = cps.map((c) => proj([c.lon, c.lat]));
   if (!src.every(finite2)) return { rms: Infinity };
   const sim = similarity(src, cps.map((c) => c.xy));
@@ -160,7 +167,7 @@ function fitFamily(fam, cps) {
     let best = null;
     for (const x0 of starts) { const r = polish(f, x0); if (!best || r.fx < best.fx) best = r; }
     params = best.x.slice(); params[0] = norm180(params[0]);
-    if (fam.startsWith('azimuthal')) params = normAzimuthal(params);
+    if (AZIMUTHAL.has(fam)) params = normAzimuthal(params);
     if (CYLINDRICAL.has(fam)) params[0] = seamCentred(params[0], cps);
   }
   return { params, ...evaluate(fam, params, cps) };
