@@ -466,16 +466,16 @@ class ChartsU5(unittest.TestCase):
 
 **Files:** Create `content/atlas/u5/topics.json`, `content/atlas/u5/overrides.json`, `content/atlas/u5/issues.md`, `scripts/atlas/tests/test_text_u5.py`, `tests/atlas/units/u5.content.test.mjs`; Output `content/atlas/u5/coloring.json`, `sims/atlas-u5-americas/data/{topics,charts}.json`, `layers.js`
 
-- [ ] **Step 1:** `topics.json` — 주제 10개(위 「주제」 표, Q1 답에 따라), 글은 출처 상자(`src`·`titleSrc`·`creditSrc`·`legendTitleSrc`·`labelSrc`)만 적고 `extract_text.py --unit u5 --fill`로 채움. 손으로 두는 것은 1단계처럼 목차 제목과 「학습 목표」뿐.
+- [x] **Step 1:** `topics.json` — 주제 10개(위 「주제」 표, Q1 답에 따라), 글은 출처 상자(`src`·`titleSrc`·`creditSrc`·`legendTitleSrc`·`labelSrc`)만 적고 `extract_text.py --unit u5 --fill`로 채움. 손으로 두는 것은 1단계처럼 목차 제목과 「학습 목표」뿐.
   - 일반도: 바로가기 「아메리카」·「중앙아메리카」(Q2), 도법 글은 본 지도(입체 투영 1:77,000,000) + 삽입(밀러 1:43,000,000) 둘 다 지면 그대로.
   - 북·남아메리카: 우리나라 윤곽 레이어(같은 label 로 묶음), 윤곽 안내 글 = 지면 글자.
   - 인구 이동과 언어: 지구본 묶음(`projection: 'globe'`, `rotate` = U5-2 fit 의 회전), 지구본 옆 본문 글(46쪽 왼쪽 위 — 「원주민이 거주하던 아메리카에…」), 캐나다 설명 글(「캐나다는 영어와 프랑스어를…」), 원본 쪽 부분(지구본).
   - 민족 구성과 문화 혼종성: 바로가기 미국 4(지도 범례 제목 labelSrc)·중남미, 100% 띠 그래프 블록 + 설명 글(「미국은 시간이 지남에 따라…」), 고리 5 는 지도 위 기호(사이드바 블록 없음 — U4-8 판단처럼 chartSymbols 항목을 참조로 셈), 사진 6, 활동하기 3.
   - 초국적 기업: 만화 사진 카드 + 원본 쪽 부분, 본사 지도 아래 글, 글로벌 생산 체제 본문, A사 그림 카드, D사 지도 + 아래 글.
   - 지역 변화: 디트로이트 그래프 블록 + 폐허 사진 + 글, 마킬라도라 묶음 + 글(「*주로 미국 수출을 목적으로…」 각주 포함), BPO 그래프 블록 2 + 글.
-- [ ] **Step 2: 색칠하기** — `python -I scripts/atlas/extract_text.py --unit u5 --labels`(41쪽 나라 글자·초성·손글씨 수도) → `node scripts/atlas/coloring_quiz.mjs --unit u5 --write`. 설정(아프리카 키 그대로): `joinLabels [["ㅂㄴㅅㅇㄹ","ㅂㄹㅂㄹ"],["세인트빈센트","그레나딘"]]`(지면에서 위아래로 맞닿은 두 줄인지 시험 — 「ㅂㄹㅂㄹ」는 글자 덩어리에 「가이아나」와 붙어 읽혔으니 먼저 나눔), `ignoreLabels ["알래스카(미)"]`, `regions {GRL, GUF}` + `noCapital {GRL, GUF}`(Q4·Q5), Q4 기본값이면 앤티가 바부다 = 이름 칸 없는 문제(새 키가 필요하면 `extraCountries {ATG: {why}}` — 있을 때만), 카리브 수도가 면 밖 해안이면 `capitalByNe`·`capitalByNeNear`. `isoByLabel`은 Natural Earth NAME_KO 초성이 글자와 다를 때만(U4-8 — 필요 없는 키를 두지 않음, 짝은 시험으로 고정): 「ㅁㄱ」(미국)·「ㅂㄴㅅㅇㄹ ㅂㄹㅂㄹ」(NE 「베네수엘라」 초성 ㅂㄴㅅㅇㄹ — 둘째 줄 처리 확인)·「도미니카 공화국」↔「도미니카」(이름이 겹침 — 글자 자리 나라 면으로 갈리는지 시험). 나라 수 = 35(Q4) + 지역 2.
-- [ ] **Step 3:** `python -I scripts/atlas/extract_text.py --unit u5 --fill --check` → `node scripts/atlas/build_content.mjs --unit u5`.
-- [ ] **Step 4: 테스트** (`tests/atlas/units/u5.content.test.mjs` + G5 계약 테스트)
+- [x] **Step 2: 색칠하기** — `python -I scripts/atlas/extract_text.py --unit u5 --labels`(41쪽 나라 글자·초성·손글씨 수도) → `node scripts/atlas/coloring_quiz.mjs --unit u5 --write`. 설정(아프리카 키 그대로): `joinLabels [["ㅂㄴㅅㅇㄹ","ㅂㄹㅂㄹ"],["세인트빈센트","그레나딘"]]`(지면에서 위아래로 맞닿은 두 줄인지 시험 — 「ㅂㄹㅂㄹ」는 글자 덩어리에 「가이아나」와 붙어 읽혔으니 먼저 나눔), `ignoreLabels ["알래스카(미)"]`, `regions {GRL, GUF}` + `noCapital {GRL, GUF}`(Q4·Q5), Q4 기본값이면 앤티가 바부다 = 이름 칸 없는 문제(새 키가 필요하면 `extraCountries {ATG: {why}}` — 있을 때만), 카리브 수도가 면 밖 해안이면 `capitalByNe`·`capitalByNeNear`. `isoByLabel`은 Natural Earth NAME_KO 초성이 글자와 다를 때만(U4-8 — 필요 없는 키를 두지 않음, 짝은 시험으로 고정): 「ㅁㄱ」(미국)·「ㅂㄴㅅㅇㄹ ㅂㄹㅂㄹ」(NE 「베네수엘라」 초성 ㅂㄴㅅㅇㄹ — 둘째 줄 처리 확인)·「도미니카 공화국」↔「도미니카」(이름이 겹침 — 글자 자리 나라 면으로 갈리는지 시험). 나라 수 = 35(Q4) + 지역 2.
+- [x] **Step 3:** `python -I scripts/atlas/extract_text.py --unit u5 --fill --check` → `node scripts/atlas/build_content.mjs --unit u5`.
+- [x] **Step 4: 테스트** (`tests/atlas/units/u5.content.test.mjs` + G5 계약 테스트)
 ```js
 const T = JSON.parse(readFileSync('sims/atlas-u5-americas/data/topics.json', 'utf8'));
 const by = Object.fromEntries(T.map((t) => [t.id, t]));
@@ -502,7 +502,7 @@ test('색칠하기: 나라 35 + 지역 2, 카리브 작은 나라가 50m 에 있
 test('태평양 중심 묶음: 본사·D사 세계 지도', () => assert.ok(by.tnc.views.some((v) => v.map === 'p47-hq')));
 ```
   (U5-6·U5-7 실측과 Q 답이 다르면 시험을 맞추고 까닭을 「실행 중 결정」에.) `test_text_u5.py`: 원문 대조 `--unit u5 --check`·출처 지면 대조·41쪽 글자 수·손글 없음(u4 꼴).
-- [ ] **Step 5:** 검토 덤프 `units/u5/shots/c5/topics.md`를 쪽 렌더와 대조(빠진 글·깨진 글 — `pdfkit.dec` 알려진 오류 `·`→`h`(46쪽 「퀘벡의 프랑스어h영어 공존」으로 이미 보임), `℃`, `㎢`, 『』, 「烋」). 고침은 `overrides.json`(from 필수, 까닭). 교과서 원문 문제는 `issues.md`. 커밋. `coloring_quiz.mjs`·`extract_text.py`를 고쳤으면 u2·u3·u4 도장 줄만 바뀌는지 `regress_unit --check` 셋 다.
+- [x] **Step 5:** 검토 덤프 `units/u5/shots/c5/topics.md`를 쪽 렌더와 대조(빠진 글·깨진 글 — `pdfkit.dec` 알려진 오류 `·`→`h`(46쪽 「퀘벡의 프랑스어h영어 공존」으로 이미 보임), `℃`, `㎢`, 『』, 「烋」). 고침은 `overrides.json`(from 필수, 까닭). 교과서 원문 문제는 `issues.md`. 커밋. `coloring_quiz.mjs`·`extract_text.py`를 고쳤으면 u2·u3·u4 도장 줄만 바뀌는지 `regress_unit --check` 셋 다.
 
 ### Task U5-9: 바탕 지도와 조각 조립
 
@@ -827,3 +827,35 @@ test('태평양 중심 묶음: 본사·D사 세계 지도', () => assert.ok(by.t
   - **회귀**(공유 스크립트 `charts_read.py` — 도장 입력 아님, src 고침 없음, `regress.sh u5-7`): u2 해시 162개 중 다른 파일 0, 캡처 41장 화소 차 0, 0/9/134/24, 조각 +0.000% · u3 다른 파일 0, 31장 화소 차 0, 0/26/118/42, +0.001% · u4 다른 파일 0, 42장 화소 차 0, 0/34/104/41, +0.001% — 셋 다 회귀 없음.
   - **교사 대조표에 올릴 것(U5-10)**: ① 이키토스 = 잰 값(97쪽 표에 없음). ② 디트로이트·BPO 매출·고용 = 잰 값(값이 인쇄돼 있지 않음 — ±0.3만 명·±0.07십억 달러·±0.003백만 명). ③ 고리 조각 차례는 교과서 그림 그대로(12시부터 시계 방향). ④ 100% 띠 제목은 소제목 ③.
   - **이어서 볼 것(U5-8)**: topics 에서 띠 = `barPicker`(1990·2020) + 크게 보기, 고리 5 는 chartSymbols 참조(build_content 계약), 기후 마커 4·디트로이트·BPO 그래프 블록 출처 글.
+- **U5-8(2026-10-21) 주제 내용 — 주제 10 · 색칠하기 37(나라 35 + 지역 2) · 그래프 13 모두 참조 · 고침 5** — 가지 atlas-u5(ef876a9 위), `content/atlas/u5/topics.json`·`overrides.json`·`coloring.json`·`issues.md`, 생성물 `sims/atlas-u5-americas/data/{topics,charts}.json`·`layers.js`(레이어 20), 검토 덤프 `$ATLAS_WORK/units/u5/shots/c5/topics.md`(쪽 렌더 40~47 과 대조), 작업 스크립트 `$ATLAS_WORK/units/u5/u5-8/`(gen_topics.py — topics 뼈대, q.py·boxes.py — 상자 글자 확인, dump.py — 쪽 글자)
+  - **주제 10**(글 108칸 모두 출처 상자 → `extract_text --fill`, 손으로 둔 것은 목차 제목·「학습 목표」뿐 — `test_text_u5` 가 막음). 질문(44·46·47쪽 머리)·학습 목표(41·45·46·47쪽)는 u4 처럼 펼친 면 주제마다 되풀이:
+
+    | id | 보기 · 바로가기(views) | 묶음(layers) | 블록 |
+    |---|---|---|---|
+    | general | p40-americas · americas「아메리카」·central「중앙아메리카」(center+bounds) | 0 | 도법 글 2(view 연결) · 쪽 |
+    | coloring | p41-coloring | 0 | 목표 · 개관 · 활동 · 쪽 + 퀴즈 37 |
+    | north | p42-north | 1(우리나라 윤곽 sameLat) | 도법 글 · 윤곽 안내 글 · 쪽 |
+    | south | p43-south | 1(윤곽 antipode) | 도법 글 · 윤곽 안내 글 · 쪽 |
+    | relief | p44-relief | 0 · 핀 7(번호 숨김) | 질문 · 목표 · 소제목(출처) · 활동하기 1 · 쪽 |
+    | climate | p45-climate | 3(기후 구분·1월·7월) · 그래프 마커 4(번호 숨김) | 질문 · 목표 · 소제목 · 활동하기 2 · 쪽 |
+    | migration | p46-migration · flows·canada | 2(식민지 면 + 경로 화살표 / 캐나다) | 질문 · 목표 · 소제목 2 · 본문 2(view) · 원본 쪽 부분(지구본) · 쪽 |
+    | ethnicity | p46-us-european · european·african·hispanic·asian·ethnic | 5(미국 4 · 중남미 면 + 고리 5) | 질문 · 목표 · 소제목 3 · 100% 띠 그래프(+설명 글) · 사진 6 · 활동하기 3 · 쪽 |
+    | tnc | p47-hq · hq·supply | 2(본사 + 실리콘 밸리 확대 창 / D사 나라 + 기호) | 질문 · 목표 · 소제목 3 · 만화 사진 + 원본 쪽 부분 · 본사 글(view) · 생산 체제 글 · A사 그림 + 원본 쪽 부분 · D사 글(view) · 쪽 |
+    | change | p47-maquila · maquila | 1(마킬라도라 칸 + 주 경계) | 질문 · 목표 · 소제목 + 부제 3 · 디트로이트 그래프 · 폐허 사진 · 마킬라도라 글(view) · BPO 그래프 2(첫 블록에 글) · 쪽 |
+
+  - **레이어 종류(U5-4 넘김 + 코디네이터)**: p47-hq·p47-agri-sites = `symbolLabels`, p47-hq-sv = `symbol`(확대 창 — 묶음 label 을 본사와 같게), p46-us-* 4·p47-mex-states = `area`(regionClass 자료 — 마킬라도라 묶음 둘째, 레이어 제목이 같아 한 묶음), 고리 = `chartSymbols`(legend false, label = 중남미 면과 같은 소제목 ④ — 한 묶음), 우리나라 윤곽 = `compareOutline`(legend false), 지구본 = `pathFlow` — **주제 view 키 없음**(U5-3c: 자료 `properties.view {projection:'globe', rotate:[30.3, −9.2]}` 가 묶음을 올릴 때 지구본으로 염). 계획 시험의 `views.some(v => v.projection === 'globe')` 는 레이어 자료 시험으로 바꿈. **`build_content.mjs` 새 설정 `content.layerTypeAs {area: ['regionClass'], symbolLabels: ['symbol']}`(있을 때만)** — 주제 type ≠ 레이어 layerType 경고의 예외(u2~u4 는 키가 없어 옛 검사, build_content --unit u2·u3·u4 「같음, 그대로」). 도장 입력 아님.
+  - **묶음·바로가기**: 묶음 이름(label)은 지면 글자 상자(labelSrc) — 지도 제목·소제목(인구 이동·캐나다·중남미·본사·D사), **미국 4장은 지도 제목이 없어 범례 제목 「유럽계 인구 비율(%)」 등**(계획 「지도 범례 제목 labelSrc」). 바로가기 id 는 topic.js `groupView`(ref 가 「-<id>」로 끝남)에 맞춤(flows·canada·european…·ethnic·hq·supply·maquila — 시험). 일반도는 레이어가 없어 바로가기 단추 둘이 그대로 보임. 「중앙아메리카」 = `center [−71.5, 14.5]`·`bounds [−94.7, 3.0, −48.3, 26.0]`(U5-3b 기록 — map 키의 frameView 5~95% 범위는 틀 가장자리 섬을 자름, `_bounds` 까닭).
+  - **그래프 13**: 기후 4 = 마커(배로·뉴욕·보고타·이키토스 — u4 처럼 그래프 도시로 옮김 10·57·97·48km, 교과서 핀은 textbookLonlat), 100% 띠 = 그래프 블록 하나(막대 1990·2020 둘이라 topic.js 가 u2 `barPicker` 길로 보임 — 블록 글 = 「미국은 시간이 지남에 따라…」), 고리 5 = chartSymbols 항목 참조(U4-8 판단 그대로 — 사이드바 블록 없음), 디트로이트·BPO 매출·고용 = 그래프 블록(출처는 그래프 자료 source). **잰 값 그래프 셋에 블록 주석(overrides from null)** 「* … 값이 인쇄돼 있지 않아 … 잰 값이다(약 ±…)」 — 앱은 그래프 자료 notes 를 보이지 않아서. 이키토스(잰 값)는 마커 그래프라 주석 칸이 없음(대조표 몫).
+  - **사진·활동**: 46쪽 활동하기 3 = 문항 전체(사진 p46-6 설명은 U5-6 captionOverride 로 줄인 첫 문장), 만화 카드 설명 = 소제목 ①(U5-6), 원본 쪽 부분 보기 3(46쪽 지구본 [30, 75, 265, 222] · 47쪽 만화 [44, 95, 389, 305] · A사 그림 [44, 366, 391, 500]) + 주제마다 쪽 전체. 폐허 사진 설명(디트로이트 글)은 사진 카드가 지니고 그래프 블록에는 글 없음. 마킬라도라 각주 「*주로 미국 수출을…」·중남미 각주 「*가로 안의 숫자는…」은 레이어 note(범례 아래).
+  - **고침 5(overrides — 모두 까닭)**: ① 42쪽 윤곽 안내 글 = 곡선 낱자(채움·테두리 두 번) → box_text 가 「같은 은같은 축척과 척…」 → 「같은 축척과 같은 위도의 우리나라」. ② 46쪽 지구본 옆 본문 = 줄마다 왼쪽 끝이 다른 곡선 글 → 줄 바꿈 자리 빈칸(「아 메리카」·「노 동력」…)만 지움(글자 같음 — 시험). ③~⑤ 잰 값 그래프 주석 3(from null). 「烋」·?글리프·h·LN 0, 46쪽 「퀘벡의 프랑스어·영어 공존」 바름(계획 메모의 h 오류는 photos 단계에서 이미 바로잡힘).
+  - **색칠하기**(`extract_text --labels` → `coloring_quiz --unit u5 --write`): 41쪽 나라 글자 39(KCCChassam 12.8pt 10 · 8pt 29)·손글씨 수도 16조각(7.5pt) = 17 이름. 결과 **37 = 나라 35 + 지역 2**, 경고 0, 수도 출처 printed 17 · places 16 · places+ne 2(앤티가 바부다 세인트존스·트리니다드 토바고 포트오브스페인).
+    - 설정(u5 만): `joinLabels`(ㅂㄴㅅㅇㄹ/ㅂㄹㅂㄹ → places 「베네수엘라 볼리바르」, 세인트빈센트/그레나딘 — 쪽 흐름에서 붙어 있고 지면에서 맞닿음, 시험; 계획 메모의 「ㅂㄹㅂㄹ 이 가이아나와 붙어 읽힘」은 지금 글자 덩어리에서 이미 따로라 나누기 필요 없음), `ignoreLabels ["알래스카(미)"]`, `regions`·`noCapital {GRL, GUF}`, `isoByLabel {도미니카: DMA}`(NE 「도미니카 연방」 초성이 달라 — 「도미니카 공화국」은 이름이 같아 DOM, 시험), `capitalByNe`·`capitalByNeNear`, **`nameKm` 600 → 1600**(41쪽은 중앙아메리카 작은 나라 이름을 태평양 쪽에 늘어놓고 지시선 — 과테말라 약 1,400km · 엘살바도르 1,150 · 코스타리카 870, 수리남은 기아나 동쪽 대서양 약 800km; 이름·초성이 같은 나라끼리만 견주므로 다른 나라로 가지 않음).
+    - **`coloring_quiz.mjs` 새 키 다섯(있을 때만 — 도장 입력)**: `dropSuffix`(「그린란드(덴)」·「기아나(프)」 소속 표시 떼고 이름 찾기 — 그린란드는 places kind island 라 `regionKinds ['region', 'island']`), `cutIsos [{from:'FRA', to:'GUF', box:[−55, 2, −51, 6], name:'기아나'}]`(Natural Earth 10m 에서 기아나가 FRA 다각형 하나 — 상자 안에 다 든 다각형을 떼어 GUF 로; 바탕 지도 U5-9 `basemap.cutIsos` 와 같은 상자, 앱 색칠 층이 바탕 지도 iso 로 칠하므로 문제 iso 도 GUF), `extraCountries {ATG}`(교사 Q4 — label null, 이름 = places 나라 지명 중 NE 이름과 같은 것), `splitLabels {"포르토프랭스 산토도밍고": [...]}`(손글씨 둘이 한 글자 덩어리 — 상자를 글자 수 몫으로), `capitalAlias {과테말라시티: 과테말라, 파나마시티: 파나마}`(41쪽 손글씨와 40·42쪽 수도 지명 표기가 다름 — 자리는 places, 퀴즈 이름은 손글씨 그대로). 합성 시험으로 키 없으면 옛 경고·결과.
+    - **도장**: coloring_quiz 는 u2·u3·u4 coloring 도장 입력 → `coloring_quiz --unit u2|u3|u4 --write` 로 **inputsHash 한 줄만** 새 값(나머지 JSON 같음 확인, git diff 파일마다 1줄), build_content --unit u2·u3·u4 「같음, 그대로」.
+  - **출처 대조**(`content.expectCredits` 14): 44쪽 1 · 45쪽 3 · 46쪽 4 · 47쪽 6. 47쪽 「(『하크 세계 지도』, 2023)」은 책 이름 글자(5.7pt, 세로 가운데 651.45)와 해 글자(6pt, 651.5)가 반올림으로 다른 줄이라 printed_credits 가 못 이음 → `notPrinted`(u4 38쪽 꼴). 46쪽 100% 띠 「(미국 통계청)」은 해가 없어 출처 꼴 밖(그래프 source 그대로).
+  - **issues.md 4**: ① 40쪽 삽입 「밀러 도법 43,000,000」에 「1:」 없음(600dpi 확인), ② 46쪽 각주 「*가로 안의 숫자」(괄호 오기로 보임), ③ 47쪽 디트로이트 「2014년에는 도시 파산을 선언」(파산 신청은 2013년 7월 — 확인 필요), ④ 41쪽 손글씨 「과테말라시티」·「파나마시티」 ↔ 일반도 「과테말라」·「파나마」.
+  - 생성물: topics.json 34,937 B · charts.json 11,452 B(13개 모두 참조) · layers.js 1,684 B(레이어 20).
+  - **시험**: `tests/atlas/units/u5.content.test.mjs` 18(계획 여섯 — 지구본은 레이어 자료 view 로 · 윤곽은 layers 로 고침 + 마커 위치 · 일반도 바로가기·도법 글 · 묶음↔바로가기 · 레이어 종류 · layerTypeAs 를 빼면 경고 7 · 그래프 참조·잰 값 주석 · 레이어 글 · 블록(활동하기 3·만화·원본 쪽 부분) · 색칠하기 35+2/수도/도미니카 둘 · 41쪽 글자(두 줄·알래스카·splitLabels) · coloring_quiz 새 키 합성 · 출처 14 · 고침 5 · 깨진 글자), `scripts/atlas/tests/test_text_u5.py` 6(dumps 형식·손글 없음·활동/원본 쪽 블록·원문 대조 `--check`·출처 지면 대조·41쪽 글자 수), G5 계약 시험 u5 7(조각 크기는 U5-9 까지 skip). `npm test` **Python 388 OK · Node 686(통과 685, skip 1 — u5 조각)**.
+  - **회귀**(공유 스크립트 `coloring_quiz.mjs`(도장 입력)·`build_content.mjs` — src 고침 없음, `regress.sh u5-8`): u2 해시 162개 중 도장만 다름 1(coloring.json), 캡처 41장 화소 차 0, 0/9/134/24, 조각 +0.000%(해시 같음) · u3 도장만 1(coloring.json), 31장 화소 차 0, 0/26/118/42, +0.001% · u4 도장만 1(coloring.json), 42장 화소 차 0, 0/34/104/41, +0.001% — 셋 다 회귀 없음(낡음 `[경고]` 없음).
+  - **교사 대조표에 올릴 것(U5-10)**: ① 앤티가 바부다 = 이름 칸 없는 문제(교사 Q4), 그린란드·기아나 = 「지역」(수도 「—」), 퀴즈 칠한 수 「나라 n / 35 · 지역 n / 2」. ② 41쪽 손글씨 수도 이름 그대로(과테말라시티·파나마시티). ③ 기후 그래프 마커 4 를 그래프 도시로 옮김(교과서 핀 10~97km). ④ 잰 값 그래프 셋에 주석(교과서에 없는 글), 이키토스는 마커 카드라 주석 없음. ⑤ 미국 4장 묶음 이름 = 범례 제목(지도 제목 없음). ⑥ 42쪽 윤곽 안내 글·46쪽 지구본 옆 본문 = 곡선 글 고침(글자 그대로). ⑦ 마킬라도라 묶음에 주 경계 범례 「주 경계」가 따로 보임(교과서 범례에 없음 — U5-4 분류).
+  - **이어서 볼 것(U5-9)**: main.js `centerLonOf {'layer-p47-hq': 150, 'layer-p47-agri-supply': 150}`(묶음 첫 ref)·`BOUNDS_OF`(태평양 중심 범위 — tnc 바로가기 범위가 경도 −11~330), `insets {'layer-p47-hq-sv': …}`(묶음 label 을 본사와 같게 둬 한 묶음에서 확대 창이 뜸), 기아나 GUF 바탕 지도 자르기 뒤 p47-agri-supply 고침, 마킬라도라 묶음 범례 블록 둘(칸 + 「주 경계」 — 같은 제목 「마킬라도라 시설(2021년)」이 두 번 보이면 주 경계 레이어 legend 를 끌지 캡처로 판단).
