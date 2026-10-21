@@ -290,7 +290,7 @@ $ATLAS_WORK/raw/ne-admin1/ · raw/statcan-cd2016/(선택)                       
 
 **Files:** Modify `scripts/atlas/config/u5.json`(`layers`); Output `sims/atlas-u5-americas/data/layer-*.json`; Test `tests/atlas/units/u5.layers.test.mjs`
 
-- [ ] **Step 1:** `python -I scripts/atlas/extract_vectors.py --unit u5 --features all`, 래스터는 `--unit u5` 래스터 분류. 레이어 설정과 기대 범례 수(`expectLegend`):
+- [x] **Step 1:** `python -I scripts/atlas/extract_vectors.py --unit u5 --features all`, 래스터는 `--unit u5` 래스터 분류. 레이어 설정과 기대 범례 수(`expectLegend`):
 
   | 레이어 id | 지도 | 종류 | 기대 범례 | 메모 |
   |---|---|---|---|---|
@@ -308,9 +308,9 @@ $ATLAS_WORK/raw/ne-admin1/ · raw/statcan-cd2016/(선택)                       
   | `p47-maquila` | p47-maquila | `unitSymbols`(3f) + 주 경계 | 2 | 파랑 99칸·주황 130칸(조사 수 — 실측), 범례 「1칸당 50개 공장」·「1칸당 2만 명 근로자」 |
   | `p42-korea` · `p43-korea` | p42-north · p43-south | `compareOutline`(3i) | — | 모드 sameLat · antipode, 지면 글자 |
 
-- [ ] **Step 2: 나라·주 분류 확인(U4-4 방식)** — `p47-agri-supply` 보고서 `levels`·작은 나라 경고를 600~1600dpi 확대로 보고 `countryOverrides`(같은 값이어도 까닭), Q5 기아나(`GUF` — 바탕 지도에서 잘라 내기 전이면 FRA 값), 그린란드(교과서 칠 여부). 미국 주 4장은 주마다 표본 다수결이 갈린 주(작은 주 — 로드아일랜드·델라웨어·DC·코네티컷)를 확대로 보고 `regionOverrides`.
-- [ ] **Step 3:** `node scripts/atlas/build_layers.mjs --unit u5` → `layer-*.json`. 용량 예산: 레이어 합계 **≤ 750KB**(미국 주 4 × ≤ 30KB, 캐나다 면, 중남미 면이 클 것 — 넘으면 `tol` 키움, 그래도 넘으면 3d 의 `geometryRef` 길), 기후 래스터 셋 ≤ 300KB.
-- [ ] **Step 4: 실패하는 테스트 → 통과** (`tests/atlas/units/u5.layers.test.mjs`)
+- [x] **Step 2: 나라·주 분류 확인(U4-4 방식)** — `p47-agri-supply` 보고서 `levels`·작은 나라 경고를 600~1600dpi 확대로 보고 `countryOverrides`(같은 값이어도 까닭), Q5 기아나(`GUF` — 바탕 지도에서 잘라 내기 전이면 FRA 값), 그린란드(교과서 칠 여부). 미국 주 4장은 주마다 표본 다수결이 갈린 주(작은 주 — 로드아일랜드·델라웨어·DC·코네티컷)를 확대로 보고 `regionOverrides`.
+- [x] **Step 3:** `node scripts/atlas/build_layers.mjs --unit u5` → `layer-*.json`. 용량 예산: 레이어 합계 **≤ 750KB**(미국 주 4 × ≤ 30KB, 캐나다 면, 중남미 면이 클 것 — 넘으면 `tol` 키움, 그래도 넘으면 3d 의 `geometryRef` 길), 기후 래스터 셋 ≤ 300KB.
+- [x] **Step 4: 실패하는 테스트 → 통과** (`tests/atlas/units/u5.layers.test.mjs`)
 ```js
 import test from 'node:test'; import assert from 'node:assert/strict'; import { readFileSync } from 'node:fs';
 const D = 'sims/atlas-u5-americas/data';
@@ -725,3 +725,38 @@ test('태평양 중심 묶음: 본사·D사 세계 지도', () => assert.ok(by.t
   - **확인 캡처**(임시 틀 `sims/_tmp-u5-3j/` — u4 자료 + 합성 47쪽 꼴 기호 레이어 16(본사 1·농장 6·창고 3·공장 2·판매 지사 4, 주제 하나를 바꿔 끼움), swiftshader 1280×800, 지움): `units/u5/u5-3j/j1-agri.png`(세계 — 기호 16·상자 5 「본사」·「유럽 ■ 112개」·「북아메리카 ■ 34개」·「중앙 및 남아메리카 ■ 7개」·「기타 지역 ■ 9개」, 범례 6 = 기호 5 + 값 아이콘 「판매 지사 수(지역별)」) · `j2-europe.png`(확대 — 주황 원·빨강 네모·상자). 콘솔 오류 0, `log.json`. 첫 캡처는 합성 기호에 `color` 를 안 줘 검은 점으로 나왔다(자료 몫 — build_layers 는 붙임).
   - **이어서 볼 것(U5-4·U5-9·U5-10)**: ① 숙성 창고 빨강 네모가 바탕 지명의 수도 기호(빨강 네모)와 비슷해 보임 — U5-9 캡처에서 크기·테두리(범례 `stroke`)로 판단. ② 지게차·건물 그림 대신 네모 — 대조표 「알려진 차이」 후보. 그림이 꼭 필요하면 `VALUE_ICONS`(공유 layerStyle.js — u2 조각에 들어감, 경로 두 개 약 +200 B) 또는 아이콘 등록 고리(등록 길)로. ③ 판매 지사 자리는 교과서 글자 자리(지역 이름 위치)를 되돌린 것(U5-4).
   - 회귀: 저장소 코드 고침 없음(계획 기록만) — u2·u3·u4 는 3i 회귀 그대로.
+- **U5-4(2026-10-21) 주제 레이어 20 — 레이어 합계 610.4KB(예산 750) · 기후 셋 243.9KB(예산 300)** — 가지 atlas-u5(b77f431 위, 커밋 799f8f4 · 9bfca52 · 0c4f2a7 · 3c01951 + 이 기록)
+  - **설정 만들기**: `config/u5.json` layers 는 작업 스크립트 `$ATLAS_WORK/units/u5/u5-4/cfg.py`(+ 묶음별 `cfg_a.py`~`cfg_d.py`)가 다시 씀(나머지 키 바이트 그대로 — mergePriority 한 줄 꼴 유지). 확인 그림 `units/u5/u5-4/chk.mjs`(레이어 → 지면 되돌림 두 칸 — pathFlow 처럼 build_layers --verify 가 없는 종류)·`build_layers --verify`(`shots/c1/<id>.png`).
+  - **교과서 범례 수 ↔ 뽑은 분류 수(U4-4 표 꼴)**:
+
+    | 레이어 | 종류 | 교과서 범례 | 뽑은 분류 | 도형 | KB | 확인 |
+    |---|---|---|---|---|---|---|
+    | p45-climate | area raster + 빗금 | 14 | 14 | 면 14 | 112.5 | 교과서 위 — 고산 빗금 북아메리카 넷 + 안데스(아래) |
+    | p45-jan | area raster + 등온선 | 7 + 선 | 8 | 면 7 · 등온선 10(−30~20 모두 값) | 64.0 | 교과서 위 |
+    | p45-jul | area raster + 등온선 | 7 + 선 | 8 | 면 7 · 등온선 11(−10~30) | 67.5 | 교과서 위 |
+    | p46-colonies | area vector(지구본) | 3 | 3 | 면 3 | 14.0 | 교과서 위(유럽 본국도 교과서처럼 칠함) |
+    | p46-migration-flows | pathFlow | 4 | 4 | 화살표 10(에스파냐·포르투갈·프랑스 2씩 · 노예 점선 4) | 19.4 | 10개 모두 교과서 화살표 위(`v-p46-migration-flows.png`) |
+    | p46-canada | area vector | 8 | 8 | 면 8 | 47.1 | 교과서 위 |
+    | p46-us-european·african·hispanic·asian | regionClass | 5씩 | 5씩 | 주 51씩 | 33.1·33.0·33.1·33.1 | U5-3d 시험 돌림 분류와 51/51 같음 |
+    | p46-ethnic | area vector + 줄·빗금 | 7 | 7 | 면 7(혼혈 가로 줄·아프리카계 45° 빗금) | 53.6 | 교과서 위 |
+    | p46-ethnic-rings | chartSymbols + leader | — | — | 고리 5(설정만) | — | 그래프 자료(U5-7) 없어 건너뜀 |
+    | p47-hq · p47-hq-sv | symbol 크기 비례 원 | 겹친 원 3 | 3 | 원 84 + 15 = 99, 글자 3 | 23.0 · 4.5 | 원 자리 = 지시선 끝(교과서 위) |
+    | p47-agri-supply | countryClass | 1 | 1 | 나라 37(고침 9) | 2.2 | 600~1500dpi 확대로 확인(아래) |
+    | p47-agri-sites | symbol + 값 | 5 | 5 | 기호 39 + 글자 3 | 9.3 | 교과서 위 |
+    | p47-maquila | unitSymbols | 2 | 2 | 묶음 16(파랑 99 · 주황 130) | 5.5 | U5-3f 와 같음 |
+    | p47-mex-states | regionClass(윤곽) | — (바탕) | 1 | 주 32 | 28.0 | 교과서 주 경계 위 |
+    | p42-korea · p43-korea | compareOutline | — | — | 윤곽 1씩 | 13.8 · 13.8 | U5-3i 와 같음(offsetKm 514) |
+
+    확대 창 바탕 `inset-p47-hq-sv.json` 5.2KB(레이어 합계 밖).
+  - **미국 주 4장(3d)**: legendItems = 지면 견본 5(이름 지면 그대로 「70-80」 붙임표), `units.insets` AK/HI 삽입 fit, `sameAs {DC: MD}`(U5-D Step 3), 단순화 기본 0.2°/0.05°² — 네 장 132.3KB 라 **geometryRef 를 만들지 않음**(합계가 예산 안). **화면 색 보정**(웹 육지 #f2efe9 와 ΔE 7.5 아래 — u4 비거주지 기준): 유럽계 「50 미만」 #fff1e2(ΔE 6.3) → #ffe4c7, 히스패닉계 「10 미만」 #f1f7e8(5.9) → #e8f2d8, 아시아계 「5 미만」 #feeceb(6.0) → #fde2e1(모두 위 단계 색 쪽으로 40% — 바탕과 ΔE 9.5~15, 위 단계와 6~15), 아프리카계 「5 미만」 #e6edf8(9.4)은 그대로. 인쇄 색은 printColor.
+  - **멕시코 주 경계(3f 이어서 볼 것)**: 새 레이어 `p47-mex-states` = regionClass 를 그대로 써서(엔진·파이프라인 고침 없음) NE 1단계 MEX 32주를 교과서 멕시코 땅 색으로 표본(#f2e9bd · 마킬라도라 없는 주 #f1ebd8 은 aliases) → 분류 하나 「주 경계」를 `legendStyles outline` + `legendColors` #6d6e71(교과서 주 경계선 색) — 면은 칠하지 않고 테두리만. 단순화 0.1°/0.02°²(0.05° 는 48KB → 28KB). 마킬라도라 묶음(주 = 지시선 끝·밑 칸을 품은 주)은 이 면과도 맞음 — 바하칼리포르니아 1묶음만 바다(교과서도 칸이 칼리포르니아만에 걸침, 185km). **mex.geojson·usa.geojson 감김 확인**: 면마다 d3 geoArea < 2π(뒤집힌 면 0) — 「주 밖」 경고는 그 하나뿐.
+  - **47쪽 본사(3e)**: 3e 시험 설정 그대로 + `symbolStyle {pxPerPt 4, maxPx 36}`(세계 처음 보기 k ≈ 1 에서 가장 큰 원 약 17px → 26px — 교과서 비율 지도 너비 2.5% 꼴, k 2.2 이상 배율 4.2 에서 멈춤, 지름 비 그대로). 동해·독도·이어도 글자 = `labelPoints`(지면 글자 상자 가운데). **기호 레이어의 글자 — 새 레이어 종류 `symbolLabels`(americasExtra 등록 길, 공유 코드 0 B)**: symbolLayer 는 Point 를 모두 기호로 그리므로 글자 Feature 를 떼어 areaLayer(지명 글자 길)로 따로 그리고 combineLayers 로 한 id(범례 구독 한 번) — U5-8 topics 에서 p47-hq·p47-agri-sites 의 type 을 `symbolLabels` 로. features.py: 기호 모드(sized-circles·symbols 등)도 `labelPoints` 를 읽음(키가 있을 때만 — u2~u4 기호 레이어에 그 키 없음). **확대 창 바탕**: 설정 `insets` p47-hq-sv(inset_outline.py — 교과서 삽입 육지 #ebebec) + 새 키 **`frame`**(있을 때만): 육지를 삽입 틀로 자르고 틀 둘레 8점을 MultiPoint `{kind:'frame'}`(symbolInset 은 Polygon·LineString 만 그림, geoBox 는 모든 좌표를 봄) → 창 범위 = 교과서 삽입 틀 (−123.09, 36.86, −121.18, 38.20)(3e 이어서 볼 것 — 임시 윤곽 0.9°×0.74° 는 틀보다 좁았음). u2 싱가포르 인셋 다시 → 바이트 같음.
+  - **45쪽 기후**: u4 37쪽 꼴(raster 150dpi·rasterCoastPx 1·rasterIslands, legendGroups 열대·건조·온대·냉대·한대 + 고산 따로). 고산 빗금 = 윤곽 선 #ba703d 0.1pt 넷(로키·그레이트베이슨 둘레·시에라마드레·멕시코 고원 남부) + **안데스는 잘라 그리기 경로**(`hatch.clips [[245.3, 370.9, 287.7, 535.0]]` — 처음 판은 안데스 빗금이 빠졌음). 조사의 「704조각」은 빗금 무늬 칸 그림(무늬 좌표계, 지면 밖 좌표)이라 면이 아님. **크기**: tol 0.1/minArea 0.03 이면 기후 셋 758.9KB(구분 311.6) → 구분 tol 0.3/0.15 · 1월·7월 0.35/0.25 로 243.9KB(아메리카는 북극 제도 해안·면 덮개(clip_land) 꼭짓점이 많아 아프리카 같은 tol 의 약 3배). 1월 「-20」 글자는 선에서 7.3pt(기본 labelDistPt 6 밖 → 값 없는 조각) — 1월만 7.5(「-30」 글자가 같은 선에 7.8pt 라 8 이상이면 -30 이 표를 가져감).
+  - **46쪽 지구본 이동 화살표 — 새 뽑기 `mode 'path-flow'`(lines.path_flows, 도장 입력 아님)**: 교과서 화살표는 선(stroke)이 아니라 **채운 가는 띠(화살대 — 너비 0.56~0.59pt) + 채운 화살촉(넓이 2.78pt² 같은 모양)**, 노예 이동 넷은 **채운 토막 점선 둘 + 점선 획(0.6pt [3 2]) 둘**(브라질 쪽 점선 획은 화살촉 없이 다른 점선의 화살촉으로 모임 → 나눠 씀). 화살대 가운데 선 = 고리에서 서로 가장 먼 두 점으로 두 변을 나눠 길이 비 평균(`band_centerline` — 끝 점만 너비의 반 안 어긋남), 점선 토막 = 넓이 중심을 화살촉 반대 끝부터 이웃 차례(`dash_centerline`), 화살대 ↔ 화살촉 짝 = 끝 ↔ 화살촉 넓이 중심 거리가 짧은 짝부터 차례로(가까운 식민지 면 가는 조각이 화살촉을 가져가지 않게), 화살 끝 = 화살촉에서 가장 먼 점. 같은 색 식민지 면 가는 조각(퀘벡 너비 1.17 등)은 설정 `shaftWidthPt [0.45, 0.75]`·`headAreaPt2 [2.4, 3.2]` 로 가르고, 화살촉 없는 가는 띠는 경고(에스파냐 2 — 카리브 식민지 조각), 수는 `expectFlows`. build_layers 새 특수 종류 `pathFlow`(순수 `pathFlowLayerJson` — 되돌릴 수 없는 점이면 멈춤, 범례 kind flow·dashed·present, 설정 `view` → properties.view). 갈래 화살표 둘(에스파냐 카리브 → 콜롬비아·포르투갈 대서양 → 브라질 북부)은 꼬리가 바다.
+  - **46쪽 식민지·캐나다·민족**: 식민지 = legendItems(지도 틀 밖 범례 — legendBbox 없음) 3, 같은 색 화살표 조각은 minArea 0.3·면 덮개로 빠짐. 캐나다 = legendItems 8(이름 = 묶음 + 단계 「영어 75% 이상」 — 두 묶음에 같은 단계 글자), minArea 0.02(「프랑스어 50% 이하」는 지면 0.36pt² 한 조각뿐). **U5-D 「받지 않음」 다시 판단 — 그대로**: 교과서 구역 채움을 되돌린 면이 확인 그림에서 주·구역 경계 모양대로 놓이고 해안은 면 덮개(Natural Earth 육지)가 정함(shape 겹 나누기 1.33pt ≈ 40km 는 확대 때 구역 경계에만 보임). 민족 = 3h 설정 그대로(혼혈 19조각·아프리카계 6조각, 멕시코 = 에스파냐계 + 혼혈 겹침).
+  - **47쪽 D사**: 원료 공급 국가 = countryClass(legendItems 분홍 하나). **country_class.py `fold_window`(도장 입력 아님)**: 태평양 중심 세계 지도는 되돌린 틀 경도 폭이 360° 라 옛 `check_lon_span` 이 멈춤 → 폭 > 180° 면 경도를 이어 붙인 면을 [-180, 180] 으로 접음(틀 끝 경선 −33.2° 둘레 아주 가는 틈 — 그린란드는 window 와 겹친 두 조각으로 나뉘어 각각 투영). 폭 ≤ 180° 는 옛 길 그대로. 고침 9(600~1500dpi 확대 `units/u5/u5-4/agri*.png`): 볼리비아(회색 — 페루 경계 어긋남 표본 1)·몰타·페로 제도·올란드 분류 없음, 안도라·모나코·산마리노·바티칸·레소토 = 둘레 나라 값. 기아나는 아직 FRA 일부라 분홍(교과서 회색 — U5-9 에서 GUF 를 자른 뒤 고침에 더할 것). 기호 = 기존 symbolLayer(U5-3j): features.py `symbols` 모드에 `legendItems`·**`manualPoints`**(있을 때만 — 그 분류는 색으로 찾지 않음): 본사 건물(그림 밑 가운데)·판매 지사 지게차 4(지게차는 6조각 그림이라 바퀴 1.7pt 가 색 기호로 잡힘 — 손 자리, `_why`), 값 = `symbolValues`·`valueIcons ['forklift']`(엔진에 없는 아이콘 → 작은 네모, 알려진 차이 후보), 농장·창고·공장 흰 테두리(`legendStrokes` — 수도 기호와 구별, 3j ①).
+  - **46쪽 고리 5 설정(3g)**: centerPt = 흰 구멍 원·쐐기 꼭짓점(바깥 지름 43.2pt, 구멍 20.6pt), leaderPt = 교과서 점선 지시선(흰 채움 + [1 1] 0.3pt 경로) 의 고리에서 먼 끝. lonlat: 브라질·페루·아르헨티나는 교과서 자리 되돌림 그대로(900km 안 땅 없음), **멕시코 (−107.5°, 8.8°) → (−104°, 8°)**(클리퍼턴섬 253km), **아이티 (−63.8°, 28.7°) → (−67.5°, 26.5°)**(버뮤다 407km). **아이티 지시선 끝**: 교과서 끝(160.6, 487.5)pt 는 되돌리면 (−70.1°, 19.3°) 도미니카 공화국 안 → 아이티 안쪽 점 (−72.5°, 19.0°) 의 지면 자리로(`_why`). 그래프 자료(`units/u5/tables/charts-u5.json`, U5-7)가 아직 없어 레이어는 건너뜀 — U5-7 뒤 `build_layers --unit u5 p46-ethnic-rings`.
+  - **리뷰 후속**: `americasExtra` 우리나라 윤곽 <g> `role="button"`(고리 기호와 같음), `build_layers.circleRadiusDeg` 가운데 되돌림 실패를 geoDistance 전에 검사(한국어 오류가 나옴).
+  - **시험**: `tests/atlas/units/u5.layers.test.mjs` 13(기후 3장 · 미국 4장(DC = 메릴랜드 · 미시시피·뉴멕시코·하와이·메인 단계) · 캐나다 · 민족(줄 각도) · 지구본(화살표 10 · view) · 본사(99 · 글자 · √) · 확대 창 틀 · 마킬라도라(99·130·16 · 주 32 · 주 밖 1) · D사(나라·기호 수·값·글자) · 고리 설정(지시선 끝 나라 안) · 윤곽 · 예산), `symbolLabels.test.mjs` 2, `layers.test.mjs` pathFlowLayerJson 1, Python `test_path_flows.py` 3, `test_country_class.py` fold_window 1. `npm test` Python 368 OK · Node 630(통과 630, 실패 0).
+  - **공유 파이프라인 회귀**: 고친 공유 스크립트 `build_layers.mjs`·`features.py`·`lines.py`·`country_class.py`·`inset_outline.py`(모두 도장 입력 아님 — 새 동작은 키가 있을 때만, fold_window 는 경도 폭 > 180° 일 때만) — `build_layers --unit u2|u3|u4 all --extract` 다시 → `sims/atlas-u2-asia|u3-europe|u4-africa` git 차이 0(바이트 같음), u2 싱가포르 인셋 같음. src 고침은 `americasExtra.js` 뿐(u2~u4 조각에 안 들어감). **`regress_unit --check` u2·u3·u4 는 끝내지 못함**: 차례 실행(regress.sh u5-4) 중 u2 embed(2,112,233 B — 기준선과 같음) 뒤 compare_shots 단계에서 시스템 메모리 부족으로 하네스가 작업을 멈춤(남은 compare_shots·헤드리스 Chrome 프로세스는 정리) — 메모리 여유가 생기면 코디네이터가 다시 돌릴 것(조각 바이트·레이어 바이트가 같아 화소 차는 예상하지 않음).
+  - **이어서 볼 것**: U5-7 그래프 자료 뒤 `p46-ethnic-rings` 생성·시험(파일이 생기면 u5.layers 시험이 자동으로 봄), U5-8 topics 레이어 type(p47-hq·p47-agri-sites = `symbolLabels`, p46-us-* = `area`, p47-mex-states = `area`(마킬라도라 묶음 둘째)), U5-9 GUF 잘라 낸 뒤 p47-agri-supply 고침에 GUF 분류 없음, U5-9 main.js `insets: {'layer-p47-hq-sv': inset-p47-hq-sv}`, 화살표 점 간격 0.5pt(19.4KB)는 U5-11 성능에서 줄일 수 있음.
