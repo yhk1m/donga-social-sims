@@ -16,18 +16,19 @@
 //     곡선을 되돌린 줄, 꼬리 → 화살 끝)}]}. 선 = geoPath(view.projection)(지구본 뒷면·날짜변경선은 투영이 자름), 화살촉 = 마지막 두 점 방향(arrowHead),
 //     굵기 flowWidthPx, 점선(dashed — 노예 이동). 범례는 기존 흐름선 견본(kind 'flow' + dashed)이 그대로 그림.
 //   - 3g 고리 기호 지시선(chartSymbols.ringHook.leader ← ringLeader): 고리 항목 leader [lon, lat] 가 있으면 고리 가장자리 → 그 점 점선 + 끝 점.
+//   - U5-4 기호 + 지면 글자(registerLayerType('symbolLabels')): 기호 레이어 자료의 Point {type:'label'} 을 떼어 지명 글자 길(areaLayer)로 — 47쪽 동해·독도.
 //   - 3i 같은 축척의 우리나라 윤곽(registerLayerType('compareOutline') — 42쪽 sameLat · 43쪽 antipode 거울상): 끌기 = 구면 회전(moveTo — 실제 크기,
 //     도착지에서 북쪽이 위), 윤곽 위에서만 잡음(지도 옮기기와 섞이지 않음), 화살표 1°, 「교과서 자리로」 = 지도 도구 확대·축소 묶음의 단추.
 //   단원 main.js: import { installAmericasExtras, globeTools } from '../../src/atlas/americasExtra.js'; installAmericasExtras();  (mountAtlas 전에)
 //                 mountAtlas(…) 뒤 globeTools(root.atlasMap, root.atlasUi.tools.el)(돌려준 함수 = 풀기)
 import { geoStereographic, geoOrthographic, geoDistance, geoPath, geoRotation, geoCentroid } from 'd3-geo';
 import { h, s, icon } from '../shared/dom.js';
-import { hatchHook } from './layers.js';
 import { ringHook } from './chartSymbols.js';
 import { registerFamily } from './fitCore.js';
 import { PROJECTIONS } from './projections.js';
 import { graticuleStep } from './lineStyle.js';
-import { registerLayerType } from './layerRef.js';
+import { registerLayerType, combineLayers } from './layerRef.js';
+import { hatchHook, areaLayer, symbolLayer } from './layers.js';
 import { flowWidthPx, arrowHead, arrowSize, alphaOf, distToPolyline, zoomScale } from './layerStyle.js';
 import { LAYER_Z, round1, metaOf, setAttr, connect, hoverClass, featuresOf, isLine } from './layerCommon.js';
 
@@ -490,7 +491,7 @@ export function compareOutlineLayer(id, data, { map = null, layerId = id, z = LA
         click: stop,
       } });
     text = s('g', { class: 'at-outline-label', 'pointer-events': 'none' });
-    root = s('g', { class: 'at-outline', tabindex: 0, 'aria-label': `${name} — 끌거나 방향키로 옮김`, style: { outline: 'none' },
+    root = s('g', { class: 'at-outline', role: 'button', tabindex: 0, 'aria-label': `${name} — 끌거나 방향키로 옮김`, style: { outline: 'none' },
       on: {
         keydown(e) {
           const d = OUTLINE_KEYS[e.key];
@@ -523,6 +524,22 @@ export function compareOutlineLayer(id, data, { map = null, layerId = id, z = LA
   };
 }
 
+// ---------- U5-4 기호 + 지면 글자 ----------
+/**
+ * 기호 레이어 + 지면 글자(registerLayerType('symbolLabels') — 47쪽 세계 지도 둘의 동해·독도·이어도 종합 해양 과학 기지, 교과서 필수 표기):
+ * 자료는 기호 레이어 그대로(build_layers — 설정 labelPoints 가 Point {type:'label', text, size, color} 를 더함). symbolLayer 는 Point 를 모두
+ * 기호로 그리므로 글자 Feature 를 떼어 areaLayer(지명 글자 길 — 흰 테두리 글자)로 따로 그리고 한 id 로 묶는다(범례 구독은 묶음이 한 번).
+ */
+export function symbolLabelsLayer(id, d, { legend = null, map = null, layerId = id, onPick = null } = {}) {
+  const isLabel = (f) => f.properties?.type === 'label';
+  const sym = { ...d, features: d.features.filter((f) => !isLabel(f)) };
+  const lab = { ...d, properties: { ...d.properties, legend: [] }, features: d.features.filter(isLabel) };
+  const part = { map, layerId, legendRefresh: false };
+  const layer = combineLayers(id, [areaLayer(`${id}:label`, lab, part), symbolLayer(`${id}:sym`, sym, { ...part, legend, onPick })], { legend, map });
+  layer.meta = metaOf(d);
+  return layer;
+}
+
 /** 아메리카 단원 조각의 모든 등록(뒤 하위 기능이 여기에 더함). 여러 번 불러도 같음(지구본 회전 상태는 처음 등록 것을 이어 감). */
 export function installAmericasExtras() {
   installAmericasFamilies();
@@ -532,4 +549,5 @@ export function installAmericasExtras() {
   hatchHook.make = hatchTile;
   ringHook.leader = ringLeader;
   registerLayerType('compareOutline', (id, d, ctx) => compareOutlineLayer(id, d, ctx));
+  registerLayerType('symbolLabels', (id, d, ctx) => symbolLabelsLayer(id, d, ctx));
 }

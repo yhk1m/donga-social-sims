@@ -182,9 +182,10 @@ function convert(layer, feat, fit) {
  */
 export function circleRadiusDeg(cv, at, sizePt) {
   const c = cv.invert(at);
+  if (!c) throw new Error(`원 ${at} 반지름을 경위도로 되돌릴 수 없음`);
   const r = sizePt / 2;
   const ds = [[r, 0], [-r, 0], [0, r], [0, -r]].map(([dx, dy]) => cv.invert([at[0] + dx, at[1] + dy])).filter(Boolean).map((q) => geoDistance(c, q) * (180 / Math.PI));
-  if (!c || !ds.length) throw new Error(`원 ${at} 반지름을 경위도로 되돌릴 수 없음`);
+  if (!ds.length) throw new Error(`원 ${at} 반지름을 경위도로 되돌릴 수 없음`);
   return ds.reduce((a, b) => a + b, 0) / ds.length;
 }
 

@@ -10,6 +10,7 @@
 #     landFill = 육지 채움색(#rrggbb, 싱가포르 22쪽 = #e7efc1)
 #     minAreaPt2 = 이보다 작은 조각은 버림(지면 pt²), tolPt = 단순화 허용치(Douglas–Peucker, 지면 pt)
 #     out      = 저장소 기준 출력 파일(sims/<조각>/data/inset-<id>.json)
+#     frame    = (있을 때만, U5-4) 육지를 지도 틀로 자르고 틀 둘레 8점을 MultiPoint {kind:'frame'}(앱은 그리지 않음)로 — 창 범위 = 교과서 삽입 틀
 #   왜 교과서 윤곽인가: Natural Earth 10m 싱가포르는 꼭짓점 40개라 섬이 화면 수백 px 로 커지면 각이 진다. 교과서 지도는 같은
 #   경위도 맞추기(fit)로 사원 기호 76개를 뽑은 그 지면이라 기호와 해안이 서로 맞는다(fit 이 approx 면 출력에도 approx — layer 로 확인).
 #   베지어는 지면에서 0.25pt 간격 남짓으로 펴고(곡선마다 8 마디), 도형 하나의 하위 경로(시작점이 앞 끝점과 다르면 새 고리)를 고리로 나눈다.
@@ -105,6 +106,17 @@ def build(item):
         for ring in rings_of(d):
             if area(ring) >= item['minAreaPt2']: rings.append(simplify(ring, item['tolPt']))
     rings = [r for r in rings if len(r) >= 3]
+    corners = []
+    if item.get('frame'):   # 틀(U5-4 — 47쪽 실리콘 밸리): 고리를 지도 틀로 자르고 틀 네 모서리·변 가운데를 그리지 않는 점으로 — 창 범위(geoBox) = 교과서 삽입 틀
+        from shapely.geometry import Polygon, box
+        from atlas_common import flat_polygons
+        clipped = []
+        for r in rings:
+            g = Polygon(r).buffer(0).intersection(box(x0, y0, x1, y1))
+            clipped += [list(q.exterior.coords)[:-1] for q in flat_polygons(g) if q.area >= item['minAreaPt2']]
+        rings = clipped
+        xm, ym = (x0 + x1) / 2, (y0 + y1) / 2
+        corners = [(x0, y0), (xm, y0), (x1, y0), (x1, ym), (x1, y1), (xm, y1), (x0, y1), (x0, ym)]
     # 도로(교과서 지도의 회색 선 — 어두운 테두리 선 위에 밝은 선을 겹쳐 그림): 밝은 선(roads.stroke)만, 굵기로 종류(roads.kinds {굵기: 종류})
     roads = []  # (종류, 점 목록)
     rc = item.get('roads')
@@ -121,7 +133,7 @@ def build(item):
                 q = simplify_line(line, item['tolPt'])
                 length = sum(math.hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]) for i in range(1, len(q)))
                 if length >= item.get('minRoadPt', 0.5): roads.append((kind, q))  # 0.5pt 보다 짧은 토막(교차로 조각)은 버림
-    flat = [p for r in rings for p in r] + [p for _, q in roads for p in q]
+    flat = [p for r in rings for p in r] + [p for _, q in roads for p in q] + corners
     ll = node_lonlat({item['map']: [list(p) for p in flat]})[item['map']]
     if any(v is None for v in ll): raise RuntimeError(f"{item['id']}: 경위도 되돌리기 실패 {sum(v is None for v in ll)}점")
     feats, k = [], 0
@@ -136,6 +148,9 @@ def build(item):
     for kind, q in roads:
         pts = ll[k:k + len(q)]; k += len(q)
         feats.append({'type': 'Feature', 'properties': {'kind': kind}, 'geometry': {'type': 'LineString', 'coordinates': [[round(a, 4), round(b, 4)] for a, b in pts]}})
+    if corners:
+        pts = ll[k:k + len(corners)]; k += len(corners)
+        feats.append({'type': 'Feature', 'properties': {'kind': 'frame'}, 'geometry': {'type': 'MultiPoint', 'coordinates': [[round(a, 4), round(b, 4)] for a, b in pts]}})
     props = {'id': item['id'], 'map': item['map'], 'page': m['page'],
              'source': f"교과서 22개정 중학 사회과 부도 {m['page']}쪽 지도의 육지 윤곽·도로(경위도 맞추기 fit 으로 되돌림)"}
     layer = item.get('layer')  # 같은 지도의 레이어 생성물 — fit 이 approx 면 그 properties 에 approx 가 실려 있다(C1)

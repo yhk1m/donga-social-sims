@@ -27,7 +27,400 @@
   "_coverageTolFactor": "coverage_simplify 의 허용치는 지우는 삼각형 넓이의 제곱근 기준이라 같은 tol 이면 Douglas–Peucker 보다 덜 지운다 → 면 덮개에는 tol × 이 값",
   "minArea": 0.15
  },
- "layers": {},
+ "layers": {
+  "p46-us-european": {
+   "map": "p46-us-european",
+   "type": "regionClass",
+   "expectLegend": 5,
+   "legendItems": [
+    {
+     "color": "#e07e27",
+     "label": "80 이상"
+    },
+    {
+     "color": "#f7941d",
+     "label": "70-80"
+    },
+    {
+     "color": "#fcbb76",
+     "label": "60-70"
+    },
+    {
+     "color": "#fed09e",
+     "label": "50-60"
+    },
+    {
+     "color": "#fff1e2",
+     "label": "50 미만"
+    }
+   ],
+   "_legendItems": "46쪽 「유럽계 인구 비율(%)」 범례 견본 5(왼쪽 x 272~318 의 4~200pt² 채움, 위 → 아래 — U5-3d trial.py 와 같은 읽기). 이름은 지면 글자 그대로(붙임표 「-」)",
+   "units": {
+    "source": "raw/ne-admin1/usa.geojson",
+    "key": "postal",
+    "name": "name",
+    "insets": {
+     "AK": "p46-us-european-ak",
+     "HI": "p46-us-european-hi"
+    },
+    "sameAs": {
+     "DC": "MD"
+    }
+   },
+   "_units": "U5-3d: 주 50 + DC(Natural Earth 1단계 행정 구역). 알래스카·하와이는 삽입 틀 fit 으로 표본(웹 그림은 실제 자리 — 대조표 알려진 차이). DC 는 교과서가 따로 칠하지 않아(U5-D Step 3 확인 그림 — DC 자리 1.5pt 안 채움은 메릴랜드·버지니아뿐) 메릴랜드 값(sameAs). 면 단순화 0.2°/0.05°²(기본값 — 레이어당 약 30KB, 네 장 약 120KB 로 레이어 예산 안이라 geometryRef 없이)",
+   "legendColors": {
+    "50 미만": {
+     "color": "#ffe4c7",
+     "why": "가장 옅은 단계 #fff1e2(ΔE 6.3 — 웹 바탕 육지 #f2efe9 위에서 묻힘, u4 비거주지 기준 7.5 아래) → 바로 위 단계 색 쪽으로 40% 섞은 색(바탕과 ΔE 9.5~15, 위 단계와 6~15 — 단계 차례·색상 그대로). 인쇄 색은 printColor"
+    }
+   }
+  },
+  "p46-us-african": {
+   "map": "p46-us-african",
+   "type": "regionClass",
+   "expectLegend": 5,
+   "legendItems": [
+    {
+     "color": "#0074bc",
+     "label": "35 이상"
+    },
+    {
+     "color": "#5598d2",
+     "label": "25-35"
+    },
+    {
+     "color": "#95b6df",
+     "label": "15-25"
+    },
+    {
+     "color": "#c7d6ee",
+     "label": "5-15"
+    },
+    {
+     "color": "#e6edf8",
+     "label": "5 미만"
+    }
+   ],
+   "_legendItems": "46쪽 「아프리카계 인구 비율(%)」 범례 견본 5(왼쪽 x 272~318 의 4~200pt² 채움, 위 → 아래 — U5-3d trial.py 와 같은 읽기). 이름은 지면 글자 그대로(붙임표 「-」)",
+   "units": {
+    "source": "raw/ne-admin1/usa.geojson",
+    "key": "postal",
+    "name": "name",
+    "insets": {
+     "AK": "p46-us-african-ak",
+     "HI": "p46-us-african-hi"
+    },
+    "sameAs": {
+     "DC": "MD"
+    }
+   },
+   "_units": "U5-3d: 주 50 + DC(Natural Earth 1단계 행정 구역). 알래스카·하와이는 삽입 틀 fit 으로 표본(웹 그림은 실제 자리 — 대조표 알려진 차이). DC 는 교과서가 따로 칠하지 않아(U5-D Step 3 확인 그림 — DC 자리 1.5pt 안 채움은 메릴랜드·버지니아뿐) 메릴랜드 값(sameAs). 면 단순화 0.2°/0.05°²(기본값 — 레이어당 약 30KB, 네 장 약 120KB 로 레이어 예산 안이라 geometryRef 없이)"
+  },
+  "p46-us-hispanic": {
+   "map": "p46-us-hispanic",
+   "type": "regionClass",
+   "expectLegend": 5,
+   "legendItems": [
+    {
+     "color": "#76b043",
+     "label": "40 이상"
+    },
+    {
+     "color": "#89c765",
+     "label": "30-40"
+    },
+    {
+     "color": "#b9d989",
+     "label": "20-30"
+    },
+    {
+     "color": "#daebc1",
+     "label": "10-20"
+    },
+    {
+     "color": "#f1f7e8",
+     "label": "10 미만"
+    }
+   ],
+   "_legendItems": "46쪽 「히스패닉계 인구 비율(%)」 범례 견본 5(왼쪽 x 272~318 의 4~200pt² 채움, 위 → 아래 — U5-3d trial.py 와 같은 읽기). 이름은 지면 글자 그대로(붙임표 「-」)",
+   "units": {
+    "source": "raw/ne-admin1/usa.geojson",
+    "key": "postal",
+    "name": "name",
+    "insets": {
+     "AK": "p46-us-hispanic-ak",
+     "HI": "p46-us-hispanic-hi"
+    },
+    "sameAs": {
+     "DC": "MD"
+    }
+   },
+   "_units": "U5-3d: 주 50 + DC(Natural Earth 1단계 행정 구역). 알래스카·하와이는 삽입 틀 fit 으로 표본(웹 그림은 실제 자리 — 대조표 알려진 차이). DC 는 교과서가 따로 칠하지 않아(U5-D Step 3 확인 그림 — DC 자리 1.5pt 안 채움은 메릴랜드·버지니아뿐) 메릴랜드 값(sameAs). 면 단순화 0.2°/0.05°²(기본값 — 레이어당 약 30KB, 네 장 약 120KB 로 레이어 예산 안이라 geometryRef 없이)",
+   "legendColors": {
+    "10 미만": {
+     "color": "#e8f2d8",
+     "why": "가장 옅은 단계 #f1f7e8(ΔE 5.9 — 웹 바탕 육지 #f2efe9 위에서 묻힘, u4 비거주지 기준 7.5 아래) → 바로 위 단계 색 쪽으로 40% 섞은 색(바탕과 ΔE 9.5~15, 위 단계와 6~15 — 단계 차례·색상 그대로). 인쇄 색은 printColor"
+    }
+   }
+  },
+  "p46-us-asian": {
+   "map": "p46-us-asian",
+   "type": "regionClass",
+   "expectLegend": 5,
+   "legendItems": [
+    {
+     "color": "#ef3f60",
+     "label": "20 이상"
+    },
+    {
+     "color": "#f37b8a",
+     "label": "15-20"
+    },
+    {
+     "color": "#f7abad",
+     "label": "10-15"
+    },
+    {
+     "color": "#fcd4d2",
+     "label": "5-10"
+    },
+    {
+     "color": "#feeceb",
+     "label": "5 미만"
+    }
+   ],
+   "_legendItems": "46쪽 「아시아계 인구 비율(%)」 범례 견본 5(왼쪽 x 272~318 의 4~200pt² 채움, 위 → 아래 — U5-3d trial.py 와 같은 읽기). 이름은 지면 글자 그대로(붙임표 「-」)",
+   "units": {
+    "source": "raw/ne-admin1/usa.geojson",
+    "key": "postal",
+    "name": "name",
+    "insets": {
+     "AK": "p46-us-asian-ak",
+     "HI": "p46-us-asian-hi"
+    },
+    "sameAs": {
+     "DC": "MD"
+    }
+   },
+   "_units": "U5-3d: 주 50 + DC(Natural Earth 1단계 행정 구역). 알래스카·하와이는 삽입 틀 fit 으로 표본(웹 그림은 실제 자리 — 대조표 알려진 차이). DC 는 교과서가 따로 칠하지 않아(U5-D Step 3 확인 그림 — DC 자리 1.5pt 안 채움은 메릴랜드·버지니아뿐) 메릴랜드 값(sameAs). 면 단순화 0.2°/0.05°²(기본값 — 레이어당 약 30KB, 네 장 약 120KB 로 레이어 예산 안이라 geometryRef 없이)",
+   "legendColors": {
+    "5 미만": {
+     "color": "#fde2e1",
+     "why": "가장 옅은 단계 #feeceb(ΔE 6.0 — 웹 바탕 육지 #f2efe9 위에서 묻힘, u4 비거주지 기준 7.5 아래) → 바로 위 단계 색 쪽으로 40% 섞은 색(바탕과 ΔE 9.5~15, 위 단계와 6~15 — 단계 차례·색상 그대로). 인쇄 색은 printColor"
+    }
+   }
+  },
+  "p47-hq": {
+   "type": "symbol",
+   "mode": "sized-circles",
+   "circles": {
+    "fill": "#f27292",
+    "sizePt": [
+     1.5,
+     16
+    ]
+   },
+   "legendValues": [
+    200,
+    100,
+    10
+   ],
+   "legendStroke": "#231f20",
+   "leaders": {
+    "fill": "#231f20",
+    "maxWidthPt": 0.6,
+    "dotPt": [
+     0.7,
+     1.4
+    ],
+    "nearPt": 0.8
+   },
+   "alpha": 0.85,
+   "circleStroke": "#231f20",
+   "labelFormat": "시가 총액 약 {v}백억 달러",
+   "legendStyle": "nested-circles",
+   "expectLegend": 3,
+   "map": "p47-hq",
+   "labelPoints": [
+    {
+     "text": "동해",
+     "xy": [
+      547.95,
+      165.05
+     ],
+     "size": 3.5,
+     "color": "#0072bc"
+    },
+    {
+     "text": "독도",
+     "xy": [
+      547.55,
+      167.9
+     ],
+     "size": 2.0,
+     "color": "#231f20"
+    },
+    {
+     "text": "이어도 종합 해양 과학 기지",
+     "xy": [
+      546.1,
+      175.7
+     ],
+     "size": 2.0,
+     "color": "#231f20"
+    }
+   ],
+   "_labelPoints": "동해·독도·이어도 종합 해양 과학 기지(교과서 필수 표기) — 47쪽 지면 글자 상자 가운데(이어도는 두 줄을 한 글자로, u4 38쪽과 같은 꼴). 앱 레이어 종류 symbolLabels(americasExtra — 글자는 지명 글자 길)",
+   "symbolStyle": {
+    "pxPerPt": 4.0,
+    "maxPx": 36
+   },
+   "_symbolStyle": "U5-3e 이어서 볼 것: 기본(pxPerPt 2.4·max 26)은 세계 처음 보기(k ≈ 1)에서 가장 큰 원 약 17px — 교과서 47쪽은 가장 큰 원(8.7pt)이 지도 너비(351pt)의 2.5% 라 1000px 지도에서 약 25px. pxPerPt 4 → k 1 에서 배율 3.0(가장 큰 원 26px · 가장 작은 원(1.5pt) 4.5px), k 2.2 이상은 maxPx 36 이 범례 200 원(8.55pt)을 막아 배율 4.2 에서 멈춤(지름 비는 그대로)"
+  },
+  "p47-hq-sv": {
+   "type": "symbol",
+   "mode": "sized-circles",
+   "circles": {
+    "fill": "#f27292",
+    "sizePt": [
+     1.5,
+     16
+    ]
+   },
+   "legendValues": [
+    200,
+    100,
+    10
+   ],
+   "legendStroke": "#231f20",
+   "leaders": {
+    "fill": "#231f20",
+    "maxWidthPt": 0.6,
+    "dotPt": [
+     0.7,
+     1.4
+    ],
+    "nearPt": 0.8
+   },
+   "alpha": 0.85,
+   "circleStroke": "#231f20",
+   "labelFormat": "시가 총액 약 {v}백억 달러",
+   "legendStyle": "nested-circles",
+   "expectLegend": 3,
+   "map": "p47-hq-sv",
+   "legendMap": "p47-hq",
+   "insetRadius": true,
+   "hideLegend": true,
+   "_doc": "실리콘 밸리 확대 삽입(교사 Q7 — 확대 창 symbolInset). 원 반지름은 rDeg(교과서 원 반지름을 이 지도 fit 으로 되돌림 — 창 축척 따라), 범례는 본 지도 레이어 것(hideLegend). 창 바탕 윤곽은 설정 insets p47-hq-sv(교과서 삽입 틀 범위)"
+  },
+  "p47-maquila": {
+   "type": "unitSymbols",
+   "map": "p47-maquila",
+   "mode": "unit-symbols",
+   "series": [
+    {
+     "cls": "plants",
+     "fill": "#0066b3",
+     "label": "1칸당 50개 공장",
+     "unit": 50,
+     "short": "공장",
+     "unitText": "50개"
+    },
+    {
+     "cls": "workers",
+     "fill": "#f5821f",
+     "label": "1칸당 2만 명 근로자",
+     "unit": 20000,
+     "short": "근로자",
+     "unitText": "2만 명"
+    }
+   ],
+   "cellPt": [
+    1.6,
+    2.4
+   ],
+   "pitchPt": 2.45,
+   "leaders": {
+    "stroke": "#231f20",
+    "width": 0.2,
+    "dotFill": "#231f20",
+    "dotPt": [
+     0.4,
+     0.9
+    ],
+    "nearPt": 0.8
+   },
+   "states": {
+    "source": "raw/ne-admin1/mex.geojson",
+    "key": "iso_3166_2",
+    "name": "name_ko"
+   },
+   "expectLegend": 2,
+   "_doc": "U5-3f: 파랑 #0066b3·주황 #f5821f 칸(한 변 1.6~2.4pt, 간격 2.45pt) → 열 → 묶음 → 주(NE 1단계 멕시코 — 지시선 끝 또는 밑 칸 자리를 품은 주). 범례 견본 네모(4.7pt)는 cellPt 로 걸러짐"
+  },
+  "p47-mex-states": {
+   "map": "p47-maquila",
+   "type": "regionClass",
+   "expectLegend": 1,
+   "legendItems": [
+    {
+     "color": "#f2e9bd",
+     "label": "주 경계"
+    }
+   ],
+   "legendStyles": {
+    "주 경계": "outline"
+   },
+   "aliases": {
+    "#f1ebd8": "#f2e9bd"
+   },
+   "_aliases": "교과서는 마킬라도라가 있는 주를 #f2e9bd, 없는 주(남부·서부 15 — 킨타나로오·오아하카 등)를 #f1ebd8 로 칠함(ΔE 약 5 — 눈으로는 거의 같음) → 둘 다 멕시코 주 한 분류로",
+   "legendColors": {
+    "주 경계": {
+     "color": "#6d6e71",
+     "why": "교과서 47쪽 주 경계선 색(#6d6e71 0.17pt) — 면은 칠하지 않고 테두리만(legendStyles outline), 인쇄 채움 #f2e9bd 는 printColor"
+    }
+   },
+   "units": {
+    "source": "raw/ne-admin1/mex.geojson",
+    "key": "iso_3166_2",
+    "name": "name_ko",
+    "simplifyDeg": 0.1,
+    "minAreaDeg2": 0.02
+   },
+   "_doc": "마킬라도라 지도 바탕의 멕시코 주 경계(U5-3f 이어서 볼 것 — 회색 가는 선): 하위 행정 구역판 regionClass 를 그대로 써서(엔진·파이프라인 고침 없음) 32주 면을 교과서 멕시코 땅 색(#f2e9bd — 주마다 한 채움)으로 표본·분류 → 테두리만 그리는 분류 하나. 단순화 0.1°/0.02°²(47쪽 지도에서 약 0.5pt — 0.05° 는 48KB, 0.1° 는 28KB)"
+  },
+  "p42-korea": {
+   "type": "compareOutline",
+   "map": "p42-north",
+   "mode": "sameLat",
+   "homePt": [
+    159.57,
+    399.98
+   ],
+   "label": [
+    "같은 축척과",
+    "같은 위도의 우리나라"
+   ],
+   "title": "같은 축척과 같은 위도의 우리나라",
+   "_why": "교과서 42쪽 실루엣(회색 채움 4색 합집합 — U5-3i silhouette.py) 넓이 중심 → 앱 처음 자리 = 교과서 자리(−133.3°, 37.8°). 교사 Q3 답: 어디로든 자유롭게 끎. 교과서 실루엣은 동서로 더 넓음(넓이 비 1.063, IoU 0.67 — 대조표 알려진 차이 후보, 앱은 실제 크기·모양)"
+  },
+  "p43-korea": {
+   "type": "compareOutline",
+   "map": "p43-south",
+   "mode": "antipode",
+   "homePt": [
+    526.25,
+    537.38
+   ],
+   "label": [
+    "같은 축척의",
+    "우리나라와 대척점"
+   ],
+   "title": "같은 축척의 우리나라와 대척점",
+   "_why": "교과서 43쪽 실루엣 넓이 중심(−46.6°, −38.7°) — 교사 Q3 답 「대척점 거울상」: 앱 처음 자리는 실제 대척점(−52.5°, −38.5°), 교과서 자리는 그보다 동쪽으로 514km(offsetKm — 실제 대척점이면 윤곽이 우루과이 해안·라플라타강 하구에 걸림, 대조표 알려진 차이 후보)"
+  }
+ },
  "_layers": "U5-4 에서 채움(u4 꼴: map·type·mode·tol·minArea·expectLegend·색 대응, 나라 단위 countryClass·countryOverrides, 하위 행정 구역 regionClass(U5-3d)·경로 화살표 pathFlow·네모 단위 기호 unitSymbols·우리나라 윤곽 compareOutline).",
  "georef": {
   "families": [
@@ -1025,6 +1418,18 @@
    "_fonts": "countryFont·capitalFont·capitalSize 는 u4 값 복사 — 41쪽도 초성 KCCChassam(12.8pt·8pt)·손글씨 수도 KyoboHandwriting 7.5pt(계획 조사). U5-8 에서 확인. 교사 Q4 답(퀴즈 나라 35 · 그린란드·기아나 지역 · 「알래스카(미)」 무시)은 regions·noCapital·ignoreLabels·joinLabels 로 U5-8 에서."
   }
  },
- "insets": [],
+ "insets": [
+  {
+   "id": "p47-hq-sv",
+   "map": "p47-hq-sv",
+   "layer": "sims/atlas-u5-americas/data/layer-p47-hq-sv.json",
+   "landFill": "#ebebec",
+   "minAreaPt2": 0.3,
+   "tolPt": 0.15,
+   "frame": true,
+   "out": "sims/atlas-u5-americas/data/inset-p47-hq-sv.json",
+   "_doc": "47쪽 실리콘 밸리 확대 삽입의 바탕(교과서 육지 #ebebec — 바다 #00aeef 계열): 육지를 삽입 틀로 자르고 틀 둘레 점(frame)으로 창 범위 = 교과서 삽입 틀(U5-3e 이어서 볼 것 — 임시 윤곽 0.9°×0.74° 는 틀보다 좁아 원이 크게 보였음)"
+  }
+ ],
  "_insets": "확대 창 — 47쪽 실리콘 밸리(symbolInset, 교사 Q7 답)는 U5-4·U5-9. 카리브 작은 나라 동그라미 겹침은 U5-9 캡처로 판단."
 }

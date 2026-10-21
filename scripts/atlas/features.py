@@ -209,6 +209,8 @@ def features(layer_id):
         out['legend'] = [{'cls': 'c1', 'color': mc['color'], 'kind': 'symbol', 'label': mc['kind']}]
     else:
         raise ValueError(f'{layer_id}: 모르는 mode {mode}')
+    if mode not in ('vector', 'raster') and cfg.get('labelPoints'):   # 기호 레이어의 지면 글자(U5-4 — 47쪽 세계 지도 동해·독도·이어도, 앱은 symbolLabels)
+        out['labels'] = label_points(cfg['labelPoints'])
     for e in out['legend']: e.pop('box', None)
     present = ({p['cls'] for p in out['polys']} | {p['cls'] for part in out.get('parts', []) for p in part['polys']}
                | {s['cls'] for s in out['symbols']} | {l['cls'] for l in out['lines']}
