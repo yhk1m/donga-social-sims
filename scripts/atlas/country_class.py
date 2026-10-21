@@ -26,6 +26,15 @@
   도형들이라 표본 9개 다수결은 우연에 맡겨진다 → 표본 격자를 samples×samples 로 늘리고, 채움 분류가 둘 이상 각각 받은 표의 minShare 를
   넘으면 classes[iso] = [가장 많은 것, 다음 …](최대 max 개, 같은 표면 범례 차례), 출력에 multiFill 'stripes'. 키가 없으면 다수결 그대로.
 
+하위 행정 구역판(U5-3d — 46쪽 미국 주 4장, 레이어 type 'regionClass' + 설정 units, 있을 때만):
+  units {source: 'raw/ne-admin1/usa.geojson'(작업 폴더), key: 'postal', name: 'name', insets?: {구역 key: 삽입 지도 id}(알래스카·하와이),
+         sameAs?: {구역 key: 다른 구역 key}(교과서가 따로 칠하지 않은 작은 구역 — DC → 메릴랜드), simplifyDeg?(기본 0.2 — 46쪽 지도 약 0.8pt),
+         minAreaDeg2?(기본 0.05 — 이보다 작은 섬 조각은 버림, 구역마다 가장 큰 조각은 남김)}.
+  나라 대신 그 면들로 표본: 구역마다 그 면이 든 지도(insets 에 있으면 삽입 지도, 없으면 본 지도) fit 으로 찍고, 그 지도 틀·그 지도의
+  범례색 채움 면(범례는 본 지도 legendBbox)으로 다수결(classify_units). 분류 못 한 구역은 경고(「분류 없음」 — 삽입 fit 을 안 줌 등).
+  출력 cc.json 에 features(구역 면 경위도 — coverage_simplify 로 이웃 경계를 함께 단순화, 0.001° 격자, 바깥 고리 시계 방향, {key, name, cls})
+  → build_layers.regionClassLayerJson 이 면 레이어 GeoJSON. 고침은 countryOverrides(열쇠 = 구역 key) 그대로. 키가 없으면 나라 길 그대로.
+
 설정(단원 설정 layers[id]): {"map", "type": "countryClass", "mode": "vector"|"raster"(기본 vector), "expectLegend"?,
   "countryOverrides"?, "legendStyles"?, "samplesGrid"?(기본 3), "smallPt2"?(기본 8), "multi"?} + defaults(matchDE·legendSwatchArea 등 — 면 레이어와 같음).
 
@@ -272,6 +281,122 @@ def small_state_issues(states, small_pt2):
     return out
 
 
+# ── 하위 행정 구역판(units — U5-3d) ──────────────────────────────────────
+def classify_units(units, insets, main, ctx, grid=3):
+    """units [(key, name, 경위도 면)], insets {key: 지도 id}, main = 본 지도 id, ctx {지도 id: (project, zones, order, 틀)} →
+    ({key: cls}, 보고서 {absent, unclassified, split, votes, maps{key: 지도 id}}). 구역마다 그 지도(insets 아니면 main)에서 classify_countries."""
+    by_map = {}
+    for k, _, g in units: by_map.setdefault(insets.get(k, main), []).append((k, g))
+    classes, rep = {}, {'absent': [], 'unclassified': [], 'split': [], 'votes': {}, 'maps': {}}
+    for mid, us in by_map.items():
+        project, zones, order, fr = ctx[mid]
+        c, r = classify_countries(us, project, zones, order, fr, grid)
+        classes.update(c)
+        for f in ('absent', 'unclassified', 'split'): rep[f] += r[f]
+        rep['votes'].update(r['votes'])
+        for k, _ in us: rep['maps'][k] = mid
+    for f in ('absent', 'unclassified', 'split'): rep[f] = sorted(rep[f])
+    rep['maps'] = dict(sorted(rep['maps'].items()))
+    return classes, rep
+
+
+def unit_warnings(units, classes, rep):
+    """분류 못 한 구역(지도 틀 밖 — 삽입 fit 을 안 줌 / 표가 없음)과 표가 갈린 구역 → 경고 글 목록."""
+    out = []
+    for k, name, _ in units:
+        if k in classes: continue
+        why = '지도 틀 밖(삽입 지도 insets 를 줬는지)' if k in rep['absent'] else '표본이 범례색 면에 안 듦'
+        out.append(f'{k}({name}): 분류 없음 — {why}')
+    for k in rep['split']:
+        if k in classes: out.append(f'{k}: 표본 분류가 반으로 갈림 {rep["votes"].get(k)}')
+    return out
+
+
+def apply_same_as(classes, same_as, known):
+    """설정 units.sameAs {key: 다른 key} — 교과서가 따로 칠하지 않은(이웃 면에 묻힌) 작은 구역에 이웃 분류를 그대로(DC → MD).
+    → (새 classes, [{key, from, cls, was}]). 모르는 key·분류 없는 이웃은 오류."""
+    out, log = dict(classes), []
+    for k, src in (same_as or {}).items():
+        if k.startswith('_'): continue
+        if k not in known or src not in known: raise ValueError(f'units.sameAs {k} → {src}: 모르는 구역')
+        if src not in classes: raise ValueError(f'units.sameAs {k} → {src}: {src} 가 분류되지 않음')
+        log.append({'key': k, 'from': src, 'cls': classes[src], 'was': out.get(k)})
+        out[k] = classes[src]
+    return out, log
+
+
+def unit_features(units, classes, tol, min_area=0.0):
+    """분류된 구역 면 → GeoJSON feature 목록(구역 차례) — 넓이 min_area(°²) 아래 조각(작은 섬)은 버리되 구역마다 가장 큰 조각은 남기고,
+    이웃 경계를 함께 단순화(coverage_simplify, tol °), 0.001° 격자, 바깥 고리 시계 방향(d3), 늘 MultiPolygon. properties {key, name, cls}."""
+    import shapely
+    from shapely.geometry import mapping, MultiPolygon
+    from atlas_common import flat_polygons
+    def drop_small(g):
+        g = polygonal(g)
+        if g is None or not min_area: return g
+        ps = sorted(flat_polygons(g), key=lambda p: -p.area)
+        return polygonal(MultiPolygon([ps[0]] + [p for p in ps[1:] if p.area >= min_area]))
+    keep = [(k, n, drop_small(g)) for k, n, g in units if k in classes]
+    keep = [(k, n, g) for k, n, g in keep if g is not None]
+    simp = list(shapely.coverage_simplify([g for _, _, g in keep], tol, simplify_boundary=True)) if tol else [g for _, _, g in keep]
+    out = []
+    for (k, n, g0), g in zip(keep, simp):
+        g = polygonal(shapely.set_precision(g, 0.001)) or polygonal(shapely.set_precision(g0, 0.001))
+        g = polygonal(shapely.orient_polygons(g, exterior_cw=True))
+        if g.geom_type == 'Polygon': g = MultiPolygon([g])
+        coords = mapping(g)['coordinates']
+        geo = {'type': 'MultiPolygon', 'coordinates': [[[[round(x, 3), round(y, 3)] for x, y in r] for r in poly] for poly in coords]}
+        out.append({'type': 'Feature', 'properties': {'key': k, 'name': n, 'cls': classes[k]}, 'geometry': geo})
+    return out
+
+
+def load_units(ucfg):
+    """설정 units → [(key, name, 경위도 면)] (파일 차례)."""
+    with open(os.path.join(WORK, ucfg['source']), encoding='utf-8') as f:
+        feats = json.load(f)['features']
+    return [(ft['properties'][ucfg['key']], ft['properties'][ucfg.get('name', ucfg['key'])], shape(ft['geometry'])) for ft in feats]
+
+
+def build_units(layer_id, cfg):
+    """하위 행정 구역판(설정 units) 레이어 하나 → cc.json 내용(features 포함)."""
+    import legend as LG, zones as Z
+    if cfg.get('mode') == 'raster': raise ValueError(f'{layer_id}: units(하위 행정 구역판)는 벡터 지도만')
+    ucfg = cfg['units']
+    M = maps()
+    m = M[cfg['map']]
+    warnings = []
+    leg = LG.manual_legend(cfg['legendItems']) if cfg.get('legendItems') else LG.legend(m, cfg)
+    if not leg: raise ValueError(f'{layer_id}: 범례 견본이 없음(legendBbox 확인)')
+    exp = cfg.get('expectLegend')
+    if exp is not None and len(leg) != exp:
+        raise ValueError(f'{layer_id}: 범례 {len(leg)}개 ≠ 설정 expectLegend {exp} — {[e["label"] for e in leg]}')
+    order = [e['cls'] for e in leg]
+    insets = {k: v for k, v in (ucfg.get('insets') or {}).items() if not k.startswith('_')}
+    units = load_units(ucfg)
+    ctx, zreps, fams = {}, {}, {}
+    for mid in [cfg['map'], *sorted(set(insets.values()))]:
+        with open(os.path.join(WORK, 'geo', f'{mid}.fit.json'), encoding='utf-8') as f: fit = json.load(f)
+        zones, zr = Z.vector_zones(M[mid], leg, cfg, warnings)
+        ctx[mid] = ((lambda ft: (lambda by: project_samples(ft, by)))(fit), zones, order, frame(M[mid]))
+        zreps[mid] = zr
+        fams[mid] = fit['family'] + (' approx' if fit.get('approx') else '')
+    classes, rep = classify_units(units, insets, cfg['map'], ctx, cfg.get('samplesGrid', 3))
+    known = {k for k, _, _ in units}
+    classes, same = apply_same_as(classes, ucfg.get('sameAs'), known)
+    for k in [o for o in (cfg.get('countryOverrides') or {}) if not o.startswith('_')]:
+        if k not in known: raise ValueError(f'{layer_id}: countryOverrides {k} — 모르는 구역')
+    classes, ov = apply_overrides(classes, cfg.get('countryOverrides'), leg)
+    warnings += unit_warnings(units, classes, rep)
+    present = set(classes.values())
+    absent = [e['label'] for e in leg if e['cls'] not in present]
+    if absent: warnings.append(f'구역이 없는 범례 분류: {absent}')
+    feats = unit_features(units, classes, ucfg.get('simplifyDeg', 0.2), ucfg.get('minAreaDeg2', 0.05))
+    legend = [{k: e[k] for k in ('cls', 'color', 'label', 'kind') if k in e} for e in leg]
+    rep.update(zones=zreps, units=len(units), classified=len(classes), warnings=warnings, fitFamily=fams)
+    return {'id': layer_id, 'map': cfg['map'], 'legend': legend, 'classes': dict(sorted(classes.items())), 'overrides': ov, 'sameAs': same,
+            'units': {'source': ucfg['source'], 'key': ucfg['key']}, 'features': feats, 'report': rep}
+
+
 # ── 지도 하나 ────────────────────────────────────────────────────────────
 NE_COUNTRIES_10M = 'raw/ne/ne_10m_admin_0_countries.geojson'
 
@@ -340,6 +465,7 @@ def build(layer_id):
     from atlas_common import unit_config
     from shapely.geometry import box as _box
     cfg = layer_config(layer_id)
+    if cfg.get('units'): return build_units(layer_id, cfg)      # 하위 행정 구역판(U5-3d) — 키가 없으면 아래 나라 길 그대로
     m = maps()[cfg['map']]
     warnings = []
     leg = LG.manual_legend(cfg['legendItems']) if cfg.get('legendItems') else LG.legend(m, cfg)
@@ -472,6 +598,11 @@ def main(argv):
         p = os.path.join(WORK, 'geo', f'{lid}.cc.json')
         with open(p, 'w', encoding='utf-8') as f: json.dump(r, f, ensure_ascii=False)
         rr = r['report']
+        if 'features' in r:   # 하위 행정 구역판
+            print(f"{lid}: 구역 {rr['classified']}/{rr['units']} · 범례 {len(r['legend'])} · 고침 {len(r['overrides'])} · sameAs {len(r['sameAs'])} · "
+                  f"지도 밖 {len(rr['absent'])} · 분류 없음 {len(rr['unclassified'])} · 갈림 {len(rr['split'])} · cc.json {os.path.getsize(p) // 1024}KB → {p}")
+            for w in rr['warnings']: print(f'  경고 {lid}: {w}')
+            continue
         print(f"{lid}: 나라 {len(r['classes'])} · 범례 {len(r['legend'])} · 고침 {len(r['overrides'])} · 지도 밖 {len(rr['absent'])} · "
               f"분류 없음 {len(rr['unclassified'])} · 갈림 {len(rr['split'])} · 작은 나라 확인 {len(rr['small'])} · "
               f"한 상세도만 {rr['levels']['only50'] + rr['levels']['only10a']} → {p}")

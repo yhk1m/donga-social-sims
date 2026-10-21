@@ -32,3 +32,18 @@ export function shiftFit(src, { map, dx, dy }, id) {
   out.fitFrom = { map, dx, dy };
   return out;
 }
+
+/** fitFrom fit · 빌린 지도 fit · 지도 항목 fitFrom {map, dx, dy} → 내용이 낡았으면 까닭 글, 아니면 null(U5-3d — build_layers 가 쓰기 전에).
+ *  빌린 지도를 다시 맞췄는데 fitFrom 지도를 다시 만들지 않았거나(도법·매개변수·닮음 변환·TPS 기준점이 shiftFit 결과와 다름),
+ *  지도 목록의 이동량이 바뀌었으면 낡음 → georef-cli --all. 파일 시각은 보지 않는다(projectionFromStale 과 같음). */
+export function fitFromStale(fit, parent, spec) {
+  if (!fit?.fitFrom) return `${fit?.id}: fitFrom fit 이 아님(지도 항목은 fitFrom 인데 fit 에 fitFrom 없음)`;
+  const ff = fit.fitFrom;
+  if (ff.map !== spec.map || ff.dx !== spec.dx || ff.dy !== spec.dy) return `${fit.id}: 이동량 ${ff.map} (${ff.dx}, ${ff.dy}) ≠ 지도 목록 ${spec.map} (${spec.dx}, ${spec.dy})`;
+  const want = shiftFit(parent, spec, fit.id);
+  const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  if (fit.family !== want.family || !eq(fit.params, want.params)) return `${fit.id}: 도법·매개변수가 빌린 지도 ${parent.id} 와 다름`;
+  if (!eq(fit.sim, want.sim)) return `${fit.id}: 닮음 변환이 빌린 지도 ${parent.id} + 이동량과 다름`;
+  if (!eq(fit.tps ?? null, want.tps ?? null)) return `${fit.id}: TPS 가 빌린 지도 ${parent.id} + 이동량과 다름`;
+  return null;
+}

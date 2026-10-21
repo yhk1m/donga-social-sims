@@ -231,3 +231,45 @@ class ManualLegend(unittest.TestCase):
 
 
 if __name__ == '__main__': unittest.main()
+
+
+class Units(unittest.TestCase):
+    """U5-3d 하위 행정 구역판(regionClass — 레이어 설정 units): 「주」 면마다 그 면이 든 지도(본토 · insets 로 고른 삽입) fit 으로 표본."""
+    # 본토 「쪽」 = 위 proj_pt·FRAME·ZONES, 삽입 「쪽」: 경위도 → (5·lon − 100, 300 − 5·lat), 틀 [0, 250, 60, 300], c2 로 칠함
+    INSET_PT = staticmethod(lambda p: [5 * p[0] - 100, 300 - 5 * p[1]])
+    UNITS = [('AA', '에이', box(0, 0, 8, 8)), ('BB', '비', box(10, 0, 18, 8)), ('IN', '삽입주', box(20, 0, 30, 9))]
+
+    def ctx(self):
+        ins = lambda by: {k: [self.INSET_PT(p) for p in pts] for k, pts in by.items()}
+        return {'main': (project, ZONES, ORDER, FRAME), 'ins': (ins, {'c2': box(0, 250, 60, 300)}, ORDER, box(0, 250, 60, 300))}
+
+    def test_each_unit_classified_on_its_map(self):
+        classes, rep = cc.classify_units(self.UNITS, {'IN': 'ins'}, 'main', self.ctx())
+        self.assertEqual(classes, {'AA': 'c1', 'BB': 'c2', 'IN': 'c2'})
+        self.assertEqual(rep['maps'], {'AA': 'main', 'BB': 'main', 'IN': 'ins'})
+        self.assertEqual(rep['unclassified'] + rep['absent'], [])
+
+    def test_missing_inset_fit_leaves_unit_unclassified_with_warning(self):
+        classes, rep = cc.classify_units(self.UNITS, {}, 'main', self.ctx())   # 삽입 fit 을 안 줌 → 본토 틀 밖
+        self.assertNotIn('IN', classes)
+        self.assertEqual(rep['absent'], ['IN'])
+        self.assertTrue(any('IN' in w and '분류 없음' in w for w in cc.unit_warnings(self.UNITS, classes, rep)))
+
+    def test_same_as_copies_neighbour_class(self):
+        classes, log = cc.apply_same_as({'AA': 'c1', 'BB': 'c2'}, {'DC': 'AA', '_why': '설명'}, {'DC'} | {'AA', 'BB'})
+        self.assertEqual(classes['DC'], 'c1')
+        self.assertEqual(log, [{'key': 'DC', 'from': 'AA', 'cls': 'c1', 'was': None}])
+        with self.assertRaises(ValueError): cc.apply_same_as({'AA': 'c1'}, {'DC': 'ZZ'}, {'DC', 'AA'})
+
+    def test_unit_features_simplified_cw_with_class_and_name(self):
+        feats = cc.unit_features(self.UNITS, {'AA': 'c1', 'IN': 'c2'}, 0.01)
+        self.assertEqual([f['properties'] for f in feats], [{'key': 'AA', 'name': '에이', 'cls': 'c1'}, {'key': 'IN', 'name': '삽입주', 'cls': 'c2'}])
+        ring = feats[0]['geometry']['coordinates'][0][0]
+        area2 = sum(x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in zip(ring, ring[1:]))
+        self.assertLess(area2, 0)                                          # 바깥 고리 시계 방향(d3)
+        self.assertEqual(feats[0]['geometry']['type'], 'MultiPolygon')
+
+    def test_without_units_country_build_path_unchanged(self):
+        # units 키가 없으면 build 는 나라 길(classify_countries) — 함수가 그대로 있고 units 길과 섞이지 않음
+        classes, rep = cc.classify_countries([('AAA', box(0, 0, 8, 8)), ('BBB', box(10, 0, 18, 8))], project, ZONES, ORDER, FRAME)
+        self.assertEqual(classes, {'AAA': 'c1', 'BBB': 'c2'})

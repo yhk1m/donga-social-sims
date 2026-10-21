@@ -327,3 +327,16 @@ test('shiftFit(fitFrom): 합성 fit(TPS 포함)에 쪽 이동량을 주면 모�
   const noTps = shiftFit({ ...src, tps: undefined }, { map: 'a', dx: 1, dy: 2 }, 'b');
   assert.equal(noTps.tps, undefined);
 });
+
+test('fitFromStale(U5-3d): fitFrom fit 이 빌린 지도 fit + 쪽 이동량과 다르면 낡음', async () => {
+  const { fitFromStale, shiftFit } = await import('../../scripts/atlas/projection_from.mjs');
+  const parent = { id: 'p46-us-european', family: 'conicEqualArea', params: [-96.1, 19, 58.1], sim: { a: 1.2, b: 0.1, tx: 400, ty: 150 },
+    tps: { cx: 400, cy: 150, hull: [[320, 100], [490, 210]], pts: [[0, 0]], w: [1] } };
+  const spec = { map: 'p46-us-european', dx: 237.99, dy: -0.04 };
+  const child = shiftFit(parent, spec, 'p46-us-african');
+  assert.equal(fitFromStale(child, parent, spec), null);
+  assert.match(fitFromStale(child, { ...parent, params: [-96, 19, 58] }, spec), /매개변수|낡음/);
+  assert.match(fitFromStale(child, { ...parent, sim: { ...parent.sim, tx: 401 } }, spec), /닮음 변환|낡음/);
+  assert.match(fitFromStale(child, parent, { ...spec, dx: 230 }), /이동량|낡음/);
+  assert.match(fitFromStale({ ...child, fitFrom: undefined }, parent, spec), /fitFrom/);
+});

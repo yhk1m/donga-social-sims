@@ -20,7 +20,7 @@ import { spawnSync } from 'node:child_process';
 import { mesh as topoMesh } from 'topojson-client';
 import { makeConverter } from './georef.mjs';
 import { WORK, loadFit as loadFitRaw, fitPath, neIndex, key, km } from './geo_util.mjs';
-import { projectionFromStale, projectionFromOlder } from './projection_from.mjs';
+import { projectionFromStale, projectionFromOlder, fitFromStale } from './projection_from.mjs';
 import { resolveUnit, stripUnitArgs } from './unit.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -45,6 +45,11 @@ function loadFit(id) {
     if (why) throw new Error(`projectionFrom 낡음(${why}) — node scripts/atlas/georef-cli.mjs --unit ${UNIT.id} --all 먼저`);
     const older = projectionFromOlder(fit, parent, { insetMtime: fs.statSync(fitPath(id)).mtimeMs, parentMtime: fs.statSync(fitPath(pf)).mtimeMs });
     if (older) console.warn(`경고: projectionFrom 시각(${older}) — 매개변수는 같음, 닮음 변환이 낡았을 수 있으니 필요하면 georef-cli --unit ${UNIT.id} --all`);
+  }
+  const ff = maps[id]?.fitFrom;   // fitFrom(U5-2 — 46쪽 미국 9장, 있을 때만): 빌린 지도 fit + 쪽 이동량과 다르면 멈춤
+  if (ff) {
+    const why = fitFromStale(fit, loadFitRaw(ff.map), ff);
+    if (why) throw new Error(`fitFrom 낡음(${why}) — node scripts/atlas/georef-cli.mjs --unit ${UNIT.id} --all 먼저`);
   }
   return fit;
 }
@@ -392,6 +397,35 @@ export function countryClassLayerJson(layer, cc, m, fit) {
   };
 }
 
+/**
+ * 하위 행정 구역 단계구분도(type 'regionClass', U5-3d — 46쪽 미국 주 4장): country_class.py 의 units 길 결과(cc.json features = 주 면
+ * 경위도, 단순화·시계 방향·0.001°) → 면 레이어 GeoJSON(바탕 지도에 없는 면이라 앱은 areaLayer 로 그대로 — topics 레이어 type 'area').
+ * feature properties {type:'area', cls, label, color(범례 꾸밈 뒤 색), name, key}. 범례 분류에 구역이 없거나 expectLegend 가 다르면 멈춤.
+ */
+export function regionClassLayerJson(layer, cc, m, fit) {
+  const { legend } = decorateLegend(layer, cc.legend);
+  const byCls = new Map(legend.map((e) => [e.cls, e]));
+  const present = new Set(cc.features.map((f) => f.properties.cls));
+  const absent = legend.filter((e) => e.geometry !== false && !present.has(e.cls)).map((e) => e.label);
+  if (layer.expectLegend != null && legend.length !== layer.expectLegend) throw new Error(`${layer.id}: 범례 ${legend.length} ≠ expectLegend ${layer.expectLegend}`);
+  if (absent.length) throw new Error(`${layer.id}: 구역이 없는 범례 분류 ${absent.join(', ')}`);
+  return {
+    type: 'FeatureCollection',
+    properties: {
+      id: layer.id, map: layer.map, page: m.page, title: m.title, kind: m.kind, layerType: 'regionClass',
+      approx: !!fit.approx, ...(fit.approx ? { approxReason: fit.approxReason } : {}),
+      source: `교과서 22개정 중학 사회과 부도 ${m.page}쪽 (하위 행정 구역별 분류 — Natural Earth 1단계 행정 구역 표본점, 경위도 맞추기: ${fit.family})`,
+      winding: 'cw',
+      legend: legend.map((e) => ({ ...e, present: present.has(e.cls) })),
+    },
+    features: cc.features.map((f) => {
+      const e = byCls.get(f.properties.cls);
+      if (!e) throw new Error(`${layer.id}: ${f.properties.key} 분류 ${f.properties.cls} 가 범례에 없음`);
+      return { type: 'Feature', properties: { type: 'area', cls: e.cls, label: e.label, color: e.color, name: f.properties.name, key: f.properties.key }, geometry: f.geometry };
+    }),
+  };
+}
+
 /** 그래프 자료 목록(배열 또는 {id: spec}) → {id: spec} */
 const chartMap = (c) => (Array.isArray(c) ? Object.fromEntries(c.map((x) => [x.id, x])) : c?.charts ? chartMap(c.charts) : c || {});
 
@@ -514,6 +548,11 @@ function writeLayer(layer, out, extra = {}) {
 
 function finishCountryClass(layer) {
   const cc = JSON.parse(fs.readFileSync(`${WORK}/geo/${layer.id}.cc.json`, 'utf8'));
+  if (cc.features) {   // 하위 행정 구역판(regionClass — 설정 units): 면 GeoJSON
+    const out = regionClassLayerJson(layer, cc, maps[layer.map], loadFit(layer.map));
+    const r = writeLayer(layer, out, { legend: out.properties.legend.length, classes: new Set(out.features.map((f) => f.properties.cls)).size, features: out.features.length });
+    return { ...r, warnings: cc.report?.warnings || [] };
+  }
   const out = countryClassLayerJson(layer, cc, maps[layer.map], loadFit(layer.map));
   fs.mkdirSync(OUT, { recursive: true });
   const file = path.join(OUT, `layer-${layer.id}.json`);
@@ -568,9 +607,9 @@ function main(argv) {
   });
   fs.mkdirSync(`${WORK}/geo`, { recursive: true });
   // 나라 단위 단계구분도는 도형을 옮기지 않는다(country_class.py → 나라별 분류만). 고리 기호·미확정 국경도 PDF 도형을 뽑지 않음(U4-3c·f)
-  const cc = todo.filter((l) => l.type === 'countryClass');
+  const cc = todo.filter((l) => l.type === 'countryClass' || l.type === 'regionClass');   // regionClass = 하위 행정 구역판(U5-3d, 설정 units)
   const special = (l) => l.type === 'chartSymbols' || l.source === 'ne-disputed';
-  const geo = todo.filter((l) => l.type !== 'countryClass' && !special(l));
+  const geo = todo.filter((l) => l.type !== 'countryClass' && l.type !== 'regionClass' && !special(l));
   const byId = new Map();
   for (const l of todo.filter(special)) {
     if (l.type === 'chartSymbols') {
@@ -600,6 +639,8 @@ function main(argv) {
     });
   }
   if (cc.length) {
+    // 하위 행정 구역판은 본 지도·삽입 fit 을 country_class.py 가 바로 읽으므로 낡음 검사(projectionFrom·fitFrom)를 먼저(키가 있을 때만)
+    for (const l of cc.filter((x) => x.units)) for (const mid of [l.map, ...Object.values(l.units.insets || {})]) loadFit(mid);
     process.stdout.write(run([path.join(here, 'country_class.py'), ...cc.map((l) => l.id)]));
     for (const l of cc) byId.set(l.id, finishCountryClass(l));
   }

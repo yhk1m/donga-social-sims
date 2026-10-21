@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, statSync } from 'node:fs';
-import { convertPath, alignHole, countryClassLayerJson, decorateLegend } from '../../scripts/atlas/build_layers.mjs';
+import { convertPath, alignHole, countryClassLayerJson, regionClassLayerJson, decorateLegend } from '../../scripts/atlas/build_layers.mjs';
 
 const DIR = 'sims/atlas-u2-asia/data';
 const load = (id) => JSON.parse(readFileSync(`${DIR}/layer-${id}.json`, 'utf8'));
@@ -345,4 +345,22 @@ test('disputedLayerJson basemapPairs(U4-9): 바탕 지도 두 나라 공유 경�
   assert.throws(() => disputedLayerJson({ ...layer, disputed: { ...layer.disputed, basemapPairs: [['MAR', 'DZA']] } }, gj, [], topo), /DZA \| MAR\(바탕 지도\)/);
   // basemapPairs 가 없으면 바탕 지도를 보지 않음(u4 전 동작)
   assert.equal(disputedLayerJson({ ...layer, disputed: { featurecla: layer.disputed.featurecla, pairs: layer.disputed.pairs } }, gj, []).features[0].geometry.coordinates.length, 1);
+});
+
+test('regionClassLayerJson(U5-3d): 하위 행정 구역 면 GeoJSON — feature 마다 type area·cls·label·color·name·key, 범례 꾸밈·present', () => {
+  const cc = { legend: [{ cls: 'c1', color: '#e8562a', label: '80 이상', kind: 'fill' }, { cls: 'c2', color: '#fff3c8', label: '50 미만', kind: 'fill' }],
+    classes: { MT: 'c1', CA: 'c2' }, overrides: [], sameAs: [{ key: 'DC', from: 'MD', cls: 'c1', was: null }],
+    features: [{ type: 'Feature', properties: { key: 'MT', name: 'Montana', cls: 'c1' }, geometry: { type: 'MultiPolygon', coordinates: [[[[-116, 49], [-104, 49], [-104, 45], [-116, 49]]]] } },
+      { type: 'Feature', properties: { key: 'CA', name: 'California', cls: 'c2' }, geometry: { type: 'MultiPolygon', coordinates: [[[[-124, 42], [-120, 42], [-120, 35], [-124, 42]]]] } }] };
+  const layer = { id: 'p46-us-european', map: 'p46-us-european', type: 'regionClass', legendColors: { '50 미만': { color: '#f7dc8a', why: '바탕에 묻힘' } } };
+  const out = regionClassLayerJson(layer, cc, { page: 46, title: '미국의 유럽계 인구 비율', kind: 'us-ethnic' }, { family: 'conicEqualArea' });
+  assert.equal(out.type, 'FeatureCollection');
+  assert.equal(out.properties.layerType, 'regionClass');
+  assert.equal(out.properties.winding, 'cw');
+  assert.match(out.properties.source, /46쪽.*conicEqualArea/);
+  assert.deepEqual(out.features.map((f) => f.properties), [
+    { type: 'area', cls: 'c1', label: '80 이상', color: '#e8562a', name: 'Montana', key: 'MT' },
+    { type: 'area', cls: 'c2', label: '50 미만', color: '#f7dc8a', name: 'California', key: 'CA' }]);
+  assert.deepEqual(out.properties.legend.map((e) => [e.cls, e.present]), [['c1', true], ['c2', true]]);
+  assert.throws(() => regionClassLayerJson(layer, { ...cc, features: cc.features.slice(0, 1) }, { page: 46 }, {}), /구역이 없는 범례 분류 50 미만/);
 });
