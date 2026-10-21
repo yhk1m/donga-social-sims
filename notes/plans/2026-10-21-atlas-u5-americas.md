@@ -157,10 +157,10 @@ $ATLAS_WORK/raw/ne-admin1/ · raw/statcan-cd2016/(선택)                       
 
 까닭: u4 가 공개되었고(15b696a), 이 단원은 엔진(도법 등록·지구본·지시선·빗금 각도)과 공유 파이프라인(georef·country_class·zones·build_layers·places)을 고친다. 아프리카 계획 U4-11 끝에 찍기로 한 u4 기준선이 아직 없다(`units/u4/baseline` 없음 — 2026-10-21 확인).
 
-- [ ] **Step 1: 낡은 시험** — `tests/atlas/hub.test.mjs:48` 「공개 전 registry 단원도 준비 중」은 `atlas-u4-africa`를 공개 전 예로 쓴다. u4 가 `docs/versions.json`에 들어가 `published`가 되었으므로 예를 **`atlas-u5-americas`(order 5, page 40)**로 바꾼다(검사 뜻 그대로 — 계획 쪽수 `ATLAS_PLAN`의 u5 항목). `npm test` → Node 실패 0.
-- [ ] **Step 2: u2·u3 지금 상태 확인** — `node scripts/atlas/regress_unit.mjs --unit u2 --check`·`--unit u3 --check`(낡음 경고면 embed·compare_shots·compare 다시). 기대: u2 도장만 다름 2(coloring.json·basemap.json), 캡처 41장 화소 차 0, 0/9/134/24, 조각 +0.956% / u3 도장만 다름 2, 캡처 31장, 0/26/118/42, +0.238%.
-- [ ] **Step 3: u4 기준선** — `node scripts/atlas/compare_shots.mjs --unit u4`(42장) → `node scripts/atlas/compare.mjs --unit u4`(결과 **0/34/104/41** 확인) → `npm run embed -- atlas-u4-africa`(**1,593,565 B** 근처 — 다르면 멈추고 까닭) → `node scripts/atlas/regress_unit.mjs --unit u4 --baseline` → 곧바로 `--check`로 「다른 파일 0, 화소 차 0」(도구 자체 검사). 캡처를 한 번 더 찍고 compare 다시 → `--check`도 같음(결정성 — u3 처럼). 해시 항목 수(저장소·작업 폴더 나눠)·캡처 42장·대조표 수·조각 크기를 「실행 중 결정」에.
-- [ ] **Step 4:** `npm test` 수를 적고 커밋(`tests/atlas/hub.test.mjs`).
+- [x] **Step 1: 낡은 시험** — `tests/atlas/hub.test.mjs:48` 「공개 전 registry 단원도 준비 중」은 `atlas-u4-africa`를 공개 전 예로 쓴다. u4 가 `docs/versions.json`에 들어가 `published`가 되었으므로 예를 **`atlas-u5-americas`(order 5, page 40)**로 바꾼다(검사 뜻 그대로 — 계획 쪽수 `ATLAS_PLAN`의 u5 항목). `npm test` → Node 실패 0.
+- [x] **Step 2: u2·u3 지금 상태 확인** — `node scripts/atlas/regress_unit.mjs --unit u2 --check`·`--unit u3 --check`(낡음 경고면 embed·compare_shots·compare 다시). 기대: u2 도장만 다름 2(coloring.json·basemap.json), 캡처 41장 화소 차 0, 0/9/134/24, 조각 +0.956% / u3 도장만 다름 2, 캡처 31장, 0/26/118/42, +0.238%.
+- [x] **Step 3: u4 기준선** — `node scripts/atlas/compare_shots.mjs --unit u4`(42장) → `node scripts/atlas/compare.mjs --unit u4`(결과 **0/34/104/41** 확인) → `npm run embed -- atlas-u4-africa`(**1,593,565 B** 근처 — 다르면 멈추고 까닭) → `node scripts/atlas/regress_unit.mjs --unit u4 --baseline` → 곧바로 `--check`로 「다른 파일 0, 화소 차 0」(도구 자체 검사). 캡처를 한 번 더 찍고 compare 다시 → `--check`도 같음(결정성 — u3 처럼). 해시 항목 수(저장소·작업 폴더 나눠)·캡처 42장·대조표 수·조각 크기를 「실행 중 결정」에.
+- [x] **Step 4:** `npm test` 수를 적고 커밋(`tests/atlas/hub.test.mjs`).
 
 ---
 
@@ -548,3 +548,10 @@ test('태평양 중심 묶음: 본사·D사 세계 지도', () => assert.ok(by.t
 
 ## 실행 중 결정
 
+- (U5-G0, 2026-10-21) u4 기준선 + 낡은 hub 시험 — 가지 atlas-u5(b851ccf 위)
+  - **hub 시험**: `tests/atlas/hub.test.mjs` 「공개 전 registry 단원도 준비 중」의 예를 `atlas-u4-africa`(order 4, page 34) → `atlas-u5-americas`(order 5, page 40, 계획 쪽수 = ATLAS_PLAN u5 [40, 47])로. 검사 뜻 그대로(registry 에 있어도 versions 없으면 planned, 판이 생기면 published + topics 없으면 계획 쪽수).
+  - **u2**: 처음 `--check` 는 캡처·조각이 입력(15b696a 의 src 시각)보다 오래됨 `[경고]` → `npm run embed -- atlas-u2-asia`(2,110,935 B) → `compare_shots --unit u2`(41장) → `compare --unit u2` → `--check`: 해시 162개 중 도장만 다름 2(coloring.json·basemap.json), 캡처 41장 화소 차 0(heritage 지명 수 100→101 참고), 대조표 0/9/134/24, 조각 +0.956% — 회귀 없음.
+  - **u3 — 판단: 기준선 다시 찍음**: `--check` 해시 195개 중 「새로 생김」 `docs/atlas-u3-europe/2/fragment.html`·`2/index.html`, 「다름」 `docs/atlas-u3-europe/index.html` — u3 기준선(a1cf7ac)을 찍은 뒤 15b696a 에서 유럽 v2 를 공개해 생긴 것뿐(2/fragment.html = 지금 `embed/atlas-u3-europe.html` 바이트 같음, 최신판 index 가 v2 를 가리킴). 캡처 31장 화소 차 0·대조표 0/26/118/42·조각 해시 같음이라 공개본을 넣어 `--unit u3 --baseline` 다시(캡처 경고 → compare_shots·compare 먼저): 해시 195개(저장소 135 · 작업 폴더 60), 캡처 31장, 0/26/118/42, 조각 1,470,531 B(1,436.1 KB) → `--check` 다름 0·화소 차 0. 계획 Step 2 의 「u3 도장만 다름 2 · +0.238%」는 a1cf7ac 의 기준선 다시 찍기 전 수 — 이제 u3 기준은 다름 0 · +0.000%.
+  - **u4 기준선**: `compare_shots --unit u4`(42장) → `compare --unit u4`(다름 0 · 알려진 차이 34 · 같음 104 · 참고 41) → `npm run embed -- atlas-u4-africa` **1,593,684 B**(1,556.3 KB — 계획의 1,593,565 B 와 +119 B 이지만 공개본 `docs/atlas-u4-africa/1/fragment.html` 과 바이트 같음, 계획 수는 공개 전 어림) → `--unit u4 --baseline`: 해시 **150개(저장소 103 = sims/atlas-u4-africa/data 16 · content/atlas/u4 4 · docs/assets/atlas/u4 76 · common 3 · docs/atlas-u4-africa 3 · 조각 1; 작업 폴더 47 = vec 29 · fit 12 · places-p34 1 · units/u4 의 city-holdout·charts-u4·climate-world·index·p35-labels 5)** → 곧바로 `--check` 다름 0·화소 차 0.
+  - **결정성**: 캡처를 한 번 더 찍고(42장) compare 다시 → `--check` 다름 0 · 화소 다른 장면 0 · 화면 값 다른 장면 0 · 대조표 수·HTML 같음 · 조각 해시 같음 — u4 캡처도 결정적(u2 heritage 같은 지명 수 흔들림 없음).
+  - **시험**: `npm test` Python 329(OK) · Node 570(통과 570, 실패 0) — hub 시험 고침으로 실패 1 → 0.
