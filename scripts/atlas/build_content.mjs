@@ -90,7 +90,11 @@ export function frameView(fit, bbox, n, pct) {
   if (ll.length < pts.length / 2) throw new Error(`${fit.id}: 지도 틀 되돌리기 실패 ${pts.length - ll.length}/${pts.length}`);
   const q = (a, p) => { const v = [...a].sort((x, y) => x - y); return v[Math.min(v.length - 1, Math.max(0, Math.round((p / 100) * (v.length - 1))))]; };
   const lons = ll.map((p) => p[0]), lats = ll.map((p) => p[1]);
-  return { center: c.map(r3), bounds: [q(lons, pct), q(lats, pct), q(lons, 100 - pct), q(lats, 100 - pct)].map(r3) };
+  const b = [q(lons, pct), q(lats, pct), q(lons, 100 - pct), q(lats, 100 - pct)];
+  // 서쪽 끝만 날짜변경선을 넘는 틀(u5 40쪽 아메리카 — 알류샨 서쪽 끝 −180.2)은 −180 으로: 중심 경도 0 지도에서 −180 너머는 오른쪽 끝(+179.8)으로
+  // 투영돼 범위가 지도 폭 전체가 된다(U5-9 캡처). 동쪽이 180 을 넘는 태평양 중심 틀(u4 태양광 등)은 묶음 중심 경도와 함께 쓰므로 그대로.
+  if (b[0] < -180 && b[2] <= 180) b[0] = -180;
+  return { center: c.map(r3), bounds: b.map(r3) };
 }
 /** GeoJSON 레이어의 모든 좌표 범위. */
 export function layerView(gj) {

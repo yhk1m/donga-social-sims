@@ -286,3 +286,21 @@ test('깨진 글자 없음: 「烋」(’ 글꼴 코드)·?글리프··→h·�
   }
   assert.ok(JSON.stringify(T).includes('퀘벡의 프랑스어·영어 공존'), '46쪽 「·」(계획 메모의 h 오류) 바르게');
 });
+
+test('main.js(U5-9): 등록 둘을 mountAtlas 전에(지구본 = 도법 고르기 6번째), globeTools 는 뒤에·destroy 때 풂, 선택값 열쇠가 실제 레이어', async () => {
+  const src = readFileSync('sims/atlas-u5-americas/main.js', 'utf8').replace(/^\s*\/\/.*$/gm, '');
+  const at = (s) => { const i = src.indexOf(s); assert.ok(i >= 0, s); return i; };
+  const mount = at('mountAtlas(root');
+  assert.ok(at('installExtraCharts();') < mount && at('installAmericasExtras();') < mount, '등록은 mountAtlas 전');
+  assert.ok(at('globeTools(root.atlasMap, root.atlasUi.tools.el)') > mount, 'globeTools 는 mountAtlas 뒤');
+  assert.match(src, /offGlobe\(\);\s*atlas\.destroy\(\)/);
+  const refs = new Set(T.flatMap((t) => t.layers.map((l) => l.ref)));
+  for (const k of ['layer-p47-hq', 'layer-p47-agri-supply', 'layer-p47-hq-sv']) assert.ok(refs.has(k) && src.includes(`'${k}'`), k);
+  // 태평양 중심 키 = 묶음 첫 레이어(topic.js 는 묶음 refs 중 처음 찾은 centerLonOf)
+  const tnc = T.find((t) => t.id === 'tnc').layers;
+  assert.equal(tnc[0].ref, 'layer-p47-hq'); assert.equal(tnc.find((l) => l.label !== tnc[0].label).ref, 'layer-p47-agri-supply');
+  // 일반도 보기 범위: 서쪽 끝이 날짜변경선을 넘으면(알류샨 −180.2) 지도 폭 전체로 맞춰졌다 → build_content frameView 가 −180 으로(U5-9)
+  for (const b of [by.general.view.bounds, by.general.views[0].bounds]) assert.ok(b[0] >= -180 && b[0] < -170 && b[2] < -5, `일반도 범위 ${b}`);
+  const { SIMS } = await import('../../../src/registry.js');
+  assert.deepEqual(SIMS.find((s) => s.id === 'atlas-u5-americas'), { id: 'atlas-u5-americas', book: 'atlas', unit: 'Ⅴ. 아메리카', page: 40, title: '사회과부도 아메리카', kind: '지도' });
+});

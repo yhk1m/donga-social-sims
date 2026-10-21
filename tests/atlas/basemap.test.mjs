@@ -199,3 +199,49 @@ test('u4 바탕 지도: 소말릴란드는 소말리아에 합침(Q3), 서사하
     assert.ok(m.coordinates.length >= 1 && m.coordinates.flat().every(([, y]) => Math.abs(y - 27.6667) < 0.001), `${lv} 경계 = 27°40′`);
   }
 });
+
+// ---------- U5-9 기아나 GUF = FRA 에서 잘라 냄(cutIsos, 교사 Q5) · 원본에 없는 iso 이름 basemap.names ----------
+test('editNames: 원본 NAME_KO 먼저, 원본에 없는 iso 는 설정 names(있을 때만) — 고치기가 없으면 {}', async () => {
+  const { editNames } = await import('../../scripts/atlas/build_basemap.mjs');
+  const read = () => ({ features: [{ properties: { ADM0_A3: 'FRA', NAME_KO: '프랑스' } }, { properties: { ADM0_A3: 'SAH', NAME_KO: '서사하라' } }] });
+  const levels = [{ countries: 'x' }];
+  assert.deepEqual(editNames({ levels }, 'r', read), {});
+  assert.deepEqual(editNames({ levels, cutIsos: [{ from: 'FRA', to: 'GUF', box: [-55, 2, -51, 6] }] }, 'r', read), {}, 'names 없으면 GUF 이름 없음(editArgs 가 오류)');
+  assert.deepEqual(editNames({ levels, cutIsos: [{ from: 'FRA', to: 'GUF', box: [-55, 2, -51, 6] }], names: { _doc: 'x', GUF: '기아나', ZZZ: '안 씀' } }, 'r', read), { GUF: '기아나' });
+  assert.deepEqual(editNames({ levels, cutIsos: [{ from: 'MAR', to: 'SAH', box: [-18, 20, -8, 27.6667] }], names: { SAH: '바꾸지 않음' } }, 'r', read), { SAH: '서사하라' }, '원본 이름이 이김');
+});
+
+test('u5 바탕 지도: 기아나 GUF 하나(상자 안), 상자 안에 FRA 없음, 용량·도장, 10a = 카리브·중앙아메리카 상자', async () => {
+  const { checkEdits } = await import('../../scripts/atlas/build_basemap.mjs');
+  const { geoBounds } = await import('d3-geo');
+  const U5 = readJson(path.join(REPO, 'scripts/atlas/config/u5.json'));
+  const file = path.join(REPO, U5.basemap.out);
+  assert.ok(fs.statSync(file).size <= U5.basemap.maxBytes);
+  const topo = readJson(file);
+  checkEdits(topo, U5.basemap);
+  if (fs.existsSync(`${WORK}/raw/ne/ne_10m_lakes.geojson`)) assert.equal(topo.meta.inputsHash, stampHash(U5, 'basemap'));
+  assert.deepEqual(topo.meta.unitBoxes, [[-95, 3, -48, 28]]);
+  const [w, s, e, n] = U5.basemap.cutIsos[0].box;
+  for (const lv of ['110', '50', '10a']) {
+    const fc = feature(topo, topo.objects[`countries${lv}`]).features;
+    const g = fc.filter((f) => f.properties.iso === 'GUF');
+    assert.equal(g.length, 1, lv);
+    assert.equal(g[0].properties.ko, '기아나');
+    const [[gw, gs], [ge, gn]] = geoBounds(g[0]);
+    assert.ok(gw >= w && gs >= s && ge <= e && gn <= n && ge - gw > 2.5, `${lv} 기아나 범위 ${[gw, gs, ge, gn]}`);
+    const fra = fc.find((f) => f.properties.iso === 'FRA');
+    const polys = fra.geometry.type === 'Polygon' ? [fra.geometry.coordinates] : fra.geometry.coordinates;
+    for (const P of polys) {
+      const [[pw, ps], [pe, pn]] = geoBounds({ type: 'Polygon', coordinates: P });
+      assert.ok(pe < w || pw > e || pn < s || ps > n, `${lv} 상자 안에 FRA 조각 ${[pw, ps, pe, pn]}`);
+    }
+    if (lv !== '10a') assert.ok(polys.some((P) => geoBounds({ type: 'Polygon', coordinates: P })[1][1] > 50), `${lv} 프랑스 본토 그대로`);
+  }
+  // 41쪽 색칠하기 나라 35 + 지역 2 가 모두 50m 바탕 지도에 있음(앱 색칠 층이 바탕 지도 iso 로 칠함 — GUF 포함)
+  const quiz = readJson(path.join(REPO, 'content/atlas/u5/coloring.json'));
+  const isos50 = new Set(feature(topo, topo.objects.countries50).features.map((f) => f.properties.iso));
+  const want = quiz.countries.map((q) => q.iso);
+  assert.equal(want.length, 37);
+  assert.ok(want.includes('GUF'));
+  for (const iso of want) assert.ok(isos50.has(iso), `50m 에 ${iso} 없음`);
+});

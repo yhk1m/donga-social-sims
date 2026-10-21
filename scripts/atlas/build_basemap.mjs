@@ -9,6 +9,7 @@
 //        하천·호수: [자르기] → scalerank ≤ maxRank → s(scalerank) → 단순화. 결과는 양자화 없는 TopoJSON 조각.
 //        단원 설정이 있을 때만(u4 아프리카 — 없으면 명령 목록이 옛 그대로): basemap.mergeIsos {남길 iso: [합칠 iso…]}(소말릴란드 → 소말리아, 교사 Q3)·
 //        basemap.cutIsos [{from, to, box}](모로코 면 중 box 안 = 서사하라로, 교사 Q1 「교과서대로」) → editArgs. 고친 나라만 따로 녹이고(dissolve2) 다시 합침.
+//        u5: cutIsos FRA → GUF(기아나, 교사 Q5) — 원본에 없는 iso 의 이름은 basemap.names(editNames).
 //     2. 조각을 combine-files 로 한 위상(topology)에 모아 quantization 으로 양자화 → 객체 순서 고정, meta{source, mapshaper, unitBoxes, inputsHash}.
 //   출력: out(basemap.json). maxBytes 를 넘으면 쓰지 않고 종료 코드 1. 내용이 같으면 쓰지 않는다.
 //   낡은 산출물 검사: 설정 content.stamps.basemap(입력 파일·이 코드·설정 basemap 해시) = meta.inputsHash 면 다시 만들지 않는다(--force 면 만듦).
@@ -217,14 +218,16 @@ export function checkEdits(topo, cfg) {
   }
 }
 
-/** 남긴·받은 나라의 원본 이름(NAME_KO) — 첫 상세도 원본에서(상세도끼리 같음). 고치기가 없으면 {}. */
-function editNames(cfg, rawDir) {
+/** 남긴·받은 나라의 원본 이름(NAME_KO) — 첫 상세도 원본에서(상세도끼리 같음). 고치기가 없으면 {}.
+ *  원본에 없는 iso(u5 기아나 GUF — Natural Earth 는 FRA 의 일부)는 설정 basemap.names {iso: 이름}(있을 때만)에서. */
+export function editNames(cfg, rawDir, read = readJson) {
   const want = new Set([...mergeEntries(cfg.mergeIsos).map(([t]) => t), ...(cfg.cutIsos || []).map((c) => c.to)]);
   if (!want.size) return {};
   const out = {};
-  for (const f of readJson(`${rawDir}/${cfg.levels[0].countries}.geojson`).features) {
+  for (const f of read(`${rawDir}/${cfg.levels[0].countries}.geojson`).features) {
     const p = f.properties; if (want.has(p.ADM0_A3)) out[p.ADM0_A3] = p.NAME_KO;
   }
+  for (const [iso, ko] of mergeEntries(cfg.names)) if (want.has(iso) && !out[iso]) out[iso] = ko;
   return out;
 }
 

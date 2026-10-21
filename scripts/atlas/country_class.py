@@ -548,6 +548,10 @@ def build(layer_id):
     # 두 상세도 대조(U3-3 리뷰 중요 1): 분류·고침 iso 가 countries50·countries10a 둘 다에 있는지
     have50 = {i for i, _ in c50}
     have10a = {i for i, g in c10 if _in_boxes(g, boxes)} if boxes else set()
+    # 바탕 지도가 잘라 만든 나라(basemap.cutIsos 의 to — u5 기아나 GUF)는 Natural Earth 원본에 없어도 바탕 지도에 있음(U5-9, u4 SAH 는 원본에도 있어 그대로)
+    for c in (unit_config().get('basemap') or {}).get('cutIsos') or []:
+        have50.add(c['to'])
+        if boxes and _in_boxes(_box(*c['box']), boxes): have10a.add(c['to'])
     lv = level_check(set(classes) | over, have50, have10a)
     rep['levels'] = lv
     if lv['neither']: warnings.append(f"두 상세도 어디에도 없는 iso {lv['neither']}")

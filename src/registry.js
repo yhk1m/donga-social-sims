@@ -23,5 +23,6 @@ export const SIMS = [
   { id: 'atlas-u2-asia', book: 'atlas', unit: 'Ⅱ. 아시아', page: 16, title: '사회과부도 아시아', kind: '지도' },
   { id: 'atlas-u3-europe', book: 'atlas', unit: 'Ⅲ. 유럽', page: 26, title: '사회과부도 유럽', kind: '지도' },
   { id: 'atlas-u4-africa', book: 'atlas', unit: 'Ⅳ. 아프리카', page: 34, title: '사회과부도 아프리카', kind: '지도' },
+  { id: 'atlas-u5-americas', book: 'atlas', unit: 'Ⅴ. 아메리카', page: 40, title: '사회과부도 아메리카', kind: '지도' },
   { id: 'atlas-hub', book: 'atlas', unit: '모음', page: null, title: '사회과부도 모음', kind: '모음' },
 ];
