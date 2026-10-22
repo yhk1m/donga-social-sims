@@ -9,6 +9,8 @@ import { geoPath, geoContains, geoDistance } from 'd3-geo';
 import { feature } from 'topojson-client';
 import { REPO, readJson } from '../../scripts/atlas/geo_util.mjs';
 import { installFakeDom } from './helpers/fakeDom.mjs';
+import { topicViewBundleProblems } from './helpers/topicViewGuard.mjs';
+import { existsSync } from 'node:fs';
 
 register('./helpers/cssHooks.mjs', import.meta.url);
 const dom = installFakeDom();
@@ -37,6 +39,9 @@ test('등록 전: 극 중심은 모르는 도법, 도법 5개', () => {
   assert.throws(() => makeProjection('polarN', { width: 800, height: 600 }), /모르는 도법/);
   assert.throws(() => makeProjection('polarS', { width: 800, height: 600 }), /모르는 도법/);
   assert.throws(() => layerFromRef({ ref: 'layer-tv', type: 'topicView' }, tvData({ centerLon: 150 })), /모르는 레이어 종류/);
+  // 지구본(installAmericasExtras)보다 먼저 부르면 멈춤 — 아무것도 등록하지 않음
+  assert.throws(() => PX.installPolarExtras(), /installAmericasExtras\(\) 를 먼저/);
+  assert.deepEqual(Object.keys(PROJECTIONS), ['miller', 'mercator', 'robinson', 'goode', 'equalEarth']);
 });
 
 test('등록 뒤: 옵션 차례 평면 5 + 지구본 + 극 둘, 라벨, 두 번 불러도 같음', () => {
@@ -212,6 +217,14 @@ test('렌더러 polarView: 밀러 → 북극 중심(보간 없음·극 가운데
   near(v.k, 3, 1e-9); near(v.center[0], c0[0], 1e-6); near(v.center[1], c0[1], 1e-6);
   restore(); // 두 번 불러도 한 번만
   assert.equal(map.view.key, 'miller');
+  // 되돌리기는 up 이 아직 내 값일 때만: A 를 연 채 B 가 up 을 바꾼 뒤 A 를 되돌려도 B 의 up 은 그대로
+  const rA = PX.polarView(map, { projection: 'polarN', up: 0 });
+  const rB = PX.polarView(map, { projection: 'polarN', up: 180 });
+  rA();
+  assert.equal(def.up, 180, '남의 up 은 지우지 않음');
+  rB();
+  assert.equal(def.up, 0, 'B 는 자기 앞 값(A 의 0)으로');
+  def.up = -90; map.setProjection('miller', { animate: false });
   // 그사이 사용자가 바꿨으면 도법은 그대로(up 만 되돌림)
   const r2 = PX.polarView(map, { projection: 'polarS', up: 0 });
   assert.equal(map.view.key, 'polarS');
@@ -418,4 +431,18 @@ test('주의(기록): 바로가기(views)가 있고 그리는 레이어가 없�
   assert.equal(b.viewBtns, a.viewBtns);
   map.destroy();
   await tick();
+});
+
+test('topicView 묶음 검사(helpers/topicViewGuard): 유일한 레이어 · 같은 label 묶음은 통과, 따로 된 label · 바로가기 + topicView 뿐은 문제, u6 topics.json(있으면)', () => {
+  const tv = (ref, label) => ({ ref, type: 'topicView', ...(label ? { label } : {}) });
+  assert.deepEqual(topicViewBundleProblems([{ id: 'coloring', layers: [tv('v')] }]), [], '유일한 레이어');
+  assert.deepEqual(topicViewBundleProblems([{ id: 'arctic', layers: [{ ref: 'a', type: 'area', label: '북극' }, tv('v', '북극')] }]), [], '같은 label');
+  assert.deepEqual(topicViewBundleProblems([{ id: 'x', views: [{ id: 'a' }], layers: [{ ref: 'a', type: 'area' }] }]), [], 'topicView 없음');
+  assert.equal(topicViewBundleProblems([{ id: 'arctic', layers: [{ ref: 'a', type: 'area', label: '북극' }, tv('v')] }]).length, 1, '따로 된 label');
+  assert.equal(topicViewBundleProblems([{ id: 'r', layers: [tv('v1', 'A'), tv('v2', 'A')] }]).length, 2, 'topicView 끼리만 한 묶음');
+  assert.match(topicViewBundleProblems([{ id: 'general', views: [{ id: 'oceania' }], layers: [tv('v')] }])[0], /바로가기/);
+  // 실제 자료(U6-8 이 만든 뒤부터 검사 — 아직 없으면 건너뜀)
+  const f = path.join(REPO, 'sims/atlas-u6-oceania-polar/data/topics.json');
+  if (!existsSync(f)) return;
+  assert.deepEqual(topicViewBundleProblems(readJson(f)), []);
 });

@@ -71,13 +71,16 @@ export function polarView(map, { projection, up = null } = {}) {
   if (!def?.pole || !map?.view) return () => {};
   const v = map.view, prev = { key: v.key, center: v.center, k: v.k }, prevUp = def.up;
   if (up != null) def.up = up;
+  const myUp = def.up;
   if (v.key === projection) map.rebase(); else map.setProjection(projection, { animate: false });
   polarHome(map, def);
   let done = false;
   return () => {
     if (done || map.destroyed) return;
     done = true;
-    def.up = prevUp;
+    // 묶음을 바꿀 때 topic.js 는 앞 레이어 destroy → 새 레이어 만들기 차례라 보통은 늘 내 값이지만, 차례가 바뀌어 다른 polarView 가 이미 up 을
+    // 바꿨으면 그 값을 지우지 않는다(내가 둔 값일 때만 되돌림)
+    if (def.up === myUp) def.up = prevUp;
     if (map.view?.key !== projection) return;
     if (prev.key === projection) { map.rebase(); return; }
     map.setProjection(prev.key, { animate: false });
@@ -89,6 +92,7 @@ export function polarView(map, { projection, up = null } = {}) {
 export const specialView = (key) => key === 'globe' || !!PROJECTIONS[key]?.pole;
 
 /** 지도 도구에 지구본·극 중심 몫을 잇는다(단원 main 이 mountAtlas 뒤에 — globeTools 대신): toolsEl = mapTools(…).el(무대 안). → 풀기 함수. */
+// TODO(americasExtra 를 고쳐도 될 때 — u5 관문을 함께 볼 수 있을 때): viewTools 를 globeTools 로 합치기(entering 표지를 내보내거나 특별 보기 일반화).
 export function viewTools(map, toolsEl) {
   const stage = toolsEl?.parentNode;
   const canvas = stage?.querySelector?.('.at-base');
@@ -168,6 +172,8 @@ export function topicViewLayer(id, data, { map = null } = {}) {
 
 /** 등록(단원 main 이 mountAtlas 전에, installAmericasExtras 뒤에 — 상자 옵션 차례 지구본 → 북극 중심 → 남극 중심). 두 번 불러도 같음. */
 export function installPolarExtras() {
+  // 옵션 차례(지구본 → 극 둘)와 viewTools 의 지구본 몫이 지구본 등록을 전제로 함 — 늦게 등록하면 상자 차례가 틀어지므로 멈춤
+  if (!PROJECTIONS.globe) throw new Error('installPolarExtras: installAmericasExtras() 를 먼저');
   if (!PROJECTIONS.polarN) registerProjection('polarN', polarProjection({ pole: 'N' }));
   if (!PROJECTIONS.polarS) registerProjection('polarS', polarProjection({ pole: 'S' }));
   registerLayerType('topicView', topicViewLayer);
