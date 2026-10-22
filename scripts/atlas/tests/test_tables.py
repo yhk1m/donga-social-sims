@@ -652,6 +652,152 @@ class ReaderU5Synthetic(unittest.TestCase):
         self.assertEqual(got['gap'], 0.05)
 
 
+U6_CONFIG = os.path.join(os.path.dirname(__file__), '..', 'config', 'u6.json')
+
+
+@NEED_PDF
+class ChartsU6(unittest.TestCase):
+    """U6-7 오세아니아·극지방 그래프 11: 기후 4(표 3·잰 값 1) · 범례 원 2 · 반원 2개 한 블록 · 두 축 선 · 해수면 점 5 · 표 2."""
+    @classmethod
+    def setUpClass(cls):
+        import json
+        from unittest import mock
+        import extract_tables as et
+        cls.et = et
+        with open(U6_CONFIG, encoding='utf-8') as f: full = json.load(f)
+        cls.cfg = full['charts']
+        cls.warnings = []
+        et._climate.clear()
+        try:
+            with mock.patch.object(et, 'charts_config', lambda: cls.cfg), mock.patch.object(et, 'unit_config', lambda: full):
+                cls.charts = et.extract_charts(cls.warnings)
+                cls.again = et.extract_charts([])
+                cls.rows = et.climate_table()
+        finally:
+            et._climate.clear()
+
+    def test_count_and_warnings(self):
+        self.assertEqual(len(self.charts), 11)
+        self.assertEqual(set(self.charts), set(self.cfg['items']))
+        self.assertEqual(self.warnings, [])
+        self.assertEqual(self.et.validate(self.charts, self.cfg), [])
+
+    def test_climate(self):
+        want = {'p53-darwin': ('다윈', '사바나', 'printed'), 'p53-alice': ('앨리스스프링스', '사막', 'measured'),
+                'p53-perth': ('퍼스', '지중해성', 'printed'), 'p53-christchurch': ('크라이스트처치', '서안 해양성', 'printed')}
+        for cid, (city, zone, method) in want.items():
+            with self.subTest(cid):
+                c = self.charts[cid]
+                self.assertEqual((c['city'], c['climate']), (city, zone))
+                self.assertEqual([len(s['values']) for s in c['series']], [12, 12])
+                for s in c['series']: self.assertEqual(s['method'], method)
+        self.assertEqual(self.charts['p53-perth']['series'][0]['values'], self.rows['퍼스']['temp'])
+        self.assertEqual(self.charts['p53-christchurch']['series'][1]['values'], self.rows['크라이스트처치']['prec'])
+        self.assertNotIn('앨리스스프링스', self.rows)
+        self.assertLess(self.charts['p53-darwin']['check']['maxTempDiff'], 0.6)
+        # 퍼스·크라이스트처치 그림은 표보다 7~8℃ 높게 그려짐(교과서 그림 — 결정 기록), 다윈은 맞음
+        self.assertGreater(self.charts['p53-perth']['check']['maxTempDiff'], 7)
+        a = self.charts['p53-alice']
+        self.assertEqual(a['axes']['prec']['n'], 11)                                         # 오식 「350」(400 자리)을 바로잡아 눈금 11 모두
+        t = a['series'][0]['values']; self.assertEqual(t.index(min(t)), 6)                    # 남반구 — 7월이 가장 추움
+        self.assertTrue(all(isinstance(s['precision'], float) for s in a['series']))
+
+    def test_pies_sum_100(self):
+        for cid in ('p54-aus-exports', 'p54-nz-exports'):
+            with self.subTest(cid):
+                c = self.charts[cid]
+                self.assertEqual(c['type'], 'pie'); self.assertNotIn('ring', c)
+                self.assertAlmostEqual(sum(s['values'][0] for s in c['series']), 100, delta=0.15)
+                self.assertLess(c['check']['maxAbsDiff'], 0.2)
+        aus = self.charts['p54-aus-exports']
+        self.assertEqual({s['name']: s['values'][0] for s in aus['series']},
+                         {'석탄': 21.2, '철광석': 18.5, '천연가스': 13.5, '교육 관련 여행': 4.0, '금': 3.5, '기타': 39.3})
+        self.assertEqual((aus['title'], aus['subtitle']), ('오스트레일리아(2022년)', '6,706(억 달러)'))
+        nz = self.charts['p54-nz-exports']
+        self.assertEqual([s['name'] for s in nz['series']], ['유제품', '육류', '목재', '과일', '밀 조제품', '기타'])
+        self.assertEqual([s['values'][0] for s in nz['series']], [28.5, 13.6, 7.3, 5.3, 3.4, 41.9])
+
+    def test_half_pies(self):
+        h = self.charts['p54-partners']
+        self.assertEqual(h['type'], 'halfPie'); self.assertEqual(len(h['items']), 2)
+        a, b = h['items']
+        self.assertEqual((a['label'], a['total'], a['orient']), ('1965년', '27(억 달러)', 'up'))
+        self.assertEqual((b['label'], b['total'], b['orient']), ('2022년', '6,706(억 달러)', 'down'))
+        for it in h['items']: self.assertAlmostEqual(sum(s['value'] for s in it['slices']), 100, delta=0.15)
+        self.assertEqual([(s['name'], s['value']) for s in a['slices']],
+                         [('영국', 19.2), ('일본', 16.4), ('미국', 9.9), ('뉴질랜드', 5.9), ('중국', 5.1), ('기타', 43.5)])
+        self.assertEqual([(s['name'], s['value']) for s in b['slices']],
+                         [('중국', 27.6), ('일본', 17.9), ('대한민국', 8.1), ('인도', 5.2), ('미국', 4.6), ('기타', 36.6)])
+        self.assertLess(a['rRel'], b['rRel']); self.assertEqual(b['rRel'], 1.0)
+        self.assertTrue(0.55 < a['rRel'] < 0.62)                                             # 교과서 잰 반지름 비(금액 비 아님 — Q13)
+
+    def test_measured(self):
+        d = self.charts['p54-temp-co2']
+        self.assertEqual(d['type'], 'dualLine'); self.assertEqual(d['x'], list(range(1880, 2021)))
+        self.assertEqual(d['xTicks'], list(range(1880, 2021, 20)))
+        L, R = d['left'], d['right']
+        self.assertEqual((L['label'], L['unit'], L['range'], R['label'], R['unit'], R['range']),
+                         ('기온', '°C', [-0.3, 1.1], '이산화 탄소 농도', 'PPM', [270, 410]))
+        self.assertEqual(len(L['values']), 141); self.assertEqual(len(R['values']), 141)
+        self.assertEqual(L['values'][:2], [None, None])                                       # 빨간 선은 1882 부터
+        self.assertTrue(all(v is not None for v in R['values']))
+        self.assertGreater(R['values'][-1], R['values'][0])                                   # 이산화 탄소 늘어남
+        self.assertTrue(all(b >= a - 0.5 for a, b in zip(R['values'], R['values'][1:])))
+        self.assertGreater(L['values'][-1], 1.0)
+        self.assertEqual(L['note'], '*1951~1980년 평균 온도 대비 변화')
+        for k in (L, R): self.assertEqual(k['method'], 'measured'); self.assertIsInstance(k['precision'], float); self.assertIn('labelAt', k)
+        s = self.charts['p54-sealevel']
+        self.assertEqual(s['type'], 'line'); self.assertEqual(s['categories'], [2000, 2013, 2050, 2080, 2100])
+        v = s['series'][0]['values']; self.assertEqual(len(v), 5); self.assertEqual(v, sorted(v)); self.assertTrue(70 < v[-1] < 80)
+
+    def test_tables(self):
+        t = self.charts['p54-plastic']
+        self.assertEqual(t['type'], 'table')
+        self.assertEqual(t['categories'][:5], ['연간 플라스틱 생산량', '연간 플라스틱 폐기량', '연간 플라스틱 유출량', '연간 플라스틱 강·해안 유출량',
+                                               '연간 플라스틱 해양 유입량'])
+        self.assertEqual(t['series'][0]['values'][:5], ['353 (백만 톤)', '82 (백만 톤)', '19 (백만 톤)', '6 (백만 톤)', '1.7 (백만 톤)'])
+        self.assertEqual(t['categories'][5:], ['연간 플라스틱 생산량의 0.5%가 바다에 버려진다.', '수만 톤~수십만 톤의 해양 플라스틱 부유물'])
+        r = self.charts['p55-route-stats']
+        self.assertEqual(r['categories'], ['거리 단축', '운항 일수 단축', '거리와 시간 단축을 통한 물류비 절감'])
+        self.assertEqual(r['series'][0]['values'], ['22,000 → 15,000km 32%', '40 → 30일 25%', ''])
+        self.assertEqual(r['source'], '(한국 무역 협회, 2022)')
+
+    def test_deterministic(self):
+        import json
+        self.assertEqual(json.dumps(self.again, ensure_ascii=False, sort_keys=True), json.dumps(self.charts, ensure_ascii=False, sort_keys=True))
+
+
+class ReaderU6Synthetic(unittest.TestCase):
+    """U6-7 새 길의 순수 부분: 「(%)」 붙은 수, 겹쳐 찍은 글자 하나로, 눈금 오식 바로잡기."""
+    def test_pct_tokens(self):
+        from unittest import mock
+        import charts_read as CR
+        ws = [{'text': '39.3(%)', 'font': 'DINPro', 'bbox': [0, 0, 5, 5]}, {'text': '4.0', 'font': 'DINPro', 'bbox': [10, 10, 12, 12]},
+              {'text': '석탄', 'font': 'DINPro', 'bbox': [0, 0, 5, 5]}, {'text': '7', 'font': 'Other', 'bbox': [0, 0, 1, 1]}]
+        with mock.patch.object(CR.AX, 'words', lambda p, box: ws):
+            self.assertEqual([t['value'] for t in CR._pct_tokens(54, [0, 0, 99, 99], 'DIN')], [39.3, 4.0])
+            self.assertEqual([t['value'] for t in CR._pct_tokens(54, [0, 0, 99, 99], 'DIN', exclude=[[9, 9, 13, 13]])], [39.3])
+
+    def test_cell_text_dedupe(self):
+        from unittest import mock
+        import charts_read as CR
+        w = lambda t, x, col: {'text': t, 'bbox': [x, 0, x + 10, 5], 'cx': x + 5, 'cy': 2.5, 'size': 6, 'color': col}
+        ws = [w('거리', 0, '#ffffff'), w('거리', 0, '#fff200'), w('단축', 12, '#fff200')]
+        with mock.patch.object(CR.AX, 'words', lambda p, box: list(ws)):
+            self.assertEqual(len(CR.cell_text(55, [0, 0, 1, 1])[0].split('거리')), 3)          # 키가 없으면 두 번 찍은 글자 그대로(옛 길)
+            self.assertEqual(CR.cell_text(55, [0, 0, 1, 1], dedupe=True), ['거리 단축'])
+
+    def test_axis_fix(self):
+        from unittest import mock
+        import charts_read as CR
+        toks = [{'value': v, 'cx': 0, 'cy': y, 'text': str(v)} for v, y in ((0, 40), (100, 30), (200, 20), (300, 10), (350, 0))]
+        ctx = {'warnings': [], 'defaults': {'numberFont': 'DIN', 'colorDE': 0, 'snapTol': 1.5, 'axisResidTol': 0.6}}
+        with mock.patch.object(CR.AX, 'number_tokens', lambda *a, **k: [dict(t) for t in toks]):
+            ax, used = CR.axis('x', {'page': 1}, ctx, [0, 0, 1, 1], 'y', name='강수량', fix=[{'at': 0, 'from': 350, 'to': 400}])
+        self.assertEqual(sorted(t['value'] for t in used), [0, 100, 200, 300, 400])   # 400 자리의 오식 「350」 → 400
+        self.assertEqual(ctx['warnings'], [])
+        self.assertAlmostEqual(ax.val(15), 250, delta=1e-6)
+
 
 class PyramidRasterSynthetic(unittest.TestCase):
     """U4-7 리뷰 후속: read_pyramid_raster 의 화소 길을 PDF 없이 — 만든 배열(막대 길이·틈·가장자리 섞임·색 허용치를 아는 값)로."""

@@ -15,7 +15,7 @@
 #   pyramidRaster(막대가 인라인 그림 — 렌더 화소), bubbleRow(원 크기 줄), climograph barsByMonth(막대 없는 달 = 0), figure 칸 groupBox.
 # 2단계 아메리카(U5-7, 모두 설정 키가 있을 때만): donut + wedges(부채꼴 + 흰 구멍 쐐기, 띠 안 인쇄 % — sliceNames 로 색 ↔ 이름, valueGapEm 으로
 #   붙은 한 자리 수 나눔), stackedLegend(여러 막대 100% 띠 — 칸 이름은 범례 견본에만, 칸에는 수만).
-import math, os, re, sys
+import functools, math, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -40,6 +40,7 @@ RING_GAP_PT = 0.5         # 바깥·안쪽 호 반지름이 이만큼 넘게 다
 APEX_FRAC = 0.2           # 부채꼴 꼭짓점은 맞춘 원 중심에서 반지름의 이 비율 안
 PRINTED_PREC = 0.05       # 인쇄값(소수 한 자리)의 반올림 정밀도
 MISS = 1e6                # 헝가리안 짝 없음 비용(가능한 짝보다 늘 크게)
+FIX_AT_PT = 1.0           # 바로잡을 눈금 글자(fix)의 위치 허용 차
 DIAG_GROUP_PT = 4.0       # 비스듬한 범주 이름: 같은 이름 글자의 cx + cy 차(≈ 0)와 이웃 이름 차(≈ 막대 간격 15pt) 사이
 GRID_FILL_MAX_H = 1.0     # 점선 격자(얇은 가로 채움)의 높이 상한(막대와 가름)
 GRID_FILL_MIN_W = 20.0    # 점선 격자 채움 묶음의 너비 하한
@@ -47,6 +48,7 @@ PRINTED_DX_PT = 3.0       # 막대 위 인쇄된 수 ↔ 막대: 가운데 x 차
 PRINTED_DY_PT = 4.0       # 막대 위 끝 − 글자 아래 끝 상한(글자가 막대 위 끝보다 1pt 넘게 아래면 짝 아님)
 CELL_LINE_PT = 2.5        # 수치 그림 칸: 세로 가운데가 이만큼 안이면 한 줄(위첨자 「2」도 같은 줄)
 CELL_JOIN_EM = 0.15       # 수치 그림 칸: 같은 줄 낱말 사이가 글자 크기의 이만큼 넘게 벌면 공백
+DEDUPE_PT = 0.5           # 수치 그림 칸(dedupe): 같은 글자 낱말 상자 네 변이 이만큼 안이면 겹쳐 찍은 것
 CLIMATE_SUFFIX = ' 기후'   # 기후 그래프 제목의 기후 이름 끝(「서안 해양성 기후」 → climate 「서안 해양성」)
 
 
@@ -69,12 +71,17 @@ def rnd(v, nd=2):
     return None if v is None else round(float(v), nd)
 
 
-def axis(cid, c, ctx, box, orient, *, name, color=None, ticks=None, require_snap=False, signed_zero=None, scale='linear'):
+def axis(cid, c, ctx, box, orient, *, name, color=None, ticks=None, require_snap=False, signed_zero=None, scale='linear', fix=None):
     """눈금 글자로 축을 맞춘다(잔차 문 포함). orient 'x'(가로 위치) 또는 'y'. ticks = 눈금선 위치(있으면 글자를 붙임).
     require_snap 이면 눈금선에 붙은 글자만 쓴다(축 끝 글자가 단위 「(%)」에 밀리거나 왼쪽 맞춤으로 비껴 있을 때).
-    signed_zero = 가운데 0 의 지면 위치(인구 피라미드). → (Axis, 쓴 눈금 글자)"""
+    signed_zero = 가운데 0 의 지면 위치(인구 피라미드). fix = 잘못 인쇄된 눈금 글자 바로잡기 [{at(글자 가운데 위치), from, to}]
+    (U6-7 — 53쪽 앨리스스프링스 강수 눈금 400 자리에 「350」, 키가 있을 때만). → (Axis, 쓴 눈금 글자)"""
     p = c['page']
     toks = AX.number_tokens(p, box, color=color, font=opt(c, ctx, 'numberFont'), de=opt(c, ctx, 'colorDE'))
+    for f in fix or ():
+        hit = [t for t in toks if t['value'] == f['from'] and abs(t['cx' if orient == 'x' else 'cy'] - f['at']) <= FIX_AT_PT]
+        if len(hit) != 1: ctx['warnings'].append(f'{cid} {name}축: 바로잡을 눈금 「{f["from"]}」(위치 {f["at"]})를 {len(hit)}개 찾음')
+        for t in hit: t['value'] = f['to']
     key = 'cx' if orient == 'x' else 'cy'
     pos = [t[key] for t in toks]
     if ticks:
@@ -130,7 +137,7 @@ def read_climograph(cid, c, ctx):
     out['city'] = city
     yt = G.hlines(p, fr)   # 격자선·0℃ 선·틀 위아래 변 — 눈금 글자를 여기에 붙인다
     tax, _ = axis(cid, c, ctx, fr, 'y', name='기온', color=c['tempColor'], ticks=yt)
-    pax, _ = axis(cid, c, ctx, fr, 'y', name='강수량', color=c['precColor'], ticks=yt)
+    pax, _ = axis(cid, c, ctx, fr, 'y', name='강수량', color=c['precColor'], ticks=yt, fix=c.get('precTickFix'))
     de = opt(c, ctx, 'colorDE')
     is_dot = lambda f: all(it[0] == 'c' for it in f['d']['items'])
     bars = sorted((f for f in G.fills(p, fr, c['precColor'], de=de) if not is_dot(f)), key=lambda f: f['rect'][0])
@@ -422,10 +429,16 @@ def read_donut(cid, c, ctx):
 
 
 # ── 수치 그림(인포그래픽 — 칸마다 이름·수 글자) → 글 표 ───────────────────────────
-def cell_text(p, box, ignore=()):
+def cell_text(p, box, ignore=(), dedupe=False):
     """상자 안 낱말을 줄(세로 가운데 LINE_PT 안)로 묶어 [줄 글자] (위→아래). 같은 줄 낱말 사이가 글자 크기의 JOIN_EM 넘게 벌면 공백,
-    아니면 붙인다(「2,500」+「개」 → 2,500개, 「24km」+위첨자 「2」 → 24km2 — 설정 replace 로 km²). ignore = 뺄 글자색(겹쳐 찍은 그림자 글자)."""
+    아니면 붙인다(「2,500」+「개」 → 2,500개, 「24km」+위첨자 「2」 → 24km2 — 설정 replace 로 km²). ignore = 뺄 글자색(겹쳐 찍은 그림자 글자).
+    dedupe = 같은 글자를 같은 자리(DEDUPE_PT 안)에 색만 바꿔 두 번 찍은 것은 하나로(U6-7 55쪽 북극 항로 수치 — 노랑·흰 글자 겹침, 한 색만 찍힌 글자도 있어 ignore 로 못 뺌)."""
     ws = sorted((w for w in AX.words(p, box) if w['color'] not in ignore), key=lambda w: (w['cy'], w['cx']))
+    if dedupe:
+        keep = []
+        for w in ws:
+            if not any(w['text'] == k['text'] and max(abs(a - b) for a, b in zip(w['bbox'], k['bbox'])) <= DEDUPE_PT for k in keep): keep.append(w)
+        ws = keep
     lines = []
     for w in ws:
         if lines and abs(w['cy'] - lines[-1]['cy']) < CELL_LINE_PT: lines[-1]['ws'].append(w)
@@ -448,7 +461,17 @@ def read_figure(cid, c, ctx):
     out['type'] = 'table'
     ign = set(c.get('ignoreColors', []))
     cats, vals = [], []
+    dd = c.get('dedupe', False)
     for cell in c['cells']:
+        # U6-7(키가 있을 때만): nameBox + valueBox(상자 하나 또는 여럿 — 이름이 여러 줄 「연간 플라스틱 / 생산량」 → 띄어 이음),
+        # textBox = 문장 한 줄(이름 = 글 전체, 값 빔). replace 는 줄마다(「22,000 15,000km」 → 그림 화살표 ▸▸ 자리에 →)
+        if cell.get('nameBox') or cell.get('textBox'):
+            rep = lambda L: [functools.reduce(lambda t, ab: t.replace(*ab), c.get('replace', {}).items(), x) for x in L]
+            name = ' '.join(rep(cell_text(p, cell.get('nameBox') or cell['textBox'], ign, dd)))
+            vb = cell.get('valueBox') or []
+            val = ' '.join(L for box in (vb if vb and isinstance(vb[0], list) else [vb] if vb else []) for L in rep(cell_text(p, box, ign, dd)))
+            if not name or (cell.get('valueBox') and not val): W.append(f'{cid}: 칸 {cell} 이름 「{name}」·값 「{val}」')
+            cats.append(name); vals.append(val); continue
         lines = cell_text(p, cell['box'], ign)
         for a, b in c.get('replace', {}).items(): lines = [L.replace(a, b) for L in lines]
         k = cell.get('nameLine', c.get('nameLine', -1))
@@ -1123,9 +1146,267 @@ def read_stacked_legend(cid, c, ctx):
     return out
 
 
+# ── 2단계 오세아니아·극지방(U6-7 — 모두 새 type, u2~u5 설정에 없음) ─────────────────────────────────
+LEGEND_ROW_PT = 2.0       # 범례 견본 네모 ↔ 오른쪽 글자: 세로 가운데 차 상한
+LEGEND_SWATCH_MAX = 8.0   # 범례 견본 네모 한 변 상한(pt)
+HALF_NAME_DY = (3.0, 10.0)   # 반원 조각 이름 = 수 바로 위 줄(수 cy − 이름 cy 가 이 범위)
+HALF_NAME_DX = 12.0       # 반원 조각 이름 ↔ 수: 가운데 x 차 상한
+LINE_PAD_PT = 5.0         # 두 축 선: 세로 줄을 그림 위아래로 이만큼 더 길게 그어 선 면과 겹침을 잼
+
+
+def _pct_tokens(p, box, font, exclude=()):
+    """수 낱말(끝에 붙은 「(%)」는 떼고 — 「39.3(%)」), exclude 상자 안 낱말은 뺌."""
+    out = []
+    for w in AX.words(p, box):
+        if font and font not in w['font']: continue
+        if any(cin(w['bbox'], b) for b in exclude): continue
+        t = w['text'][:-3] if w['text'].endswith('(%)') else w['text']
+        v = AX.parse_num(t)
+        if v is not None: out.append({**w, 'text': t, 'value': v})
+    return out
+
+
+def _legend_names(cid, p, box, W):
+    """범례 견본 네모 + 오른쪽 글자(같은 줄 다음 견본 앞까지 — 「교육 관련 여행」처럼 여러 낱말이면 띄어 씀) → {색: 이름}."""
+    sw = [f for f in G.fills(p, box) if f['rect'][2] - f['rect'][0] <= LEGEND_SWATCH_MAX and f['rect'][3] - f['rect'][1] <= LEGEND_SWATCH_MAX]
+    ws = [w for w in AX.words(p, box) if HANGUL.search(w['text'])]
+    names = {}
+    for f in sw:
+        r = f['rect']
+        nxt = min((g['rect'][0] for g in sw if abs(yc(g['rect']) - yc(r)) <= LEGEND_ROW_PT and g['rect'][0] > r[2]), default=math.inf)
+        row = sorted((w for w in ws if w['bbox'][0] >= r[2] - IN_BAR_PAD and w['cx'] < nxt and abs(w['cy'] - yc(r)) <= LEGEND_ROW_PT),
+                     key=lambda w: w['bbox'][0])
+        if not row: W.append(f'{cid}: 범례 견본 {f["color"]} 오른쪽 글자 없음'); continue
+        names[f['color']] = ' '.join(w['text'] for w in row)
+    return names
+
+
+def _sector(f, center=None):
+    """부채꼴 채움 → {color, a0, a1(12시 0 시계 방향 도), r, cx, cy} (바깥 호 = 가장 큰 원호)."""
+    A = G.arcs(f['d'])
+    if not A: return None
+    o = max(A, key=lambda a: a['r'])
+    ctr = center or (o['cx'], o['cy'])
+    a0, a1 = _slice_span(o['pts'], ctr)
+    return {'color': f['color'], 'a0': a0, 'a1': a1, 'r': o['r'], 'cx': o['cx'], 'cy': o['cy'], 'f': f}
+
+
+def read_pie_legend(cid, c, ctx):
+    """꽉 찬 원그래프(54쪽 오스트레일리아·뉴질랜드 수출품): 조각 = 가운데에서 뻗은 부채꼴(색마다 가장 큰 것, 구멍 없음).
+    인쇄 % 는 조각 안 또는 밖(좁은 조각은 바깥) — labelBox 안 수 글자를 각·값으로 조각에 짝(헝가리안, read_donut_outside 와 같은 비용).
+    조각 이름 = 범례(legendBox — 견본 네모 + 오른쪽 글자) 색 ↔ 조각 색. 출력은 read_pie 꼴(type pie, ring 없음 — 앱은 csat 원그래프)."""
+    W = ctx['warnings']; p = c['page']
+    out = meta(cid, c)
+    out['type'] = 'pie'
+    if c.get('subtitleBox'): out['subtitle'] = text(p, c['subtitleBox'])   # 원 위 머리 둘째 줄(총액 「6,706(억 달러)」)
+    names = _legend_names(cid, p, c['legendBox'], W)
+    big = {}
+    for f in G.fills(p, c['plotBox'], list(names), geom=True):
+        if f['color'] not in big or f['geom'].area > big[f['color']]['geom'].area: big[f['color']] = f
+    sec = [s for s in (_sector(f) for f in big.values()) if s]
+    if len(sec) != len(names): W.append(f'{cid}: 조각 {len(sec)}개 ≠ 범례 {len(names)}개')
+    if not sec: raise ValueError(f'{cid}: 조각이 없음')
+    center = (float(np.median([s['cx'] for s in sec])), float(np.median([s['cy'] for s in sec])))
+    sec = sorted((_sector(s['f'], center) for s in sec), key=lambda s: s['a0'])
+    for s in sec: s['pct'] = 100 * (s['a1'] - s['a0']) / 360
+    toks = _pct_tokens(p, c['labelBox'], opt(c, ctx, 'numberFont'))
+    ang = [G.clock_angle((t['cx'], t['cy']), center) for t in toks]
+    mid = [(s['a0'] + s['a1']) / 2 for s in sec]
+    m = pair(list(range(len(toks))), list(range(len(sec))),
+             lambda i, j: _ang_dist(ang[i], mid[j]) / OUT_ANG_SCALE + abs(toks[i]['value'] - sec[j]['pct']),
+             lambda i, j: abs(toks[i]['value'] - sec[j]['pct']) <= c['maxDiff'], miss=lambda i: MISS)
+    if len(m) != len(sec) or len(toks) != len(sec):
+        W.append(f'{cid}: 조각 {len(sec)}·수 {len(toks)}·짝 {len(m)} — 남은 수 {[toks[i]["text"] for i in range(len(toks)) if i not in m]}')
+    val = {j: toks[i]['value'] for i, j in m.items()}
+    out['categories'] = [c.get('category', '')]
+    out['series'], maxd, msum = [], 0.0, 0.0
+    for j, s in enumerate(sec):
+        v = val.get(j); msum += s['pct']
+        if v is not None: maxd = max(maxd, abs(v - s['pct']))
+        out['series'].append(series_entry(names.get(s['color']), [v], 'printed', measured=[rnd(s['pct'], 2)], precision=PRINTED_PREC, color=s['color']))
+    rs = [s['r'] for s in sec]
+    if max(rs) - min(rs) > RING_GAP_PT: W.append(f'{cid}: 조각 바깥 반지름이 서로 다름({min(rs):.2f}~{max(rs):.2f})')
+    out['check'] = {'maxAbsDiff': round(maxd, 3), 'measuredSum': round(msum, 2), 'firstStartDeg': round(sec[0]['a0'], 2)}
+    if maxd > c['warnDiff']: W.append(f'{cid}: 조각 각과 인쇄 비율 차 최대 {maxd:.2f}%p')
+    if abs(msum - 100) > c['warnDiff']: W.append(f'{cid}: 조각 각 합 {msum:.2f}% ≠ 100 (겹치거나 빈 조각)')
+    if abs(sec[0]['a0']) > opt(c, ctx, 'startTolDeg'): W.append(f'{cid}: 첫 조각이 12시에서 시작하지 않음({sec[0]["a0"]:.1f}°)')
+    return out
+
+
+def read_half_pie(cid, c, ctx):
+    """반원 그래프 여럿(54쪽 오스트레일리아 무역 상대국 1965 위 반원 · 2022 아래 반원): 부채꼴을 바깥 반지름으로 반원마다 묶고(차 ≤ RING_GAP_PT),
+    반원 = 부채꼴들이 가운데보다 위에 있으면 'up'(9시 → 12시 → 3시), 아래면 'down'(9시 → 6시 → 3시) — 조각 차례는 둘 다 왼쪽부터.
+    조각 % = 각 / 180. 인쇄 % 는 반원마다 items[].valueBox 안(items[].labelBox 머리 글자 뺌) 수 글자, 각·값으로 짝(헝가리안),
+    조각 이름 = 그 수 바로 위 줄 낱말(HALF_NAME_DY·DX — 색은 해마다 순위 색이라 범례 없음). items[].labelBox = 「1965년」「27(억 달러)」 두 줄
+    → label·total. rRel = 반지름 / 가장 큰 반지름(교과서 잰 비 — 교사 Q13 기본값). 출력 {type halfPie, items:[{label, total, rRel, orient,
+    slices:[{name, value, measured, color}]}]} — 앱은 polarExtra halfPieSvg."""
+    W = ctx['warnings']; p = c['page']
+    out = meta(cid, c)
+    sec = [s for s in (_sector(f) for f in G.fills(p, c['plotBox'], geom=True) if f['color'] not in set(c.get('ignoreColors', []))) if s]
+    groups = []
+    for s in sorted(sec, key=lambda s: s['r']):
+        if groups and abs(s['r'] - groups[-1][-1]['r']) <= RING_GAP_PT: groups[-1].append(s)
+        else: groups.append([s])
+    if len(groups) != len(c['items']): raise ValueError(f'{cid}: 반원 {len(groups)}개 ≠ 설정 items {len(c["items"])}개')
+    font = opt(c, ctx, 'numberFont')
+    heads = [it['labelBox'] for it in c['items']]
+    hw = [w for w in AX.words(p, c['bbox']) if HANGUL.search(w['text'])]
+    rmax = max(float(np.mean([s['r'] for s in g])) for g in groups)
+    built, maxd = [], 0.0
+    for it in c['items']:
+        toks = _pct_tokens(p, it['valueBox'], font, exclude=heads)
+        # 이 반원 = 수 글자 무게 중심에서 조각 상자 무게 중심이 가장 가까운 묶음(위·아래 반원은 가운데 점이 거의 같아 조각 쪽으로 가름)
+        if not toks: raise ValueError(f'{cid}: {it["valueBox"]} 안에 수 글자가 없음')
+        gx, gy = np.mean([t['cx'] for t in toks]), np.mean([t['cy'] for t in toks])
+        g = min(groups, key=lambda g: math.hypot(gx - np.mean([(s['f']['rect'][0] + s['f']['rect'][2]) / 2 for s in g]),
+                                                 gy - np.mean([yc(s['f']['rect']) for s in g])))
+        center = (float(np.median([s['cx'] for s in g])), float(np.median([s['cy'] for s in g])))
+        r = float(np.mean([s['r'] for s in g]))
+        orient = 'up' if np.mean([yc(s['f']['rect']) for s in g]) < center[1] else 'down'
+        sl = [_sector(s['f'], center) for s in g]
+        for s in sl:
+            s['pct'] = 100 * (s['a1'] - s['a0']) / 180
+            m_ = (s['a0'] + s['a1']) / 2
+            s['key'] = (m_ - 270) % 360 if orient == 'up' else (270 - m_) % 360
+        sl.sort(key=lambda s: s['key'])
+        ang = [G.clock_angle((t['cx'], t['cy']), center) for t in toks]
+        mid = [(s['a0'] + s['a1']) / 2 for s in sl]
+        m = pair(list(range(len(toks))), list(range(len(sl))),
+                 lambda i, j: _ang_dist(ang[i], mid[j]) / OUT_ANG_SCALE + abs(toks[i]['value'] - sl[j]['pct']),
+                 lambda i, j: abs(toks[i]['value'] - sl[j]['pct']) <= c['maxDiff'], miss=lambda i: MISS)
+        if len(m) != len(sl) or len(toks) != len(sl):
+            W.append(f'{cid} {it["labelBox"]}: 조각 {len(sl)}·수 {len(toks)}·짝 {len(m)} — 남은 수 {[toks[i]["text"] for i in range(len(toks)) if i not in m]}')
+        tok_of = {j: toks[i] for i, j in m.items()}
+        lines = cell_text(p, it['labelBox'])
+        if len(lines) != 2: W.append(f'{cid}: 반원 머리 {lines} — 두 줄(해 · 총액)이어야 함')
+        slices, psum = [], 0.0
+        for j, s in enumerate(sl):
+            t = tok_of.get(j)
+            name = None
+            if t is not None:
+                cand = [w for w in hw if HALF_NAME_DY[0] <= t['cy'] - w['cy'] <= HALF_NAME_DY[1] and abs(w['cx'] - t['cx']) <= HALF_NAME_DX]
+                if cand: name = min(cand, key=lambda w: abs(w['cx'] - t['cx']) + abs(t['cy'] - w['cy']))['text']
+                maxd = max(maxd, abs(t['value'] - s['pct'])); psum += t['value']
+            if name is None: W.append(f'{cid}: {lines[:1]} 조각 {s["color"]} 이름 없음')
+            slices.append({'name': name, 'value': t['value'] if t else None, 'measured': rnd(s['pct'], 2), 'color': s['color']})
+        if abs(psum - 100) > c.get('sumTol', PRINTED_PREC * 3): W.append(f'{cid}: {lines[:1]} 인쇄 % 합 {psum:.2f} ≠ 100')
+        sw = sum(s['a1'] - s['a0'] for s in sl)
+        if abs(sw - 180) > c['warnDiff'] * 1.8: W.append(f'{cid}: {lines[:1]} 조각 각 합 {sw:.1f}° ≠ 180')
+        built.append({'label': lines[0] if lines else '', 'total': lines[1] if len(lines) > 1 else '', 'r': r, 'orient': orient, 'slices': slices,
+                      'center': [round(center[0], 2), round(center[1], 2)]})
+    out['categories'] = [b['label'] for b in built]
+    out['items'] = [{'label': b['label'], 'total': b['total'], 'rRel': round(b['r'] / rmax, 3), 'orient': b['orient'], 'slices': b['slices']} for b in built]
+    out['method'] = 'printed'; out['precision'] = PRINTED_PREC
+    out['check'] = {'maxAbsDiff': round(maxd, 3), 'radiiPt': [round(b['r'], 2) for b in built], 'centers': [b['center'] for b in built]}
+    if maxd > c['warnDiff']: W.append(f'{cid}: 조각 각과 인쇄 비율 차 최대 {maxd:.2f}%p')
+    return out
+
+
+def _signed_axis(cid, c, ctx, box, ticks, name):
+    """눈금 글자에 「+」가 붙은 세로축(54쪽 기온 편차 +0.1 … +1.1) — 「+」를 떼고 수로, 눈금선에 붙여 축(잔차 문). → (Axis, 값 목록)"""
+    W = ctx['warnings']
+    toks = []
+    for w in AX.words(c['page'], box):
+        if opt(c, ctx, 'numberFont') not in w['font']: continue
+        v = AX.parse_num(w['text'][1:] if w['text'].startswith('+') else w['text'])
+        if v is not None: toks.append({**w, 'value': v})
+    pos = AX.snap([t['cy'] for t in toks], ticks, opt(c, ctx, 'snapTol')) if ticks else [t['cy'] for t in toks]
+    ax = AX.fit_axis_checked(list(zip(pos, [t['value'] for t in toks])), tol=opt(c, ctx, 'axisResidTol'), warnings=W, name=f'{cid} {name}축')
+    return ax, toks
+
+
+def read_dual_line(cid, c, ctx):
+    """두 축 선 그래프(54쪽 기온 편차 · 이산화 탄소 농도): 선이 획이 아니라 **채움 도형**(선 둘레를 따라 그린 띠)이라 해마다 세로 줄을 그어
+    띠와 겹친 구간의 가운데 높이를 잰다(꺾인 꼭짓점의 이음 모양 탓에 정밀도에 띠 반폭을 더함). 왼쪽 축 = left(+ 붙은 눈금 — _signed_axis),
+    오른쪽 축 = right, 가로 = 해 눈금 글자(「2000」「2020」은 한 낱말로 붙어 빠짐 — 나머지로 축). 선 이름 상자(labelBox 글자)의 자리 → labelAt
+    {x: 가장 가까운 해, dy: (글자 높이 − 그 해 선 높이) × renderPlotPx / 축 높이(pt)} — polarExtra dualLineSvg 그림 높이(220px) 기준.
+    출력 {type dualLine, x, xTicks, left:{label, unit, range, step, values, color, note?, labelAt, method, precision}, right:{…}}."""
+    W = ctx['warnings']; p = c['page']
+    out = meta(cid, c)
+    yt = y_ticks(c)
+    xax, _ = axis(cid, c, ctx, c['xAxisBox'], 'x', name='가로', ticks=x_ticks(c), require_snap=c.get('xRequireSnap', False))
+    years = year_list(c['categories'])
+    xt = year_list(c['xTicks'])
+    marks = G.dedup(sorted(cx(s['rect']) for s in G.strokes(p, c['xMarkBox'], c.get('xMarkColor')) if s['rect'][2] - s['rect'][0] < 0.1))
+    if len(marks) != len(xt): W.append(f'{cid}: 가로 눈금 표 {len(marks)}개 ≠ 설정 xTicks {len(xt)}개')
+    elif max(abs(xax.pos(y) - m) for y, m in zip(xt, marks)) > opt(c, ctx, 'snapTol'):
+        W.append(f'{cid}: 가로 눈금 표 자리가 해 글자 축과 어긋남')
+    px = c.get('renderPlotPx', 220)
+    sides = {}
+    for k in ('left', 'right'):
+        sc = c[k]
+        ax, toks = _signed_axis(cid, c, ctx, sc['axisBox'], yt, '왼쪽' if k == 'left' else '오른쪽')
+        vs = sorted(t['value'] for t in toks)
+        geoms = [f['geom'] for f in G.fills(p, c['plotBox'], sc['color'], geom=True, de=opt(c, ctx, 'colorDE'))]
+        if not geoms: raise ValueError(f'{cid}: {k} 선({sc["color"]})이 없음')
+        from shapely.ops import unary_union
+        from shapely.geometry import LineString
+        band = unary_union(geoms)
+        y0, y1 = band.bounds[1] - LINE_PAD_PT, band.bounds[3] + LINE_PAD_PT
+        halfw, vals, missing, ys = 0.0, [], [], {}
+        for yr in years:
+            x = xax.pos(yr)
+            hit = band.intersection(LineString([(x, y0), (x, y1)]))
+            if hit.is_empty: vals.append(None); missing.append(yr); continue
+            lo, hi = hit.bounds[1], hit.bounds[3]
+            ys[yr] = (lo + hi) / 2
+            vals.append(ax.val(ys[yr]))
+        # 띠 반폭 = 띠 넓이 / 길이 / 2 (길이 ≈ 둘레 / 2)
+        halfw = band.area / (band.length / 2) / 2 if band.length else 0.0
+        prec = (ax.resid + halfw + 0.1) * ax.units_per_pt
+        nd = AX.decimals_for(prec, cap_from(toks))
+        lab = label_lines(p, sc['labelBox'])
+        name = ' '.join(L['text'] for L in lab)
+        if not name: W.append(f'{cid}: {k} 선 이름 글자 없음({sc["labelBox"]})')
+        lx = float(np.mean([cx(L['bbox']) for L in lab])) if lab else xax.pos(years[len(years) // 2])
+        ly = float(np.mean([L['cy'] for L in lab])) if lab else 0.0
+        ny = min(ys, key=lambda yr: abs(xax.pos(yr) - lx)) if ys else years[0]
+        ppt = px / abs(ax.pos(vs[-1]) - ax.pos(vs[0]))
+        d = {'label': name, 'unit': strip_parens(text(p, sc['unitBox'])) if sc.get('unitBox') else sc.get('unit'),
+             'range': [vs[0], vs[-1]], 'step': round(ax.step, 6), 'values': [rnd(v, nd) for v in vals], 'color': sc['color'],
+             'labelAt': {'x': ny, 'dy': round((ly - ys.get(ny, ly)) * ppt, 1)}, 'method': 'measured', 'precision': round(prec, 4)}
+        if sc.get('noteBox'): d['note'] = text(p, sc['noteBox'])
+        if missing: d['missing'] = missing
+        sides[k] = (d, ax)
+        if missing and len(missing) > c.get('allowMissing', 0): W.append(f'{cid}: {k} 선이 닿지 않는 해 {missing}')
+    L, R = sides['left'][0], sides['right'][0]
+    if len(ticksL := [round(v, 6) for v in np.arange(L['range'][0], L['range'][1] + L['step'] / 2, L['step'])]) != \
+            len([v for v in np.arange(R['range'][0], R['range'][1] + R['step'] / 2, R['step'])]):
+        W.append(f'{cid}: 왼쪽 눈금 {len(ticksL)}개와 오른쪽 눈금 수가 다름(같은 높이로 그릴 수 없음)')
+    out['categories'] = [L['label'], R['label']]
+    out['x'] = years
+    out['xTicks'] = xt
+    out['left'], out['right'] = L, R
+    out['axes'] = {'x': xax.to_json(), 'left': sides['left'][1].to_json(), 'right': sides['right'][1].to_json()}
+    return out
+
+
+def read_dots(cid, c, ctx):
+    """점 그래프(54쪽 남태평양 해수면 변화 예측 — 해마다 세로 막대 끝 원 5): 점 = dotColor 채움 원(크기 dotSize 안), 가운데 높이 → 세로축 값.
+    가로 자리는 해 글자가 붙어 읽힘(「2000 2013」「2050 20802100」)이라 설정 categories(해) 차례로 — 점 수가 다르면 경고.
+    출력 type line(categoryKind year — 앱은 csat 꺾은선)."""
+    W = ctx['warnings']; p = c['page']
+    out = meta(cid, c)
+    out['type'] = 'line'
+    yax, ytoks = axis(cid, c, ctx, c['yAxisBox'], 'y', name='세로', ticks=y_ticks(c), require_snap=c.get('yRequireSnap', False))
+    lo, hi = c['dotSize']
+    dots = sorted((f for f in G.fills(p, c['plotBox'], c['dotColor'])
+                   if lo <= f['rect'][2] - f['rect'][0] <= hi and lo <= f['rect'][3] - f['rect'][1] <= hi), key=lambda f: f['rect'][0])
+    cats = list(c['categories'])
+    if len(dots) != len(cats): W.append(f'{cid}: 점 {len(dots)}개 ≠ 설정 해 {len(cats)}개')
+    prec = AX.precision(yax); nd = AX.decimals_for(prec, cap_from(ytoks))
+    out['categories'] = cats; out['categoryKind'] = 'year'
+    out['axes'] = {'y': yax.to_json()}
+    out['series'] = [series_entry(c['seriesName'], [rnd(yax.val(yc(f['rect'])), nd) for f in dots[:len(cats)]] + [None] * max(0, len(cats) - len(dots)),
+                                  'measured', precision=round(prec, 3), color=c.get('color', c['dotColor']))]
+    out['check'] = {'dotX': [round((f['rect'][0] + f['rect'][2]) / 2, 2) for f in dots]}
+    return out
+
+
 READERS = {'climograph': read_climograph, 'line': read_line, 'bar': read_bar, 'stackedBar': read_stacked_bar,
            'stackedArea': read_stacked_area, 'pyramid': read_pyramid, 'radialBar': read_radial, 'pie': read_pie,
            'stackedPrinted': read_stacked_printed, 'table': read_table,
            'vbar': read_vbar, 'donut': read_donut, 'figure': read_figure,   # 2단계 유럽(U3-7): 세로·묶음 막대, 고리, 수치 그림
            'pyramidRaster': read_pyramid_raster, 'bubbleRow': read_bubble_row,   # 2단계 아프리카(U4-7): 그림 막대 피라미드, 원 크기 줄
-           'stackedLegend': read_stacked_legend}   # 2단계 아메리카(U5-7): 범례 이름 100% 띠
+           'stackedLegend': read_stacked_legend,   # 2단계 아메리카(U5-7): 범례 이름 100% 띠
+           'pieLegend': read_pie_legend, 'halfPie': read_half_pie, 'dualLine': read_dual_line, 'dots': read_dots}   # 오세아니아·극지방(U6-7)

@@ -1,7 +1,7 @@
 # © 2026 김용현
 # scripts/atlas/chart_sheets.py — C4 대조표: 그래프마다 교과서 그림(자른 것) | 뽑은 숫자로 다시 그린 그림(matplotlib) 을 한 줄로,
 # 쪽마다 한 장 <out_dir>/charts-<쪽>.png (out_dir = 설정 charts.out.sheets). 다시 그린 그림의 색은 설정 계열 색(없으면 기본 색), 잰 값은 작은 × 로 겹친다.
-import io, os, sys
+import io, math, os, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -32,7 +32,7 @@ def _colors(cid, ch):
     m = {}
     for s in cfg.get('series', []):
         if isinstance(s, dict) and s.get('color'): m[s['name']] = s['color']
-    if ch.get('ring') or ch['type'] == 'bubbleRow':   # 아프리카(U4-7): 설정 계열이 없고 뽑은 자료에 조각 색(교과서 색)이 있는 그래프
+    if ch.get('ring') or ch['type'] == 'bubbleRow' or cfg.get('type') == 'pieLegend':   # 아프리카(U4-7)·오세아니아(U6-7 범례 원그래프): 설정 계열이 없고 뽑은 자료에 조각 색(교과서 색)이 있는 그래프
         return [s.get('color') or PALETTE[i % len(PALETTE)] for i, s in enumerate(ch['series'])]
     return [m.get(s['name'], PALETTE[i % len(PALETTE)]) for i, s in enumerate(ch['series'])]
 
@@ -53,7 +53,7 @@ def _measured(s):
 
 
 def _plot(cid, ch, ax):
-    t = ch['type']; cats = ch['categories']; cols = _colors(cid, ch)
+    t = ch['type']; cats = ch['categories']; cols = _colors(cid, ch) if 'series' in ch else []
     if t == 'climograph':
         temp = next(s for s in ch['series'] if s['name'] == '기온'); prec = next(s for s in ch['series'] if s['name'] == '강수량')
         ax2 = ax.twinx()
@@ -156,6 +156,27 @@ def _plot(cid, ch, ax):
         vals = [s['values'][0] for s in ch['series']]
         ax.pie(vals, labels=[f'{s["name"]}\n{s["values"][0]:g}' for s in ch['series']], colors=cols, startangle=90, counterclock=False,
                textprops={'fontsize': 8})
+    elif t == 'halfPie':   # 오세아니아(U6-7) 반원 여럿: 반지름 = rRel, 위(up)·아래(down) 반원을 지름 맞대 — 교과서 꼴 그대로
+        for it in ch['items']:
+            r = it['rRel']; tot = sum(q['value'] for q in it['slices']) or 1
+            a = 180.0   # 9시에서 시작(matplotlib 각 — 반시계), 위 반원은 시계 방향으로 줄고 아래 반원은 반시계로 늚
+            for q in it['slices']:
+                sw = 180.0 * q['value'] / tot
+                th1, th2 = (a - sw, a) if it['orient'] == 'up' else (a, a + sw)
+                ax.add_patch(Wedge((0, 0), r, th1, th2, facecolor=q['color'], edgecolor='white'))
+                m = math.radians((th1 + th2) / 2); k = 0.7 if r > 0.8 else 1.2
+                ax.text(k * r * math.cos(m), k * r * math.sin(m), f'{q["name"]} {q["value"]:g}', ha='center', va='center', fontsize=6)
+                a = th1 if it['orient'] == 'up' else th2
+            ax.text(-1.25, 0.15 if it['orient'] == 'up' else -0.15, f'{it["label"]} {it["total"]}', fontsize=7, ha='left')
+        ax.set_xlim(-1.3, 1.3); ax.set_ylim(-1.1, 1.1); ax.set_aspect('equal'); ax.axis('off')
+    elif t == 'dualLine':   # 오세아니아(U6-7) 두 축 선: 왼쪽 = left, 오른쪽 = right
+        L, R = ch['left'], ch['right']
+        ax.plot(ch['x'], [v if v is not None else float('nan') for v in L['values']], color=L['color'], lw=0.8)
+        ax.set_ylim(*L['range']); ax.set_ylabel(f'{L["label"]}({L["unit"]})', fontsize=7)
+        ax2 = ax.twinx()
+        ax2.plot(ch['x'], [v if v is not None else float('nan') for v in R['values']], color=R['color'], lw=1.5)
+        ax2.set_ylim(*R['range']); ax2.set_ylabel(f'{R["label"]}({R["unit"]})', fontsize=7)
+        ax.set_xticks(ch['xTicks'])
     elif t == 'table':
         ax.axis('off')
         rows = list(zip(cats, ch['series'][0]['values']))
