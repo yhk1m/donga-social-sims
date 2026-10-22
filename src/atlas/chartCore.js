@@ -14,6 +14,8 @@
 //                  · 고리 그래프(pie + ring — U4-3c, 38쪽 자원 7: csat 2.2.2 원그래프에 안쪽 반지름이 없음). ring 이 있을 때만 — donut 만 있는
 //                  pie(유럽 31쪽 코펜하겐)는 csat 원그래프 그대로. 유럽 v2 는 그 자료에 ring: true 만 더하면 donut 값을 안쪽 반지름으로 고리가 됨
 //                  · 원 크기 줄(bubbleRow — U4-3d, 39쪽 복원 녹지 면적 11개국)
+//                  · 두 축 선(dualLine)·반원(halfPie) — U6-3g 54쪽, csat 에 두 y축 선·반원이 없음. 그리는 함수는 polarExtra.installPolarExtras 가 등록
+//                    (부르지 않는 단원은 「그래프를 그리지 못했습니다」 — bubbleRow 와 같은 길)
 //   표(HTML)       table(네옴시티) — 그래프가 아니라 글 표
 
 const MONTHS = 12;
@@ -26,7 +28,7 @@ export function chartPlan(spec) {
     case 'stackedArea': return { via: 'csat', renderer: 'line', size: [1100, 820] };
     case 'pyramid': return { via: 'csat', renderer: 'pyramid', size: [800, 720] };
     case 'pie': return spec.ring ? { via: 'svg' } : { via: 'csat', renderer: 'stacked', size: [800, 640] };
-    case 'bubbleRow': return { via: 'svg' };
+    case 'bubbleRow': case 'dualLine': case 'halfPie': return { via: 'svg' };
     case 'bar': return spec.colors || spec.axisBreak ? { via: 'svg' } : { via: 'csat', renderer: 'absbar', size: [1000, 600] };
     case 'groupedBar': return { via: 'csat', renderer: 'absbar', size: [1300, 700] }; // 1000 폭이면 「대중교통」 같은 범주 이름이 칸보다 넓어 csat 가 하나 걸러 씀
     case 'stackedBar':

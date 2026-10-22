@@ -24,6 +24,12 @@
 //     width?(pt, 기본 1.2)}]}, features:[{properties:{cls, offsetPx?, name?}, geometry: LineString|MultiLineString(경계 경선 + 바깥 호 — 노르웨이는 바깥만)}]}.
 //     SVG 선(경위도 변을 1° 마다 대원으로 나눠 화면에 옮긴 줄) + 화면 비킴 offsetPx(진행 방향 오른쪽 + — 같은 경선을 쓰는 영국·칠레·아르헨티나를 교과서처럼
 //     나란히), 범례 고름 = 그 나라 선만 굵게(나머지 흐리게), 맞히기 = 선과의 화면 거리 → 「○○ 영유권 주장 경계」(자료 label·name 이 있으면 그것), 장애물 [].
+//   - 3g 그래프(registerSvgChart — 54쪽, chartCore.chartPlan 이 svg 길로 보냄): csat-chart.js 2.2.2 에 두 y축 선·반원이 없어 시험지 양식 SVG
+//     (chartsExtra 의 pie·bubbleRow 꼴 — 검은 틀·점선 격자·명조, h()/s()).
+//     dualLine = {x:[해…], left:{label, unit, range:[lo, hi], step, values, color, note?, labelAt?}, right:{같은 꼴}, xTicks, source}
+//       왼쪽 축 = left, 오른쪽 축 = right(눈금 수가 같으면 같은 높이), 선 이름 = 선 곁 글자 상자 + 짧은 지시선(labelAt {x: 해, dy: px} — 없으면 어림 자리).
+//     halfPie = {items:[{label:'1965년', total:'27(억 달러)', rRel(가장 큰 반원 대비 반지름 — 교과서 잰 값, 교사 Q13 기본값), slices:[{name, value(%), color}]}]}
+//       위쪽 반원(9시 → 3시 시계 방향)을 가운데 아래 끝을 맞춰 나란히, 조각 글자는 넓으면 안, 좁으면 바깥 + 지시선.
 //   단원 main.js: installAmericasExtras(); installPolarExtras();  (mountAtlas 전에) — mountAtlas 뒤 viewTools(root.atlasMap, root.atlasUi.tools.el)(풀기 함수)
 import { geoAzimuthalEquidistant, geoDistance, geoInterpolate } from 'd3-geo';
 import { s } from '../shared/dom.js';
@@ -32,6 +38,8 @@ import { graticuleStep } from './lineStyle.js';
 import { registerLayerType } from './layerRef.js';
 import { metaOf, featuresOf, isLine, setAttr, connect, hoverClass, round1, LAYER_Z } from './layerCommon.js';
 import { alphaOf, lineWidthPx, unwrapLine, splitJumps, distToPolyline } from './layerStyle.js';
+import { INK, txt, registerSvgChart } from './charts.js';
+import { linearScale, sectorPath } from './chartCore.js';
 import { baseOptions, baseModeOf } from './natural.js';
 import { registerProjection, globeCenter, rotateFor, globeView } from './americasExtra.js';
 
@@ -262,6 +270,86 @@ export function sectorLinesLayer(id, data, { legend = null, map = null, layerId 
   return layer;
 }
 
+// ---------- 3g 그래프 ----------
+const f2 = (v) => v.toFixed(2);
+const num = (v) => String(Number(v.toFixed(6)));
+/** 축 눈금 값 목록: lo 부터 step 마다 hi 까지 */
+const ticksOf = ({ range: [lo, hi], step }) => Array.from({ length: Math.round((hi - lo) / step) + 1 }, (_, i) => lo + i * step);
+
+/** 두 축 선 그래프(54쪽 기온 편차·이산화 탄소 농도) — 왼쪽 축 = left, 오른쪽 축 = right. */
+function dualLineSvg(spec, label) {
+  const W = 520, x0 = 50, x1 = W - 58, top = 36, bottom = top + 220, Hh = bottom + (spec.left.note ? 46 : 30);
+  const xs = spec.x, X = linearScale([xs[0], xs[xs.length - 1]], [x0, x1]);
+  const side = (k) => {
+    const d = spec[k], Y = linearScale(d.range, [bottom, top]);
+    const ticks = ticksOf(d).map((v) => txt(k === 'left' ? x0 - 5 : x1 + 5, f2(Y(v) + 4), num(v), { 'text-anchor': k === 'left' ? 'end' : 'start', class: `at-ct at-ct-tick at-ct-${k[0]}tick` }));
+    let path = '', pen = false;
+    xs.forEach((x, i) => { const v = d.values[i]; if (!Number.isFinite(v)) { pen = false; return; } path += `${pen ? 'L' : 'M'}${f2(X(x))},${f2(Y(v))}`; pen = true; });
+    const line = s('path', { class: `at-ct-dual-${k}`, d: path, fill: 'none', stroke: d.color, 'stroke-width': k === 'left' ? 1.2 : 2, 'stroke-linejoin': 'round' });
+    // 선 이름 상자 + 지시선(교과서처럼 선 곁) — labelAt {x: 해, dy} 없으면 왼쪽 선은 30%, 오른쪽 선은 60% 자리 위
+    const at = d.labelAt || {}, i = Math.max(0, Math.min(xs.length - 1, at.x != null ? xs.indexOf(at.x) : Math.round(xs.length * (k === 'left' ? 0.3 : 0.6))));
+    const px = X(xs[i]), py = Y(d.values[i] ?? d.range[0]), dy = at.dy ?? -34, bw = [...d.label].length * 12 + 12, by = py + dy;
+    const name = s('g', {},
+      s('path', { class: 'at-ct-leader', d: `M${f2(px)},${f2(by + (dy < 0 ? 9 : -9))}L${f2(px)},${f2(py)}` }),
+      s('rect', { x: f2(px - bw / 2), y: f2(by - 9), width: bw, height: 18, fill: '#fff', stroke: d.color, 'stroke-width': 0.8 }),
+      txt(f2(px), f2(by + 4.5), d.label, { 'text-anchor': 'middle', class: 'at-ct at-ct-dual-name', style: { fill: d.color } }));
+    return { ticks, line, name, Y, unit: txt(k === 'left' ? x0 : x1, top - 14, `(${d.unit})`, { 'text-anchor': 'middle', class: 'at-ct at-ct-tick' }) };
+  };
+  const L = side('left'), R = side('right');
+  const grid = ticksOf(spec.left).slice(1, -1).map((v) => s('line', { class: 'at-ct-grid', x1: x0, x2: x1, y1: f2(L.Y(v)), y2: f2(L.Y(v)) }));
+  const xt = (spec.xTicks || []).map((x) => s('g', {},
+    s('line', { class: 'at-ct-axis', x1: f2(X(x)), x2: f2(X(x)), y1: bottom, y2: bottom + 4 }),
+    txt(f2(X(x)), bottom + 17, String(x), { 'text-anchor': 'middle', class: 'at-ct at-ct-tick at-ct-xtick' })));
+  const frame = s('path', { class: 'at-ct-axis', d: `M${x0},${top}V${bottom}H${x1}V${top}`, 'data-box': `${x0},${top},${x1},${bottom}` });
+  return s('svg', { class: 'at-chart-svg', viewBox: `0 0 ${W} ${Hh}`, role: 'img', 'aria-label': label },
+    grid, s('g', {}, s('title', {}, `${spec.left.label}(${spec.left.unit})`), L.line), s('g', {}, s('title', {}, `${spec.right.label}(${spec.right.unit})`), R.line),
+    frame, L.ticks, R.ticks, xt, L.unit, R.unit, L.name, R.name,
+    spec.left.note ? txt(x0, Hh - 6, spec.left.note, { class: 'at-ct at-ct-sub' }) : null);
+}
+
+/** 반원 조각: 9시(−90°)에서 3시(90°)까지 시계 방향, 각 = 값 / 합 × 180 → [{name, value, color, a0, a1}](도, 12시 0) */
+export function halfPieSlices(item) {
+  const vals = item.slices.map((q) => Math.max(0, q.value || 0)), sum = vals.reduce((a, v) => a + v, 0) || 1;
+  let a = -90;
+  return item.slices.map((q, i) => { const a0 = a; a += (vals[i] / sum) * 180; return { name: q.name, value: q.value, color: q.color || '#ccc', a0, a1: a }; });
+}
+
+/** 반원 그래프(54쪽 무역 상대국 1965·2022) — 반지름 = 가장 큰 반원 × rRel(교과서 잰 비), 아래 끝(가운데)을 한 줄에. */
+function halfPieSvg(spec, label) {
+  const W = 520, R = 118, cy = 40 + R, Hh = cy + 46, n = spec.items.length;
+  const groups = spec.items.map((it, k) => {
+    const cx = (W * (k + 0.5)) / n, r = R * (it.rRel ?? 1);
+    const sl = halfPieSlices(it).map((q) => {
+      const mid = (((q.a0 + q.a1) / 2) * Math.PI) / 180;
+      return { ...q, sin: Math.sin(mid), cos: Math.cos(mid), inside: q.a1 - q.a0 >= 20 && r >= 80 };
+    });
+    // 바깥 글자: 왼쪽(sin < 0)·오른쪽 묶음마다 위에서부터 줄 간격 13 이상으로 내려 겹치지 않게, x 는 그 높이의 반원 바깥 + 4, 꺾인 지시선
+    const R1 = r + 11;
+    for (const left of [true, false]) {
+      let prev = -Infinity;
+      for (const q of sl.filter((x) => !x.inside && x.sin < 0 === left).sort((a, b) => b.cos - a.cos)) {
+        q.ly = Math.max(cy - R1 * q.cos, prev + 13);
+        prev = q.ly;
+        q.lx = cx + (left ? -1 : 1) * (Math.sqrt(Math.max(0, R1 * R1 - (cy - q.ly) ** 2)) + 4);
+      }
+    }
+    const cells = sl.map((q) => {
+      const lab = q.inside
+        ? [txt(f2(cx + r * 0.62 * q.sin), f2(cy - r * 0.62 * q.cos - 2), q.name, { 'text-anchor': 'middle', class: 'at-ct at-ct-cell-name' }),
+          txt(f2(cx + r * 0.62 * q.sin), f2(cy - r * 0.62 * q.cos + 11), String(q.value), { 'text-anchor': 'middle', class: 'at-ct at-ct-cell-val' })]
+        : [s('path', { class: 'at-ct-leader', d: `M${f2(cx + r * 0.85 * q.sin)},${f2(cy - r * 0.85 * q.cos)}L${f2(cx + (r + 5) * q.sin)},${f2(cy - (r + 5) * q.cos)}L${f2(q.lx - (q.sin < 0 ? -2 : 2))},${f2(q.ly - 4)}` }),
+          txt(f2(q.lx), f2(q.ly), `${q.name} ${q.value}`, { 'text-anchor': q.sin < 0 ? 'end' : 'start', class: 'at-ct at-ct-out-text' })];
+      return s('g', { class: 'at-ct-cell' }, s('title', {}, `${it.label} ${q.name} ${q.value}%`),
+        s('path', { d: sectorPath(cx, cy, 0, r, q.a0, q.a1), fill: q.color, stroke: INK, 'stroke-width': 0.8 }), lab);
+    });
+    return s('g', { class: 'at-ct-half', 'data-r': r, 'data-cy': cy }, cells,
+      txt(cx, cy + 18, it.label, { 'text-anchor': 'middle', class: 'at-ct at-ct-cat' }),
+      it.total ? txt(cx, cy + 34, it.total, { 'text-anchor': 'middle', class: 'at-ct at-ct-sub' }) : null);
+  });
+  return s('svg', { class: 'at-chart-svg', viewBox: `0 0 ${W} ${Hh}`, role: 'img', 'aria-label': label }, groups,
+    txt(W - 8, 16, '(%)', { 'text-anchor': 'end', class: 'at-ct at-ct-tick' }));
+}
+
 /** 등록(단원 main 이 mountAtlas 전에, installAmericasExtras 뒤에 — 상자 옵션 차례 지구본 → 북극 중심 → 남극 중심). 두 번 불러도 같음. */
 export function installPolarExtras() {
   // 옵션 차례(지구본 → 극 둘)와 viewTools 의 지구본 몫이 지구본 등록을 전제로 함 — 늦게 등록하면 상자 차례가 틀어지므로 멈춤
@@ -270,4 +358,6 @@ export function installPolarExtras() {
   if (!PROJECTIONS.polarS) registerProjection('polarS', polarProjection({ pole: 'S' }));
   registerLayerType('topicView', topicViewLayer);
   registerLayerType('sectorLines', (id, d, ctx) => sectorLinesLayer(id, d, ctx));
+  registerSvgChart('dualLine', dualLineSvg);
+  registerSvgChart('halfPie', halfPieSvg);
 }
