@@ -95,9 +95,17 @@ test('culledLabels: 앞 무리 상자와 겹치는 무리는 숨김(같은 자�
   assert.ok(drop.has(o.geometry.coordinates) && drop.has(dup.geometry.coordinates));
   assert.ok(!drop.has(n1.geometry.coordinates) && !drop.has(far.geometry.coordinates));
   const px = Math.round(5.5 * 2.4), lh = px * 1.15;   // labelPx(region 5.5pt) = 13px
-  assert.deepEqual(moved.get(n2.geometry.coordinates), [102, 100 + lh / 2 + lh / 2], '아래로 붙임(이름 상자 밑 + 반 줄)');
+  assert.deepEqual(moved.get(n2.geometry.coordinates), [102, 100 + lh / 2 + 3 + lh / 2], '아래로 붙임(이름 상자 밑 + 흰 테두리 몫 3px + 반 줄)');
   const side = PX.culledLabels(PX.labelGroups([lab('다산 과학 기지', 0, 0), lab('(대한민국)', 3, 0.1, '#d71920')]), proj, measure);
-  assert.deepEqual([...side.moved.values()][0], [40 + 3 + 30, 1], '옆이면 오른쪽에 붙임(이름 상자 오른쪽 + 3px)');
+  assert.deepEqual([...side.moved.values()][0], [40 + 3 + 3 + 30, 1], '옆이면 오른쪽에 붙임(이름 상자 오른쪽 + 테두리 몫 + 3px)');
+  // 기호 점(자기 기지 점 포함)에 닿으면 무리째 가장 짧게 비킴(최대 24px), 못 비키면 숨김
+  const nm = lab('장보고 과학 기지', 10, 10);   // 화면 (100, 100), 상자 [60, 92.5, 140, 107.5]
+  const r1 = PX.culledLabels(PX.labelGroups([nm]), proj, measure, [{ ll: [10.5, 10.9], r: 5 }]);   // 점 (105, 109) — 상자 아래쪽에 닿음
+  const got = r1.moved.get(nm.geometry.coordinates);
+  assert.ok(got && got[0] === 100 && got[1] < 100, `위로 비킴 ${got}`);
+  assert.ok(100 - got[1] <= 24);
+  const r2 = PX.culledLabels(PX.labelGroups([nm]), proj, measure, [{ ll: [10, 10], r: 40 }]);   // 큰 점이 글자를 다 덮음 → 못 비킴
+  assert.ok(r2.drop.has(nm.geometry.coordinates));
 });
 test('installPolarExtras 뒤 symbolLabels: 겹치는 글자는 그리지 않음 — 확대하면 다시', () => {
   PX.installPolarExtras();

@@ -104,7 +104,7 @@ export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85,
       const b = geoBounds(f);
       let c = geoCentroid(f);
       if (!Number.isFinite(c[0]) || !Number.isFinite(c[1])) c = [(b[0][0] + b[1][0]) / 2, (b[0][1] + b[1][1]) / 2];
-      const m = markAt[iso];
+      const m = Object.hasOwn(markAt, iso) ? markAt[iso] : null; // 프로토타입 열쇠(constructor 등)를 읽지 않음
       v = { b, c: m || c };
       if (smallMetric === 'area') v.big = m ? { a: 0, c: m } : largestPart(f.geometry);
     }

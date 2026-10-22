@@ -41,7 +41,7 @@ import { PROJECTIONS } from './projections.js';
 import { graticuleStep } from './lineStyle.js';
 import { registerLayerType } from './layerRef.js';
 import { metaOf, featuresOf, isLine, setAttr, connect, hoverClass, round1, LAYER_Z } from './layerCommon.js';
-import { alphaOf, lineWidthPx, unwrapLine, splitJumps, distToPolyline } from './layerStyle.js';
+import { alphaOf, lineWidthPx, unwrapLine, splitJumps, distToPolyline, symbolPx } from './layerStyle.js';
 import { INK, txt, registerSvgChart } from './charts.js';
 import { labelPx } from './layers.js';
 import { linearScale, sectorPath } from './chartCore.js';
@@ -108,6 +108,10 @@ export function polarView(map, { projection, up = null } = {}) {
   };
 }
 
+/** 극 중심 → 평면(사용자가 도법 상자로 고를 때, U6-9 리뷰): 마지막 평면 보기 가운데가 그 반구 띠 안이면 그 보기, 아니면(없거나 다른 반구 —
+ *  다른 주제의 보기) 그 반구 위도 띠로 맞춤 — 극 묶음으로 바로 연 뒤 밀러를 고르면 극 보기의 변환이 남아 첫 화면의 약 30% 가 빈 회색
+ *  (북위 35° 띠 k 1.93)이었음. 지구본 → 평면은 그대로 마지막 평면 보기. */
+const POLAR_FLAT_N = [-180, 20, 180, 85], POLAR_FLAT_S = [-180, -85, 180, -20];
 /** 특별 보기(평면이 아닌 것): 지구본·극 중심. */
 export const specialView = (key) => key === 'globe' || !!PROJECTIONS[key]?.pole;
 
@@ -138,7 +142,11 @@ export function viewTools(map, toolsEl) {
       def.home = def.rot.slice();
       later(() => { map.rebase(); globeHome(map); });
     } else if (def?.pole) later(() => polarHome(map, def));
-    else if (flat?.center) { const f = flat; later(() => map.flyTo({ center: f.center, zoom: f.k }, 0)); }
+    else {
+      const b = PROJECTIONS[was]?.pole === 'N' ? POLAR_FLAT_N : PROJECTIONS[was]?.pole === 'S' ? POLAR_FLAT_S : null, f = flat;
+      if (b && !(f?.center && f.center[1] >= b[1] && f.center[1] <= b[3])) later(() => map.fitBounds(b, { ms: 0 }));
+      else if (f?.center) later(() => map.flyTo({ center: f.center, zoom: f.k }, 0));
+    }
   });
   const home = (e) => {
     const key = map.view?.key, def = PROJECTIONS[key];
@@ -402,43 +410,76 @@ export function labelGroups(labels) {
   const red = (g) => g.some((f) => /^#d7/i.test(f.properties.color || ''));
   return [...groups.filter(red), ...groups.filter((g) => !red(g))];
 }
-/** 화면에서 앞 무리 글자 상자와 겹치는 무리를 고름 → {drop(숨길 좌표 배열 Set), moved(좌표 배열 → 화면 자리)} — 같은 자리 겹쳐 그린 사본도
- *  여기서 빠짐. 무리 안 「(…)」 글자는 화면 글자가 교과서보다 커서 이름 글자와 겹치므로 이름 글자 상자에 붙임(교과서 배치 방향 — 아래면 아래, 옆이면 옆).
+/** 화면에서 앞 무리 글자 상자·기호 점과 겹치는 무리를 고름 → {drop(숨길 좌표 배열 Set), moved(좌표 배열 → 화면 자리)} — 같은 자리 겹쳐 그린 사본도
+ *  여기서 빠짐. 무리 안 「(…)」 글자는 화면 글자가 교과서보다 커서 이름 글자와 겹치므로 이름 글자 상자에 붙임(교과서 배치 방향 — 아래면 아래, 옆이면 옆,
+ *  흰 테두리 몫 LGAP 띄움). 기호 점(dots [{ll, r}] — 자기 기지 점 포함)에 닿으면 무리째 점을 비켜 가장 짧게 옮김(최대 LMOVE px), 못 비키면 숨김.
  *  글자 크기·굵기는 layers.js 지명 글자와 같음. */
-export function culledLabels(groups, proj, measure) {
+const LGAP = 3, LMOVE = 24;
+export function culledLabels(groups, proj, measure, dots = []) {
   const kept = [], drop = new Set(), moved = new Map();
-  const hit = (b) => kept.some((o) => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]);
+  const over = (b, o) => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1];
+  const pad = (b, d) => [b[0] - d, b[1] - d, b[2] + d, b[3] + d];
+  const blocks = [];
+  for (const { ll, r } of dots) { const q = proj(ll); if (q && Number.isFinite(q[0])) blocks.push([q[0] - r - LGAP, q[1] - r - LGAP, q[0] + r + LGAP, q[1] + r + LGAP]); }
+  const free = (bs) => bs.every((b) => !kept.some((o) => over(b, o)) && !blocks.some((o) => over(b, o)));
   for (const g of groups) {
-    const boxes = [], mv = [];
+    const items = [];
     let lead = null;
     for (const f of g) {
       const q = proj(f.geometry.coordinates);
       if (!q || !Number.isFinite(q[0])) continue;
       const p = f.properties, px = labelPx(p), lines = p.lines?.length ? p.lines : [p.text], lh = px * 1.15;
       const w = Math.max(...lines.map((t) => measure(t, `${p.role === 'region' ? 600 : 800} ${px}px "Pretendard", "Malgun Gothic", sans-serif`))), hh = lines.length * lh;
-      let [x, y] = q;
+      let [x, y] = q, mv = false;
       if (lead && f !== g[0]) {
-        const below = Math.abs(y - lead.y) > Math.abs(x - lead.x);
-        if (below) y = lead.b[3] + hh / 2; else x = lead.b[2] + 3 + w / 2;
-        mv.push([f.geometry.coordinates, [x, y]]);
+        if (Math.abs(y - lead.y) > Math.abs(x - lead.x)) y = lead.b[3] + LGAP + hh / 2; else x = lead.b[2] + LGAP + 3 + w / 2;
+        mv = true;
       }
       const b = [x - w / 2, y - hh / 2, x + w / 2, y + hh / 2];
       if (f === g[0]) lead = { x, y, b };
-      boxes.push(b);
+      items.push({ f, x, y, b, mv });
     }
-    if (boxes.some(hit)) g.forEach((f) => drop.add(f.geometry.coordinates));
-    else { kept.push(...boxes); for (const [k, v] of mv) moved.set(k, v); }
+    if (!items.length) continue;
+    const boxes = items.map((it) => pad(it.b, LGAP / 2));
+    // 옮김 후보: 그대로 → 닿은 점마다 위·아래·왼쪽·오른쪽으로 비키는 가장 짧은 거리(짧은 것부터)
+    const shifts = [[0, 0]];
+    const u = [Math.min(...boxes.map((b) => b[0])), Math.min(...boxes.map((b) => b[1])), Math.max(...boxes.map((b) => b[2])), Math.max(...boxes.map((b) => b[3]))];
+    for (const o of blocks) if (over(u, o)) shifts.push([0, o[1] - u[3]], [0, o[3] - u[1]], [o[0] - u[2], 0], [o[2] - u[0], 0]);
+    // 두 점 이상에 닿으면 하나 비킨 자리가 다른 점에 닿을 수 있음 — 비킨 자리들을 한 번 더 비킴
+    for (const [sx, sy] of shifts.slice(1)) {
+      const v = [u[0] + sx, u[1] + sy, u[2] + sx, u[3] + sy];
+      for (const o of blocks) if (over(v, o)) shifts.push([sx, sy + o[1] - v[3]], [sx, sy + o[3] - v[1]], [sx + o[0] - v[2], sy], [sx + o[2] - v[0], sy]);
+    }
+    // 우리나라 기지(붉은 글자 무리)는 숨기지 않게 더 멀리(LMOVE × 2.5)까지 — 자기 큰 점(흰 테두리)을 비키려면 두 줄 높이만큼 옮겨야 함
+    const lim = g.some((f) => /^#d7/i.test(f.properties.color || '')) ? LMOVE * 2.5 : LMOVE;
+    const ok = shifts.filter(([dx, dy]) => Math.abs(dx) + Math.abs(dy) <= lim).sort((a, b) => Math.abs(a[0]) + Math.abs(a[1]) - Math.abs(b[0]) - Math.abs(b[1]))
+      .find(([dx, dy]) => free(boxes.map((b) => [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])));
+    if (!ok) { g.forEach((f) => drop.add(f.geometry.coordinates)); continue; }
+    const [dx, dy] = ok;
+    kept.push(...boxes.map((b) => [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]));
+    for (const it of items) if (it.mv || dx || dy) moved.set(it.f.geometry.coordinates, [it.x + dx, it.y + dy]);
   }
   return { drop, moved };
 }
-/** symbolLabels(아메리카 것) + 글자 몫 뒷면 숨김 + 겹치는 글자 무리 숨김(U6-9 — 51쪽 기지 글자 33 이 처음 보기에서 서로 겹쳤음, 확대하면 다시 보임) */
+/** symbolLabels(아메리카 것) + 글자 몫 뒷면 숨김 + 겹치는 글자 무리 숨김·점 비킴(U6-9 — 51쪽 기지 글자 33 이 처음 보기에서 서로 겹쳤음, 확대하면 다시 보임).
+ *  거르기 결과는 화면 투영이 같으면(글자 둘레 점 둘의 화면 자리·k) 다시 쓰고, 글자 폭은 (글자, 글꼴)로 기억. */
 export function polarSymbolLabelsLayer(id, d, ctx) {
   const layer = symbolLabelsLayer(id, d, ctx), draw = layer.draw;
-  const groups = labelGroups(featuresOf(d).filter((f) => f.geometry?.type === 'Point' && f.properties?.type === 'label'));
+  const feats = featuresOf(d).filter((f) => f.geometry?.type === 'Point');
+  const labels = feats.filter((f) => f.properties?.type === 'label'), syms = feats.filter((f) => f.properties?.type !== 'label');
+  const groups = labelGroups(labels), widths = new Map();
+  let memo = null;
   if (draw) layer.draw = (c, path, view) => {
     const v = hiddenAwareView(view), p = v.projection;
-    const measure = (t, font) => { c.font = font; return c.measureText(t).width; };
-    const { drop, moved } = culledLabels(groups, p, measure);
+    if (!labels.length) return draw(c, path, v);
+    const a = p(labels[0].geometry.coordinates), z = p(labels[labels.length - 1].geometry.coordinates);
+    const key = `${view.k}|${a}|${z}|${view.width}x${view.height}`;
+    if (memo?.key !== key) {
+      const measure = (t, font) => { const k2 = `${font}|${t}`; let w = widths.get(k2); if (w == null) { c.font = font; widths.set(k2, (w = c.measureText(t).width)); } return w; };
+      const dots = syms.map((f) => ({ ll: f.geometry.coordinates, r: symbolPx(f.properties.size || 3, view.k ?? 1) / 2 }));
+      memo = { key, ...culledLabels(groups, p, measure, dots) };
+    }
+    const { drop, moved } = memo;
     if (!drop.size && !moved.size) return draw(c, path, v);
     const q = (ll) => (drop.has(ll) ? null : moved.get(ll) || p(ll));
     q.hidden = p.hidden;

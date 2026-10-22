@@ -286,10 +286,15 @@ test('도법 고르기 상자 옵션 8 + viewTools: 밀러 → 북극 중심 →
   await tick();
   near(map.view.k, 4, 1e-9); near(map.view.center[0], 100, 1e-6); near(map.view.center[1], 30, 1e-6);
   assert.equal(tools.el.dispatch('click', { target: wholeBtn })._stop, false, '평면에서는 도구 그대로');
-  // 남극 중심 → 밀러
+  // 남극 중심 → 밀러(U6-9 리뷰): 마지막 평면 보기(100°E, 30°N)가 남반구 띠 밖 → 남반구 띠 [−180, −85, 180, −20] 로 맞춤
   pick('polarS'); await tick();
   cp = map.project([0, -90]); near(cp[0], 500, 0.5); near(cp[1], 400, 0.5);
   pick('miller'); await tick();
+  assert.equal(map.view.key, 'miller'); assert.ok(map.view.center[1] < 0, `남반구 쪽 ${map.view.center}`);
+  { const [a, z] = [map.project([0, -20]), map.project([0, -80])]; assert.ok(a[1] >= 0 && z[1] <= 800, '띠가 화면 안'); }
+  // 북극 중심 → 밀러: 마지막 평면 보기가 북반구 띠 안이면 그 보기
+  map.flyTo({ center: [100, 30], zoom: 4 }, 0); await tick();
+  pick('polarN'); await tick(); pick('miller'); await tick();
   near(map.view.k, 4, 1e-9); near(map.view.center[0], 100, 1e-6);
   // 코드가 바꾼 것(polarView·globeView): 상자·단추만 따라가고 viewTools 는 보기를 움직이지 않음 → 되돌리기 한 번
   map.flyTo({ center: [-60, 10], zoom: 2 }, 0);
