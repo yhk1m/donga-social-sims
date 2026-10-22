@@ -20,7 +20,8 @@ import functools, math, os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import numpy as np
-from shapely.geometry import Point
+from shapely.geometry import LineString, Point
+from shapely.ops import unary_union
 import pdfkit
 import charts_axes as AX
 import charts_geom as G
@@ -1339,11 +1340,9 @@ def read_dual_line(cid, c, ctx):
         vs = sorted(t['value'] for t in toks)
         geoms = [f['geom'] for f in G.fills(p, c['plotBox'], sc['color'], geom=True, de=opt(c, ctx, 'colorDE'))]
         if not geoms: raise ValueError(f'{cid}: {k} 선({sc["color"]})이 없음')
-        from shapely.ops import unary_union
-        from shapely.geometry import LineString
         band = unary_union(geoms)
         y0, y1 = band.bounds[1] - LINE_PAD_PT, band.bounds[3] + LINE_PAD_PT
-        halfw, vals, missing, ys = 0.0, [], [], {}
+        vals, missing, ys = [], [], {}
         for yr in years:
             x = xax.pos(yr)
             hit = band.intersection(LineString([(x, y0), (x, y1)]))

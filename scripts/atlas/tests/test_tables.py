@@ -753,10 +753,9 @@ class ChartsU6(unittest.TestCase):
     def test_tables(self):
         t = self.charts['p54-plastic']
         self.assertEqual(t['type'], 'table')
-        self.assertEqual(t['categories'][:5], ['연간 플라스틱 생산량', '연간 플라스틱 폐기량', '연간 플라스틱 유출량', '연간 플라스틱 강·해안 유출량',
+        self.assertEqual(t['categories'], ['연간 플라스틱 생산량', '연간 플라스틱 폐기량', '연간 플라스틱 유출량', '연간 플라스틱 강·해안 유출량',
                                                '연간 플라스틱 해양 유입량'])
-        self.assertEqual(t['series'][0]['values'][:5], ['353 (백만 톤)', '82 (백만 톤)', '19 (백만 톤)', '6 (백만 톤)', '1.7 (백만 톤)'])
-        self.assertEqual(t['categories'][5:], ['연간 플라스틱 생산량의 0.5%가 바다에 버려진다.', '수만 톤~수십만 톤의 해양 플라스틱 부유물'])
+        self.assertEqual(t['series'][0]['values'], ['353 (백만 톤)', '82 (백만 톤)', '19 (백만 톤)', '6 (백만 톤)', '1.7 (백만 톤)'])   # 문장 둘은 U6-8 글
         r = self.charts['p55-route-stats']
         self.assertEqual(r['categories'], ['거리 단축', '운항 일수 단축', '거리와 시간 단축을 통한 물류비 절감'])
         self.assertEqual(r['series'][0]['values'], ['22,000 → 15,000km 32%', '40 → 30일 25%', ''])

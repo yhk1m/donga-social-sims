@@ -115,3 +115,28 @@ test('반원(halfPie): 조각 각 합 = 180°, 반지름 비 = 자료 rRel(교�
   for (const s of ['1965년', '27(억 달러)', '2022년', '6,706(억 달러)', '대한민국', '27.6']) assert.ok(t.includes(s), s);
   assert.ok(all(svg, (n) => n.tagName === 'title').some((n) => textOf(n) === '1965년 영국 19.2%'));
 });
+
+test('반원 orient(U6-7 — 교과서 꼴): 1965 위 반원 · 2022 아래 반원이 한 가운데 점에 지름을 맞대, 아래 반원은 9시 → 6시 → 3시(조각 차례 왼쪽부터)', () => {
+  const spec = { ...HALF, items: [{ ...HALF.items[0], rRel: 0.587, orient: 'up' }, { ...HALF.items[1], orient: 'down' }] };
+  const box = h('div', {});
+  renderChart(box, spec);
+  const svg = all(box, (n) => n.tagName === 'svg')[0];
+  const groups = byClass(svg, 'at-ct-half');
+  assert.deepEqual(groups.map((g) => g.getAttribute('data-orient')), ['up', 'down']);
+  assert.equal(groups[0].getAttribute('data-cy'), groups[1].getAttribute('data-cy'));
+  const radii = groups.map((g) => +g.getAttribute('data-r'));
+  assert.ok(Math.abs(radii[0] / radii[1] - 0.587) < 1e-9);
+  const cy = +groups[0].getAttribute('data-cy');
+  const sectors = (g) => all(g, (n) => n.tagName === 'path' && n.getAttribute('fill') && n.getAttribute('class') !== 'at-ct-leader');
+  // 경로 점: M·L 은 그 점, A 는 끝점(마지막 두 수 — 큰 호·방향 플래그를 점으로 읽지 않게)
+  const ys = (p) => (p.getAttribute('d').match(/[MLA][^MLAZ]*/g) || []).map((c) => { const v = c.slice(1).split(/[ ,]+/).map(Number); return v.slice(-2); });
+  for (const p of sectors(groups[0])) for (const [, y] of ys(p)) assert.ok(y <= cy + 0.05, `위 반원 ${y} > ${cy}`);
+  for (const p of sectors(groups[1])) for (const [, y] of ys(p)) assert.ok(y >= cy - 0.05, `아래 반원 ${y} < ${cy}`);
+  // 같은 가운데 x(지름 맞댐), 아래 반원 첫 조각(중국)은 왼쪽(9시 쪽), 마지막(기타)은 오른쪽
+  const xsOf = (p) => ys(p).map(([x]) => x);
+  const down = sectors(groups[1]), cxs = groups.map((g) => Math.max(...sectors(g).flatMap(xsOf)) - Math.min(...sectors(g).flatMap(xsOf)));
+  assert.ok(cxs[0] < cxs[1]);
+  assert.ok(Math.min(...xsOf(down[0])) < Math.min(...xsOf(down[down.length - 1])));
+  const vb = svg.getAttribute('viewBox').split(' ').map(Number);
+  assert.ok(vb[3] >= cy + radii[1], `높이 ${vb[3]} — 아래 반원이 들어감`);
+});

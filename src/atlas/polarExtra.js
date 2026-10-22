@@ -321,23 +321,33 @@ export function halfPieSlices(item) {
   return item.slices.map((q, i) => { const a0 = a; a += (vals[i] / sum) * 180; return { name: q.name, value: q.value, color: q.color || '#ccc', a0, a1: a }; });
 }
 
-/** 반원 그래프(54쪽 무역 상대국 1965·2022) — 반지름 = 가장 큰 반원 × rRel(교과서 잰 비), 아래 끝(가운데)을 한 줄에.
- *  배치(폭 520·반지름 118·가운데 = 폭 × (k + 0.5) / n)는 반원 n ≤ 2 에 맞춘 값 — 셋 이상이면 반원·바깥 글자가 겹치므로 그때 다시 잡을 것. */
+/** 반원 그래프(54쪽 무역 상대국 1965·2022) — 반지름 = 가장 큰 반원 × rRel(교과서 잰 비).
+ *  orient 가 없으면(옛 꼴) 위쪽 반원을 나란히, 아래 끝(가운데)을 한 줄에 — 배치(폭 520·반지름 118·가운데 = 폭 × (k + 0.5) / n)는 n ≤ 2 에 맞춘 값.
+ *  자료에 orient 'down' 이 있으면(U6-7 — 교과서 꼴) 모든 반원을 한 가운데 점에 지름을 맞대 쌓음: 'up' = 9시 → 12시 → 3시(위),
+ *  'down' = 9시 → 6시 → 3시(아래, 조각 차례는 둘 다 왼쪽부터), 해·금액 글자는 왼쪽(위 반원은 위쪽 · 아래 반원은 아래쪽 — 교과서 자리). */
 function halfPieSvg(spec, label) {
-  const W = 520, R = 118, cy = 40 + R, Hh = cy + 46, n = spec.items.length;
+  const W = 520, R = 118, n = spec.items.length;
+  const stacked = spec.items.some((it) => it.orient === 'down');
+  const rUp = stacked ? Math.max(0, ...spec.items.filter((it) => it.orient !== 'down').map((it) => R * (it.rRel ?? 1))) : R;
+  const cy = 40 + rUp, Hh = stacked ? cy + Math.max(0, ...spec.items.filter((it) => it.orient === 'down').map((it) => R * (it.rRel ?? 1))) + 46 : cy + 46;
   const groups = spec.items.map((it, k) => {
-    const cx = (W * (k + 0.5)) / n, r = R * (it.rRel ?? 1);
+    const down = it.orient === 'down';
+    const cx = stacked ? W / 2 : (W * (k + 0.5)) / n, r = R * (it.rRel ?? 1);
+    // 아래 반원: 위 반원 각(9시 −90 → 3시 90)을 가로축에 거울 — a' = 180 − a(9시 270 → 6시 180 → 3시 90), 시작·끝 바꿈
     const sl = halfPieSlices(it).map((q) => {
-      const mid = (((q.a0 + q.a1) / 2) * Math.PI) / 180;
-      return { ...q, sin: Math.sin(mid), cos: Math.cos(mid), inside: q.a1 - q.a0 >= 20 && r >= 80 };
+      const a0 = down ? 180 - q.a1 : q.a0, a1 = down ? 180 - q.a0 : q.a1;
+      const mid = (((a0 + a1) / 2) * Math.PI) / 180;
+      return { ...q, a0, a1, sin: Math.sin(mid), cos: Math.cos(mid), inside: a1 - a0 >= 20 && r >= 80 };
     });
-    // 바깥 글자: 왼쪽(sin < 0)·오른쪽 묶음마다 위에서부터 줄 간격 13 이상으로 내려 겹치지 않게, x 는 그 높이의 반원 바깥 + 4, 꺾인 지시선
-    const R1 = r + 11;
+    // 바깥 글자: 왼쪽(sin < 0)·오른쪽 묶음마다 반원 바깥쪽(위 반원은 위에서, 아래 반원은 아래에서)부터 줄 간격 13 이상으로 가운데 쪽으로,
+    // x 는 그 높이의 반원 바깥 + 4, 꺾인 지시선
+    const R1 = r + 11, dir = down ? -1 : 1;
     for (const left of [true, false]) {
       let prev = -Infinity;
-      for (const q of sl.filter((x) => !x.inside && x.sin < 0 === left).sort((a, b) => b.cos - a.cos)) {
-        q.ly = Math.max(cy - R1 * q.cos, prev + 13);
-        prev = q.ly;
+      for (const q of sl.filter((x) => !x.inside && x.sin < 0 === left).sort((a, b) => dir * (b.cos - a.cos))) {
+        const y = cy - R1 * q.cos;
+        q.ly = down ? Math.min(y, -prev - 13) : Math.max(y, prev + 13);
+        prev = down ? -q.ly : q.ly;
         q.lx = cx + (left ? -1 : 1) * (Math.sqrt(Math.max(0, R1 * R1 - (cy - q.ly) ** 2)) + 4);
       }
     }
@@ -350,11 +360,14 @@ function halfPieSvg(spec, label) {
       return s('g', { class: 'at-ct-cell' }, s('title', {}, `${it.label} ${q.name} ${q.value}%`),
         s('path', { d: sectorPath(cx, cy, 0, r, q.a0, q.a1), fill: q.color, stroke: INK, 'stroke-width': 0.8 }), lab);
     });
-    return s('g', { class: 'at-ct-half', 'data-r': r, 'data-cy': cy }, cells,
-      txt(cx, cy + 18, it.label, { 'text-anchor': 'middle', class: 'at-ct at-ct-cat' }),
-      it.total ? txt(cx, cy + 34, it.total, { 'text-anchor': 'middle', class: 'at-ct at-ct-sub' }) : null);
+    // 해·금액 글자: 옛 꼴 = 반원 아래 가운데, 쌓은 꼴 = 왼쪽 끝(위 반원은 지름 위 · 아래 반원은 반원 아래쪽)
+    const ly = stacked ? (down ? cy + r - 18 : cy - Math.max(r, 36)) : cy + 18;
+    const lx = stacked ? 12 : cx, anchor = stacked ? 'start' : 'middle';
+    return s('g', { class: 'at-ct-half', 'data-r': r, 'data-cy': cy, 'data-orient': down ? 'down' : 'up' }, cells,
+      txt(lx, ly, it.label, { 'text-anchor': anchor, class: 'at-ct at-ct-cat' }),
+      it.total ? txt(lx, ly + 16, it.total, { 'text-anchor': anchor, class: 'at-ct at-ct-sub' }) : null);
   });
-  return s('svg', { class: 'at-chart-svg', viewBox: `0 0 ${W} ${Hh}`, role: 'img', 'aria-label': label }, groups,
+  return s('svg', { class: 'at-chart-svg', viewBox: `0 0 ${W} ${f2(Hh)}`, role: 'img', 'aria-label': label }, groups,
     txt(W - 8, 16, '(%)', { 'text-anchor': 'end', class: 'at-ct at-ct-tick' }));
 }
 
