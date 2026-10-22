@@ -334,5 +334,65 @@ class SymbolFix(unittest.TestCase):
         self.assertEqual(run(fix), {'볼티모어': 'city', '워싱턴': 'capital'})
 
 
+U6_CFG = os.path.join(os.path.dirname(__file__), '..', 'config', 'u6.json')
+
+
+class OverdrawU6(unittest.TestCase):
+    """U6-5 places.overdraw(키가 있을 때만): 투명도 평탄화 타일로 같은 글자를 4~11번(토막으로) 겹쳐 그린 쪽 — 48쪽 하와이 삽입·50쪽."""
+    @classmethod
+    def setUpClass(cls):
+        cls.h = [s for s in PL.overdraw_spans(48) if PL._in_box(s['bbox'], [566.9, 29.3, 748.3, 146.1])]
+        cls.raw = [s for s in pdfkit.page_spans(48) if PL._in_box(s['bbox'], [566.9, 29.3, 748.3, 146.1])]
+
+    def test_fragments_joined_once(self):
+        t = [s['text'] for s in self.h]
+        for n in ['마우나케아산', '킬라우에아산', '할레아칼라산', '호놀룰루', '카우아이 해협', '니하우섬']: self.assertEqual(t.count(n), 1, n)
+        self.assertNotIn('나케아산', t); self.assertNotIn('마우나', t)
+        r = [s['text'] for s in self.raw]                             # 쪽 글자 그대로는 토막·여러 번
+        self.assertGreaterEqual(r.count('호놀룰루'), 5); self.assertNotIn('마우나케아산', r)
+        self.assertTrue(all(s.get('overdraw') for s in self.h))
+
+    def test_separate_labels_not_joined(self):                       # 50쪽 「리투아니아 / 에스토니아」 한 줄에 맞닿아도 따로
+        t = [s['text'] for s in PL.overdraw_spans(50)]
+        self.assertIn('리투아니아', t); self.assertIn('에스토니아', t); self.assertNotIn('리투아니아 에스토니아', t)
+        self.assertEqual(t.count('테헤란'), 1); self.assertIn('대 서 양', t)   # 67번 겹친 테헤란 · 자간 벌린 대양(공백 글자 이음)
+
+    def test_same_style_ignores_colour_only_for_overdraw(self):
+        r = {'role': 'city'}
+        def node(c, ov): return {'s': {'rule': r, 'font': 'F', 'color': c, **({'overdraw': True} if ov else {})}, 'size': 5.7}
+        self.assertFalse(PL._same_style(node('#000520', False), node('#131920', False)))   # 옛 길: 색이 다르면 다른 양식
+        self.assertFalse(PL._same_style(node('#000520', True), node('#131920', False)))
+        self.assertTrue(PL._same_style(node('#000520', True), node('#131920', True)))
+
+
+class AddLabelsDropBoxesU6(unittest.TestCase):
+    """U6-5 places.addLabels·dropBoxes(키가 있을 때만)."""
+    @classmethod
+    def setUpClass(cls):
+        import json
+        with open(U6_CFG, encoding='utf-8') as f: cls.cfg = json.load(f)['places']
+
+    def test_added_span(self):
+        s = PL._added_span({'text': '빈슨산', 'role': 'landform', 'xy': [404.3, 248.0], 'size': 5.7, 'elev': 4892, 'why': 'x'}, self.cfg, 'p51-antarctic')
+        self.assertEqual(PL._centre(s['bbox']), (404.3, 248.0))
+        self.assertAlmostEqual(s['bbox'][2] - s['bbox'][0], 3 * 5.7)
+        self.assertEqual(s['rule']['role'], 'landform'); self.assertEqual(s['rule']['addElev'], 4892)
+        self.assertNotIn(s['rule'], [])                                      # 사본(양식 표의 규칙 그 자체가 아님 — 이어지지 않음)
+        self.assertFalse(any(s['rule'] is r for r in self.cfg['styles']))
+        v = PL._added_span({'text': '엘즈워스산맥', 'role': 'landform', 'xy': [10, 20], 'size': 6.9, 'angle': 90, 'why': 'x'}, self.cfg, 'p51-antarctic')
+        self.assertEqual(v['dir'], [0.0, 1.0]); self.assertGreater(v['bbox'][3] - v['bbox'][1], v['bbox'][2] - v['bbox'][0])
+        with self.assertRaises(ValueError): PL._added_span({'text': 'a', 'role': 'land', 'xy': [0, 0], 'size': 5}, self.cfg, 'p50-arctic')   # why 없음
+        with self.assertRaises(ValueError): PL._added_span({'text': 'a', 'role': 'nope', 'xy': [0, 0], 'size': 5, 'why': 'x'}, self.cfg, 'p50-arctic')
+
+    def test_drop_boxes(self):
+        boxes = self.cfg['dropBoxes']['p48-oceania']
+        self.assertTrue(PL._drop_box([670, 660, 690, 670], boxes))           # 타히티 틀 안
+        self.assertTrue(PL._drop_box([180, 540, 190, 545], boxes))           # 우리나라 실루엣
+        self.assertIsNone(PL._drop_box([300, 300, 310, 305], boxes))
+        a = PL.symbols(48, {'id': 'p48-oceania', 'bbox': [640, 625, 716, 700]}, self.cfg)
+        b = PL.symbols(48, {'id': 'p48-oceania', 'bbox': [640, 625, 716, 700]}, {k: v for k, v in self.cfg.items() if k != 'dropBoxes'})
+        self.assertEqual(a, []); self.assertGreaterEqual(len(b), 0)
+
+
 if __name__ == '__main__':
     unittest.main()

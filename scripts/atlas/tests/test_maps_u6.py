@@ -276,9 +276,17 @@ class MapsU6(unittest.TestCase):
         # U6-3d(교사 Q3): 삽입 지명 우선 합치기 — 하와이·타히티 → 48쪽 본 지도 → 극 일반도 둘(places.maps 모두)
         self.assertEqual(p['mergePriority'], ['p48-hawaii', 'p48-tahiti', 'p48-oceania', 'p50-arctic', 'p51-antarctic'])
         self.assertEqual(sorted(p['mergePriority']), sorted(p['maps']))
-        for k in ('neAlias', 'snapAlways', 'keepTextbookPosition', 'relocate', 'indexExclude', 'extraNames'):
+        for k in ('snapAlways', 'keepTextbookPosition'):
             self.assertEqual(p[k], {})
-        self.assertFalse([s for s in p['styles'] if s.get('maps')])
+        # U6-5 가 채운 키(neAlias·relocate·indexExclude·extraNames·addLabels·dropBoxes·overdraw — 내용은 tests/atlas/units/u6.places.test.mjs):
+        # 지도별 양식·무시 규칙과 손 넣은 글자는 places.maps 의 지도만 가리킴
+        for r in p['styles'] + p['ignore']:
+            for mid in r.get('maps', []): self.assertIn(mid, p['maps'], r)
+        for k in ('addLabels', 'dropBoxes'):
+            for mid, v in p[k].items():
+                self.assertIn(mid, p['maps'])
+                for a in v: self.assertTrue(a.get('why'), a)
+        self.assertTrue(set(p['overdraw']['maps']) <= set(p['maps']))
         for k in ('places', 'cityControls'):
             for mid in c[k]['maps']: self.assertIn(mid, self.by)
         # 색칠하기: 49쪽, 아메리카 지역·자르기 키 없음
@@ -287,7 +295,9 @@ class MapsU6(unittest.TestCase):
         self.assertIn(col['map'], self.by)
         for k in ('regions', 'noCapital', 'joinLabels', 'cutIsos', 'extraCountries', 'isoByLabel', 'capitalAlias', 'splitLabels'):
             self.assertNotIn(k, col)
-        self.assertEqual(c['photos']['items'], []); self.assertEqual(c['charts']['items'], {})
+        # U6-6·U6-7 이 채움(사진 23 · 그래프 11 — 자세한 검사는 u6.photos.test·test_tables ChartsU6)
+        self.assertEqual(len(c['photos']['items']), 23)
+        self.assertEqual(len(c['charts']['items']), 11)
         self.assertEqual(c['insets'], [])
 
 

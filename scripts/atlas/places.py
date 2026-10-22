@@ -145,6 +145,94 @@ def glue_spans(spans, rules):
     return out
 
 
+# ── 겹쳐 그린 글자(설정 places.overdraw 가 있을 때만 — u6 48쪽 하와이·50·51쪽) ─────────────
+def overdraw_spans(pno, tol=0.1, space_em=0.25, break_em=1.0):
+    """투명도 평탄화로 지도가 타일마다 다시 그려져 같은 글자가 같은 자리에 4~11번(타일 경계에서 토막으로 — 「마우나」·「나케아산」),
+    타일 배경과 섞인 색(#000520·#131920 …)으로 나오는 쪽 → 글자 하나씩 모아 같은 글꼴·크기·방향·글자·자리(tol pt 격자)를 하나로 하고,
+    어느 사본에서든 바로 이웃한 글자끼리만(토막은 타일 경계 글자를 함께 가져 겹친다) page_spans 와 같은 기준(수직 어긋남 ≤ 0.5em·
+    빈틈 −0.5em~break_em)으로 다시 이어 조각을 만든다 — 따로 놓인 두 지명이 한 줄에 맞닿아도 잇지 않는다.
+    조각 색 = 그 글자들의 모든 사본 색 중 가장 많은 것(참고용 — 이 지도의 양식 규칙은 색 없이 maps 로 고름), overdraw 표시."""
+    uniq, edges = {}, {}
+    for t in pdfkit.doc()[pno - 1].get_texttrace():
+        if t['type'] == 3 or not t['chars']: continue
+        size = round(t['size'], 1); latin = any(k in t['font'] for k in pdfkit.LATIN_FONTS)
+        d = (round(t['dir'][0], 3), round(t['dir'][1], 3)); col = pdfkit.hex_color(t.get('color'))
+        prev = None
+        for u, gid, o, bb in t['chars']:
+            ch = pdfkit._glyph_char(u, gid, latin)
+            k = (t['font'], size, d, ch, round(o[0] / tol), round(o[1] / tol))
+            e = uniq.get(k)
+            if e is None:
+                e = uniq[k] = {'ch': ch, 'font': t['font'], 'size': size, 'dir': d, 'o': o, 'bbox': list(bb), 'colors': Counter(), 'order': len(uniq)}
+            e['colors'][col] += 1
+            if prev is not None and prev != k: edges.setdefault(prev, set()).add(k)
+            prev = k
+    def link(a, b):
+        """a 다음 b 의 (점수, 빈틈) 또는 None — page_spans 의 조각 나누기 기준."""
+        (ax, ay), (dx, dy), b0, size = a['o'], a['dir'], a['bbox'], a['size']
+        adv = max((x - ax) * dx + (y - ay) * dy for x in (b0[0], b0[2]) for y in (b0[1], b0[3]))
+        vx, vy = b['o'][0] - ax, b['o'][1] - ay
+        along, perp = vx * dx + vy * dy, abs(-vx * dy + vy * dx)
+        gap = along - adv
+        if along <= 0 or perp > 0.5 * size or gap < -0.5 * size or gap > break_em * size: return None
+        return abs(gap) + 2 * perp, gap
+    nxt = {}
+    for ka, kbs in edges.items():
+        c = [(l, kb) for kb in kbs if (l := link(uniq[ka], uniq[kb]))]
+        if c: nxt[ka] = min(c, key=lambda x: x[0][0])
+    best = {}
+    for ka, ((sc, _g), kb) in nxt.items():
+        if kb not in best or sc < best[kb][0]: best[kb] = (sc, ka)
+    succ = {ka: (kb, g) for ka, ((sc, g), kb) in nxt.items() if best[kb][1] == ka}
+    has_pred = {kb for kb, _g in succ.values()}
+    spans = []
+    for h, e in uniq.items():
+        if h in has_pred: continue
+        text, bb, cols, k, first = e['ch'], list(e['bbox']), Counter(e['colors']), h, e['order']
+        seen = {h}
+        while k in succ and succ[k][0] not in seen:
+            j, g = succ[k]; f = uniq[j]; seen.add(j)
+            if g > space_em * e['size'] and not text.endswith(' ') and f['ch'] != ' ': text += ' '
+            text += f['ch']
+            if f['ch'].strip():
+                b = f['bbox']; bb = [min(bb[0], b[0]), min(bb[1], b[1]), max(bb[2], b[2]), max(bb[3], b[3])]
+                cols.update(f['colors'])
+            first = min(first, f['order']); k = j
+        text = ' '.join(text.split())
+        if not text: continue
+        if not e['ch'].strip():                                      # 공백으로 시작한 사슬: 상자는 글자만
+            ks = [x for x in seen if uniq[x]['ch'].strip()]
+            bs = [uniq[x]['bbox'] for x in ks]
+            bb = [min(b[0] for b in bs), min(b[1] for b in bs), max(b[2] for b in bs), max(b[3] for b in bs)]
+        spans.append({'text': text, 'size': e['size'], 'font': e['font'], 'color': cols.most_common(1)[0][0],
+                      'bbox': [round(v, 1) for v in bb], 'dir': list(e['dir']), 'overdraw': True, '_order': first})
+    spans.sort(key=lambda s: s['_order'])
+    for s in spans: del s['_order']
+    return spans
+
+
+def _added_span(a, cfg, map_id):
+    """설정 places.addLabels[지도 id] 항목 {text, role, xy(글자 가운데 지면 pt), size, angle?(도), elev?, why} → 묶기에 넣을 조각.
+    규칙 = 그 지도에 쓰이는 같은 역할 양식의 사본(사본이라 다른 조각과 이어지지 않음 — 한 항목 = 지명 하나)."""
+    rule = next((r for r in cfg['styles'] if r['role'] == a['role'] and ('maps' not in r or map_id in r['maps'])), None)
+    if rule is None: raise ValueError(f'{map_id}: addLabels 「{a["text"]}」 — 역할 {a["role"]} 양식이 없음')
+    if not a.get('why'): raise ValueError(f'{map_id}: addLabels 「{a["text"]}」 — why 필요')
+    size, ang = a['size'], math.radians(a.get('angle', 0))
+    dx, dy = math.cos(ang), math.sin(ang)
+    hl, hh = len(a['text'].replace(' ', '')) * size / 2, size / 2
+    xs = [a['xy'][0] + s * hl * dx - t * hh * dy for s in (-1, 1) for t in (-1, 1)]
+    ys = [a['xy'][1] + s * hl * dy + t * hh * dx for s in (-1, 1) for t in (-1, 1)]
+    rule = dict(rule)
+    if 'elev' in a: rule['addElev'] = int(a['elev'])                 # 산 높이(지면 숫자도 래스터일 때)
+    return {'text': a['text'], 'size': size, 'font': '(addLabels)', 'color': None, 'bbox': [min(xs), min(ys), max(xs), max(ys)],
+            'dir': [round(dx, 3), round(dy, 3)], 'rule': rule}
+
+
+def _drop_box(b, boxes):
+    """설정 places.dropBoxes[지도 id] 상자 안이면 그 까닭(덮개 키 넷으로 못 덮는 삽입 틀·실루엣 — u6 48쪽 타히티)."""
+    return next((d['why'] for d in boxes if _in_box(b, d['box'])), None)
+
+
 # ── 묶기 ────────────────────────────────────────────────────────────────
 def _span_ends(s):
     """조각 하나의 글자 줄 양 끝 글자 중심(dir 방향)."""
@@ -164,7 +252,8 @@ def _node(s):
 
 
 def _same_style(a, b):
-    return (a['s']['rule'] is b['s']['rule'] and a['s']['font'] == b['s']['font'] and a['s']['color'] == b['s']['color']
+    same_color = a['s']['color'] == b['s']['color'] or (a['s'].get('overdraw') and b['s'].get('overdraw'))   # 겹쳐 그린 지도(u6): 색은 조각마다 달라 규칙·글꼴로만
+    return (a['s']['rule'] is b['s']['rule'] and a['s']['font'] == b['s']['font'] and same_color
             and abs(a['size'] - b['size']) <= _chain().get('sizeTol', 0.35))   # sizeTol(u5 만): 43쪽 「야 노 / 스」 5.9·6.9pt
 
 
@@ -442,7 +531,7 @@ def hidden_spans(pno, spans, cfg):
 def symbols(pno, m, cfg):
     """지도 안 점 기호 → [{xy, cls, size}] (겹친 동심 도형은 하나로: 가장 큰 도형 중심, 분류는 classes 순서가 앞선 것).
     설정 places.hidden 이 있으면 래스터 밑에 깔려 보이지 않는 기호(쪽 흐름에서 그 뒤에 그린 큰 그림이 덮음)는 뺀다."""
-    sc = cfg['symbols']; lo, hi = sc['sizeRange']; excl = excluded_boxes(m)
+    sc = cfg['symbols']; lo, hi = sc['sizeRange']; excl = excluded_boxes(m); drop = cfg.get('dropBoxes', {}).get(m.get('id'), [])
     hc = _hidden_cfg(cfg); imgs, _t, dpos = _paint_order(pno, *hc) if hc else ((), None, None)
     cand = []
     for n, d in enumerate(drawings(pno)):
@@ -451,6 +540,7 @@ def symbols(pno, m, cfg):
         if not (lo <= w <= hi and lo <= h <= hi): continue
         b = [r.x0, r.y0, r.x1, r.y1]
         if not _in_box(b, m['bbox']) or any(_in_box(b, e) for e in excl): continue
+        if drop and _drop_box(b, drop): continue
         fill, stroke, ops = hexc(d.get('fill')), hexc(d.get('color')), _ops(d)
         for c in sc['classes']:
             if 'fill' in c and fill not in c['fill']: continue
@@ -543,13 +633,17 @@ def extract(map_id, keys=None):
     # 순서 주의: glue 는 양식 표(style_of, ignore 단계)보다 먼저 돈다. u3 의 낱자 숫자 규칙(textRe ^[0-9]$, 기울여 한 글자씩 놓은
     # 산 높이 1|8|9|5)은 이 순서에 기댄다 — 잇기 전의 한 자리 숫자 조각은 산 높이 규칙에 안 맞아 무시·양식 표에 없음으로 빠지므로,
     # glue 를 ignore 뒤로 옮기면 1895 가 사라진다.
-    gspans = glue_spans(pdfkit.page_spans(pno), cfg.get('glue', []))
+    ov = cfg.get('overdraw')                                         # u6: 겹쳐 그린 지도는 글자를 하나로 모아 다시 이음
+    raw = overdraw_spans(pno, ov.get('tolPt', 0.1)) if ov and map_id in ov['maps'] else pdfkit.page_spans(pno)
+    drop = cfg.get('dropBoxes', {}).get(map_id, [])
+    gspans = glue_spans(raw, cfg.get('glue', []))
     hid = hidden_spans(pno, gspans, cfg)
     for k, s in enumerate(gspans):
         b = s['bbox']
         if k in hid: dropped.append({'text': s['text'], 'why': cfg['hidden'].get('why', '래스터 밑에 가려진 글자')}); continue
         if not _in_box(b, m['bbox']): dropped.append({'text': s['text'], 'why': '지도 틀 밖'}); continue
         if any(_in_box(b, e) for e in excl): dropped.append({'text': s['text'], 'why': '범례·제목 상자'}); continue
+        if drop and _drop_box(b, drop): dropped.append({'text': s['text'], 'why': _drop_box(b, drop)}); continue
         what, r = style_of(s, cfg, map_id)
         if what == 'ignore':
             if r.get('elevation'): elevs.append(s)
@@ -561,6 +655,8 @@ def extract(map_id, keys=None):
         kept.append({**s, 'rule': r})
     for (f, sz, c), n in unknown.items():
         warnings.append(f'{map_id}: 양식 표에 없는 글자 {n}개 ({f} {sz}pt {c})')
+    for a in cfg.get('addLabels', {}).get(map_id, []):               # u6: 래스터로 묻힌 지면 글자를 손으로(렌더를 보고 적은 자리)
+        kept.append(_added_span(a, cfg, map_id))
     labels, parens = [], []
     for L in group(kept, keys, notes):
         why = next((e['why'] for e in cfg['exclude'] if re.search(e['re'], L['name'])), None)
@@ -621,6 +717,7 @@ def extract(map_id, keys=None):
             else: warnings.append(f'{map_id}: 영문 이름 「{e["name"]}」을 붙일 지명이 없음')
     labels = main
     for L in labels:
+        if 'addElev' in L['rule']: L['elev'] = L['rule']['addElev']
         L['kind'] = kind_of(L['role'], L['name'], (L.get('symbol') or {}).get('cls'), cfg)
         if L['kind'] == 'mountain' and L['role'] == 'city' and 'elev' not in L:
             warnings.append(f'{map_id}: 산 「{L["name"]}」에 높이 숫자가 없음')
