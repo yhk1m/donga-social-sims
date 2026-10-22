@@ -60,11 +60,11 @@ test('수도: 오세아니아 독립국 14 영문 병기 + 48쪽 아시아 이�
 
 test('종류별 수(48쪽 셋 + 50·51쪽 합친 한 벌)', () => {
   const n = (k) => places.filter((p) => p.kind === k).length;
-  assert.equal(places.length, 588);
+  assert.equal(places.length, 626);
   assert.deepEqual({ country: n('country'), capital: n('capital'), city: n('city'), sea: n('sea'), river: n('river'), mountain: n('mountain'), island: n('island'), region: n('region'), plain: n('plain'), desert: n('desert'), other: n('other') },
-    { country: 72, capital: 36, city: 146, sea: 88, river: 10, mountain: 26, island: 153, region: 31, plain: 5, desert: 5, other: 16 });
+    { country: 72, capital: 36, city: 168, sea: 88, river: 10, mountain: 38, island: 153, region: 31, plain: 9, desert: 5, other: 16 });
   const from = (m) => places.filter((p) => p.from.includes(m)).length;
-  assert.deepEqual(['p48-hawaii', 'p48-tahiti', 'p48-oceania', 'p50-arctic', 'p51-antarctic'].map(from), [21, 1, 343, 176, 60]);
+  assert.deepEqual(['p48-hawaii', 'p48-tahiti', 'p48-oceania', 'p50-arctic', 'p51-antarctic'].map(from), [21, 1, 343, 214, 60]);
   const by = {}; for (const p of places) (by[p.name] ||= []).push(p);
   assert.deepEqual(Object.entries(by).filter(([, v]) => v.length > 1).map(([k]) => k).sort(), ['미크로네시아', '솔로몬 제도', '포틀랜드'].sort());   // 나라 ↔ 지역·섬, 오리건 ↔ 빅토리아주
 });
@@ -81,6 +81,7 @@ test('고친 글자: 덮개 밖 상자·소속 표시·래스터 글자 손 넣�
   for (const n of ['퀸모드랜드', '빅토리아랜드', '아델리랜드', '윌크스랜드', '그레이엄랜드']) assert.equal(one(n).kind, 'region');
   for (const n of ['남극 횡단 산맥', '엘즈워스산맥']) assert.equal(one(n).kind, 'mountain');
   assert.ok(near(one('빈슨산'), -85.62, -78.53, 0.6) && one('빈슨산').elev === 4892);
+  assert.ok(near(one('백두산'), 128.06, 41.99, 0.5) && one('백두산').elev === 2744 && one('군비요른산').elev === 3700);
   assert.ok(near(one('디날리산'), -151.0, 63.07, 1) && one('디날리산').elev === 6190);
   assert.ok(near(one('그레이트오스트레일리아만'), 130, -34, 2) && one('그레이트오스트레일리아만').from[0] === 'p48-oceania');
 });
@@ -146,16 +147,32 @@ test('Natural Earth 대조: 48쪽 중앙값 ≤ 1km · 90% ≤ 12km · 최대 �
   const NE = `${WORK}/${cfg.neFile}`;
   if (!existsSync(NE)) return;
   const r = neCheck(places, NE);
-  assert.ok(r.n >= 125 && r.far.length === 0 && r.max <= 32, JSON.stringify(r));
+  assert.ok(r.n >= 145 && r.far.length === 0 && r.max <= 32, JSON.stringify(r));
   const r48 = neCheck(places.filter((p) => p.from[0] === 'p48-oceania'), NE);
   assert.ok(r48.n >= 85 && r48.median <= 1 && r48.p90 <= 12, JSON.stringify(r48));
   const r50 = neCheck(places.filter((p) => p.from[0] === 'p50-arctic'), NE);
-  assert.ok(r50.n >= 30 && r50.p90 <= 25, JSON.stringify(r50));
+  assert.ok(r50.n >= 50 && r50.p90 <= 25, JSON.stringify(r50));
+});
+
+test('50쪽 래스터 도시 22·상자 글자 14(U6-5 리뷰 — addLabels): 기호 자리 = NE(기호와 1pt 안) 또는 교과서 기호, rank 는 글자 크기 표', () => {
+  const ad = cfg.addLabels['p50-arctic'];
+  const cities = ad.filter((a) => a.dot === 'city'); assert.equal(cities.length, 22);
+  for (const a of cities) assert.match(a.why, /Natural Earth 「.+」\(.+\) 을 50쪽 fit 으로 지면에 — .+와 (0\.\d\d|1\.00)pt|교과서 .+ 자리 — Natural Earth 「.+」 은 \d+\.\dpt 떨어짐/, a.text);
+  for (const n of ['니즈니노브고로드', '카잔', '사마라', '우파', '첼랴빈스크', '옴스크', '톰스크', '바르나울', '크라스노야르스크', '이르쿠츠크', '볼로그다', '로스토프',
+    '야쿠츠크', '베르호얀스크', '하바롭스크', '치치하얼', '하얼빈', '지린', '창춘', '선양', '캘거리', '에드먼턴']) {
+    const p = one(n, 'city'); assert.ok(p.symbol && p.from[0] === 'p50-arctic', n);
+    assert.equal(p.rank, ['하얼빈', '창춘', '선양'].includes(n) ? 4 : 6, n);   // 굵은 7.1pt = 4, 5.7pt = 6(이 쪽 다른 도시와 같은 표)
+  }
+  assert.ok(near(one('로스토프'), 39.71, 47.24, 0.2));             // 로스토프나도누(neAlias name) — 로스토프벨리키로 옮기지 않음
+  assert.ok(near(one('카잔'), 49.12, 55.75, 0.05) && !one('카잔').snapped);   // NE 자리
+  for (const n of ['래브라도 고원', '매켄지산맥', '코스트산맥', '동유럽 평원', '우랄산맥', '북시베리아 평원', '중앙시베리아고원', '체르스키산맥', '베르호얀스크산맥',
+    '콜리마산맥', '주그주르산맥', '스타노보이산맥', '야블로노비산맥', '알타이산맥']) assert.match(one(n).kind, /^(mountain|plain)$/, n);
+  assert.ok(near(one('우랄산맥'), 59, 60, 4) && near(one('중앙시베리아고원'), 103, 64, 6));
 });
 
 test('옮긴 기호는 snapped 기록(snapKm 넘음), 용량 ≤ 220KB', () => {
   const moved = places.filter((x) => x.snapped);
-  assert.equal(moved.length, 9);
-  for (const p of moved) assert.ok(p.snapped.km > cfg.snapKm - 0.5 && p.snapped.km < 140, `${p.name} ${p.snapped.km}`);
+  assert.equal(moved.length, 12);
+  for (const p of moved) assert.ok(p.snapped.km > cfg.snapKm - 0.5 && p.snapped.km < 150, `${p.name} ${p.snapped.km}`);
   assert.ok(statSync(FILE).size <= 220 * 1024, `${statSync(FILE).size}`);
 });

@@ -148,7 +148,8 @@ def glue_spans(spans, rules):
 # ── 겹쳐 그린 글자(설정 places.overdraw 가 있을 때만 — u6 48쪽 하와이·50·51쪽) ─────────────
 def overdraw_spans(pno, tol=0.1, space_em=0.25, break_em=1.0):
     """투명도 평탄화로 지도가 타일마다 다시 그려져 같은 글자가 같은 자리에 4~11번(타일 경계에서 토막으로 — 「마우나」·「나케아산」),
-    타일 배경과 섞인 색(#000520·#131920 …)으로 나오는 쪽 → 글자 하나씩 모아 같은 글꼴·크기·방향·글자·자리(tol pt 격자)를 하나로 하고,
+    타일 배경과 섞인 색(#000520·#131920 …)으로 나오는 쪽 → 글자 하나씩 모아 같은 글꼴·크기·방향·글자·자리(tol pt 안 — tol 격자 칸과
+    이웃 여덟 칸을 보고 거리로 판정하므로 칸 경계에 걸친 사본도 하나)를 하나로 하고,
     어느 사본에서든 바로 이웃한 글자끼리만(토막은 타일 경계 글자를 함께 가져 겹친다) page_spans 와 같은 기준(수직 어긋남 ≤ 0.5em·
     빈틈 −0.5em~break_em)으로 다시 이어 조각을 만든다 — 따로 놓인 두 지명이 한 줄에 맞닿아도 잇지 않는다.
     조각 색 = 그 글자들의 모든 사본 색 중 가장 많은 것(참고용 — 이 지도의 양식 규칙은 색 없이 maps 로 고름), overdraw 표시."""
@@ -160,10 +161,13 @@ def overdraw_spans(pno, tol=0.1, space_em=0.25, break_em=1.0):
         prev = None
         for u, gid, o, bb in t['chars']:
             ch = pdfkit._glyph_char(u, gid, latin)
-            k = (t['font'], size, d, ch, round(o[0] / tol), round(o[1] / tol))
-            e = uniq.get(k)
+            g, ix, iy = (t['font'], size, d, ch), round(o[0] / tol), round(o[1] / tol)
+            e = next((c for c in (uniq.get(g + (ix + a, iy + b)) for a in (-1, 0, 1) for b in (-1, 0, 1))      # 격자 경계에 걸친 사본도
+                      if c is not None and math.dist(c['o'], o) <= tol), None)                                   # 이웃 칸에서 tol 안이면 같은 글자
             if e is None:
-                e = uniq[k] = {'ch': ch, 'font': t['font'], 'size': size, 'dir': d, 'o': o, 'bbox': list(bb), 'colors': Counter(), 'order': len(uniq)}
+                k = g + (ix, iy)
+                e = uniq[k] = {'ch': ch, 'font': t['font'], 'size': size, 'dir': d, 'o': o, 'bbox': list(bb), 'colors': Counter(), 'order': len(uniq), 'k': k}
+            k = e['k']
             e['colors'][col] += 1
             if prev is not None and prev != k: edges.setdefault(prev, set()).add(k)
             prev = k
@@ -212,7 +216,8 @@ def overdraw_spans(pno, tol=0.1, space_em=0.25, break_em=1.0):
 
 
 def _added_span(a, cfg, map_id):
-    """설정 places.addLabels[지도 id] 항목 {text, role, xy(글자 가운데 지면 pt), size, angle?(도), elev?, why} → 묶기에 넣을 조각.
+    """설정 places.addLabels[지도 id] 항목 {text, role, xy(글자 가운데 지면 pt), size, angle?(도), elev?, dot?, why} → 묶기에 넣을 조각.
+    dot(기호 분류 'city' 등)이 있으면 xy 는 기호 자리이고 그 지명은 기호 짝짓기 없이 그 자리를 기호로 삼는다(래스터 기호·NE 자리).
     규칙 = 그 지도에 쓰이는 같은 역할 양식의 사본(사본이라 다른 조각과 이어지지 않음 — 한 항목 = 지명 하나)."""
     rule = next((r for r in cfg['styles'] if r['role'] == a['role'] and ('maps' not in r or map_id in r['maps'])), None)
     if rule is None: raise ValueError(f'{map_id}: addLabels 「{a["text"]}」 — 역할 {a["role"]} 양식이 없음')
@@ -224,6 +229,7 @@ def _added_span(a, cfg, map_id):
     ys = [a['xy'][1] + s * hl * dy + t * hh * dx for s in (-1, 1) for t in (-1, 1)]
     rule = dict(rule)
     if 'elev' in a: rule['addElev'] = int(a['elev'])                 # 산 높이(지면 숫자도 래스터일 때)
+    if a.get('dot'): rule['addDot'] = a['dot']                       # 점 지명 xy = 기호 자리 그 자체(기호 분류) — 기호 짝짓기를 건너뜀
     return {'text': a['text'], 'size': size, 'font': '(addLabels)', 'color': None, 'bbox': [min(xs), min(ys), max(xs), max(ys)],
             'dir': [round(dx, 3), round(dy, 3)], 'rule': rule}
 
@@ -693,13 +699,14 @@ def extract(map_id, keys=None):
         if len(li) != 1 or sj is None or math.dist(syms[sj]['xy'], fx['pt']) > 1.0:
             warnings.append(f'{map_id}: symbolFix 「{name}」 — 지명 {len(li)}개·1pt 안 기호 없음'); continue
         forced[li[0]] = sj
-    ri = [i for i in range(len(pts)) if i not in forced]; rj = [j for j in range(len(syms)) if j not in forced.values()]
+    ri = [i for i in range(len(pts)) if i not in forced and 'addDot' not in pts[i]['rule']]; rj = [j for j in range(len(syms)) if j not in forced.values()]
     sub = pair([pts[i] for i in ri], [syms[j] for j in rj],
                lambda L, s: _anchor_dist(s['xy'], L) + (0 if (s['cls'] == 'mountain') == ('elev' in L) else pen * L['size']),
                lambda L, s: _anchor_dist(s['xy'], L) <= sc['pairMaxEm'] * L['size'],
                lambda L: sc['pairMaxEm'] * L['size'] * 2)
     pr = {**{ri[a]: rj[b] for a, b in sub.items()}, **forced}
     for i, L in enumerate(pts):
+        if 'addDot' in L['rule']: L['symbol'] = {'xy': [round(v, 2) for v in L['xy']], 'cls': L['rule']['addDot'], 'd': 0.0}; continue
         if i in pr: L['symbol'] = {'xy': syms[pr[i]]['xy'], 'cls': syms[pr[i]]['cls'], 'd': round(_anchor_dist(syms[pr[i]]['xy'], L) / L['size'], 2)}
         else: warnings.append(f'{map_id}: 점 지명 「{L["name"]}」 옆에 기호가 없음 → 글자 중심을 씀')
     used = set(pr.values())

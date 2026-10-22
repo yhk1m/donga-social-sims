@@ -357,6 +357,16 @@ class OverdrawU6(unittest.TestCase):
         self.assertIn('리투아니아', t); self.assertIn('에스토니아', t); self.assertNotIn('리투아니아 에스토니아', t)
         self.assertEqual(t.count('테헤란'), 1); self.assertIn('대 서 양', t)   # 67번 겹친 테헤란 · 자간 벌린 대양(공백 글자 이음)
 
+    def test_no_stray_single_letters_and_cell_boundary(self):
+        self.assertEqual([s['text'] for s in self.h if re.fullmatch('[가-힣]', s['text'])], [])   # 하와이: 토막 낱자 없음
+        class Page:                                                          # 칸 경계(0.05 = round 경계)에 걸친 두 사본 → 글자 하나
+            def get_texttrace(self):
+                ch = lambda x: [(0xAC00, 1, (x, 10.0), (x, 5.0, x + 5, 10.0))]
+                return [{'type': 0, 'size': 5.0, 'font': 'F', 'dir': (1.0, 0.0), 'color': (0, 0, 0), 'chars': ch(10.049), 'seqno': 1},
+                        {'type': 0, 'size': 5.0, 'font': 'F', 'dir': (1.0, 0.0), 'color': (0, 0, 0), 'chars': ch(10.051), 'seqno': 2}]
+        with mock.patch.object(PL.pdfkit, 'doc', return_value=[Page()]):
+            self.assertEqual([s['text'] for s in PL.overdraw_spans(1)], ['가'])
+
     def test_same_style_ignores_colour_only_for_overdraw(self):
         r = {'role': 'city'}
         def node(c, ov): return {'s': {'rule': r, 'font': 'F', 'color': c, **({'overdraw': True} if ov else {})}, 'size': 5.7}
@@ -377,10 +387,16 @@ class AddLabelsDropBoxesU6(unittest.TestCase):
         self.assertEqual(PL._centre(s['bbox']), (404.3, 248.0))
         self.assertAlmostEqual(s['bbox'][2] - s['bbox'][0], 3 * 5.7)
         self.assertEqual(s['rule']['role'], 'landform'); self.assertEqual(s['rule']['addElev'], 4892)
-        self.assertNotIn(s['rule'], [])                                      # 사본(양식 표의 규칙 그 자체가 아님 — 이어지지 않음)
-        self.assertFalse(any(s['rule'] is r for r in self.cfg['styles']))
+        src = next(r for r in self.cfg['styles'] if r['role'] == 'landform' and ('maps' not in r or 'p51-antarctic' in r['maps']))
+        self.assertIsNot(s['rule'], src); self.assertNotIn('addElev', src)  # 사본(양식 표의 규칙 그 자체가 아님 — 다른 조각과 이어지지 않음)
+        self.assertEqual({k: v for k, v in s['rule'].items() if k != 'addElev'}, src)
+        t = PL._added_span({'text': '빈슨산', 'role': 'landform', 'xy': [404.3, 248.0], 'size': 5.7, 'why': 'x'}, self.cfg, 'p51-antarctic')
+        self.assertIsNot(t['rule'], s['rule']); self.assertNotIn('addElev', t['rule'])
         v = PL._added_span({'text': '엘즈워스산맥', 'role': 'landform', 'xy': [10, 20], 'size': 6.9, 'angle': 90, 'why': 'x'}, self.cfg, 'p51-antarctic')
         self.assertEqual(v['dir'], [0.0, 1.0]); self.assertGreater(v['bbox'][3] - v['bbox'][1], v['bbox'][2] - v['bbox'][0])
+        c = PL._added_span({'text': '카잔', 'role': 'city', 'xy': [230.17, 553.65], 'size': 5.7, 'dot': 'city', 'why': 'x'}, self.cfg, 'p50-arctic')
+        self.assertEqual(c['rule']['addDot'], 'city'); self.assertTrue(c['rule'].get('point'))
+        self.assertEqual(PL._centre(c['bbox']), (230.17, 553.65))            # 기호 자리 = 글자 상자 가운데(extract 가 그 자리를 기호로)
         with self.assertRaises(ValueError): PL._added_span({'text': 'a', 'role': 'land', 'xy': [0, 0], 'size': 5}, self.cfg, 'p50-arctic')   # why 없음
         with self.assertRaises(ValueError): PL._added_span({'text': 'a', 'role': 'nope', 'xy': [0, 0], 'size': 5, 'why': 'x'}, self.cfg, 'p50-arctic')
 
@@ -389,9 +405,15 @@ class AddLabelsDropBoxesU6(unittest.TestCase):
         self.assertTrue(PL._drop_box([670, 660, 690, 670], boxes))           # 타히티 틀 안
         self.assertTrue(PL._drop_box([180, 540, 190, 545], boxes))           # 우리나라 실루엣
         self.assertIsNone(PL._drop_box([300, 300, 310, 305], boxes))
-        a = PL.symbols(48, {'id': 'p48-oceania', 'bbox': [640, 625, 716, 700]}, self.cfg)
-        b = PL.symbols(48, {'id': 'p48-oceania', 'bbox': [640, 625, 716, 700]}, {k: v for k, v in self.cfg.items() if k != 'dropBoxes'})
-        self.assertEqual(a, []); self.assertGreaterEqual(len(b), 0)
+        import fitz                                                          # 실제 48쪽 두 상자 안에는 기호가 없어 가짜 도형으로
+        dot = lambda x, y: {'rect': fitz.Rect(x - 1.4, y - 1.4, x + 1.4, y + 1.4), 'fill': (1, 1, 1), 'color': None, 'items': [('c',)] * 4}
+        ds = [dot(680, 660), dot(185, 545), dot(300, 300)]                    # 타히티 틀 안 · 실루엣 안 · 밖
+        m = {'id': 'p48-oceania', 'bbox': [0, 0, 779.5, 722.8]}
+        with mock.patch.object(PL, 'drawings', return_value=ds), mock.patch.object(PL, 'excluded_boxes', return_value=[]):
+            a = PL.symbols(48, m, self.cfg)
+            b = PL.symbols(48, m, {k: v for k, v in self.cfg.items() if k != 'dropBoxes'})
+        self.assertEqual(sorted(x['xy'] for x in b), [[185.0, 545.0], [300.0, 300.0], [680.0, 660.0]])   # 키 없으면 셋 다
+        self.assertEqual([x['xy'] for x in a], [[300.0, 300.0]])                                   # 키가 있으면 상자 안 둘이 빠짐
 
 
 if __name__ == '__main__':
