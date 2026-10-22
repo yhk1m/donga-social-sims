@@ -300,7 +300,7 @@ $ATLAS_WORK/raw/ne-antarctic/                                                   
 
 **Files:** Modify `scripts/atlas/config/u6.json`(`layers`); Output `sims/atlas-u6-oceania-polar/data/layer-*.json`; Test `tests/atlas/units/u6.layers.test.mjs`
 
-- [ ] **Step 1:** `python -I scripts/atlas/extract_vectors.py --unit u6 --features all`, 래스터는 `--unit u6` 래스터 분류. 설정은 작업 스크립트(`$ATLAS_WORK/units/u6/u6-4/cfg.py` — U5-4 꼴)가 다시 쓴다. 레이어와 기대 범례 수(`expectLegend`):
+- [x] **Step 1:** `python -I scripts/atlas/extract_vectors.py --unit u6 --features all`, 래스터는 `--unit u6` 래스터 분류. 설정은 작업 스크립트(`$ATLAS_WORK/units/u6/u6-4/cfg.py` — U5-4 꼴)가 다시 쓴다. 레이어와 기대 범례 수(`expectLegend`):
 
   | 레이어 id | 지도 | 종류 | 기대 범례 | 메모 |
   |---|---|---|---|---|
@@ -328,9 +328,9 @@ $ATLAS_WORK/raw/ne-antarctic/                                                   
   | `p55-bases` | p55-bases | `symbolLabels` | 1 | 기지 점 약 30 + 약칭, 세종·장보고 |
   | `p55-araon-s` · `p55-araon-n` | p55-araon-* | `pathFlow` + 번호 원(3i) + `view {projection:'globe', rotate}` | 1씩 | 번호 ①~⑦ · ①~⑥, 지명 글자(크라이스트처치(뉴질랜드) 등) |
 
-- [ ] **Step 2: 나라 분류 확인(U4-4 방식)** — `p54-fta`·`p55-treaty` 보고서 `levels`·작은 나라 경고를 600~1600dpi 확대로 보고 `countryOverrides`(같은 값이어도 까닭 — 싱가포르·홍콩·몰타 등 작은 나라, 그린란드·뉴칼레도니아·프랑스령 섬들 같은 속령은 지면 칠 그대로).
-- [ ] **Step 3:** `node scripts/atlas/build_layers.mjs --unit u6` → `layer-*.json`. 용량 예산: 레이어 합계 **≤ 700KB**(빙붕·기후 래스터·세계 지도 둘이 클 것 — 넘으면 `tol`), 기후 래스터 셋 ≤ 300KB.
-- [ ] **Step 4: 실패하는 테스트 → 통과** (`tests/atlas/units/u6.layers.test.mjs`)
+- [x] **Step 2: 나라 분류 확인(U4-4 방식)** — `p54-fta`·`p55-treaty` 보고서 `levels`·작은 나라 경고를 600~1600dpi 확대로 보고 `countryOverrides`(같은 값이어도 까닭 — 싱가포르·홍콩·몰타 등 작은 나라, 그린란드·뉴칼레도니아·프랑스령 섬들 같은 속령은 지면 칠 그대로).
+- [x] **Step 3:** `node scripts/atlas/build_layers.mjs --unit u6` → `layer-*.json`. 용량 예산: 레이어 합계 **≤ 700KB**(빙붕·기후 래스터·세계 지도 둘이 클 것 — 넘으면 `tol`), 기후 래스터 셋 ≤ 300KB.
+- [x] **Step 4: 실패하는 테스트 → 통과** (`tests/atlas/units/u6.layers.test.mjs`)
 ```js
 import test from 'node:test'; import assert from 'node:assert/strict'; import { readFileSync, existsSync } from 'node:fs';
 import { geoArea, geoContains } from 'd3-geo';
@@ -375,7 +375,7 @@ test('p54 FTA: 협정국 분류에 대한민국·영국·뉴질랜드, 태평양
 });
 ```
   (분류 이름·출력 키 이름은 U5-4 실제 꼴(`countryClass` 출력·`symbolLabels` 글자 키)에 맞춘다. 기지 수·연도 글자 수는 실측으로 고치고 까닭을 「실행 중 결정」에.)
-- [ ] **Step 5:** 지도마다 「교과서 범례 수 ↔ 뽑은 분류 수」 표를 「실행 중 결정」에(U5-4 표 꼴, KB 칸), 화면용 색 보정 결정도. 커밋. 공유 파이프라인을 고쳤으면 u2~u5 회귀(`build_layers --unit u2|u3|u4|u5 all --extract` → 바이트 같음, `regress.sh u6-4`).
+- [x] **Step 5:** 지도마다 「교과서 범례 수 ↔ 뽑은 분류 수」 표를 「실행 중 결정」에(U5-4 표 꼴, KB 칸), 화면용 색 보정 결정도. 커밋. 공유 파이프라인을 고쳤으면 u2~u5 회귀(`build_layers --unit u2|u3|u4|u5 all --extract` → 바이트 같음, `regress.sh u6-4`).
 
 ### Task U6-5: 지명
 
@@ -671,3 +671,44 @@ test('주제도 활동(교사 §8 Q4): 문항 카드 + 원본 쪽', () => {
   - **u5 다시 돌림(코디네이터, 2026-10-22)** `regress-u6-3dj-u5.log`: **u5 회귀 없음** — 다른 것 coloring 도장만, 캡처 58장 화소 차 0, 대조표 0/48/150/71 같음, 조각 +0.002%(chartCore +29 B). → u2~u5 넷 다 회귀 없음.
 - **U6-3d~3j 리뷰 고침(2026-10-22)** — 리뷰 승인 + 작은 고침: ① sectorLines 강조(hover) — 공유 CSS 에 `.at-sector.is-hover` 꾸밈이 없어 보이지 않았음 → 지도 hover 를 받으면 그 선만 굵기 +1px(drawSvg 굵기에도 더해 다시 그려도 유지, 시험), ② `installPolarExtras` 의 symbolLabels 덮기는 등록 차례에 기댐(뒤에 installAmericasExtras 를 다시 부르면 아메리카 것으로 되돌아감) → 주석 + 감싼 레이어 표시 `hiddenAware` + 시험(극 등록 뒤 true, 아메리카 다시 → 없음, 극 다시 → true), ③ `polar_geom.polarPolygon` 이 날짜변경선 자른 자리에 남기던 연달아 같은 꼭짓점(자를 선 위에 이미 꼭짓점이 있으면 clipPolygon 이 겹쳐 냄 — 시험 고리에서 7개)을 `dedupRing` 으로 없앰(시험), ④ halfPieSvg 배치는 반원 n ≤ 2 용이라는 주석, ⑤ 아래 U6-4 선 방향 규칙.
   - **U6-4 영유권 경계선 자료 방향 규칙(offsetPx 부호가 기대는 것)**: `offsetRun` 은 화면에서 **진행 방향 오른쪽**으로 + 비킴 → 같은 경선을 여러 나라가 쓰면 그 경선 LineString 은 **모든 나라에서 같은 방향 — 바깥 호(위선) 쪽 끝에서 극 쪽으로**(남극 −60° → −90°) 그린다. 바깥 호는 **경도가 커지는 쪽(동쪽)으로**(날짜변경선 건너면 경도를 이어 붙여 ±180 으로 감은 채). 그러면 같은 경선에서 offsetPx 가 + 인 나라와 − 인 나라가 언제나 반대편, 크기가 같은 부호면 같은 편 다른 거리. 파이프라인은 교과서 선을 되돌린 뒤 이 방향으로 뒤집어 맞추고(`_dir` 기록), 겹치는 영국·칠레·아르헨티나는 교과서 순서대로 −2.5 · 0 · +2.5 꼴(값은 U6-4 확인 그림으로). 시험 꼴: `tests/atlas/polarSectorLines.test.mjs`(경선 −60 → −90).
+- **U6-4(2026-10-22) 주제 레이어 33 — 합계 351.2KB(예산 700) · 기후 셋 118.6KB(예산 300) · 빙붕 38.0KB(예산 60)** — 커밋 e90cea8(파이프라인) · 1654729(설정·자료·시험). 설정 `config/u6.json` layers 는 작업 스크립트 `$ATLAS_WORK/units/u6/u6-4/cfg.py`(+ `cfg_a.py` 48·49·52쪽 · `cfg_b.py` 50·51쪽 · `cfg_c.py` 53쪽 · `cfg_d.py` 54쪽 · `cfg_e.py` 55쪽, 기호·글자 자리 원료 `facts.py` → `facts.json`)가 "layers" 값만 바꿔 씀(나머지 바이트 그대로 — 한 줄 꼴 목록 유지). 확인 그림 `units/u6/u6-4/v-*.png`(레이어 → 지면 되돌림 두 칸, `chk.mjs` — U5-4 꼴) · `app-*.png`(임시 틀 `sims/_u6tmp` — u6 시험 바탕 지도 + installAmericasExtras·installPolarExtras·viewTools, 주제 14 · 1440×900 헤드리스, 캡처 뒤 지움) · 나라 분류 확대 `fta-*.png`·`treaty-*.png` · 조사 `lc*.png`·`crop*.png`·`st51*.png`.
+  - **공유 파이프라인 고침(모두 키·종류가 있을 때만 — u2~u5 설정에 없음)**: 새 `scripts/atlas/line_chains.py`(조각으로 그린 선 → 이은 선: 색(채널 ±2 — 조사 도구와 `hexc` 반올림 차)·조각 크기·주축 길이/폭·항목 수·극 둘레 띠(+ 뺄 띠)·반지름 방향 거르기·상자로 조각을 고르고, 긴 조각은 주축 양 끝·짧은 조각은 가운데로 가까운 끝끼리 잇기, 겹쳐 그린 판 가운데 0.4pt 안 하나로, `legend false` = 범례 밖 선, `rings` = 점 고리 수백 개 든 채움 하나, 획 파선 무늬 거르기 / `stroke_flows` = 획 하나 = 경로 하나, 화살촉 또는 headPt 쪽이 끝) · 새 `scripts/atlas/polar_layers.mjs`(topicView·sectorLines 자료, 위선 latLines, 빙붕 raw·seamFreeOutline 테두리) · `features.py`(mode `lines`, 키 `lineChains`, path-flow 의 `stroke` 흐름 + 합친 뒤 expectFlows, 범례 수 검사에서 legendHidden 빼고 latLines 셈, `drawPattern`) · `legend.py`(manual_legend `drawPattern`, 빗금 `noLegend`) · `clip_land.py`(`clipLand: false` — 바다 위 면) · `build_layers.mjs`(선 kind 'line' → type 'line'·dashed, `polar` 면 = polarPolygon 뒤 **clip_land 를 거치지 않은 raw 면 그대로**(clip_land 평면 접기·덮개 단순화가 러시아 부채꼴을 「지구 − 면」 12.5 sr 로 만듦 — 확인), `latLines` 는 finish 에서(clip_land 평면 단순화가 위선을 두 점으로 줄여 앱이 대원으로 그림 — 확인), `outlineColor`, `view` 기록, `legendHidden` 범례에서 뺌, 특수 종류 topicView·sectorLines·source `ne-shelves`). **u2~u5 확인**: 임시 설정(out 만 작업 폴더)으로 `build_layers all` → 레이어 53(u2 11 · u3 11 · u4 11 · u5 20) 모두 공개 data 와 바이트 같음, `extract_vectors --features`(임시 out) → 뽑기 36 모두 작업 폴더 vec 과 바이트 같음(`units/u6/u6-4/rb.sh`·`fx.sh`). 조각에 들어가는 파일·도장 입력 고침 0 → u2~u5 조각 바이트 그대로(회귀 돌리개 결과는 아래 줄).
+  - **교과서 범례 수 ↔ 뽑은 분류 수(U5-4 표 꼴)**:
+
+    | 레이어 | 종류(앱) | 교과서 범례 | 웹 범례 | 도형 | KB | 확인 |
+    |---|---|---|---|---|---|---|
+    | p48-view · p49-view · p52-view | topicView(중심 경도 150 — Q2) | — | 0 | 0 | 0.2씩 | — |
+    | p48-boundaries | area 선 | 없음 | 1(「해양 경계」 손 견본 — Q10) | 선 65(#f48365 1pt 획) | 14.6 | 교과서 붉은 파선 위 |
+    | p48-korea | compareOutline(mirrorLat → sameLat) | — | 0 | 윤곽 1 | 14.7 | 3h 와 같음(126.76°E, 38.18°S) |
+    | p50-view · p51-view | topicView polarN/polarS up −90 | — | 0 | 0 | 0.2씩 | 극 중심 캡처 |
+    | p50-lines | area 선(+ view 기록) | 없음 | 4(북극권·유빙 한계·영구빙 한계·해양 경계 — Q10) | 위선 1 + 선 44 | 16.0 | 교과서 선 위(지리 위선 66.5626°N 이 교과서 「북극권」 파선과 겹침) |
+    | p50-dasan | symbolLabels | — | 1(우리나라 과학 기지) | 점 1 + 글자 2 | 1.1 | 태극 기호 자리 |
+    | p51-shelves | area 면 + 테두리 선 | 없음 | 1(빙붕 — Q7) | 면 1 + 테두리 1 | 38.0 | 로스·론·아메리 빙붕 교과서 위, 180° 이음매 없음 |
+    | p51-lines | area 선 | 없음 | 3(남극권·유빙 한계·영구빙 한계) | 위선 1 + 선 25(날짜 변경선 범례 밖) | 11.8 | 교과서 선 위 |
+    | p51-stations | symbolLabels | — | 2(과학 기지 · 우리나라 과학 기지) | 점 31 + 글자 33 | 13.3 | 점 = 교과서 빨간 점 |
+    | p53-climate | area 래스터 + 빗금 | 9 | 9(열대 3·건조 2·온대 4) | 면 9 + 빗금 1(범례 밖 — Q15) | 39.7 | 교과서 위 |
+    | p53-jan · p53-jul | area 래스터 + 등온선 | 7 + 선 | 8씩 | 면 7 + 등온선(1월 20·30 · 7월 10·20) | 44.0 · 34.9 | 교과서 위 |
+    | p54-fta | countryClass | 없음 | 2(손 견본 — Q14) | 나라 16(고침 6) | 1.7 | 1000~2400dpi 확대 |
+    | p54-fta-labels | area(글자 + 지시선) | — | 0 | 연도 글자 14 + 동해·독도·이어도 3 + 지시선 10 | 5.3 | 교과서 글자 자리 |
+    | p54-garbage | area 점무늬(drawPattern dots) | 없음 | 1(쓰레기 지대 — 손 견본) | 면 4 + 글자 3 | 6.9 | 교과서 점 무리 위(1.2pt 넓어짐) |
+    | p54-currents | pathFlow | 없음 | 1(해류 — 손 견본) | 화살표 6 | 13.4 | 교과서 화살표 위 |
+    | p54-sealevel | area(hideLegend) | 없음 | 0 | 면 3 + 글자 3 | 3.2 | 교과서 분홍 면 위 |
+    | p55-route | pathFlow + view globe | 없음(지도 글자) | 2(북극 항로(15,000km) · 기존 항로(22,000km)) | 경로 2 | 14.5 | 교과서 선 위 |
+    | p55-route-cities | symbolLabels | — | 1(주요 지점) | 점 3 + 글자 4 | 1.8 | 붉은 점 위 |
+    | p55-claims-view | topicView polarN up 180 | — | 0 | 0 | 0.3 | 알래스카 위 |
+    | p55-claims | area 극 면 + 선 | 5 + EEZ | 6 | 면 5 + EEZ 선 + 해양 경계 선(범례 밖) | 18.4 | 교과서 위(극에서 만남, 넓이 0.002~0.034 sr) |
+    | p55-resources | symbolLabels | 3(가스전·유전·분쟁 지역) | 3(세모·세모·마름모) | 점 26 + 글자 9 | 7.2 | 그림 기호 자리 |
+    | p55-treaty | countryClass | 2 | 2 | 나라 69(고침 9) | 2.4 | 500~1200dpi 확대 |
+    | p55-bases-view | topicView polarS up −90 | — | 0 | 0 | 0.3 | 세종 쪽 위 |
+    | p55-sectors | sectorLines(+ view 기록) | 없음(선 곁 나라 글자) | 7 | 조각 19 | 11.3 | 교과서 경선·노르웨이 띠 위 |
+    | p55-bases | symbolLabels | — | 2 | 점 27 + 글자 29 | 11.6 | 빨간 점 위 |
+    | p55-araon-s · -n | pathFlow + view globe | — | 1씩 | 구간 7 · 4 | 12.2 · 7.3 | 교과서 노랑 선 위(10~4월 approx) |
+    | p55-araon-s-marks · -n-marks | symbolLabels(글자만) | — | 0 | 원문자 7·5 + 지명 6·3 | 2.7 · 1.7 | 노랑 원 가운데 |
+
+  - **극 선 뽑기(50·51쪽 — 선은 획이 아니라 채움 조각, 같은 선을 겹쳐 그린 판마다 색이 조금씩 다름)**: 유빙 한계 = 물결 마디 조각(항목 ≥ 15) · 극 거리 띠(50쪽 150~395pt · 51쪽 235~298pt) + 해안 조각 상자 뺌, 영구빙 한계 = 갈고리 달린 굵은 파선 토막(주축 3.5~8pt — 51쪽 끝 갈고리 2pt 는 길이로 빠짐, 50쪽은 반지름 방향 토막 뺌 + 북극권 띠 184~200pt 뺌 + 노르웨이해 물결 조각 상자 뺌), 해양 경계(50쪽) = 그림자 깐 갈색 막대(주축 양 끝), 51쪽 날짜 변경선 = 검은 토막(첫 색 ΔE 14 안, 180° 경선 남위 약 51°~극 — 지명 자리 틈 gap 28pt). 북극권·남극권은 교과서 가는 파선(51쪽 #00a0e3 토막 극 거리 186~195pt = 정확히 66.56°)이 위선이라 **지리로**(2° 간격 181점 줄 — clip_land 를 거치지 않음). 웹 색: 영구빙 한계는 유빙 한계와 가르려고 #0089cf(교과서 둘 다 #00a6e9 계열, 견본 파선/실선).
+  - **기지·글자 자리**: 51쪽 기지 이름은 글꼴(YDVYGOStd32)에 유니코드가 없어 추출이 깨지므로 **쪽 렌더 확대를 보고 적음** — 29곳(파머(미)·에스페란자(아르)·로데라(영)·시그니(영)·오르카다스(아르)·루스카야(러)·벨그라노(아르)·핼리(영)·아보아(핀)·노이마이어(독)·쾨넨(독)·마이트리(인)·노볼라자렙스카야(러)·아문센 스콧(미)·스콧(뉴)·맥머도(미)·레닌그라드스카야(러)·보스토크(러)·쿤룬(중)·미즈호(일)·쇼와(일)·몰로데즈나야(러)·태산(중)·모슨(오)·중산(중)·데이비스(오)·케이시(오)·미르니(러)·뒤몽뒤르빌(프)) + 세종·장보고. 점 자리 = 벡터 빨간 원 14 + 200dpi 렌더 빨간 덩어리(나머지는 래스터). 55쪽은 글자가 읽혀 약칭 「(러)」 꼴을 가장 가까운 점 이름으로. 우리나라 기지(다산·세종·장보고)는 교사 Q9 기본값대로 큰 빨간 점 + 흰 테두리 + 붉은 「(대한민국)」 — 범례 분류를 따로 둬 **51·55쪽 범례 2**(계획 표 1 에서 바뀜). 유전 9 는 검은 조각 여럿 그림이라 확대 그림(`claims_pts.png`)을 보고 손 자리, 가스전 13·분쟁 지역 4 는 채움 가운데. 아라온호 번호 = 노랑 원(고리 33점) 가운데에 원문자 글자(코디네이터 결정 4), **7~9월은 번호 5(①~⑤)** — 계획 「①~⑥」은 어림. 아라온호 지구본 밖 길 잃은 선(코디네이터 확인 요청): 뽑은 구간은 모두 원판 안(확인 그림), 앱은 지구본 뒷면을 투영이 자름(캡처 확인). 극·지구본 글자 레이어는 모두 symbolLabels(코디네이터 결정 3 — 극 반대 반구·지구본 뒷면 글자 숨김), 평면 세계 지도(FTA 연도·쓰레기 섬·해수면 글자)는 area(지시선을 그려야 해서 — symbolLabels 는 선을 그리지 않음).
+  - **남극 영유권 경계선(Q8)**: 교과서 선을 fit 으로 되돌린 평균 경도 — 뉴질랜드 160.7·−150.5, 칠레 −89.2·−53.8, 아르헨티나 −73.9·−25.4, 영국 −79.9·−19.9, 오스트레일리아 45.0·160.1(교과서는 45~160°E 한 부채꼴, 프랑스 선이 안에), 프랑스 136.1·141.7 → 정수(실제 주장 경선과 1° 안 — 대조표 참고 줄). 바깥 호 = 남위 60°(교과서 원판 가장자리 ≈ 59.8°S), 노르웨이 = 파란 띠 바깥 변(남위 약 66° 지그재그, pathPt — 극까지 안 감). 비킴: 칠레 호 −2.5 · 아르헨티나 호 +2.5 · 프랑스 호 +2.5 · 160°E 경선 뉴질랜드 +2/오스트레일리아 −2(앱 캡처에서 모두 보임). 색: 영국 #fdb913 → **#f7941d**, 오스트레일리아 #fff200 → **#e8c600**(흰 남극 대륙 위 묻힘 — 대조표 알려진 차이), 나머지 교과서 그대로.
+  - **나라 분류(Step 2)**: FTA 표본 보라 18 + 분홍 1 → 고침 북한·네팔·부탄·맨섬 분류 없음(회색 확인), 싱가포르·마카오 협정국(교과서가 따로 그리지 않음 — 둘레 값, u5 안도라 꼴) → 협정국 15(연도 글자 14 + 마카오). 남극 조약 표본 71 → 멕시코·볼리비아 분류 없음(회색 확인), 안도라·산마리노·바티칸·레소토·에스와티니·홍콩·리히텐슈타인 = 둘레 값 → 69(교과서 회원국 56 + 둘레에 묻힌 작은 나라·영역; 캅카스·발칸 작은 나라는 지면에서 가를 수 없어 표본 그대로 — U6-10 교사 확인 후보).
+  - **대조표 알려진 차이 후보(U6-10)**: ① 유빙 한계 물결 무늬 → 실선 ② 극 일반도 선 범례는 손 견본(교과서는 지도 위 글자) ③ 50쪽 날짜 변경선 없음(대부분 래스터) · 48쪽 날짜 변경선 없음(벡터 후보 둘 다 아님 — 자홍 1.5pt 점선 = 인도네시아·파푸아 뉴기니 경계, 검은 0.3pt 파선 = 잘라 그리기로 가려진 꺾은 선, 보이는 선은 래스터) ④ 50쪽 우랄 붉은 점선(대륙 경계) 없음 ⑤ 50·51쪽 빙상 두께 등고선 없음(래스터 — 글자만, 51쪽도 선 안 보임 → p50-icesheet·p51-icesheet 없음) ⑥ 51쪽 날짜 변경선 북서쪽 꺾인 부분(회색 래스터) 없음 ⑦ 빙붕 갈라진 얼음 무늬 없음(Q7) ⑧ 53쪽 기후 구분 핀 자리(앨리스스프링스 둘레) 래스터 구멍 0.04~0.12°² — 앱 핀 표식이 덮음 ⑨ 54쪽 해류 가운데 큰 S자 소용돌이 띠 없음(채운 꺾인 띠라 가운데 선을 못 뽑음) ⑩ 54쪽 FTA·쓰레기 섬·해수면·해류 범례는 손 견본(교과서 범례 없음) ⑪ 55쪽 북극 항로에 화살촉(교과서 없음 — 끝 = 로테르담) ⑫ 아라온호 번호는 노랑 원이 아니라 원문자 글자 ⑬ 그림 기호 → 단순 모양(세모·마름모), 태극기 → 큰 빨간 점 ⑭ 남극 기지 지도의 선 곁 나라 이름(흰 글자)은 범례가 대신 ⑮ 영국·오스트레일리아 선 색 진하게 ⑯ 48쪽 윤곽 글자 위(교과서 오른쪽) ⑰ 다산 기지 글자가 점과 조금 겹침 ⑱ 쓰레기 지대 면이 점 무리보다 1.2pt 넓음 ⑲ FTA 하이난섬(교과서 회색, 웹은 중국 전체 칠) ⑳ 영구빙 한계·유빙 한계 선은 지명 글자 자리에서 끊김(교과서 그대로).
+  - **시험**: `tests/atlas/units/u6.layers.test.mjs` 12, `tests/atlas/polarLayers.test.mjs` 5, `scripts/atlas/tests/test_line_chains.py` 6.
+  - **npm test**: Python 416 OK(410 + line_chains 6 — test_maps_u6 뼈대 「빈 layers」 검사를 레이어 33·모두 u6 지도 위로 고침) · Node 760 통과(로그 `units/u6/npmtest-u6-4.log`). **회귀 `regress-u6-4` — u2 만 끝남**: u2 회귀 없음(해시 다른 것 coloring 도장 1 — U6-3a 부터 · 캡처 41 화소 차 0 · 대조표 0/9/134/24 같음 · 조각 해시 다름 +0.001% = U6-3g chartCore +29 B 그대로). u3 compare_shots 도중 Claude Code 가 메모리 부족으로 돌리개를 멈춤 → 남은 compare_shots·헤드리스 Chrome·vite(5173)·bash 를 손으로 끄고 user-data-dir 지움. u3·u4·u5 는 돌지 않음. 조각 바이트·sha256: u2~u5 넷 모두 U6-4 전과 같음(u2 2,112,384 · u3 1,472,000 · u4 1,595,157 · u5 1,666,689 B — 고친 공유 파일이 모두 scripts/atlas 파이프라인이라 조각·도장에 안 들어감, u2~u5 레이어 53·뽑기 36 바이트 같음은 위). 메모리 여유가 있을 때 u3·u4·u5 를 하나씩(compare_shots → compare → regress_unit --check) 확인할 것(코디네이터).
