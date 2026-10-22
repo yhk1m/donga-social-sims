@@ -34,6 +34,21 @@ const outline = (mode, home, extra = {}) => ({
 const verts = (g) => g.coordinates.flat(2);
 const centerOf = (L) => geoCentroid(L.geometry());
 
+test('같은 경도 거울상(U6-3h — 파이프라인이 위도 부호를 바꾼 도형을 sameLat 으로 넘김): moveTo 로 어디로 옮겨도 대권 거리 그대로·거울상 그대로(독도가 동쪽)', () => {
+  const mirror = { type: 'MultiPolygon', coordinates: KOREA.coordinates.map((pg) => pg.map((r) => r.map(([x, y]) => [x, -y]).reverse())) };
+  assert.ok(geoArea(mirror) < 0.01, '작은 면(감김 맞음)');
+  const c = geoCentroid(mirror);
+  const vs = verts(mirror);
+  for (const p of [[128, -38], [128, 37], [-30, 10], [150, -60]]) {
+    const f = AX.moveTo(c, p), ws = vs.map(f);
+    for (let i = 0; i < vs.length; i += 3) for (let j = i + 1; j < vs.length; j += 5) near(geoDistance(ws[i], ws[j]), geoDistance(vs[i], vs[j]), 1e-9);
+    // 독도(마지막 면)는 본토 넓이 중심보다 동쪽 — 도착지에서 북쪽 위이므로 좌우가 그대로(거울상 유지 — 원래 모양으로 돌아가지 않음)
+    const dokdo = f([131.86, -37.24]), main = f([127.5, -38.5]);
+    assert.ok(((dokdo[0] - main[0] + 540) % 360) - 180 > 0, `${p} 독도 동쪽`);
+    assert.ok(dokdo[1] > main[1] - 2 && f([128.8, -42.6])[1] < main[1], `${p} 북한 쪽(거울상 남쪽)이 아래`);
+  }
+});
+
 test('등록 전: compareOutline 은 모르는 레이어 종류', () => {
   assert.throws(() => layerFromRef({ ref: 'k', type: 'compareOutline' }, { k: outline('sameLat', [-133, 38]) }), /모르는 레이어 종류 compareOutline/);
 });

@@ -498,11 +498,15 @@ export function chartSymbolsLayerJson(layer, charts, cv, m, fit = {}) {
  * 설정 {mode: 'sameLat' | 'antipode', homePt(교과서 실루엣 넓이 중심 지면 pt), label?(지면 글자 — 문자열 또는 줄 배열), outline?:{source, tol, minArea}},
  * outline = korea_outline.py 결과 Feature(KOR+PRK 합친 MultiPolygon — 실제 경위도). → FeatureCollection {properties:{id, map, page, title, kind,
  * layerType:'compareOutline', mode, home, textbook, offsetKm, label, approx, source, legend:[]}, features:[{properties:{name}, geometry}]}.
+ * mode 'mirrorLat'(U6-3h — 48쪽 같은 경도 거울상): outline 이 korea_outline.py --mirror-lat 결과(properties.mirror 'lat')여야 하고, 출력 mode 는 'sameLat'
+ * (앱 compareOutlineLayer 그대로 — 거울상은 도형 자체), home = textbook, properties 끝에 _mirror(까닭) — 옛 두 모드 출력은 키·바이트 그대로.
  * textbook = homePt 를 그 지도 fit 으로 되돌린 자리. home(앱 처음·「교과서 자리로」 자리) = sameLat 은 textbook, antipode 는 **실제 대척점**
  * (우리나라 넓이 중심의 대척점 — 교사 답 「대척점 거울상」) 이고 교과서 자리와의 차를 offsetKm 로 기록. 도형은 실제 경위도 그대로(거울상·회전은 앱 compareOutlineLayer).
  */
 export function koreaOutlineLayerJson(layer, outline, cv, m, fit = {}) {
-  if (layer.mode !== 'sameLat' && layer.mode !== 'antipode') throw new Error(`${layer.id}: compareOutline mode 는 sameLat · antipode (${layer.mode})`);
+  const mirror = layer.mode === 'mirrorLat';
+  if (layer.mode !== 'sameLat' && layer.mode !== 'antipode' && !mirror) throw new Error(`${layer.id}: compareOutline mode 는 sameLat · antipode · mirrorLat (${layer.mode})`);
+  if (mirror && outline.properties?.mirror !== 'lat') throw new Error(`${layer.id}: mirrorLat 인데 윤곽이 거울상이 아님(korea_outline.py --mirror-lat)`);
   if (!layer.homePt) throw new Error(`${layer.id}: compareOutline 에 교과서 실루엣 넓이 중심 homePt 가 없음`);
   const tb = cv.invert(layer.homePt);
   if (!tb) throw new Error(`${layer.id}: 실루엣 넓이 중심 ${layer.homePt} 를 경위도로 되돌릴 수 없음`);
@@ -511,9 +515,10 @@ export function koreaOutlineLayerJson(layer, outline, cv, m, fit = {}) {
   const rr = (p) => [r3(p[0]), r3(p[1])];
   return {
     type: 'FeatureCollection',
-    properties: { id: layer.id, map: layer.map, page: m.page, title: layer.title || m.title, kind: m.kind, layerType: 'compareOutline', mode: layer.mode,
+    properties: { id: layer.id, map: layer.map, page: m.page, title: layer.title || m.title, kind: m.kind, layerType: 'compareOutline', mode: mirror ? 'sameLat' : layer.mode,
       home: rr(home), textbook: rr(tb), offsetKm: Math.round(geoDistance(home, tb) * 6371), label: layer.label ?? null, approx: !!fit.approx,
-      source: `Natural Earth 10m 대한민국·북한(독도·울릉도 포함) — 교과서 ${m.page}쪽 실루엣 자리(경위도 맞추기: ${fit.family})`, legend: [] },
+      source: `Natural Earth 10m 대한민국·북한(독도·울릉도 포함) — 교과서 ${m.page}쪽 실루엣 자리(경위도 맞추기: ${fit.family})`, legend: [],
+      ...(mirror ? { _mirror: '같은 경도 거울상 — 꼭짓점 위도 부호만 바꿈(황해 왼쪽·동해 오른쪽 그대로, korea_outline.py --mirror-lat), 앱은 sameLat 그대로(끌어도 거울상)' } : {}) },
     features: [{ type: 'Feature', properties: { name: outline.properties?.name || '우리나라' }, geometry: outline.geometry }],
   };
 }
@@ -767,7 +772,7 @@ function main(argv) {
     } else if (l.type === 'compareOutline') {   // 우리나라 윤곽(U5-3i): NE 10m KOR+PRK → korea_outline.py(합치기·단순화) → 교과서 자리
       const o = l.outline || {}, out = `${WORK}/geo/${l.id}.outline.json`;
       process.stdout.write(run([path.join(here, 'korea_outline.py'), path.join(WORK, o.source || 'raw/ne/ne_10m_admin_0_countries.geojson'), out,
-        ...(o.tol != null ? ['--tol', String(o.tol)] : []), ...(o.minArea != null ? ['--min-area', String(o.minArea)] : [])]));
+        ...(o.tol != null ? ['--tol', String(o.tol)] : []), ...(o.minArea != null ? ['--min-area', String(o.minArea)] : []), ...(l.mode === 'mirrorLat' ? ['--mirror-lat'] : [])]));
       const fit = loadFit(l.map);
       const res = koreaOutlineLayerJson(l, JSON.parse(fs.readFileSync(out, 'utf8')), converter(l, fit), maps[l.map], fit);
       byId.set(l.id, writeLayer(l, res, { features: 1 }));

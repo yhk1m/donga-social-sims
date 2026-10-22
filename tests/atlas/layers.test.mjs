@@ -308,6 +308,25 @@ test('koreaOutlineLayerJson(U5-3i): sameLat home = 교과서 실루엣 넓이 �
   assert.throws(() => koreaOutlineLayerJson({ id: 'x', mode: 'sameLat', homePt: [-1, 1] }, outline, cv, m), /되돌릴 수 없음/);
 });
 
+test('koreaOutlineLayerJson mirrorLat(U6-3h — 48쪽 같은 경도 거울상): 출력 mode sameLat(앱 그대로)·home = 교과서 자리·_mirror 기록, 거울상 아닌 윤곽이면 멈춤, 옛 모드 출력에는 _mirror 없음', () => {
+  const cv = { invert: ([x, y]) => (x < 0 ? null : [x / 10 + 100, -y / 10]) };
+  const mirrored = { type: 'Feature', properties: { name: '우리나라', mirror: 'lat' }, geometry: { type: 'MultiPolygon', coordinates: [
+    [[[124, -38], [126, -34], [129, -35], [130, -42], [129, -43], [124, -38]]]] } };
+  const m = { page: 48, title: '오세아니아', kind: 'general' };
+  const layer = { id: 'p48-korea', map: 'p48-oceania', type: 'compareOutline', mode: 'mirrorLat', homePt: [282, 380], label: ['같은 축척과', '같은 경도의 우리나라'] };
+  const o = koreaOutlineLayerJson(layer, mirrored, cv, m, { family: 'azimuthalEqualArea' });
+  assert.equal(o.properties.mode, 'sameLat');
+  assert.deepEqual(o.properties.home, [128.2, -38]);
+  assert.deepEqual(o.properties.textbook, o.properties.home);
+  assert.equal(o.properties.offsetKm, 0);
+  assert.match(o.properties._mirror, /위도 부호/);
+  assert.deepEqual(o.features[0].geometry, mirrored.geometry);
+  assert.throws(() => koreaOutlineLayerJson(layer, { ...mirrored, properties: { name: '우리나라' } }, cv, m), /거울상/);
+  const same = koreaOutlineLayerJson({ ...layer, mode: 'sameLat' }, mirrored, cv, m);
+  assert.equal('_mirror' in same.properties, false);
+  assert.deepEqual(Object.keys(same.properties), ['id', 'map', 'page', 'title', 'kind', 'layerType', 'mode', 'home', 'textbook', 'offsetKm', 'label', 'approx', 'source', 'legend'], '옛 모드 키 차례 그대로');
+});
+
 test('pathFlowLayerJson(U5-4): 화살표 가운데 선(지면 pt) → 경위도 LineString(꼬리 → 끝), 범례 kind flow·dashed·present, view, 되돌릴 수 없는 점이면 멈춤', () => {
   const cv = { invert: ([x, y]) => (x < 0 ? null : [x / 10 - 50, 20 - y / 10]) };
   const feat = {
