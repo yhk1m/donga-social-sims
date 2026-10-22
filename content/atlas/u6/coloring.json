@@ -1,0 +1,220 @@
+{
+ "_doc": "coloring_quiz.mjs 생성물(직접 고치지 말고 고칠 값은 overrides.json). name = 나라 이름(교과서 지명), label = 색칠하기 지도 글자(초성 또는 이름), iso = Natural Earth ADM0_A3, labelIso = 글자가 놓인 다른 나라, capitalFrom = printed(색칠하기 지도에 적힌 수도)·places(일반도 수도 지명)·places+ne(여럿 중 Natural Earth 수도에 가까운 것).",
+ "page": 49,
+ "map": "p49-coloring",
+ "inputsHash": "dc8d405c37d275b3ee5299f825d829c18b740c0d1563609da1313b5848bfbc02",
+ "countries": [
+  {
+   "name": "오스트레일리아",
+   "label": null,
+   "iso": "AUS",
+   "neName": "Australia",
+   "capital": "캔버라",
+   "capitalLonlat": [
+    149.13,
+    -35.28
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "피지",
+   "label": "ㅍㅈ",
+   "iso": "FJI",
+   "neName": "Fiji",
+   "labelLonlat": [
+    177.199,
+    -16.5887
+   ],
+   "capital": "수바",
+   "capitalLonlat": [
+    178.44,
+    -18.13
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "미크로네시아",
+   "label": "미크로네시아",
+   "iso": "FSM",
+   "neName": "Micronesia",
+   "labelLonlat": [
+    150.8342,
+    5.205
+   ],
+   "capital": "팔리키르",
+   "capitalLonlat": [
+    158.15,
+    6.92
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "키리바시",
+   "label": "ㅋㄹㅂㅅ",
+   "iso": "KIR",
+   "neName": "Kiribati",
+   "labelLonlat": [
+    176.2031,
+    -0.2395
+   ],
+   "capital": "타라와",
+   "capitalLonlat": [
+    173.08,
+    1.4
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "마셜 제도",
+   "label": "ㅁㅅ ㅈㄷ",
+   "iso": "MHL",
+   "neName": "Marshall Is.",
+   "labelLonlat": [
+    171.82,
+    8.1217
+   ],
+   "capital": "마주로",
+   "capitalLonlat": [
+    171.38,
+    7.1
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "나우루",
+   "label": "ㄴㅇㄹ",
+   "iso": "NRU",
+   "neName": "Nauru",
+   "labelLonlat": [
+    167.872,
+    -1.6402
+   ],
+   "capital": "야렌",
+   "capitalLonlat": [
+    166.92,
+    -0.51
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "뉴질랜드",
+   "label": null,
+   "iso": "NZL",
+   "neName": "New Zealand",
+   "capital": "웰링턴",
+   "capitalLonlat": [
+    174.82,
+    -41.29
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "팔라우",
+   "label": "ㅍㄹㅇ",
+   "iso": "PLW",
+   "neName": "Palau",
+   "labelLonlat": [
+    134.6087,
+    6.4361
+   ],
+   "capital": "응어룰무드",
+   "capitalLonlat": [
+    134.53,
+    7.49
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "파푸아 뉴기니",
+   "label": null,
+   "iso": "PNG",
+   "neName": "Papua New Guinea",
+   "capital": "포트모르즈비",
+   "capitalLonlat": [
+    147.18,
+    -9.47
+   ],
+   "capitalFrom": "places"
+  },
+  {
+   "name": "솔로몬 제도",
+   "label": "ㅅㄹㅁ ㅈㄷ",
+   "iso": "SLB",
+   "neName": "Solomon Is.",
+   "labelLonlat": [
+    163.8841,
+    -9.7227
+   ],
+   "capital": "호니아라",
+   "capitalLonlat": [
+    159.98,
+    -9.44
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "통가",
+   "label": "ㅌㄱ",
+   "iso": "TON",
+   "neName": "Tonga",
+   "labelLonlat": [
+    -175.3795,
+    -19.4254
+   ],
+   "capital": "누쿠알로파",
+   "capitalLonlat": [
+    -175.22,
+    -21.14
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "투발루",
+   "label": "ㅌㅂㄹ",
+   "iso": "TUV",
+   "neName": "Tuvalu",
+   "labelLonlat": [
+    -179.2815,
+    -9.679
+   ],
+   "capital": "푸나푸티",
+   "capitalLonlat": [
+    179.22,
+    -8.52
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "바누아투",
+   "label": "ㅂㄴㅇㅌ",
+   "iso": "VUT",
+   "neName": "Vanuatu",
+   "labelLonlat": [
+    165.0882,
+    -17.9971
+   ],
+   "capital": "포트빌라",
+   "capitalLonlat": [
+    168.35,
+    -17.73
+   ],
+   "capitalFrom": "printed"
+  },
+  {
+   "name": "사모아",
+   "label": "ㅅㅁㅇ",
+   "iso": "WSM",
+   "neName": "Samoa",
+   "labelLonlat": [
+    -173.1274,
+    -12.9159
+   ],
+   "capital": "아피아",
+   "capitalLonlat": [
+    -171.77,
+    -13.84
+   ],
+   "capitalFrom": "printed"
+  }
+ ]
+}

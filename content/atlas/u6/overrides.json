@@ -1,0 +1,40 @@
+{
+ "_doc": "사람이 고친 값. 키 = topicId.field | topicId.quiz.field | topicId.markers.<marker id>.field | topicId.blocks.<block id>.field | topicId.layers.<ref>.field | topicId.views.<view id>.field (field 는 점으로 더 들어갈 수 있음). value = 쓸 값, from = 고치기 전 값(필수 — null 이면 그 칸이 없어야 함). from 이 topics.json 의 지금 값과 다르면 build_content.mjs 가 「낡은 고침」으로 멈춘다(원문 추출이 바뀌었는지 다시 볼 것), why = 까닭. extract_text.py --fill 은 topics.json 만 다시 채우므로 여기 값은 지워지지 않는다.",
+ "items": {
+  "general.blocks.outline-text.text": {
+   "value": "같은 축척과 같은 경도의 우리나라",
+   "from": "은 같은 경도의은 경 나",
+   "why": "48쪽 회색 실루엣 옆 안내 글은 대부분 쪽 그림(래스터)에 묻혀 있고 PDF 글자는 토막(「은」·「같은 경도의」·「은 경」·「나」 — 타일마다 겹쳐 그린 사본)만 남아 box_text 가 뜻 없는 글을 읽는다. 지면 세 줄 「같은 축척과 / 같은 경도의 / 우리나라」(쪽 렌더 units/u6/survey/p48-korea.png)를 한 줄로 — u5 42쪽 「같은 축척과 같은 위도의 우리나라」와 같은 꼴."
+  },
+  "antarcticResearch.views.bases.label": {
+   "value": "세계 각국의 남극 연구 기지와 영유권 분쟁",
+   "from": "세계 각국의 남극 연구 기 지와 영유권 분쟁",
+   "why": "55쪽 지도 제목은 두 줄(「세계 각국의 남극 연구 기 / 지와 영유권 분쟁」 — 낱말 가운데서 줄이 바뀜)인데 왼쪽 정렬이라 box_text 가 줄 바꿈 자리에 빈칸을 넣는다. 글자는 그대로 두고 줄 바꿈 빈칸만 지움(레이어 제목 「세계 각국의 남극 연구 기지와 영유권 분쟁」과 같아져 바로가기 ↔ 묶음 이름이 맞음)."
+  },
+  "antarcticResearch.blocks.bases-text.title": {
+   "value": "세계 각국의 남극 연구 기지와 영유권 분쟁",
+   "from": "세계 각국의 남극 연구 기 지와 영유권 분쟁",
+   "why": "views.bases.label 과 같은 까닭(두 줄 제목의 줄 바꿈 빈칸만 지움)."
+  },
+  "antarcticResearch.blocks.bases-text.text": {
+   "value": "2023년 현재 29개국이 남극 대륙에 연구 기지를 운영 중이며, 남극 대륙 주변에 위치하거나 탐험의 역사를 가진 국가들이 남극 대륙에서의 영유권을 주장하고 있다.",
+   "from": "2023년 현재 29개국이 남 극 대륙에 연구 기지를 운영 중이며, 남극 대륙 주변에 위치하거나 탐험 의 역사를 가진 국가들이 남극 대륙에서의 영유권을 주장하고 있다.",
+   "why": "55쪽 남극 기지 지도 옆 본문은 원판 둘레를 따라 줄마다 왼쪽 끝이 다른 글(428~433pt)이라 box_text 가 낱말 가운데 줄 바꿈(「남|극」·「탐험|의」)에 빈칸을 넣는다. 글자는 그대로 두고 그 두 빈칸만 지움(u5 46쪽 지구본 옆 본문과 같은 꼴)."
+  },
+  "antarcticResearch.layers.layer-p55-sectors.label": {
+   "value": "세계 각국의 남극 연구 기지와 영유권 분쟁",
+   "from": null,
+   "why": "U6-4 → U6-8: 남극 기지 묶음 = 보기 레이어·영유권 경계선·기지 셋이 같은 label 이어야 한 묶음(topic.js layerGroups — 다르면 「지도 고르기」 단추가 하나 더 생김). 보기·기지 레이어 제목은 지면 지도 제목 「세계 각국의 남극 연구 기지와 영유권 분쟁」인데 영유권 선 레이어 제목만 「남극 영유권 주장 경계」라 같은 지면 제목을 씀(지면 제목 상자는 줄 바꿈 빈칸 때문에 labelSrc 로 쓰지 않음 — views.bases.label 까닭)."
+  },
+  "environment.blocks.p54-temp-co2.note": {
+   "value": "* 그래프에 값이 인쇄돼 있지 않아 선 높이를 잰 값이다(기온 편차 약 ±0.014℃, 이산화 탄소 농도 약 ±1.9PPM).",
+   "from": null,
+   "why": "U6-7: 기온 편차·이산화 탄소 농도 두 축 선은 값 글자가 없어 도형(채움 띠)을 잰 값(±0.0137℃ · ±1.85PPM, charts notes). 화면에 수를 보여 주므로 잰 값임을 밝힘 — 교과서에 없는 글(대조표 「알려진 차이」, u5 디트로이트와 같은 꼴)."
+  },
+  "environment.blocks.p54-sealevel.note": {
+   "value": "* 그래프 점에 값이 인쇄돼 있지 않아 점 높이를 잰 값이다(약 ±0.4cm).",
+   "from": null,
+   "why": "U6-7: 남태평양 해수면 변화 예측 점 5개는 값 글자가 없어 점 높이를 잰 값(±0.37cm — 교사 Q12 기본값 「잰 값 — 교과서에 수치 없음」 주석). 교과서에 없는 글(대조표 「알려진 차이」)."
+  }
+ }
+}

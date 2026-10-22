@@ -289,12 +289,19 @@ class MapsU6(unittest.TestCase):
         self.assertTrue(set(p['overdraw']['maps']) <= set(p['maps']))
         for k in ('places', 'cityControls'):
             for mid in c[k]['maps']: self.assertIn(mid, self.by)
-        # 색칠하기: 49쪽, 아메리카 지역·자르기 키 없음
+        # 색칠하기: 49쪽, 아메리카 지역·자르기 키 없음. U6-8 이 채운 키 둘(내용은 tests/atlas/units/u6.content.test.mjs·test_text_u6):
+        # extraCountries = 윤곽 글자(투명 글자) 큰 초성 셋 AUS·PNG·NZL, isoByLabel = 「미크로네시아」 → FSM
         col = c['content']['coloring']
         self.assertEqual((col['page'], col['map']), (49, 'p49-coloring'))
         self.assertIn(col['map'], self.by)
-        for k in ('regions', 'noCapital', 'joinLabels', 'cutIsos', 'extraCountries', 'isoByLabel', 'capitalAlias', 'splitLabels'):
+        for k in ('regions', 'noCapital', 'joinLabels', 'cutIsos', 'capitalAlias', 'splitLabels'):
             self.assertNotIn(k, col)
+        self.assertEqual(sorted(col['extraCountries']), ['AUS', 'NZL', 'PNG'])
+        self.assertEqual(col['isoByLabel'], {'미크로네시아': 'FSM'})
+        # U6-8: 주제 내용 기대값(교사 Q1·Q5 + 실측)과 기호 + 글자 레이어 type 예외
+        self.assertEqual(c['content']['expect']['markers'], {'relief': 7, 'climate': 4})
+        self.assertEqual((c['content']['expect']['coloringCountries'], c['content']['expect']['charts']), (14, 11))
+        self.assertEqual(c['content']['layerTypeAs'], {'symbolLabels': ['symbol']})
         # U6-6·U6-7 이 채움(사진 23 · 그래프 11 — 자세한 검사는 u6.photos.test·test_tables ChartsU6)
         self.assertEqual(len(c['photos']['items']), 23)
         self.assertEqual(len(c['charts']['items']), 11)

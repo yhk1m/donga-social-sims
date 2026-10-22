@@ -6888,11 +6888,47 @@
     "environment",
     "arcticRoute",
     "antarcticResearch"
-   ]
+   ],
+   "markers": {
+    "relief": 7,
+    "climate": 4
+   },
+   "chartMarkers": {
+    "climate": 4
+   },
+   "coloringCountries": 14,
+   "charts": 11
   },
-  "_expect": "교사 Q1 답(기본값): 주제 10(55쪽을 북극 arcticRoute / 남극·극지 연구 antarcticResearch 로 나눔, 50·51쪽 일반도 arctic·antarctic 따로). U6-6·U6-7·U6-8 실측으로 markers(지형 7·기후 4)·chartMarkers(기후 4)·coloringCountries(Q5 답 14)·charts(어림 11)를 더함.",
+  "_expect": "교사 Q1 답(기본값): 주제 10(55쪽을 북극 arcticRoute / 남극·극지 연구 antarcticResearch 로 나눔, 50·51쪽 일반도 arctic·antarctic 따로). 실측(U6-6·U6-7·U6-8): 지형 핀 7(번호 숨김), 기후 그래프 마커 4(다윈·앨리스스프링스·퍼스·크라이스트처치 — 번호 숨김), 49쪽 색칠하기 14 = 오세아니아 독립국 14(교사 Q5 — 뉴칼레도니아는 퀴즈 밖, 「지역」 없음), 그래프 11(기후 4 · 원 2 · 반원 1 · 두 축 선 1 · 해수면 점 1 · 표 2 — 모두 사이드바 블록·마커가 참조).",
   "expectCredits": {
-   "_doc": "48~55쪽에 인쇄된 출처 글(쪽: 목록) — U6-8 에서 채움.",
+   "52": [
+    "(naturalearthdata.com, 2023)"
+   ],
+   "53": [
+    "(www.gloh2o.org, 2023)",
+    "(www.worldclim.org, 2023)",
+    "(『이과연표』, 2023)"
+   ],
+   "54": [
+    "(오스트레일리아 외교 통상부, 2022)",
+    "(뉴질랜드 통계청, 2022)",
+    "(오스트레일리아 외교 통상부, 2023)",
+    "(ourworldindata.org, 2022)",
+    "(education.nationalgeographic.org, 2023)",
+    "(climatecentral.org, 2021)",
+    "(유엔 정부 간 기후 변화 협의회(IPCC), 2013)"
+   ],
+   "55": [
+    "(한국 무역 협회, 2022)",
+    "(해양 수산부, 2021)",
+    "(남극 조약 사무국 누리집, 2023)",
+    "(「청소년을 위한 국가 지도집」, 2022)",
+    "(「청소년을 위한 대한민국 국가지도집」, 2022)"
+   ],
+   "_doc": "48~55쪽에 인쇄된 출처 글(쪽: 목록). 생성물 topics.json·charts.json 어딘가에 있어야 한다(공백 무시, tests/atlas/units/u6.content.test.mjs). 48~51쪽에는 출처 글이 없다. 55쪽 책 이름은 지면에 홑낫표 「」로 인쇄(600dpi 렌더로 확인 — 53쪽 『이과연표』의 겹낫표와 다름, 그대로 둠). 54쪽 해수면 「(유엔 정부 간 기후 변화 협의회(IPCC), 2013)」은 괄호가 겹쳐 printed_credits(안쪽 괄호 없는 꼴)가 찾지 못한다 — 지면 대조 시험은 빼고 본다(notPrinted, 글은 box_text 로 원문 그대로 레이어 credit·그래프 source 에 있음).",
+   "notPrinted": [
+    "(유엔 정부 간 기후 변화 협의회(IPCC), 2013)"
+   ],
    "notCredits": []
   },
   "viewGrid": 20,
@@ -7146,8 +7182,23 @@
    "nearKm": 150,
    "nameKm": 600,
    "_nearKm": "나라 찾기: Natural Earth 이름(NAME_KO) 초성이 글자와 같은 나라 중 nameKm 안 가장 가까운 면, 없으면 글자 자리의 면(nearKm 안). 수도 글자도 nearKm. nameKm 은 u2~u4 값 600(u5 의 1600 은 중앙아메리카 바다 위 이름 때문 — 49쪽 섬나라 이름은 나라 곁, U6-8 에서 확인).",
-   "_fonts": "countryFont·capitalFont·capitalSize 는 u5 값 복사 — 49쪽도 초성 KCCChassam 12.8pt·이름 「미크로네시아」 8.8pt·손글씨 수도 KyoboHandwriting 7.5pt(계획 조사). U6-8 에서 확인. 교사 Q5 답(퀴즈 독립국 14·수도 14 — 캔버라·웰링턴·포트모르즈비는 이름 칸 없음, 뉴칼레도니아는 퀴즈 밖)은 extraCountries·capitalByNe 등으로 U6-8 에서."
-  }
+   "_fonts": "U6-8 실측: 49쪽 보이는 글자 = 초성·이름 KCCChassam 8.8pt 11조각(이름 「미크로네시아」 1 + 초성 10)·손글씨 수도 KyoboHandwriting 7.5pt 11 이름. 큰 초성 셋(ㅇㅅㅌㄹㅇㄹㅇ·ㅍㅍㅇ ㄴㄱ·ㄴㅈㄹㄷ 12.8pt)은 글자를 윤곽(도형)으로 그리고 같은 자리에 투명 글자(alpha 0, 217 사본)를 겹쳐 둔 것이라 page_spans(보이지 않는 글자 뺌)에 안 잡힘 → extraCountries. 활동 글(9pt)·글머리 ●(5pt)는 크기로 빠짐.",
+   "extraCountries": {
+    "AUS": "U6-8: 49쪽 「ㅇㅅㅌㄹㅇㄹㅇ」은 윤곽 글자(같은 자리 글자는 투명 alpha 0 — page_spans 가 뺌, 공유 extract_text 를 고치지 않음)라 --labels 에 없음 → 지면에 글자가 있지만 extraCountries 로 넣음(label null, 이름 = places 「오스트레일리아」). 교사 Q5 답 독립국 14.",
+    "PNG": "U6-8: 49쪽 「ㅍㅍㅇ ㄴㄱ」 윤곽 글자(같은 까닭 — AUS) → extraCountries(label null, 이름 = places 「파푸아 뉴기니」).",
+    "NZL": "U6-8: 49쪽 「ㄴㅈㄹㄷ」 윤곽 글자(같은 까닭 — AUS) → extraCountries(label null, 이름 = places 「뉴질랜드」)."
+   },
+   "isoByLabel": {
+    "미크로네시아": "FSM"
+   },
+   "_isoByLabel": "U6-8: 49쪽 「미크로네시아」(이름 글자 — 지역 이름 미크로네시아와 같은 글자)는 Natural Earth 한국어 이름 「미크로네시아 연방」과 초성이 달라 짝이 안 되고, 글자가 캐롤라인 제도 서쪽 바다(150.8°E, 5.2°N — FSM 면에서 150km 넘게)라 글자 자리 면도 없음 → FSM. 이름은 places 나라 「미크로네시아」(지면 글자 그대로)."
+  },
+  "layerTypeAs": {
+   "symbolLabels": [
+    "symbol"
+   ]
+  },
+  "_layerTypeAs": "주제 레이어 type ↔ 레이어 자료 layerType 이 다른 것(build_content 검사 예외): 기호 + 글자 레이어(50쪽 다산·51쪽 기지·55쪽 도시·자원·기지·아라온호 번호)는 symbol 자료를 아메리카 symbolLabels(polarExtra 가 지구본 뒷면·극 반대 반구 글자를 숨기도록 다시 등록 — U6-3i)로 그린다(u5 와 같은 키)."
  },
  "insets": [],
  "_insets": "확대 창 — 필요하면 U6-4·U6-9(섬나라 동그라미 겹침은 U6-9 캡처로 판단). 하와이·타히티는 창을 띄우지 않고 일반도 바로가기(교사 Q3 기본값)."

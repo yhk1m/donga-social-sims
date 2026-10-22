@@ -1,0 +1,1500 @@
+[
+ {
+  "id": "general",
+  "title": "일반도",
+  "pages": [48],
+  "view": {
+   "map": "p48-oceania"
+  },
+  "views": [
+   {
+    "id": "oceania",
+    "labelSrc": {
+     "page": 48,
+     "bbox": [73, 605, 143, 623]
+    },
+    "map": "p48-oceania",
+    "label": "오세아니아"
+   },
+   {
+    "id": "hawaii",
+    "labelSrc": {
+     "page": 48,
+     "bbox": [714, 22, 744, 30]
+    },
+    "map": "p48-hawaii",
+    "_bounds": "U6-3d: 48쪽 삽입 「하와이 제도」 틀(p48-hawaii)을 그 fit 으로 되돌린 범위(41×41 격자). 교사 Q3 기본값: 따로 창 없이 일반도 바로가기. 밀러 1440×900 에서 k ≈ 47 이 필요해 최대 확대 40 에 막혀 조금 넓게 보임(받아들임). map 키는 대조표 몫, 범위는 이 손 값(build_content — map + bounds).",
+    "bounds": [-161, 18.6, -153.5, 23.1],
+    "label": "하와이 제도"
+   },
+   {
+    "id": "tahiti",
+    "labelSrc": {
+     "page": 48,
+     "bbox": [663, 655, 682, 664]
+    },
+    "map": "p48-tahiti",
+    "_bounds": "U6-3d: 48쪽 삽입 「타히티(프)」 틀(p48-tahiti)을 그 fit 으로 되돌린 범위. 바로가기 이름은 틀 제목의 「타히티」(소속 표시 (프) 는 블록 글에 남음).",
+    "bounds": [-156.3, -21.1, -145.7, -14.0],
+    "label": "타히티"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p48-view",
+    "type": "topicView",
+    "legend": false,
+    "group": "map",
+    "labelSrc": {
+     "page": 48,
+     "bbox": [73, 605, 143, 623]
+    },
+    "label": "오세아니아"
+   },
+   {
+    "ref": "layer-p48-boundaries",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 48,
+     "bbox": [73, 605, 143, 623]
+    },
+    "label": "오세아니아"
+   },
+   {
+    "ref": "layer-p48-korea",
+    "type": "compareOutline",
+    "legend": false,
+    "group": "map",
+    "labelSrc": {
+     "page": 48,
+     "bbox": [73, 605, 143, 623]
+    },
+    "label": "오세아니아"
+   }
+  ],
+  "_layers": "U6-4 → U6-8: 일반도 묶음 하나 = 보기 레이어(태평양 중심 150 — 교사 Q2) + 해양 경계 + 같은 경도 거울상 윤곽(Q4). label 은 셋 모두 지면 제목 「오세아니아」(같은 label = 한 묶음 — topicView 가 따로 된 묶음이 되지 않게). 레이어가 있어 topic.js 「바로가기」 줄은 그리지 않으므로(U6-3c 쓰는 쪽 주의 ②) 하와이·타히티 바로가기는 블록의 「지도에서 보기」 단추로.",
+  "markers": [],
+  "blocks": [
+   {
+    "id": "map-text",
+    "type": "text",
+    "view": "oceania",
+    "titleSrc": {
+     "page": 48,
+     "bbox": [73, 605, 143, 623]
+    },
+    "src": {
+     "page": 48,
+     "bbox": [54, 625, 147, 634]
+    },
+    "title": "오세아니아",
+    "text": "람베르트 정적 방위 도법 1:30,000,000"
+   },
+   {
+    "id": "hawaii-text",
+    "type": "text",
+    "view": "hawaii",
+    "titleSrc": {
+     "page": 48,
+     "bbox": [714, 22, 744, 30]
+    },
+    "src": {
+     "page": 48,
+     "bbox": [690, 38, 740, 49]
+    },
+    "title": "하와이 제도",
+    "text": "0 100km"
+   },
+   {
+    "id": "tahiti-text",
+    "type": "text",
+    "view": "tahiti",
+    "src": {
+     "page": 48,
+     "bbox": [663, 655, 692, 664]
+    },
+    "text": "타히티(프)"
+   },
+   {
+    "id": "outline-text",
+    "type": "text",
+    "src": {
+     "page": 48,
+     "bbox": [195, 548, 232, 572]
+    },
+    "text": "은 같은 경도의은 경 나"
+   },
+   {
+    "id": "page-48",
+    "type": "page",
+    "page": 48
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "coloring",
+  "title": "색칠하기",
+  "pages": [49],
+  "view": {
+   "map": "p49-coloring"
+  },
+  "layers": [
+   {
+    "ref": "layer-p49-view",
+    "type": "topicView",
+    "legend": false,
+    "group": "map"
+   }
+  ],
+  "_layers": "U6-3c: 그리는 레이어가 없는 주제의 태평양 중심(교사 Q2 — 중심 경도 150) 보기 레이어 하나(묶음 1 — 「지도 고르기」·범례 없음).",
+  "markers": [],
+  "blocks": [
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 49,
+     "bbox": [501, 47, 712, 67],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 지리 정보와 매체를 활용하여 오세아니아의 국가와 주요 도시의 위치를 표현할 수 있다."
+   },
+   {
+    "id": "text-1",
+    "type": "text",
+    "titleSrc": {
+     "page": 49,
+     "bbox": [96, 548, 236, 563]
+    },
+    "src": {
+     "page": 49,
+     "bbox": [55, 574, 316, 636]
+    },
+    "title": "오세아니아의 국가와 주요 도시",
+    "text": "오세아니아 대륙은 오스트레일리아와 뉴질랜드, 파푸아 뉴기니 등을 포함한 태평양의 여러 섬나라로 이루어져 있다. 오세아니아는 세계에서 가장 작은 대륙으로, 전체 육지 면적이 브라질과 비슷하다. 오스트레일리아와 뉴질랜드는 영국 연방에 속하여 유럽과의 무역 비중이 높았지만, 1980년대 이후 풍부한 광물 및 에너지 자원을 바탕으로 동아시아 국가들과의 무역이 크게 증가하였다."
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "src": {
+     "page": 49,
+     "bbox": [61, 640, 281, 652]
+    },
+    "text": "각 나라에 색칠하여 지도를 완성하고 각 국가명과 도시명을 써넣어 보자."
+   },
+   {
+    "id": "page-49",
+    "type": "page",
+    "page": 49
+   }
+  ],
+  "quiz": {
+   "type": "coloring",
+   "ref": "coloring"
+  }
+ },
+ {
+  "id": "arctic",
+  "title": "북극",
+  "pages": [50],
+  "view": {
+   "map": "p50-arctic",
+   "_bounds": "U6-8: 극 중심 묶음의 처음 보기 = 묶음 범위(U6-3c 쓰는 쪽 주의 ③ — [−180, φ0, 180, ±90] 꼴). 지도 틀 격자의 5~95% 범위([−128.1, 35.2, 198.9, 78.1])는 경도가 한 바퀴를 다 못 덮는 띠라 극 보기에서 뜻이 없음 → 교과서 지면에 보이는 가장 바깥 위선 원(U6-2 틀 되돌림 — 네모 틀 변 가운데 약 44°N, 모서리 25°N)으로 맞춤.",
+   "bounds": [-180, 44, 180, 90]
+  },
+  "layers": [
+   {
+    "ref": "layer-p50-view",
+    "type": "topicView",
+    "legend": false,
+    "group": "map"
+   },
+   {
+    "ref": "layer-p50-lines",
+    "type": "area",
+    "legend": true,
+    "group": "map"
+   },
+   {
+    "ref": "layer-p50-dasan",
+    "type": "symbolLabels",
+    "legend": true,
+    "group": "map"
+   }
+  ],
+  "_layers": "U6-4 → U6-8: 극 묶음 = 보기 레이어(북극 중심 · 위쪽 경선 90°W — 교사 Q6 교과서 방향) + 선(북극권·유빙 한계·영구빙 한계·해양 경계 — Q10 손 견본) + 다산 기지(symbol 자료 → symbolLabels, layerTypeAs). label 은 셋 모두 레이어 제목 「북극 일반도」(지면 제목 「북 극」은 낱자 사이가 벌어져 공백이 들어감 — 범례 제목으로 쓰지 않음).",
+  "markers": [],
+  "blocks": [
+   {
+    "id": "map-text",
+    "type": "text",
+    "titleSrc": {
+     "page": 50,
+     "bbox": [100, 99, 140, 118]
+    },
+    "src": {
+     "page": 50,
+     "bbox": [68, 120, 142, 128]
+    },
+    "title": "북 극",
+    "text": "정거 방위 도법 1:39,000,000"
+   },
+   {
+    "id": "page-50",
+    "type": "page",
+    "page": 50
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "antarctic",
+  "title": "남극",
+  "pages": [51],
+  "view": {
+   "map": "p51-antarctic",
+   "_bounds": "U6-8: 극 중심 묶음의 처음 보기 = 묶음 범위(U6-3c 쓰는 쪽 주의 ③ — [−180, φ0, 180, ±90] 꼴). 지도 틀 격자의 5~95% 범위([−48.1, −78.5, 265.9, −35.7])는 경도가 한 바퀴를 다 못 덮는 띠라 극 보기에서 뜻이 없음 → 교과서 지면에 보이는 가장 바깥 위선 원(U6-2 틀 되돌림 — 네모 틀 변 가운데 약 45°S, 모서리 26°S)으로 맞춤.",
+   "bounds": [-180, -90, 180, -45]
+  },
+  "layers": [
+   {
+    "ref": "layer-p51-view",
+    "type": "topicView",
+    "legend": false,
+    "group": "map"
+   },
+   {
+    "ref": "layer-p51-shelves",
+    "type": "area",
+    "legend": true,
+    "group": "map"
+   },
+   {
+    "ref": "layer-p51-lines",
+    "type": "area",
+    "legend": true,
+    "group": "map"
+   },
+   {
+    "ref": "layer-p51-stations",
+    "type": "symbolLabels",
+    "legend": true,
+    "group": "map"
+   }
+  ],
+  "_layers": "U6-4 → U6-8: 보기 레이어(남극 중심 · 위쪽 경선 90°W) + 빙붕(Q7 Natural Earth) + 선(남극권·유빙 한계·영구빙 한계) + 기지(symbolLabels — Q9). label = 레이어 제목 「남극 일반도」(arctic 과 같은 까닭).",
+  "markers": [],
+  "blocks": [
+   {
+    "id": "map-text",
+    "type": "text",
+    "titleSrc": {
+     "page": 51,
+     "bbox": [110, 99, 148, 118]
+    },
+    "src": {
+     "page": 51,
+     "bbox": [78, 120, 152, 128]
+    },
+    "title": "남 극",
+    "text": "정거 방위 도법 1:39,000,000"
+   },
+   {
+    "id": "page-51",
+    "type": "page",
+    "page": 51
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "relief",
+  "title": "지형",
+  "pages": [52],
+  "view": {
+   "map": "p52-relief"
+  },
+  "layers": [
+   {
+    "ref": "layer-p52-view",
+    "type": "topicView",
+    "legend": false,
+    "group": "map"
+   }
+  ],
+  "_layers": "U6-3c: 태평양 중심 보기 레이어(중심 경도 150 — Q2).",
+  "pinNumbers": "hidden",
+  "markers": [
+   {
+    "id": "r-barrier",
+    "photo": "p52-1"
+   },
+   {
+    "id": "r-bluemountain",
+    "photo": "p52-2"
+   },
+   {
+    "id": "r-waiotapu",
+    "photo": "p52-3"
+   },
+   {
+    "id": "r-uluru",
+    "photo": "p52-4"
+   },
+   {
+    "id": "r-artesian",
+    "photo": "p52-5"
+   },
+   {
+    "id": "r-oceanroad",
+    "photo": "p52-6"
+   },
+   {
+    "id": "r-milford",
+    "photo": "p52-7"
+   }
+  ],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 52,
+     "bbox": [56, 33, 377, 50]
+    },
+    "text": "오세아니아의 자연환경은 어떤 특색을 지니고 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 53,
+     "bbox": [503, 32, 711, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 지리 정보와 매체를 활용하여 오세아니아의 지형과 기후 특색을 지도로 표현할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 52,
+     "bbox": [53, 78, 137, 92]
+    },
+    "creditSrc": {
+     "page": 52,
+     "bbox": [484, 537, 557, 545]
+    },
+    "text": "오세아니아의 지형",
+    "credit": "(naturalearthdata.com, 2023)"
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "titleSrc": {
+     "page": 52,
+     "bbox": [36, 501, 70, 510]
+    },
+    "src": {
+     "page": 52,
+     "bbox": [38, 511, 193, 529]
+    },
+    "title": "활동하기 1",
+    "text": "48쪽의 오세아니아 지도와 인터넷을 참고하여 사진의 위치를 지도의 빈칸에 표시해 보자."
+   },
+   {
+    "id": "page-52",
+    "type": "page",
+    "page": 52
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "climate",
+  "title": "기후",
+  "pages": [53],
+  "view": {
+   "map": "p53-climate"
+  },
+  "layers": [
+   {
+    "ref": "layer-p53-climate",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 53,
+     "bbox": [343, 434, 451, 442]
+    },
+    "legendTitleSrc": {
+     "page": 53,
+     "bbox": [59, 375, 87, 384]
+    },
+    "credit": "*1991~2020년 평균 (www.gloh2o.org, 2023)",
+    "legendTitle": "기후 구분"
+   },
+   {
+    "ref": "layer-p53-jan",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 53,
+     "bbox": [498, 453, 614, 461]
+    },
+    "legendTitleSrc": {
+     "page": 53,
+     "bbox": [701, 140, 736, 148]
+    },
+    "lineLegendTitleSrc": {
+     "page": 53,
+     "bbox": [701, 210, 726, 218]
+    },
+    "credit": "*1970~2010년 평균 (www.worldclim.org, 2023)",
+    "legendTitle": "강수량(mm)",
+    "lineLegendTitle": "기온 (°C)"
+   },
+   {
+    "ref": "layer-p53-jul",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 53,
+     "bbox": [498, 453, 614, 461]
+    },
+    "legendTitleSrc": {
+     "page": 53,
+     "bbox": [701, 333, 736, 341]
+    },
+    "lineLegendTitleSrc": {
+     "page": 53,
+     "bbox": [701, 403, 726, 411]
+    },
+    "credit": "*1970~2010년 평균 (www.worldclim.org, 2023)",
+    "legendTitle": "강수량(mm)",
+    "lineLegendTitle": "기온 (°C)"
+   }
+  ],
+  "pinNumbers": "hidden",
+  "markers": [
+   {
+    "id": "c-darwin",
+    "photo": "p53-1",
+    "chart": "p53-darwin",
+    "lonlatFrom": {
+     "place": "다윈",
+     "why": "기후 그래프 도시 위치(u4·u5 와 같이 그래프 도시는 늘 옮김 — 교과서 핀은 textbookLonlat, U6-6 핀 표의 짝 지명 다윈)"
+    }
+   },
+   {
+    "id": "c-alice",
+    "photo": "p53-2",
+    "chart": "p53-alice",
+    "lonlatFrom": {
+     "place": "앨리스스프링스",
+     "why": "기후 그래프 도시 위치(u4·u5 와 같이 그래프 도시는 늘 옮김 — 교과서 핀은 textbookLonlat, U6-6 핀 표의 짝 지명 앨리스스프링스)"
+    }
+   },
+   {
+    "id": "c-perth",
+    "photo": "p53-3",
+    "chart": "p53-perth",
+    "lonlatFrom": {
+     "place": "퍼스",
+     "why": "기후 그래프 도시 위치(u4·u5 와 같이 그래프 도시는 늘 옮김 — 교과서 핀은 textbookLonlat, U6-6 핀 표의 짝 지명 퍼스)"
+    }
+   },
+   {
+    "id": "c-christchurch",
+    "photo": "p53-4",
+    "chart": "p53-christchurch",
+    "lonlatFrom": {
+     "place": "크라이스트처치",
+     "why": "기후 그래프 도시 위치(u4·u5 와 같이 그래프 도시는 늘 옮김 — 교과서 핀은 textbookLonlat, U6-6 핀 표의 짝 지명 크라이스트처치)"
+    }
+   }
+  ],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 52,
+     "bbox": [56, 33, 377, 50]
+    },
+    "text": "오세아니아의 자연환경은 어떤 특색을 지니고 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 53,
+     "bbox": [503, 32, 711, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 지리 정보와 매체를 활용하여 오세아니아의 지형과 기후 특색을 지도로 표현할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 53,
+     "bbox": [64, 78, 149, 92]
+    },
+    "text": "오세아니아의 기후"
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "titleSrc": {
+     "page": 53,
+     "bbox": [48, 440, 82, 448]
+    },
+    "src": {
+     "page": 53,
+     "bbox": [49, 450, 244, 459]
+    },
+    "title": "활동하기 2",
+    "text": "기후 그래프와 사진 설명을 읽고 해당 지역의 위치를 지도에 표시해 보자."
+   },
+   {
+    "id": "page-53",
+    "type": "page",
+    "page": 53
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "exchange",
+  "title": "상호 교류",
+  "pages": [54],
+  "view": {
+   "map": "p54-fta"
+  },
+  "views": [
+   {
+    "id": "fta",
+    "labelSrc": {
+     "page": 54,
+     "bbox": [396, 253, 575, 263]
+    },
+    "map": "p54-fta",
+    "label": "오스트레일리아와 자유 무역 협정(FTA)을 맺은 국가들"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p54-fta",
+    "type": "countryClass",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 54,
+     "bbox": [650, 255, 735, 262]
+    },
+    "credit": "(오스트레일리아 외교 통상부, 2023)"
+   },
+   {
+    "ref": "layer-p54-fta-labels",
+    "type": "area",
+    "legend": false,
+    "group": "map"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 54,
+     "bbox": [59, 33, 417, 50]
+    },
+    "text": "오세아니아와 태평양 지역은 세계와 어떤 영향을 주고받을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 54,
+     "bbox": [495, 27, 699, 57],
+     "skip": "학습 목표 |"
+    },
+    "text": "자원 수출을 중심으로 오세아니아 지역과 세계 다른 지역과의 상호 연계성을 설명할 수 있다. 태평양 지역이 겪고 있는 환경 문제의 해결 방안을 제안할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 54,
+     "bbox": [53, 78, 262, 92]
+    },
+    "text": "오세아니아 지역과 세계 여러 나라의 상호 교류"
+   },
+   {
+    "id": "sub-1",
+    "type": "text",
+    "role": "subtitle",
+    "src": {
+     "page": 54,
+     "bbox": [39, 233, 210, 242]
+    },
+    "text": "오스트레일리아와 뉴질랜드의 수출액과 주요 수출품"
+   },
+   {
+    "id": "p54-aus-exports",
+    "type": "chart",
+    "ref": "p54-aus-exports",
+    "src": {
+     "page": 54,
+     "bbox": [33, 244, 218, 263]
+    },
+    "text": "오스트레일리아는 천연자원을, 뉴질랜드는 육류와 유제품을 주로 수출한다."
+   },
+   {
+    "id": "p54-nz-exports",
+    "type": "chart",
+    "ref": "p54-nz-exports"
+   },
+   {
+    "id": "p54-partners",
+    "type": "chart",
+    "ref": "p54-partners",
+    "src": {
+     "page": 54,
+     "bbox": [230, 244, 381, 263]
+    },
+    "text": "오스트레일리아는 최근 태평양 연안 국가들과의 교역량이 크게 증가하였다."
+   },
+   {
+    "id": "fta-text",
+    "type": "text",
+    "view": "fta",
+    "titleSrc": {
+     "page": 54,
+     "bbox": [396, 253, 575, 263]
+    },
+    "src": {
+     "page": 54,
+     "bbox": [594, 255, 650, 262]
+    },
+    "title": "오스트레일리아와 자유 무역 협정(FTA)을 맺은 국가들",
+    "text": "*다자간 협정은 제외함."
+   },
+   {
+    "id": "page-54",
+    "type": "page",
+    "page": 54
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "environment",
+  "title": "환경 문제",
+  "pages": [54],
+  "view": {
+   "map": "p54-garbage",
+   "_bounds": "U6-8: 북태평양 지도(밀러 중심 −175.4°)는 서쪽 끝이 날짜변경선 너머라 build_content frameView 가 서쪽을 −180 으로 자름(아메리카 40쪽 규칙 — 중심 경도 0 지도용) → 틀 격자 5~95% 범위 [−238.4, 3.3, −111.5, 63.1]를 +360 으로 편 값(동쪽이 180 을 넘는 태평양 중심 범위 — FTA 와 같이 묶음 중심 경도(main.js centerLonOf, U6-9)와 함께 씀).",
+   "bounds": [121.6, 3.3, 248.5, 63.1]
+  },
+  "views": [
+   {
+    "id": "garbage",
+    "labelSrc": {
+     "page": 54,
+     "bbox": [396, 480, 479, 490]
+    },
+    "map": "p54-garbage",
+    "_bounds": "U6-8: 북태평양 지도(밀러 중심 −175.4°)는 서쪽 끝이 날짜변경선 너머라 build_content frameView 가 서쪽을 −180 으로 자름(아메리카 40쪽 규칙 — 중심 경도 0 지도용) → 틀 격자 5~95% 범위 [−238.4, 3.3, −111.5, 63.1]를 +360 으로 편 값(동쪽이 180 을 넘는 태평양 중심 범위 — FTA 와 같이 묶음 중심 경도(main.js centerLonOf, U6-9)와 함께 씀).",
+    "bounds": [121.6, 3.3, 248.5, 63.1],
+    "label": "태평양의 거대 쓰레기 섬"
+   },
+   {
+    "id": "sealevel",
+    "labelSrc": {
+     "page": 54,
+     "bbox": [575, 522, 671, 532]
+    },
+    "map": "p54-sealevel",
+    "_bounds": "U6-8: 54쪽 해수면 작은 지도는 틀 오른쪽 절반이 그림 그래프에 덮여 있고(1pt ≈ 105km — 틀 격자 범위 [−221.2, −40.8, −63.9, 27.2]는 그래프 밑 바다까지) build_content 가 서쪽을 −180 으로 자름 → 분홍 면(키리바시·투발루·피지 160°E~161°W, 23°S~25°N)과 처음 식 기준점(요크곶 142.5°E·뉴칼레도니아·비티레부섬)을 담는 손 범위(동쪽 180 넘음 — 태평양 중심).",
+    "bounds": [140, -28, 212, 28],
+    "label": "남태평양의 해수면 변화 예측"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p54-garbage",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 54,
+     "bbox": [396, 480, 479, 490]
+    },
+    "creditSrc": {
+     "page": 54,
+     "bbox": [395, 391, 556, 399]
+    },
+    "label": "태평양의 거대 쓰레기 섬",
+    "credit": "(education.nationalgeographic.org, 2023)"
+   },
+   {
+    "ref": "layer-p54-currents",
+    "type": "pathFlow",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 54,
+     "bbox": [396, 480, 479, 490]
+    },
+    "label": "태평양의 거대 쓰레기 섬"
+   },
+   {
+    "ref": "layer-p54-sealevel",
+    "type": "area",
+    "legend": false,
+    "group": "map",
+    "labelSrc": {
+     "page": 54,
+     "bbox": [575, 522, 671, 532]
+    },
+    "creditSrc": {
+     "page": 54,
+     "bbox": [624, 506, 730, 515]
+    },
+    "label": "남태평양의 해수면 변화 예측",
+    "credit": "(유엔 정부 간 기후 변화 협의회(IPCC), 2013)"
+   }
+  ],
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 54,
+     "bbox": [59, 33, 417, 50]
+    },
+    "text": "오세아니아와 태평양 지역은 세계와 어떤 영향을 주고받을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 54,
+     "bbox": [495, 27, 699, 57],
+     "skip": "학습 목표 |"
+    },
+    "text": "자원 수출을 중심으로 오세아니아 지역과 세계 다른 지역과의 상호 연계성을 설명할 수 있다. 태평양 지역이 겪고 있는 환경 문제의 해결 방안을 제안할 수 있다."
+   },
+   {
+    "id": "section-2",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 54,
+     "bbox": [53, 278, 163, 291]
+    },
+    "text": "해양 쓰레기의 유입 경로"
+   },
+   {
+    "id": "text-2",
+    "type": "text",
+    "src": {
+     "page": 54,
+     "bbox": [194, 299, 370, 328]
+    },
+    "text": "바다로 유입된 플라스틱은 바다 위를 떠다니기도 하고, 자외선에 의해 분해되어 미세 플라스틱 형태로 돌아다니면서 해양 생태계를 위협한다."
+   },
+   {
+    "id": "p54-plastic",
+    "type": "chart",
+    "ref": "p54-plastic"
+   },
+   {
+    "id": "plastic-note-1",
+    "type": "text",
+    "src": {
+     "page": 54,
+     "bbox": [230, 406, 323, 425.5]
+    },
+    "text": "연간 플라스틱 생산량의 0.5%가 바다에 버려진다."
+   },
+   {
+    "id": "plastic-note-2",
+    "type": "text",
+    "src": {
+     "page": 54,
+     "bbox": [311, 454, 373, 471]
+    },
+    "text": "수만 톤~수십만 톤의 해양 플라스틱 부유물"
+   },
+   {
+    "id": "page-54-plastic",
+    "type": "page",
+    "page": 54,
+    "bbox": [30, 293, 382, 506]
+   },
+   {
+    "id": "garbage-text",
+    "type": "text",
+    "view": "garbage",
+    "src": {
+     "page": 54,
+     "bbox": [396, 480, 479, 490]
+    },
+    "text": "태평양의 거대 쓰레기 섬"
+   },
+   {
+    "id": "p54-1",
+    "type": "photo",
+    "ref": "p54-1"
+   },
+   {
+    "id": "section-3",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 54,
+     "bbox": [53, 530, 183, 543]
+    },
+    "text": "플라스틱을 줄이기 위한 노력"
+   },
+   {
+    "id": "p54-2",
+    "type": "photo",
+    "ref": "p54-2"
+   },
+   {
+    "id": "p54-3",
+    "type": "photo",
+    "ref": "p54-3"
+   },
+   {
+    "id": "p54-4",
+    "type": "photo",
+    "ref": "p54-4"
+   },
+   {
+    "id": "section-4",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 54,
+     "bbox": [589, 278, 699, 291]
+    },
+    "text": "기후 변화와 해수면 상승"
+   },
+   {
+    "id": "p54-temp-co2",
+    "type": "chart",
+    "ref": "p54-temp-co2",
+    "src": {
+     "page": 54,
+     "bbox": [569, 391, 737, 420]
+    },
+    "text": "이산화 탄소 농도 증가로 세계 평균 기온이 상승하고 있으며, 이로 인한 해수면 상승은 저지대에 거주하는 사람들의 삶의 터전을 위협하고 있다."
+   },
+   {
+    "id": "sealevel-text",
+    "type": "text",
+    "view": "sealevel",
+    "src": {
+     "page": 54,
+     "bbox": [575, 522, 671, 532]
+    },
+    "text": "남태평양의 해수면 변화 예측"
+   },
+   {
+    "id": "p54-sealevel",
+    "type": "chart",
+    "ref": "p54-sealevel"
+   },
+   {
+    "id": "page-54-sealevel",
+    "type": "page",
+    "page": 54,
+    "bbox": [567, 424, 737, 531]
+   },
+   {
+    "id": "p54-5",
+    "type": "photo",
+    "ref": "p54-5"
+   },
+   {
+    "id": "activity-3",
+    "type": "activity",
+    "titleSrc": {
+     "page": 54,
+     "bbox": [572, 598, 606, 606]
+    },
+    "src": {
+     "page": 54,
+     "bbox": [574, 607, 731, 636]
+    },
+    "title": "활동하기 3",
+    "text": "기후 변화 대응을 위한 저탄소 생활 실천 방법을 찾아보고 캠페인에 활용할 수 있는 홍보물을 포스터, 표어, 카드 뉴스 등 다양한 형식으로 만들어 보자."
+   },
+   {
+    "id": "site-1",
+    "type": "text",
+    "titleSrc": {
+     "page": 54,
+     "bbox": [579, 650, 612, 658]
+    },
+    "src": {
+     "page": 54,
+     "bbox": [571, 666, 634, 684]
+    },
+    "title": "참고 사이트",
+    "text": "탄소 중립 포인트 에너지 https://t25.kr/hpkm"
+   },
+   {
+    "id": "page-54",
+    "type": "page",
+    "page": 54
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "arcticRoute",
+  "title": "북극의 지리적 중요성",
+  "pages": [55],
+  "view": {
+   "map": "p55-claims",
+   "_bounds": "U6-8: 북극 중심 묶음 — 55쪽 원판 가장자리(반지름 약 72pt × 49.1km/pt ≈ 3,540km ≈ 31.8° → 약 58°N)보다 조금 넓게 57°N(틀 격자 5~95% 범위 [−323.5, 49.3, −17.6, 81.0]은 원판 밖 모서리까지 든 띠).",
+   "bounds": [-180, 57, 180, 90]
+  },
+  "views": [
+   {
+    "id": "route",
+    "labelSrc": {
+     "page": 55,
+     "bbox": [54, 97, 89, 107]
+    },
+    "map": "p55-route",
+    "label": "북극 항로"
+   },
+   {
+    "id": "claims",
+    "labelSrc": {
+     "page": 55,
+     "bbox": [292, 97, 392, 107]
+    },
+    "map": "p55-claims",
+    "_bounds": "U6-8: 북극 중심 묶음 — 55쪽 원판 가장자리(반지름 약 72pt × 49.1km/pt ≈ 3,540km ≈ 31.8° → 약 58°N)보다 조금 넓게 57°N(틀 격자 5~95% 범위 [−323.5, 49.3, −17.6, 81.0]은 원판 밖 모서리까지 든 띠).",
+    "bounds": [-180, 57, 180, 90],
+    "label": "북극해를 둘러싼 영유권 분쟁"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p55-route",
+    "type": "pathFlow",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 55,
+     "bbox": [54, 97, 89, 107]
+    },
+    "creditSrc": {
+     "page": 55,
+     "bbox": [217, 243, 271, 250]
+    },
+    "label": "북극 항로",
+    "credit": "(한국 무역 협회, 2022)"
+   },
+   {
+    "ref": "layer-p55-route-cities",
+    "type": "symbolLabels",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 55,
+     "bbox": [54, 97, 89, 107]
+    },
+    "label": "북극 항로"
+   },
+   {
+    "ref": "layer-p55-claims-view",
+    "type": "topicView",
+    "legend": false,
+    "group": "map"
+   },
+   {
+    "ref": "layer-p55-claims",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 55,
+     "bbox": [283, 243, 329, 250]
+    },
+    "legendTitleSrc": {
+     "page": 55,
+     "bbox": [288, 143, 335, 151]
+    },
+    "credit": "(해양 수산부, 2021)",
+    "legendTitle": "영유권 주장 국가"
+   },
+   {
+    "ref": "layer-p55-resources",
+    "type": "symbolLabels",
+    "legend": true,
+    "group": "map"
+   }
+  ],
+  "_layers": "U6-4 → U6-8: 묶음 둘 — 북극 항로(지구본 — pathFlow properties.view, 도시 점 symbolLabels, label = 지면 「북극 항로」)·북극해 영유권(보기 레이어 북극 중심 위쪽 경선 180° + 주장 면·EEZ + 자원 symbolLabels, label = 세 레이어 제목 「북극해를 둘러싼 영유권 분쟁」 그대로).",
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 55,
+     "bbox": [71, 33, 264, 50]
+    },
+    "text": "극지방은 우리에게 왜 중요할까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 55,
+     "bbox": [500, 32, 711, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "극지방의 지리적 중요성과 지역 개발을 둘러싼 다양한 이해관계를 살펴보고, 이에 대한 자신과 상대방의 의견을 비판적으로 검토한다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 55,
+     "bbox": [64, 78, 161, 92]
+    },
+    "text": "북극의 지리적 중요성"
+   },
+   {
+    "id": "route-text",
+    "type": "text",
+    "view": "route",
+    "titleSrc": {
+     "page": 55,
+     "bbox": [54, 97, 89, 107]
+    },
+    "src": {
+     "page": 55,
+     "bbox": [44, 257, 273, 276]
+    },
+    "title": "북극 항로",
+    "text": "지구 온난화로 인해 여름철 북극해의 빙하가 녹아 있는 기간이 증가하고 있다. 이에 따라 북극 항로의 이용 일수가 증가할 전망이다."
+   },
+   {
+    "id": "p55-route-stats",
+    "type": "chart",
+    "ref": "p55-route-stats"
+   },
+   {
+    "id": "claims-text",
+    "type": "text",
+    "view": "claims",
+    "titleSrc": {
+     "page": 55,
+     "bbox": [292, 97, 392, 107]
+    },
+    "src": {
+     "page": 55,
+     "bbox": [281, 257, 508, 276]
+    },
+    "title": "북극해를 둘러싼 영유권 분쟁",
+    "text": "북극해에 석유와 천연가스를 비롯한 천연자원이 대규모로 매장되어 있으며, 자원을 둘러싼 인접 국가들의 영유권 분쟁이 나타나고 있다."
+   },
+   {
+    "id": "page-55",
+    "type": "page",
+    "page": 55
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "antarcticResearch",
+  "title": "남극의 지리적 중요성과 극지 연구",
+  "pages": [55],
+  "view": {
+   "map": "p55-treaty"
+  },
+  "views": [
+   {
+    "id": "treaty",
+    "labelSrc": {
+     "page": 55,
+     "bbox": [50, 427, 85, 437]
+    },
+    "map": "p55-treaty",
+    "label": "남극 조약"
+   },
+   {
+    "id": "bases",
+    "labelSrc": {
+     "page": 55,
+     "bbox": [421, 313, 508, 332]
+    },
+    "map": "p55-bases",
+    "_bounds": "U6-8: 남극 중심 묶음 — 55쪽 원판 가장자리(약 59.8°S — 영유권 바깥 호 60°S)보다 조금 넓게 59°S(틀 격자 5~95% 범위 [−146.1, −81.6, 170.2, −51.9]는 원판 밖 모서리까지 든 띠).",
+    "bounds": [-180, -90, 180, -59],
+    "label": "세계 각국의 남극 연구 기 지와 영유권 분쟁"
+   },
+   {
+    "id": "araon-s",
+    "labelSrc": {
+     "page": 55,
+     "bbox": [524.3, 288, 552.5, 296]
+    },
+    "map": "p55-araon-s",
+    "label": "10월~4월"
+   },
+   {
+    "id": "araon-n",
+    "labelSrc": {
+     "page": 55,
+     "bbox": [641, 288, 665.5, 296]
+    },
+    "map": "p55-araon-n",
+    "label": "7월~9월"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p55-treaty",
+    "type": "countryClass",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 55,
+     "bbox": [186, 420, 261, 427]
+    },
+    "credit": "(남극 조약 사무국 누리집, 2023)"
+   },
+   {
+    "ref": "layer-p55-bases-view",
+    "type": "topicView",
+    "legend": false,
+    "group": "map"
+   },
+   {
+    "ref": "layer-p55-sectors",
+    "type": "sectorLines",
+    "legend": true,
+    "group": "map",
+    "creditSrc": {
+     "page": 55,
+     "bbox": [416, 416, 501, 423]
+    },
+    "credit": "(「청소년을 위한 국가 지도집」, 2022)"
+   },
+   {
+    "ref": "layer-p55-bases",
+    "type": "symbolLabels",
+    "legend": true,
+    "group": "map"
+   },
+   {
+    "ref": "layer-p55-araon-s",
+    "type": "pathFlow",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 55,
+     "bbox": [524.3, 288, 552.5, 296]
+    },
+    "creditSrc": {
+     "page": 55,
+     "bbox": [642, 465, 745, 473]
+    },
+    "label": "10월~4월",
+    "credit": "(「청소년을 위한 대한민국 국가지도집」, 2022)"
+   },
+   {
+    "ref": "layer-p55-araon-s-marks",
+    "type": "symbolLabels",
+    "legend": false,
+    "group": "map",
+    "labelSrc": {
+     "page": 55,
+     "bbox": [524.3, 288, 552.5, 296]
+    },
+    "label": "10월~4월"
+   },
+   {
+    "ref": "layer-p55-araon-n",
+    "type": "pathFlow",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 55,
+     "bbox": [641, 288, 665.5, 296]
+    },
+    "creditSrc": {
+     "page": 55,
+     "bbox": [642, 465, 745, 473]
+    },
+    "label": "7월~9월",
+    "credit": "(「청소년을 위한 대한민국 국가지도집」, 2022)"
+   },
+   {
+    "ref": "layer-p55-araon-n-marks",
+    "type": "symbolLabels",
+    "legend": false,
+    "group": "map",
+    "labelSrc": {
+     "page": 55,
+     "bbox": [641, 288, 665.5, 296]
+    },
+    "label": "7월~9월"
+   }
+  ],
+  "_layers": "U6-4 → U6-8: 묶음 넷 — 남극 조약(세계 태평양 중심 — centerLonOf 는 main.js U6-9), 남극 기지(보기 레이어 남극 중심 위쪽 경선 90°W + 영유권 경계선 sectorLines + 기지 symbolLabels — label = 레이어 제목 「세계 각국의 남극 연구 기지와 영유권 분쟁」, 영유권 선 레이어 제목은 「남극 영유권 주장 경계」라 overrides 로 같은 label), 아라온호 10월~4월·7월~9월(지구본 pathFlow + 원문자 번호 symbolLabels, label = 지면 「(10월~4월)」에서 괄호를 뺀 상자).",
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 55,
+     "bbox": [71, 33, 264, 50]
+    },
+    "text": "극지방은 우리에게 왜 중요할까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 55,
+     "bbox": [500, 32, 711, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "극지방의 지리적 중요성과 지역 개발을 둘러싼 다양한 이해관계를 살펴보고, 이에 대한 자신과 상대방의 의견을 비판적으로 검토한다."
+   },
+   {
+    "id": "section-2",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 55,
+     "bbox": [64, 294, 161, 306]
+    },
+    "text": "남극의 지리적 중요성"
+   },
+   {
+    "id": "treaty-text",
+    "type": "text",
+    "view": "treaty",
+    "titleSrc": {
+     "page": 55,
+     "bbox": [50, 427, 85, 437]
+    },
+    "src": {
+     "page": 55,
+     "bbox": [44, 438, 270, 467]
+    },
+    "title": "남극 조약",
+    "text": "1959년에 남극 조약이 체결(12개국)되었으며, 2023년 현재 56개국이 가입해 있다. 조약에 의거 2048년까지 평화적, 과학 연구 목적으로만 남극을 이용할 수 있다."
+   },
+   {
+    "id": "bases-text",
+    "type": "text",
+    "view": "bases",
+    "titleSrc": {
+     "page": 55,
+     "bbox": [421, 313, 508, 332]
+    },
+    "src": {
+     "page": 55,
+     "bbox": [427, 333, 511, 403]
+    },
+    "title": "세계 각국의 남극 연구 기 지와 영유권 분쟁",
+    "text": "2023년 현재 29개국이 남 극 대륙에 연구 기지를 운영 중이며, 남극 대륙 주변에 위치하거나 탐험 의 역사를 가진 국가들이 남극 대륙에서의 영유권을 주장하고 있다."
+   },
+   {
+    "id": "activity-4",
+    "type": "activity",
+    "titleSrc": {
+     "page": 55,
+     "bbox": [288, 440, 322, 448]
+    },
+    "src": {
+     "page": 55,
+     "bbox": [290, 450, 501, 468]
+    },
+    "title": "활동하기 4",
+    "text": "2048년, 남극 조약의 만료가 다가왔다. 역할극을 통해 각 이해 당사자가 되어 남극의 활용 방안을 토의·토론해 보자."
+   },
+   {
+    "id": "section-3",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 55,
+     "bbox": [540, 78, 638, 92]
+    },
+    "text": "우리나라의 극지 연구"
+   },
+   {
+    "id": "sub-1",
+    "type": "text",
+    "role": "subtitle",
+    "src": {
+     "page": 55,
+     "bbox": [530, 98, 623, 108]
+    },
+    "text": "우리나라의 극지 과학 기지"
+   },
+   {
+    "id": "p55-1",
+    "type": "photo",
+    "ref": "p55-1"
+   },
+   {
+    "id": "p55-2",
+    "type": "photo",
+    "ref": "p55-2"
+   },
+   {
+    "id": "p55-3",
+    "type": "photo",
+    "ref": "p55-3"
+   },
+   {
+    "id": "sub-2",
+    "type": "text",
+    "role": "subtitle",
+    "src": {
+     "page": 55,
+     "bbox": [530, 274, 588, 284]
+    },
+    "text": "쇄빙선 아라온호"
+   },
+   {
+    "id": "araon-s-text",
+    "type": "text",
+    "view": "araon-s",
+    "src": {
+     "page": 55,
+     "bbox": [522, 288, 554, 296]
+    },
+    "text": "(10월~4월)"
+   },
+   {
+    "id": "araon-n-text",
+    "type": "text",
+    "view": "araon-n",
+    "src": {
+     "page": 55,
+     "bbox": [639, 288, 668, 296]
+    },
+    "text": "(7월~9월)"
+   },
+   {
+    "id": "page-55-araon",
+    "type": "page",
+    "page": 55,
+    "bbox": [519, 284, 757, 408]
+   },
+   {
+    "id": "p55-4",
+    "type": "photo",
+    "ref": "p55-4"
+   },
+   {
+    "id": "theme-1",
+    "type": "activity",
+    "role": "theme",
+    "titleSrc": {
+     "page": 55,
+     "bbox": [130, 495, 249, 506]
+    },
+    "src": {
+     "page": 55,
+     "bbox": [44, 515, 313, 524]
+    },
+    "title": "극지 연구소의 연구 활동 알아보기",
+    "text": "우리나라 극지 연구소의 누리집에 접속하여 극지 연구소의 활동에 대해 자세히 살펴보자."
+   },
+   {
+    "id": "p55-5",
+    "type": "photo",
+    "ref": "p55-5"
+   },
+   {
+    "id": "p55-6",
+    "type": "photo",
+    "ref": "p55-6"
+   },
+   {
+    "id": "p55-7",
+    "type": "photo",
+    "ref": "p55-7"
+   },
+   {
+    "id": "site-1",
+    "type": "text",
+    "titleSrc": {
+     "page": 55,
+     "bbox": [623, 492, 656, 500]
+    },
+    "src": {
+     "page": 55,
+     "bbox": [615, 507, 674, 526]
+    },
+    "title": "참고 사이트",
+    "text": "극지 연구소 https://t25.kr/6kv2"
+   },
+   {
+    "id": "page-55-theme",
+    "type": "page",
+    "page": 55,
+    "bbox": [30, 487, 758, 693]
+   },
+   {
+    "id": "page-55",
+    "type": "page",
+    "page": 55
+   }
+  ],
+  "quiz": null
+ }
+]
