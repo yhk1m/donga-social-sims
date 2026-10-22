@@ -30,6 +30,9 @@
 //       왼쪽 축 = left, 오른쪽 축 = right(눈금 수가 같으면 같은 높이), 선 이름 = 선 곁 글자 상자 + 짧은 지시선(labelAt {x: 해, dy: px} — 없으면 어림 자리).
 //     halfPie = {items:[{label:'1965년', total:'27(억 달러)', rRel(가장 큰 반원 대비 반지름 — 교과서 잰 값, 교사 Q13 기본값), slices:[{name, value(%), color}]}]}
 //       위쪽 반원(9시 → 3시 시계 방향)을 가운데 아래 끝을 맞춰 나란히, 조각 글자는 넓으면 안, 좁으면 바깥 + 지시선.
+//   - 3i 기호 + 글자(symbolLabels) 다시 등록: 아메리카 symbolLabelsLayer 의 글자 몫(areaLayer 지명 글자 — 캔버스)은 view.projection 을 그대로 써서
+//     지구본 뒷면·극 중심 반대 반구 글자까지 그림(기호 몫은 렌더러 project 가 hidden 이면 null 이라 숨음) → 그 레이어의 draw 에 hidden 을 지키는 투영
+//     (hidden 이면 null)을 넘기는 감싸개로 다시 등록(americasExtra·layers.js 고침 없음 — 글자 몫은 지명 Point 뿐이라 draw 가 투영을 점에만 씀).
 //   단원 main.js: installAmericasExtras(); installPolarExtras();  (mountAtlas 전에) — mountAtlas 뒤 viewTools(root.atlasMap, root.atlasUi.tools.el)(풀기 함수)
 import { geoAzimuthalEquidistant, geoDistance, geoInterpolate } from 'd3-geo';
 import { s } from '../shared/dom.js';
@@ -41,7 +44,7 @@ import { alphaOf, lineWidthPx, unwrapLine, splitJumps, distToPolyline } from './
 import { INK, txt, registerSvgChart } from './charts.js';
 import { linearScale, sectorPath } from './chartCore.js';
 import { baseOptions, baseModeOf } from './natural.js';
-import { registerProjection, globeCenter, rotateFor, globeView } from './americasExtra.js';
+import { registerProjection, globeCenter, rotateFor, globeView, symbolLabelsLayer } from './americasExtra.js';
 
 /** 극 중심 규칙: 반구 원판 반지름 = 무대 짧은 변 × fill, 처음(k < 2) 경위선 간격(°), 처음 위쪽 경선(°, 50·51쪽 일반도 = 서경 90°) */
 export const POLAR = Object.freeze({ fill: 0.48, step: 10, up: -90 });
@@ -350,6 +353,22 @@ function halfPieSvg(spec, label) {
     txt(W - 8, 16, '(%)', { 'text-anchor': 'end', class: 'at-ct at-ct-tick' }));
 }
 
+// ---------- 3i 기호 + 글자: 뒷면 글자 숨김 ----------
+/** view 의 투영에 hidden 이 있으면(지구본·극 중심) hidden 인 점은 null 을 내는 투영으로 바꾼 view(없으면 그대로) */
+export function hiddenAwareView(view) {
+  const p = view?.projection;
+  if (!p?.hidden) return view;
+  const q = (ll) => (p.hidden(ll) ? null : p(ll));
+  q.hidden = p.hidden;
+  return { ...view, projection: q };
+}
+/** symbolLabels(아메리카 것) + 글자 몫 뒷면 숨김 */
+export function polarSymbolLabelsLayer(id, d, ctx) {
+  const layer = symbolLabelsLayer(id, d, ctx), draw = layer.draw;
+  if (draw) layer.draw = (c, path, view) => draw(c, path, hiddenAwareView(view));
+  return layer;
+}
+
 /** 등록(단원 main 이 mountAtlas 전에, installAmericasExtras 뒤에 — 상자 옵션 차례 지구본 → 북극 중심 → 남극 중심). 두 번 불러도 같음. */
 export function installPolarExtras() {
   // 옵션 차례(지구본 → 극 둘)와 viewTools 의 지구본 몫이 지구본 등록을 전제로 함 — 늦게 등록하면 상자 차례가 틀어지므로 멈춤
@@ -358,6 +377,7 @@ export function installPolarExtras() {
   if (!PROJECTIONS.polarS) registerProjection('polarS', polarProjection({ pole: 'S' }));
   registerLayerType('topicView', topicViewLayer);
   registerLayerType('sectorLines', (id, d, ctx) => sectorLinesLayer(id, d, ctx));
+  registerLayerType('symbolLabels', polarSymbolLabelsLayer); // 아메리카 등록을 덮음(뒷면 글자 숨김 — 위 3i)
   registerSvgChart('dualLine', dualLineSvg);
   registerSvgChart('halfPie', halfPieSvg);
 }
