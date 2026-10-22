@@ -51,6 +51,7 @@ def manual_legend(items):
     for i, e in enumerate(items):
         if not e.get('color') or not e.get('label'): raise ValueError(f'legendItems {i}: color·label 이 다 있어야 함')
         out.append({'cls': f'c{i + 1}', 'color': e['color'].lower(), 'label': e['label'], 'kind': 'fill'})
+        if e.get('drawPattern'): out[-1]['drawPattern'] = e['drawPattern']   # U6-4: 색으로 찾되 무늬로 그림(있을 때만)
     return out
 
 
@@ -65,6 +66,9 @@ def _chain(cand, x_start):
 
 def hatch_legend(m, hcfg, pattern='hatch'):
     """빗금 견본(채움이 무늬라 get_drawings 에 안 잡힘 → 설정의 견본 상자) + 오른쪽 글자. 점무늬(U4-3b)는 pattern 'dots' 로 같은 길."""
+    if hcfg.get('noLegend'):   # 교과서 범례에 없는 빗금(U6-4 — 53쪽 파푸아 뉴기니 고지대, 교사 Q15 기본값, 있을 때만): 이름은 설정, 웹 범례에서 뺌(legendHidden)
+        if not hcfg.get('label'): raise ValueError('빗금 noLegend 에 label 이 있어야 함')
+        return {'color': hcfg['color'], 'kind': 'fill', 'pattern': pattern, 'label': hcfg['label'], 'legendHidden': True}
     b = hcfg['swatch']; y = yc(b)
     cand = sorted((t for t in spans(m['page']) if abs(yc(t['bbox']) - y) < ROW_TOL_PT and b[2] - 0.5 <= t['bbox'][0] < b[2] + HATCH_LABEL_SPAN_PT),
                   key=lambda t: t['bbox'][0])

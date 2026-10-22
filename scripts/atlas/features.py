@@ -9,7 +9,9 @@
 # mode: vector(zones.vector_zones) | raster(zones.raster_zones) | symbols(symbols.symbols) | density-markers(symbols.density_markers)
 #   | raster-circles(symbols.raster_circles — 렌더 화소에서 찾는 크기 단계 원) | labelled-points(symbols.labelled_points — 이름 붙은 점)
 #   | sized-circles(symbols.sized_circles — 지름 ∝ √값 원 + 겹친 원 범례 + 지시선 끝 자리, U5-3e 47쪽 본사)
-#   | unit-symbols(symbols.unit_symbols — 주별 네모 칸 묶음, U5-3f 47쪽 마킬라도라 — build_layers 가 type 'unitSymbols' 로 주에 붙임).
+#   | unit-symbols(symbols.unit_symbols — 주별 네모 칸 묶음, U5-3f 47쪽 마킬라도라 — build_layers 가 type 'unitSymbols' 로 주에 붙임)
+#   | lines(선만 — U6-4 극 지도, 설정 lineChains 필수).
+# 부가(U6-4, 있을 때만): lineChains(line_chains.line_chains — 조각으로 그린 선 → kind 'line' 선 + 범례 선 견본, 어느 mode 에서나).
 # 부가: hatch(빗금 분류), isotherm(lines.isotherms), flows(lines.flows), extraLegend(범례에 없는 칠한 분류), outlineFills(띠로 그린 지역 경계 →
 #   테두리만 분류 style 'outline'), labels(지역 이름 글자 → Point {type:'label'}).
 # domain: build_layers.mjs 가 쓰는 $ATLAS_WORK/geo/<map>.domain.json(경위도로 되돌릴 수 있는 지면 범위, 원통 도법 세계 지도)이
@@ -124,6 +126,7 @@ def area_polys(m, leg, cfg, warnings, report):
         p = {'cls': e['cls'], 'color': e['color'], 'label': e['label'], 'polygons': poly_coords(g)}
         if e.get('pattern'): p['pattern'] = e['pattern']
         if e.get('angle') is not None: p['angle'] = e['angle']   # 빗금 각도(U5-3h — 있을 때만)
+        if e.get('drawPattern'): p['pattern'] = e['drawPattern']   # 색으로 찾은 면을 무늬로 그림(U6-4 — 54쪽 쓰레기 지대 점무늬, 설정 legendItems drawPattern)
         polys.append(p)
     return polys
 
@@ -161,6 +164,8 @@ def features(layer_id):
             out['report']['parts'] = [p['map'] for p in out['parts']]
         else:
             out['polys'] = area_polys(m, leg, cfg, warnings, out['report'])
+        for e in leg:   # drawPattern(U6-4): 범례 견본도 그 무늬로
+            if e.get('drawPattern'): e['pattern'] = e.pop('drawPattern')
         out['legend'] = leg
         for oc in cfg.get('outlineFills') or []:   # 띠로 그린 지역 경계(파다니아) → 테두리만 그리는 분류
             g = outline_polys(m, oc, cfg['densifyPt'])
@@ -212,14 +217,30 @@ def features(layer_id):
         out['report'].update(rep)
     elif mode == 'path-flow':        # 46쪽 지구본 인구 이동 화살표(채운 화살대·점선 토막 + 화살촉 → 가운데 선 — lines.path_flows, U5-4)
         out['legend'] = [{'cls': fc['cls'], 'color': fc['fill'], 'kind': 'flow', 'label': fc['label'], **({'dashed': True} if fc.get('dashed') else {})} for fc in cfg['flows']]
-        out['lines'], rep = LN.path_flows(m, cfg, warnings)
-        out['report']['flows'] = rep
+        sf = [fc for fc in cfg['flows'] if fc.get('stroke')]   # 획으로 그린 경로(U6-4 — 55쪽 북극 항로·아라온호, 있을 때만): line_chains.stroke_flows
+        if sf:
+            import line_chains as LC
+            for fc in sf: out['lines'] += LC.stroke_flows(m, fc, cfg, warnings)
+            out['report']['flows'] = {fc['cls']: sum(1 for l in out['lines'] if l['cls'] == fc['cls']) for fc in sf}
+        if len(sf) < len(cfg['flows']):
+            ls, rep = LN.path_flows(m, {**cfg, 'flows': [fc for fc in cfg['flows'] if not fc.get('stroke')], **({'expectFlows': None} if sf else {})}, warnings)
+            out['lines'] += ls; out['report']['flows'] = {**out['report'].get('flows', {}), **rep}
+        if sf:   # 획 경로가 있으면 수 확인은 합친 뒤(계열마다)
+            for c, exp in (cfg.get('expectFlows') or {}).items():
+                n = sum(1 for l in out['lines'] if l['cls'] == c)
+                if n != exp: raise ValueError(f'{layer_id}: 경로 {c} {n}개 ≠ expectFlows {exp}')
+    elif mode == 'lines':            # 선만(U6-4 — 50·51쪽 극 지도 선: 범례·선은 아래 lineChains 가 만듦, 면·기호 없음)
+        if not cfg.get('lineChains'): raise ValueError(f'{layer_id}: mode lines 에 lineChains 가 없음')
     elif mode == 'density-markers':
         mc = cfg['marker']
         out['symbols'] = S.density_markers(m, mc, warnings)
         out['legend'] = [{'cls': 'c1', 'color': mc['color'], 'kind': 'symbol', 'label': mc['kind']}]
     else:
         raise ValueError(f'{layer_id}: 모르는 mode {mode}')
+    if cfg.get('lineChains'):   # 조각으로 그린 선(U6-4 — 파선 토막·물결 조각·점 고리·막대 → 이은 선 kind 'line', 있을 때만): 범례 끝에 선 견본
+        import line_chains as LC
+        lg, ls, rep = LC.line_chains(m, cfg['lineChains'], warnings)
+        out['legend'] += lg; out['lines'] += ls; out['report']['lineChains'] = rep
     if mode not in ('vector', 'raster') and cfg.get('labelPoints'):   # 기호 레이어의 지면 글자(U5-4 — 47쪽 세계 지도 동해·독도·이어도, 앱은 symbolLabels)
         out['labels'] = label_points(cfg['labelPoints'])
     for e in out['legend']: e.pop('box', None)
@@ -229,8 +250,10 @@ def features(layer_id):
     absent = [e['label'] for e in out['legend'] if e['cls'] not in present and e.get('geometry') is not False]
     if absent: warnings.append(f'도형 없는 범례 분류: {absent}')
     exp = cfg.get('expectLegend')
-    if exp is not None and len(out['legend']) != exp:
-        raise ValueError(f'{layer_id}: 범례 {len(out["legend"])}개 ≠ 설정 expectLegend {exp} — {[e["label"] for e in out["legend"]]}')
+    # U6-4(키가 있을 때만): 웹 범례에서 빼는 빗금(legendHidden)은 세지 않고, build_layers 가 더하는 위선(latLines)은 셈
+    n_leg = sum(1 for e in out['legend'] if not e.get('legendHidden')) + len(cfg.get('latLines') or [])
+    if exp is not None and n_leg != exp:
+        raise ValueError(f'{layer_id}: 범례 {n_leg}개 ≠ 설정 expectLegend {exp} — {[e["label"] for e in out["legend"]]}')
     out['report'].update(legendCount=len(out['legend']), outputClasses=len(present), absent=absent, warnings=warnings)
     return out
 

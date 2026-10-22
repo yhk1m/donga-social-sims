@@ -3,7 +3,7 @@
 #   python -I scripts/atlas/clip_land.py <레이어 id ...>
 #   입력  $ATLAS_WORK/geo/<id>.raw.geojson  (경도는 고리·선 안에서 이어져 ±180 을 넘을 수 있다)
 #   출력  $ATLAS_WORK/geo/<id>.clipped.geojson — 좌표는 0.001° 격자, 면은 유효·서로 겹치지 않음·바깥 고리 시계 방향
-#   설정  config/u2.json layers[id]: tol(단순화 °, 면 덮개는 × coverageTolFactor), minArea(°²), source:'ne' 면 육지로 자르지 않음
+#   설정  config/u2.json layers[id]: tol(단순화 °, 면 덮개는 × coverageTolFactor), minArea(°²), source:'ne' 또는 clipLand false(U6-4) 면 육지로 자르지 않음
 #   육지  $ATLAS_WORK/raw/ne/ne_10m_land.geojson (github.com/nvkelso/natural-earth-vector geojson/)
 # 면(분류들 = 하나의 덮개 coverage):
 #   날짜변경선에서 나눠 [-180,180] 으로 접기 → 육지와 교차 → 범례 순서대로 앞 분류가 차지한 곳 빼기(겹침 0)
@@ -175,7 +175,8 @@ def line_geom(lines, tol):
 
 def process(lid):
     cfg = layer_config(lid)
-    tol, min_area, clip = cfg['tol'], cfg['minArea'], cfg.get('source') != 'ne'
+    # clipLand false(U6-4 — 바다 위 면: 북극해 영유권·빙붕·쓰레기 지대·해수면 강조, 있을 때만)면 육지로 자르지 않음
+    tol, min_area, clip = cfg['tol'], cfg['minArea'], cfg.get('source') != 'ne' and cfg.get('clipLand', True)
     with open(os.path.join(WORK, 'geo', f'{lid}.raw.geojson'), encoding='utf-8') as f:
         gj = json.load(f)
     feats = gj['features']

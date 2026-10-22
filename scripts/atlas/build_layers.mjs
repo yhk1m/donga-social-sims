@@ -23,6 +23,8 @@ import { makeConverter } from './georef.mjs';
 import { WORK, loadFit as loadFitRaw, fitPath, neIndex, key, km } from './geo_util.mjs';
 import { projectionFromStale, projectionFromOlder, fitFromStale } from './projection_from.mjs';
 import { resolveUnit, stripUnitArgs } from './unit.mjs';
+import { polarPolygon } from './polar_geom.mjs';
+import { topicViewLayerJson, sectorLinesLayerJson, latLineFeatures, shelvesRaw, shelfOutlineFeature } from './polar_layers.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..', '..');
@@ -121,6 +123,8 @@ function convert(layer, feat, fit) {
     const polys = [];
     for (const poly of p.polygons) {
       const ext = ring(poly[0], p.label); if (!ext) continue;
+      // 극점을 품은 면(U6-4 — 설정 polar {pole, snapDeg}, 있을 때만: 55쪽 북극해 영유권 — 극 붙이기·극 두 점·±180 조각·감김, polar_geom.polarPolygon)
+      if (layer.polar) { polys.push(...polarPolygon(ext, layer.polar)); continue; }
       const holes = poly.slice(1).map((h) => ring(h, p.label)).filter(Boolean).map((h) => alignHole(ext, h));
       polys.push([ext, ...holes]);
     }
@@ -166,8 +170,9 @@ function convert(layer, feat, fit) {
     total += l.points.length;
     const [o, d] = convertPath(cv, l.points); dropped += d;
     if (o.length < 2) continue;
-    const props = { type: l.kind === 'isotherm' ? 'isotherm' : 'flow', cls: l.cls, kind: l.kind, color: l.color };
-    for (const k of ['value', 'valueRank', 'width', 'widthPt', 'dir', 'label']) if (l[k] != null) props[k] = l[k];
+    // kind 'line'(U6-4 lineChains — 조각으로 그린 선, 있을 때만): 면 레이어가 그리는 선 type 'line'(dashed 면 파선)
+    const props = { type: l.kind === 'isotherm' ? 'isotherm' : l.kind === 'line' ? 'line' : 'flow', cls: l.cls, kind: l.kind, color: l.color };
+    for (const k of ['value', 'valueRank', 'width', 'widthPt', 'dir', 'label', 'dashed']) if (l[k] != null) props[k] = l[k];
     features.push({ type: 'Feature', properties: props, geometry: { type: 'LineString', coordinates: o } });
   }
   if (total && dropped / total > layer.maxDroppedFrac) {
@@ -230,7 +235,7 @@ function convertParts(layer, feat) {
 function prepare(layers, { extract }) {
   // 0. 도메인(여러 지도 한 레이어는 지도마다)
   for (const l of layers) {
-    if (l.source === 'ne') continue;
+    if (l.source === 'ne' || l.source === 'ne-shelves') continue;
     for (const mid of l.maps || [l.map]) {
       const dom = domainPolygon(loadFit(mid));
       const f = `${WORK}/geo/${mid}.domain.json`;
@@ -238,7 +243,7 @@ function prepare(layers, { extract }) {
     }
   }
   // 1. 뽑기(한 프로세스)
-  const need = layers.filter((l) => l.source !== 'ne' && (extract || !fs.existsSync(`${WORK}/vec/${l.id}.features.json`))).map((l) => l.id);
+  const need = layers.filter((l) => l.source !== 'ne' && l.source !== 'ne-shelves' && (extract || !fs.existsSync(`${WORK}/vec/${l.id}.features.json`))).map((l) => l.id);
   if (need.length) process.stdout.write(run([path.join(here, 'extract_vectors.py'), '--features', ...need]));
   if (layers.some((l) => l.source === 'ne')) run([path.join(here, 'kashmir.py')]);
 }
@@ -249,9 +254,17 @@ function toRaw(layer) {
     const raw = JSON.parse(fs.readFileSync(`${WORK}/geo/${layer.id}.raw.geojson`, 'utf8'));
     return { meta: { ...raw.properties, approx: !!raw.properties.approx, convert: null, warnings: [] } }; // 카슈미르: 종교 면 안쪽 경계가 근사(kashmir.py)
   }
+  if (layer.source === 'ne-shelves') {   // 남극 빙붕(U6-4 — U6-D Natural Earth 면, 경위도 그대로): clip_land(clipLand false)가 단순화
+    const sh = shelvesRaw(layer, JSON.parse(fs.readFileSync(path.join(WORK, layer.shelves), 'utf8')));
+    const fit = loadFit(layer.map);
+    const meta = { id: layer.id, source: `Natural Earth 10m 남극 빙붕 면(${layer.shelves}) — 교과서 ${m.page}쪽 빙붕 자리`, approx: false, legend: sh.legend, convert: null, warnings: [], sourceFamily: fit.family };
+    fs.writeFileSync(`${WORK}/geo/${layer.id}.raw.geojson`, JSON.stringify({ type: 'FeatureCollection', properties: meta, features: sh.features }));
+    return { meta };
+  }
   const feat = JSON.parse(fs.readFileSync(`${WORK}/vec/${layer.id}.features.json`, 'utf8'));
   const fit = loadFit(layer.map);
   const { features, dropped, total, covers } = feat.parts ? convertParts(layer, feat) : { ...convert(layer, feat, fit), covers: null };
+  if (layer.latLines) feat.legend = [...latLineFeatures(layer).legend, ...feat.legend];   // 위선(U6-4 — 북극권·남극권, 있을 때만): 범례 앞에(선은 finish 에서 — clip_land 평면 단순화가 위선을 두 점으로 줄이므로)
   const meta = {
     id: layer.id, source: `교과서 22개정 중학 사회과 부도 ${m.page}쪽 (경위도 맞추기: ${fit.family})`,
     approx: !!fit.approx, ...(fit.approx ? { approxReason: fit.approxReason } : {}),
@@ -360,6 +373,14 @@ function finish(layer, meta) {
   const m = maps[layer.map];
   const clipped = JSON.parse(fs.readFileSync(`${WORK}/geo/${layer.id}.clipped.geojson`, 'utf8'));
   const features = clipped.features.map((f) => ({ type: 'Feature', properties: f.properties, geometry: roundGeom(f.geometry) }));
+  if (layer.polar) {   // 극점을 품은 면(U6-4): clip_land 의 평면 접기·덮개 단순화가 극 변을 망가뜨리므로(러시아 부채꼴이 「지구 − 면」 12.5 sr) 면은 raw(polarPolygon 결과)를 그대로·0.001° 로
+    const raw = JSON.parse(fs.readFileSync(`${WORK}/geo/${layer.id}.raw.geojson`, 'utf8'));
+    const polys = raw.features.filter((f) => f.geometry.type === 'MultiPolygon').map((f) => ({ type: 'Feature', properties: f.properties, geometry: roundGeom(f.geometry) }));
+    features.splice(0, features.length, ...polys, ...features.filter((f) => f.geometry.type !== 'MultiPolygon'));
+  }
+  if (layer.latLines) features.unshift(...latLineFeatures(layer).features);   // 위선(U6-4): 지리로 만든 2° 간격 줄 그대로(단순화하지 않음)
+  // 빙붕 테두리(U6-4, 설정 outlineColor 가 있을 때만): 면은 채움만, 테두리는 ±180·극 위 변을 뺀 선(같은 분류)
+  if (layer.outlineColor) features.push(...features.filter((f) => f.geometry.type === 'MultiPolygon').map((f) => shelfOutlineFeature(f, layer.outlineColor)));
   const { legend, colorOfCls } = decorateLegend(layer, meta.legend);
   for (const f of features) if (colorOfCls.has(f.properties.cls)) f.properties = { ...f.properties, color: colorOfCls.get(f.properties.cls) };
   const sizes = applySymbolSizes(layer, legend, features);
@@ -379,6 +400,7 @@ function finish(layer, meta) {
     approx: meta.approx, ...(meta.approxReason ? { approxReason: meta.approxReason } : {}),
     source: ne ? 'Natural Earth' : meta.source, ...(ne ? { sourceDetail: meta.source, note: meta.note } : {}),
     winding: 'cw', // 면 바깥 고리 시계 방향(d3-geo 규약), 구멍 반시계
+    ...(layer.view ? { view: layer.view } : {}),   // 묶음 보기(U6-4 — 기록: 극 묶음은 같은 묶음의 topicView 레이어가 엶, 있을 때만)
     ...(layer.symbolStyle ? { symbolStyle: layer.symbolStyle } : {}), // 기호 크기 배율·최소/최대 지름(px) — symbolLayer 가 읽음
     ...(Object.keys(sizes).length || sized ? { sizeBy: 'class' } : {}), // 크기 단계 기호(symbolLayer 가 단계 비를 지킴) — 크기 비례 원도 같은 길
     ...(sized ? { sizeRule: 'sqrt' } : {}),                           // 크기 비례 원: 지름 ∝ √값(범례 size = k·√값, 기호 size = 교과서 지름 — 기록용)
@@ -386,14 +408,16 @@ function finish(layer, meta) {
     ...(layer.valueLegend ? { valueLegend: layer.valueLegend } : {}),  // 값 붙은 기호의 아이콘 설명 [{icon, label}]
     ...(layer.nameInBox ? { nameInBox: true } : {}),                  // 값 상자 맨 위에 기호 이름(없으면 이름만 든 상자) — symbolLayer 가 읽음
     // 설정 hideLegend(U5-3e — 실리콘 밸리 확대 창 레이어: 범례는 본 지도 레이어 것 하나만 — 사이드바 범례 블록·창 아래 범례 줄이 겹치지 않게)
-    legend: layer.hideLegend ? [] : legend.map((e) => ({ ...e, present: present.has(e.cls) })),
+    // legendHidden(U6-4 — 교과서 범례에 없는 빗금, 있을 때만): 그리기는 하되 웹 범례에서 뺌
+    legend: layer.hideLegend ? [] : legend.filter((e) => !e.legendHidden).map((e) => ({ ...e, present: present.has(e.cls) })),
   };
   fs.mkdirSync(OUT, { recursive: true });
   const file = path.join(OUT, `layer-${layer.id}.json`);
   fs.writeFileSync(file, JSON.stringify({ type: 'FeatureCollection', properties: props, features }));
   const geomLegend = legend.filter((e) => e.geometry !== false);
   const absent = geomLegend.filter((e) => !present.has(e.cls)).map((e) => e.label);
-  if (layer.expectLegend != null && legend.length !== layer.expectLegend) throw new Error(`${layer.id}: 범례 ${legend.length} ≠ expectLegend ${layer.expectLegend}`);
+  const nShown = legend.filter((e) => !e.legendHidden).length;
+  if (layer.expectLegend != null && nShown !== layer.expectLegend) throw new Error(`${layer.id}: 범례 ${nShown} ≠ expectLegend ${layer.expectLegend}`);
   if (absent.length) throw new Error(`${layer.id}: 출력에 없는 범례 분류 ${absent.join(', ')}`);
   return {
     id: layer.id, type: layer.type, legend: geomLegend.length, classes: present.size, features: features.length,
@@ -752,7 +776,8 @@ function main(argv) {
   fs.mkdirSync(`${WORK}/geo`, { recursive: true });
   // 나라 단위 단계구분도는 도형을 옮기지 않는다(country_class.py → 나라별 분류만). 고리 기호·미확정 국경도 PDF 도형을 뽑지 않음(U4-3c·f)
   const cc = todo.filter((l) => l.type === 'countryClass' || l.type === 'regionClass');   // regionClass = 하위 행정 구역판(U5-3d, 설정 units)
-  const special = (l) => l.type === 'chartSymbols' || l.source === 'ne-disputed' || l.type === 'unitSymbols' || l.type === 'compareOutline' || l.type === 'pathFlow';
+  const special = (l) => l.type === 'chartSymbols' || l.source === 'ne-disputed' || l.type === 'unitSymbols' || l.type === 'compareOutline' || l.type === 'pathFlow'
+    || l.type === 'topicView' || l.type === 'sectorLines';   // U6-4: 주제 보기·남극 영유권 경계선(polar_layers.mjs)
   const geo = todo.filter((l) => l.type !== 'countryClass' && l.type !== 'regionClass' && !special(l));
   const byId = new Map();
   const units = todo.filter((l) => l.type === 'unitSymbols' || l.type === 'pathFlow');   // 네모 단위 기호(U5-3f)·경로 화살표(U5-4): PDF 에서는 features.py 가 뽑고, 경위도(주 붙이기)는 여기서
@@ -776,6 +801,12 @@ function main(argv) {
       const fit = loadFit(l.map);
       const res = koreaOutlineLayerJson(l, JSON.parse(fs.readFileSync(out, 'utf8')), converter(l, fit), maps[l.map], fit);
       byId.set(l.id, writeLayer(l, res, { features: 1 }));
+    } else if (l.type === 'topicView') {
+      byId.set(l.id, writeLayer(l, topicViewLayerJson(l, maps[l.map])));
+    } else if (l.type === 'sectorLines') {
+      const fit = loadFit(l.map);
+      const out = sectorLinesLayerJson(l, converter(l, fit), maps[l.map], fit);
+      byId.set(l.id, writeLayer(l, out, { legend: out.properties.legend.length, classes: out.properties.legend.length, features: out.features.length }));
     } else if (l.type === 'chartSymbols') {
       const cf = path.join(WORK, config.content.charts);
       if (!fs.existsSync(cf)) {   // 그래프 자료(extract_tables --charts)가 아직 없으면 이 레이어만 건너뜀 — 있는데 그래프가 빠졌으면 chartSymbolsLayerJson 이 멈춤
