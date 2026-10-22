@@ -233,7 +233,10 @@ class MapsU6(unittest.TestCase):
                          ['general', 'coloring', 'arctic', 'antarctic', 'relief', 'climate', 'exchange', 'environment', 'arcticRoute', 'antarcticResearch'])
         self.assertEqual(c['photos']['topics'], c['content']['expect']['topics'])
         self.assertNotIn('tint', c); self.assertNotIn('natural', c)
-        self.assertEqual(c['layers'], {})
+        # U6-4 뒤: 레이어 33, 모두 이 단원 지도 위(뼈대 때 「빈 layers」 검사를 바꿈)
+        with open(os.path.join(HERE, '..', 'maps_u6.json'), encoding='utf-8') as f: ids = {m['id'] for m in json.load(f)}
+        self.assertEqual(len(c['layers']), 33)
+        for k, v in c['layers'].items(): self.assertIn(v['map'], ids, k)
         text = json.dumps({k: v for k, v in c.items() if not k.startswith('_')}, ensure_ascii=False)
         for bad in ('units/u5/', 'content/atlas/u5', 'atlas-u5-americas', 'docs/assets/atlas/u5', 'charts-u5', 'p41-',
                     'units/u4/', 'atlas-u4-africa', '"u5/"'):
