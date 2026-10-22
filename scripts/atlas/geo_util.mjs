@@ -42,17 +42,29 @@ export function cmp(a, b) {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
+/** neBox 의 상자 목록: 상자 하나 [x0, y0, x1, y1] 이나 상자 목록 [[x0, y0, x1, y1], …](U6 — 날짜변경선 건너 둘 + 극 둘레)을 목록으로.
+ *  상자마다 유한한 수 넷이 아니면 멈춘다(비교가 NaN 이 되어 아무것도 거르지 않는 일을 막음). */
+export function neBoxes(box) {
+  const boxes = Array.isArray(box?.[0]) ? box : [box];
+  for (const b of boxes) if (!Array.isArray(b) || b.length !== 4 || !b.every(Number.isFinite)) throw new Error(`neBox 상자가 [경도 최소, 위도 최소, 경도 최대, 위도 최대] 꼴이 아님: ${JSON.stringify(box)}`);
+  return boxes;
+}
+/** (lon, lat)이 neBox(상자 하나 또는 목록 — 어느 상자든) 안인가. 경도 최소 > 최대인 상자는 날짜변경선을 건넌 상자(lon ≥ x0 또는 lon ≤ x1). */
+export function inNeBox(box, lon, lat) {
+  return neBoxes(box).some(([x0, y0, x1, y1]) => lat >= y0 && lat <= y1 && (x0 <= x1 ? lon >= x0 && lon <= x1 : lon >= x0 || lon <= x1));
+}
+
 const neCache = new Map();
-/** Natural Earth 10m 인구 지점: NAME_KO 열쇠 → box([경도 최소, 위도 최소, 경도 최대, 위도 최대]) 안 [{lon, lat, ne}] 목록.
+/** Natural Earth 10m 인구 지점: NAME_KO 열쇠 → box(상자 [경도 최소, 위도 최소, 경도 최대, 위도 최대] 하나 또는 그 목록 — inNeBox) 안 [{lon, lat, ne}] 목록.
  *  파일이 없으면 null. 같은 (파일, box)는 한 번만 읽는다. */
 export function neIndex(file, box) {
-  const ck = `${file}|${box}`;
+  const boxes = neBoxes(box), ck = `${file}|${JSON.stringify(box)}`;
   if (neCache.has(ck)) return neCache.get(ck);
   if (!fs.existsSync(file)) return null;
-  const [x0, y0, x1, y1] = box, by = new Map();
+  const by = new Map();
   for (const f of JSON.parse(fs.readFileSync(file, 'utf8')).features) {
     const k = key(f.properties.NAME_KO), [lon, lat] = f.geometry.coordinates;
-    if (!k || lon < x0 || lon > x1 || lat < y0 || lat > y1) continue;
+    if (!k || !inNeBox(boxes, lon, lat)) continue;
     if (!by.has(k)) by.set(k, []); by.get(k).push({ lon, lat, ne: f.properties.NAME });
   }
   neCache.set(ck, by);

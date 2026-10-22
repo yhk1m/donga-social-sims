@@ -24,11 +24,25 @@ export const FAMILY_NAMES = Object.keys(FAMILIES);
 /** 1단계(아시아) 도법 후보 8개 — 차례도 그대로(같은 rms 일 때 고르는 차례가 차례에 기댐). fitCore.FAMILIES 에 후보를 더해도
  *  u2 지도의 fit 이 바뀌지 않게 단원·지도가 후보를 따로 정하지 않으면 이것을 쓴다(2단계 설계 §7). */
 export const PHASE1_FAMILIES = Object.freeze(['azimuthalEqualArea', 'azimuthalEquidistant', 'conicEqualArea', 'conicConformal', 'miller', 'robinson', 'equirectangular', 'mercator']);
-/** 지도 하나의 도법 후보: 지도 항목 families → 단원 설정 georef.families → 1단계 8개. */
+/** 지도 하나의 도법 후보: 지도 항목 families → 단원 설정 georef.families → 1단계 8개.
+ *  원소는 도법 이름, 또는 고정 후보 {family, params}(매개변수를 맞추지 않고 닮음 변환만 — fitControls. 극 중심 정거 방위
+ *  {family: 'azimuthalEquidistant', params: [0, ±90]} 처럼 중심 경도가 지면 회전일 뿐인 지도, U6-3a). 고정 후보는 새 객체로 돌려준다. */
 export function familiesFor(mapEntry, unitConfig) {
   const fams = mapEntry?.families ?? unitConfig?.georef?.families ?? PHASE1_FAMILIES;
-  for (const f of fams) if (!familyOf(f)) throw new Error(`${mapEntry?.id ?? '?'}: 모르는 도법 후보 ${f} (fitCore.FAMILIES: ${FAMILY_NAMES.join(', ')})`);
-  return [...fams];
+  const out = [];
+  for (const f of fams) {
+    if (f && typeof f === 'object') {
+      const n = INIT[f.family]?.length;
+      if (!familyOf(f.family)) throw new Error(`${mapEntry?.id ?? '?'}: 고정 후보의 모르는 도법 ${f.family} (fitCore.FAMILIES: ${FAMILY_NAMES.join(', ')})`);
+      if (!Array.isArray(f.params) || !f.params.length || !f.params.every(Number.isFinite) || (n && f.params.length !== n))
+        throw new Error(`${mapEntry?.id ?? '?'}: 고정 후보 ${f.family} 의 params 가 유한한 수 ${n ?? ''}개가 아님: ${JSON.stringify(f.params)}`);
+      out.push({ family: f.family, params: f.params.slice() });
+      continue;
+    }
+    if (!familyOf(f)) throw new Error(`${mapEntry?.id ?? '?'}: 모르는 도법 후보 ${f} (fitCore.FAMILIES: ${FAMILY_NAMES.join(', ')})`);
+    out.push(f);
+  }
+  return out;
 }
 export const PT_MM = 0.3528;
 // 모양을 정하는 실제 매개변수 수(중심 경도처럼 닮음 변환이 흡수하는 것은 빼고) — 비슷하면 적은 쪽을 고른다

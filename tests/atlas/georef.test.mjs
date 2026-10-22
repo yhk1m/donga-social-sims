@@ -340,3 +340,99 @@ test('fitFromStale(U5-3d): fitFrom fit 이 빌린 지도 fit + 쪽 이동량과 
   assert.match(fitFromStale(child, parent, { ...spec, dx: 230 }), /이동량|낡음/);
   assert.match(fitFromStale({ ...child, fitFrom: undefined }, parent, spec), /fitFrom/);
 });
+
+// ── Ⅵ 극 지도(U6-3a): 극 중심 정거 방위 고정 후보 {family: 'azimuthalEquidistant', params: [0, ±90]} ─────────────
+// 중심 경도는 지면에서 극을 도는 회전일 뿐이라 닮음 변환이 흡수한다 → 매개변수를 맞추지 않는 고정 후보로 충분하다.
+import { geoAzimuthalEquidistant } from 'd3-geo';
+const POLAR_ROT = 37;   // 지면 회전(°) — 교과서 위쪽 경선
+/** 합성 극 기준점: 정거 방위(극 중심 rotate [-λ0, ∓90]) → 무대 가운데 둘레로 POLAR_ROT 회전 → 결정적 잡음 ±noise pt, 40점. */
+function polarCps(pole, { lon0 = 0, noise = 0.1 } = {}) {
+  const P = geoAzimuthalEquidistant().rotate([-lon0, pole === 'N' ? -90 : 90]).scale(400).translate([390, 360]);
+  const t = POLAR_ROT * Math.PI / 180, cs = Math.cos(t), sn = Math.sin(t), cps = [];
+  const lats = pole === 'N' ? [60, 65, 70, 75, 80] : [-60, -65, -70, -75, -80];
+  let i = 0;
+  for (const lon of [-180, -135, -90, -45, 0, 45, 90, 135]) for (const lat of lats) {
+    const [x, y] = P([lon, lat]), u = x - 390, v = y - 360; i++;
+    cps.push({ xy: [390 + cs * u - sn * v + noise * Math.sin(i * 12.9898), 360 + sn * u + cs * v + noise * Math.sin(i * 78.233)], lon, lat, src: 'grid' });
+  }
+  return cps;
+}
+const simDeg = (sim) => Math.atan2(sim.b, sim.a) * 180 / Math.PI;
+
+test('U6-3a 고정 후보 객체: familiesFor 가 받고(새 객체), 모르는 도법·잘못된 params 는 막는다', () => {
+  const N = { family: 'azimuthalEquidistant', params: [0, 90] };
+  const got = familiesFor({ id: 'p50-arctic', families: [N, 'miller'] }, {});
+  assert.deepEqual(got, [N, 'miller']);
+  assert.notEqual(got[0], N, '고정 후보는 복사');
+  assert.notEqual(got[0].params, N.params);
+  assert.deepEqual(familiesFor({ id: 'x' }, { georef: { families: [{ family: 'azimuthalEquidistant', params: [0, -90] }] } }), [{ family: 'azimuthalEquidistant', params: [0, -90] }]);
+  assert.throws(() => familiesFor({ id: 'x', families: [{ family: 'nope', params: [0, 90] }] }, {}), /nope/);
+  assert.throws(() => familiesFor({ id: 'x', families: [{ family: 'azimuthalEquidistant', params: [0] }] }, {}), /params/);
+  assert.throws(() => familiesFor({ id: 'x', families: [{ family: 'azimuthalEquidistant', params: [0, NaN] }] }, {}), /params/);
+  assert.throws(() => familiesFor({ id: 'x', families: [{ family: 'azimuthalEquidistant' }] }, {}), /params/);
+  assert.throws(() => familiesFor({ id: 'x', families: [null] }, {}), /모르는 도법/);
+});
+
+test('U6-3a familiesFor: u2~u5 지도 목록·설정의 이름 후보는 예전과 같은 배열', () => {
+  for (const u of ['u2', 'u3', 'u4', 'u5']) {
+    const cfg = JSON.parse(readFileSync(new URL(`../../scripts/atlas/config/${u}.json`, import.meta.url), 'utf8'));
+    const maps = JSON.parse(readFileSync(new URL(`../../scripts/atlas/maps_${u}.json`, import.meta.url), 'utf8'));
+    for (const m of maps) {
+      const old = [...(m.families ?? cfg.georef?.families ?? PHASE1_FAMILIES)];
+      assert.ok(old.every((f) => typeof f === 'string'), `${u} ${m.id}`);
+      assert.deepEqual(familiesFor(m, cfg), old, `${u} ${m.id}`);
+    }
+  }
+});
+
+for (const pole of ['N', 'S']) {
+  const sign = pole === 'N' ? 90 : -90;
+  test(`U6-3a 합성 ${pole === 'N' ? '북' : '남'}극 지도: 고정 후보 [0, ${sign}] rms ≤ 0.15pt · 지면 회전 ${POLAR_ROT}° · 자유 후보 중심 |φ| ≥ 89.5`, () => {
+    const cps = polarCps(pole), fixed = { family: 'azimuthalEquidistant', params: [0, sign] };
+    const fit = fitControls(cps, familiesFor({ id: 'syn', families: [fixed] }, {}));
+    assert.equal(fit.fixed, true);
+    assert.equal(fit.family, 'azimuthalEquidistant');
+    assert.deepEqual(fit.params, [0, sign], '고정 매개변수 그대로');
+    assert.ok(fit.rmsPt <= 0.15, `rms ${fit.rmsPt}`);
+    assert.ok(Math.abs(simDeg(fit.sim) - POLAR_ROT) <= 0.2, `회전 ${simDeg(fit.sim)}`);
+    assert.ok(Math.abs(Math.hypot(fit.sim.a, fit.sim.b) - 400) < 1, `배율 ${Math.hypot(fit.sim.a, fit.sim.b)}`);
+    // 되돌리기: 맞춘 식으로 기준점을 투영하면 지면 자리에, 지면 자리를 되돌리면 경위도에
+    for (const c of cps) {
+      const p = applyFit(fit, [c.lon, c.lat]);
+      assert.ok(Math.hypot(p[0] - c.xy[0], p[1] - c.xy[1]) < 0.3, `${c.lon},${c.lat}`);
+      const ll = invertFit(fit, p);
+      assert.ok(Math.abs(ll[1] - c.lat) < 1e-6 && Math.abs(((ll[0] - c.lon + 540) % 360) - 180) < 1e-6, `${ll} ≠ ${c.lon},${c.lat}`);
+    }
+    // georef-cli 와 같은 길(robustFit → fitWithTps, 후보 = 지도 항목 families)도 고정 후보 그대로
+    const { cps: kept, dropped } = robustFit(cps, { families: [fixed] });
+    assert.equal(dropped.length, 0);
+    const full = fitWithTps(kept, { families: [fixed] });
+    assert.equal(full.fixed, true); assert.deepEqual(full.params, [0, sign]); assert.equal(full.tps, undefined);
+    // 자유 후보(매개변수 2)도 극 중심을 찾고, 이름 후보와 섞으면 비슷한 잔차에서 고정(매개변수 0) 쪽이 이긴다
+    const free = fitControls(cps, ['azimuthalEquidistant']);
+    assert.ok(Math.abs(free.params[1]) >= 89.5 && Math.sign(free.params[1]) === Math.sign(sign), `자유 후보 중심 ${free.params}`);
+    assert.ok(Math.abs(free.rmsPt - fit.rmsPt) < 0.05, `자유 ${free.rmsPt} · 고정 ${fit.rmsPt}`);
+    assert.equal(fitControls(cps, ['azimuthalEquidistant', fixed]).fixed, true);
+  });
+}
+
+test('U6-3a 극 중심 경도는 지면 회전일 뿐: 중심 경도 100° 로 그린 극 지도도 고정 후보 [0, ±90] 로 맞는다', () => {
+  for (const [pole, sign] of [['N', 90], ['S', -90]]) {
+    const fit = fitControls(polarCps(pole, { lon0: 100, noise: 0 }), [{ family: 'azimuthalEquidistant', params: [0, sign] }]);
+    assert.ok(fit.rmsPt < 1e-6, `${pole} rms ${fit.rmsPt}`);
+    const d = ((simDeg(fit.sim) - POLAR_ROT + 540) % 360) - 180;
+    assert.ok(Math.abs(Math.abs(d) - 100) < 1e-6, `${pole} 회전 차 ${d}`);
+  }
+});
+
+test('U6-3a maps_u6 극 지도 4장: families 고정 후보가 familiesFor 를 지나고 극 부호가 맞다', () => {
+  const U6 = JSON.parse(readFileSync(new URL('../../scripts/atlas/maps_u6.json', import.meta.url), 'utf8'));
+  const want = { 'p50-arctic': 90, 'p55-claims': 90, 'p51-antarctic': -90, 'p55-bases': -90 };
+  for (const [id, sign] of Object.entries(want)) {
+    const m = U6.find((x) => x.id === id);
+    const fams = familiesFor(m, {});
+    assert.deepEqual(fams, [{ family: 'azimuthalEquidistant', params: [0, sign] }], id);
+    const fit = fitControls(polarCps(sign > 0 ? 'N' : 'S'), fams);
+    assert.equal(fit.fixed, true, id); assert.deepEqual(fit.params, [0, sign], id);
+  }
+});

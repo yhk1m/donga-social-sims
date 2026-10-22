@@ -65,3 +65,20 @@ test('모든 도법 이름을 안다, 모르는 이름은 오류', () => {
   }
   assert.throws(() => makeFitForward({ family: 'nope', params: [], sim: { a: 1, b: 0, tx: 0, ty: 0 } }), /도법/);
 });
+
+test('U6-3a 극 중심 정거 방위 고정 후보 fit(params [0, ±90] · 지면 회전)도 앱 계산 = georef 지면 좌표', async () => {
+  const { geoAzimuthalEquidistant } = await import('d3-geo');
+  const { fitControls } = await import('../../scripts/atlas/georef.mjs');
+  for (const sign of [90, -90]) {
+    const P = geoAzimuthalEquidistant().rotate([-40, -sign]).scale(300).translate([400, 360]);
+    const t = 0.4, cps = [];
+    for (let lon = -180; lon < 180; lon += 30) for (const lat of [55, 65, 75, 85]) {
+      const [x, y] = P([lon, sign > 0 ? lat : -lat]);
+      cps.push({ xy: [400 + Math.cos(t) * (x - 400) - Math.sin(t) * (y - 360), 360 + Math.sin(t) * (x - 400) + Math.cos(t) * (y - 360)], lon, lat: sign > 0 ? lat : -lat });
+    }
+    const fit = fitControls(cps, [{ family: 'azimuthalEquidistant', params: [0, sign] }]);
+    assert.equal(fit.fixed, true);
+    const full = { id: `polar${sign}`, ...fit };
+    same(browserFit(full), full, 1e-9);
+  }
+});
