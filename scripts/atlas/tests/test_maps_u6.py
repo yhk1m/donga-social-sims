@@ -76,6 +76,15 @@ class MapsU6(unittest.TestCase):
                 with self.subTest(id=m['id'], key=key):
                     self.assertTrue(b[0] < fx1 and b[2] > fx0 and b[1] < fy1 and b[3] > fy0, b)
 
+    def test_legend_inside_frame(self):
+        # 범례 상자는 그 지도 틀 안(파이프라인은 덮개 상자를 넓히지 않으므로 글자 끝까지 직접 여유 — 53쪽 1월·7월 범례 x1 739, 틀 753.3)
+        for m in self.maps:
+            b = m.get('legendBbox')
+            if b is None: continue
+            with self.subTest(id=m['id']):
+                fx0, fy0, fx1, fy1 = m['bbox']
+                self.assertTrue(fx0 <= b[0] and fy0 <= b[1] and b[2] <= fx1 and b[3] <= fy1, (b, m['bbox']))
+
     def test_insets_inside_main_map(self):
         # 48쪽 삽입 둘은 본 지도 틀 안이고, 본 지도 excludeBoxes(눈금 글자·교차점 버림)가 삽입 틀을 품는다. 하와이 틀은 덮개 둘(모서리 잘린 틀)
         main = self.by['p48-oceania']
