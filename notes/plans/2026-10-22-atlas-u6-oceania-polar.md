@@ -170,10 +170,10 @@ $ATLAS_WORK/raw/ne-antarctic/                                                   
 
 까닭: u5 가 공개되었고(4f488a0) U5-11 Step 4 에서 u5 기준선을 찍었다(`units/u5/baseline` — 해시 176 · 캡처 58 · 0/48/150/71 · 1,666,660 B). u2·u3·u4 기준선도 U5-11 에서 다시 찍었다. 이 단원은 새 기준선을 찍지 않고 **넷 다 지금 맞는지만** 확인한다.
 
-- [ ] **Step 1: 낡은 시험** — `tests/atlas/hub.test.mjs:52~57` 「공개 전 registry 단원도 준비 중」은 `atlas-u5-americas`를 공개 전 예로 쓴다(지금 실패 — `docs/versions.json`에 u5 v1). 예를 **`atlas-u6-oceania-polar`(order 6, page 48, unit 「Ⅵ. 오세아니아와 극지방」)**로 바꾼다(검사 뜻 그대로 — `ATLAS_PLAN` u6 [48, 55]). `node --test tests/atlas/hub.test.mjs` 통과.
-- [ ] **Step 2: 돌리개** — `$ATLAS_WORK/units/u6/regress.sh <tag>`(u5 regress.sh 꼴, 단원 목록에 `"u5 atlas-u5-americas"` 더함, 로그 `units/u6/regress-<tag>.log`).
-- [ ] **Step 3: 넷 다 확인** — `bash $ATLAS_WORK/units/u6/regress.sh g0`. 기대: 넷 모두 「다른 파일 0(또는 도장만)」·화소 차 0·대조표 수 위 표 그대로·조각 ±0.01% 안(u2 는 기준선보다 +122 B — u5 registry 몫, U5-9 기록). `[경고]`면 그 단원을 다시 찍고 check. **u5 는 처음 `--check`** — 결정성(캡처를 한 번 더 → 같은 결과)도 본다.
-- [ ] **Step 4:** `npm test` 수를 적고 커밋(`tests/atlas/hub.test.mjs`). 「실행 중 결정」에 넷의 check 결과 한 줄씩.
+- [x] **Step 1: 낡은 시험** — `tests/atlas/hub.test.mjs:52~57` 「공개 전 registry 단원도 준비 중」은 `atlas-u5-americas`를 공개 전 예로 쓴다(지금 실패 — `docs/versions.json`에 u5 v1). 예를 **`atlas-u6-oceania-polar`(order 6, page 48, unit 「Ⅵ. 오세아니아와 극지방」)**로 바꾼다(검사 뜻 그대로 — `ATLAS_PLAN` u6 [48, 55]). `node --test tests/atlas/hub.test.mjs` 통과.
+- [x] **Step 2: 돌리개** — `$ATLAS_WORK/units/u6/regress.sh <tag>`(u5 regress.sh 꼴, 단원 목록에 `"u5 atlas-u5-americas"` 더함, 로그 `units/u6/regress-<tag>.log`).
+- [x] **Step 3: 넷 다 확인** — `bash $ATLAS_WORK/units/u6/regress.sh g0`. 기대: 넷 모두 「다른 파일 0(또는 도장만)」·화소 차 0·대조표 수 위 표 그대로·조각 ±0.01% 안(u2 는 기준선보다 +122 B — u5 registry 몫, U5-9 기록). `[경고]`면 그 단원을 다시 찍고 check. **u5 는 처음 `--check`** — 결정성(캡처를 한 번 더 → 같은 결과)도 본다.
+- [x] **Step 4:** `npm test` 수를 적고 커밋(`tests/atlas/hub.test.mjs`). 「실행 중 결정」에 넷의 check 결과 한 줄씩.
 
 ---
 
@@ -192,7 +192,7 @@ $ATLAS_WORK/raw/ne-antarctic/                                                   
 | 배타적 경제 수역·해양 경계(Marine Regions EEZ, CC BY) | 48쪽 해양 경계 붉은 선·55쪽 EEZ 점선 | marineregions.org | **받지 않음** — 교과서 선을 되돌린다(지면 그대로, 사용 조건 걱정 없음) |
 | 바다 얼음(NSIDC 해빙 범위) | 50·51쪽 유빙 한계 | — | **받지 않음** — 교과서 선(교과서에 없는 수치 금지) |
 
-- [ ] **Step 1:** 새 빈 폴더 `raw/ne-antarctic/`에 `ne_10m_antarctic_ice_shelves_polys.geojson`을 커밋 SHA 고정 주소에서 받는다(웹 접근이 필요하면 코디네이터에게 승인 — 60초 시간 제한·3번 시도). 스크립트(`$ATLAS_WORK/scripts-u6d/check_shelves.py`, `python -I`, 경로 인자)로 FeatureCollection·도형 수·경위도 범위(모두 남위 60° 남쪽)를 확인.
+- [x] **Step 1:** 새 빈 폴더 `raw/ne-antarctic/`에 `ne_10m_antarctic_ice_shelves_polys.geojson`을 커밋 SHA 고정 주소에서 받는다(웹 접근이 필요하면 코디네이터에게 승인 — 60초 시간 제한·3번 시도). 스크립트(`$ATLAS_WORK/scripts-u6d/check_shelves.py`, `python -I`, 경로 인자)로 FeatureCollection·도형 수·경위도 범위(모두 남위 60° 남쪽)를 확인.
 - [ ] **Step 2:** 확인 그림 `units/u6/shelves-check.png` — 51쪽 지면 크기·극 fit(U6-2 뒤면 그 fit, 앞이면 정거 방위 극 중심 어림)으로 빙붕 면을 그려 교과서 빙붕(로스·론·아메리)과 모양이 맞는지 눈으로. 빙붕 + 육지가 교과서 해안과 맞으면 기본값대로, 크게 다르면 Q7 대안(교과서 도형 되돌림)을 「실행 중 결정」에 까닭과 함께.
 - [ ] **Step 3:** 저장소에 넣는 파일은 없음. 커밋 없음 — 「실행 중 결정」에 판·크기·주소·sha256·조건.
 
@@ -562,4 +562,5 @@ test('주제도 활동(교사 §8 Q4): 문항 카드 + 원본 쪽', () => {
 - U6-10 승인 대기 동안 다음 단원(Ⅰ 세계화)의 U1-1·U1-2 를 시작해도 된다(파일이 겹치지 않음). 엔진을 바꾸면 u2~u6 의 `regress_unit --check`로 화소 비교 — u6 도 공개 뒤 `--unit u6 --baseline`(U6-11 Step 4). Ⅰ 의 세계 지도는 이 단원의 태평양 중심 보기 레이어(3c)·극 중심 보기(3b)를 그대로 쓸 수 있다.
 
 ## 실행 중 결정
-
+- **U6-G0(2026-10-22)** — `hub.test.mjs` 공개 전 예를 u6 으로(통과 10). 돌리개 `$ATLAS_WORK/units/u6/regress.sh`(u2~u5). 첫 check: u2·u3·u4 회귀 없음(u2 도장만 2), **u5 는 코드·조각 해시 같은데 tnc-g1(11화소)·tnc-miller-agri(9화소)가 번갈아 다름** → 원인: Chrome **부분 래스터**(더러운 칸만 다시 그려 원 가장자리 안티에일리어싱이 두 가지로 갈림 — DOM·보기 상태는 세 번 모두 바이트 같음, 증거 `$ATLAS_WORK/probe-tnc/`). 고침: `compare_shots.mjs` Chrome 인자에 `--disable-partial-raster`(엔진·조각 바뀜 없음) → 안티에일리어싱만 다른 장면(u2 6 · u3 6 · u4 9 · u5 15)이 생겨 **u2·u3·u4·u5 기준선 캡처 다시**, 다시 찍은 뒤 check 넷 다 화소 차 0(결정성 확인). 옛 u5 기준선 사본 `units/u5/baseline-u511`. `npm test` Python 388 OK · Node 690 통과.
+- **U6-D Step 1(2026-10-22)** — `raw/ne-antarctic/ne_10m_antarctic_ice_shelves_polys.geojson`(ca96624a, 561,580 B, sha256 8f9bf623…, 도형 159, 남위 64.5° 남쪽, 퍼블릭 도메인, `SOURCE.txt`). Step 2 확인 그림은 U6-2 극 fit 뒤(U6-4 에서).

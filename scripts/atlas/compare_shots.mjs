@@ -52,7 +52,7 @@ const port = 9300 + Math.floor(Math.random() * 500);
 const chrome = spawn(CHROME, [
   '--headless=new', '--disable-gpu', '--use-angle=swiftshader', '--enable-unsafe-swiftshader',
   `--user-data-dir=${udd}`, `--remote-debugging-port=${port}`, '--hide-scrollbars', '--disable-extensions',
-  `--window-size=${W},${H}`, '--disk-cache-size=0', 'about:blank',
+  `--window-size=${W},${H}`, '--disk-cache-size=0', '--disable-partial-raster', 'about:blank',
 ], { stdio: 'ignore' });
 
 let ws;

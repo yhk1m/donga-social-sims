@@ -49,12 +49,12 @@ test('hubUnits: 준비 중 카드로 Ⅰ~Ⅵ 빈자리를 채우고 겹치지 �
   const units = hubUnits({ sims: SIMS, versions, topicsOf: readTopics });
   assert.deepEqual(units.map((u) => u.order), [1, 2, 3, 4, 5, 6]);
   for (const u of units.filter((x) => x.status === 'planned')) assert.equal(u.url, null);
-  const sims = [...SIMS, { id: 'atlas-u5-americas', book: 'atlas', unit: 'Ⅴ. 아메리카', page: 40, title: '사회과부도 아메리카' }];
-  assert.equal(hubUnits({ sims, versions }).find((u) => u.order === 5).status, 'planned');
-  const v2 = { ...versions, 'atlas-u5-americas': [{ v: 1, date: '2026-11-01' }] };
-  const am = hubUnits({ sims, versions: v2 }).find((u) => u.order === 5);
+  const sims = [...SIMS, { id: 'atlas-u6-oceania-polar', book: 'atlas', unit: 'Ⅵ. 오세아니아와 극지방', page: 48, title: '사회과부도 오세아니아와 극지방' }];
+  assert.equal(hubUnits({ sims, versions }).find((u) => u.order === 6).status, 'planned');
+  const v2 = { ...versions, 'atlas-u6-oceania-polar': [{ v: 1, date: '2026-11-01' }] };
+  const am = hubUnits({ sims, versions: v2 }).find((u) => u.order === 6);
   assert.equal(am.status, 'published');
-  assert.deepEqual(am.pages, ATLAS_PLAN.find((p) => p.id === 'atlas-u5-americas').pages, 'topics 없으면 계획 쪽수');
+  assert.deepEqual(am.pages, ATLAS_PLAN.find((p) => p.id === 'atlas-u6-oceania-polar').pages, 'topics 없으면 계획 쪽수');
 });
 
 test('사회과부도 단원은 조각이 주울 수 있는 자리(sims/atlas-u*/data/topics.json)에 있고 썸네일이 있음', () => {
