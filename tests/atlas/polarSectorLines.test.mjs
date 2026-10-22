@@ -125,3 +125,24 @@ test('맞히기: 선과의 화면 거리 → 「○○ 영유권 주장 경계�
   layer.legend.toggle('cl');
   layer.destroy();
 });
+
+test('강조(hover): 지도 hover 가 그 선이면 굵기 +1px(공유 CSS 없이 drawSvg 굵기에 더함), 벗어나면 처음 굵기, 다시 그려도 유지', () => {
+  AX.installAmericasExtras();
+  PX.installPolarExtras();
+  const on = {};
+  const map = { destroyed: false, on: (t, fn) => { on[t] = fn; return () => { delete on[t]; }; }, refreshLayer() {} };
+  const layer = PX.sectorLinesLayer('sl', DATA, { map, layerId: 'sl' });
+  const { g } = draw(layer, 'polarS');
+  const width = (cls) => +paths(g).find((el) => el.getAttribute('data-cls') === cls).getAttribute('stroke-width');
+  const w0 = width('uk');
+  const uk = layer.features.find((f) => f.properties.cls === 'uk');
+  on.hover({ layerId: 'sl', feature: uk });
+  assert.ok(Math.abs(width('uk') - (w0 + 1)) < 0.11, `${width('uk')} vs ${w0 + 1}`);
+  assert.equal(width('cl'), w0);
+  draw(layer, 'polarS', { g });
+  assert.ok(Math.abs(width('uk') - (w0 + 1)) < 0.11, '다시 그려도 강조');
+  on.hover({ layerId: 'sl', feature: null });
+  assert.equal(width('uk'), w0);
+  layer.destroy();
+  assert.equal(on.hover, undefined, '구독 풂');
+});

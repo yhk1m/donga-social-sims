@@ -237,7 +237,11 @@ export function sectorLinesLayer(id, data, { legend = null, map = null, layerId 
     root.append(...items.map((it) => it.el));
     g.append(root);
   }
-  const onHover = hoverClass((f) => byF.get(f));
+  const hover = hoverClass((f) => byF.get(f));
+  // 강조(hover): 공유 CSS 에 .at-sector 꾸밈이 없으므로 굵기 +1px 을 직접(is-hover 클래스도 그대로 붙임)
+  const strokeOf = (it) => round1(it.w + (it.f === hover.current() ? 1 : 0));
+  const onHover = (f) => { hover(f); for (const it of items) if (it.line) setAttr(it.line, 'stroke-width', strokeOf(it)); };
+  onHover.current = hover.current;
   const layer = {
     id, z, meta: metaOf(data), features: items.map((it) => it.f),
     labelObstacles: () => [],
@@ -250,9 +254,9 @@ export function sectorLinesLayer(id, data, { legend = null, map = null, layerId 
         const w = sel && a === 1 ? base * 2 : base;
         if (w !== it.w) {
           it.w = w;
-          setAttr(it.line, 'stroke-width', round1(w));
           setAttr(it.line, 'stroke-dasharray', it.e.dash ? it.e.dash.map((v) => round1(v * w)).join(' ') : null);
         }
+        setAttr(it.line, 'stroke-width', strokeOf(it));
         it.runs = it.lines.flatMap((L) => splitJumps(unwrapLine(L), project)).map((r) => offsetRun(r, it.off));
         setAttr(it.line, 'd', pathD(it.runs));
         setAttr(it.el, 'opacity', a === 1 ? null : a);
@@ -317,7 +321,8 @@ export function halfPieSlices(item) {
   return item.slices.map((q, i) => { const a0 = a; a += (vals[i] / sum) * 180; return { name: q.name, value: q.value, color: q.color || '#ccc', a0, a1: a }; });
 }
 
-/** 반원 그래프(54쪽 무역 상대국 1965·2022) — 반지름 = 가장 큰 반원 × rRel(교과서 잰 비), 아래 끝(가운데)을 한 줄에. */
+/** 반원 그래프(54쪽 무역 상대국 1965·2022) — 반지름 = 가장 큰 반원 × rRel(교과서 잰 비), 아래 끝(가운데)을 한 줄에.
+ *  배치(폭 520·반지름 118·가운데 = 폭 × (k + 0.5) / n)는 반원 n ≤ 2 에 맞춘 값 — 셋 이상이면 반원·바깥 글자가 겹치므로 그때 다시 잡을 것. */
 function halfPieSvg(spec, label) {
   const W = 520, R = 118, cy = 40 + R, Hh = cy + 46, n = spec.items.length;
   const groups = spec.items.map((it, k) => {
@@ -366,6 +371,7 @@ export function hiddenAwareView(view) {
 export function polarSymbolLabelsLayer(id, d, ctx) {
   const layer = symbolLabelsLayer(id, d, ctx), draw = layer.draw;
   if (draw) layer.draw = (c, path, view) => draw(c, path, hiddenAwareView(view));
+  layer.hiddenAware = true; // 등록 확인용(시험 — installAmericasExtras 를 뒤에 다시 부르면 아메리카 것으로 덮여 이 표시가 없음)
   return layer;
 }
 
@@ -377,7 +383,9 @@ export function installPolarExtras() {
   if (!PROJECTIONS.polarS) registerProjection('polarS', polarProjection({ pole: 'S' }));
   registerLayerType('topicView', topicViewLayer);
   registerLayerType('sectorLines', (id, d, ctx) => sectorLinesLayer(id, d, ctx));
-  registerLayerType('symbolLabels', polarSymbolLabelsLayer); // 아메리카 등록을 덮음(뒷면 글자 숨김 — 위 3i)
+  // 아메리카 등록을 덮음(뒷면 글자 숨김 — 위 3i). 차례에 기댐: installPolarExtras 뒤에 installAmericasExtras 를 다시 부르면 아메리카 것으로
+  // 되돌아가므로 단원 main 은 늘 installAmericasExtras → installPolarExtras 한 번씩(위 지구본 검사가 앞 차례를, 시험이 덮인 상태를 지킴).
+  registerLayerType('symbolLabels', polarSymbolLabelsLayer);
   registerSvgChart('dualLine', dualLineSvg);
   registerSvgChart('halfPie', halfPieSvg);
 }

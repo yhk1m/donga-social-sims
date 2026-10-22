@@ -72,6 +72,22 @@ test('polarPolygon: 날짜변경선을 넘는 부채꼴(150°E~150°W — 러시
   assert.ok(geoContains(mp(s), [180, -80]));
 });
 
+test('dedupRing·polarPolygon: 연달아 같은 꼭짓점(날짜변경선 자른 자리 등)이 남지 않음, 고리는 닫힘', () => {
+  assert.deepEqual(G.dedupRing([[0, 0], [1, 0], [1, 0], [1, 1], [0, 0]]), [[0, 0], [1, 0], [1, 1]]);
+  assert.deepEqual(G.dedupRing([[0, 0], [1, 0], [1, 1], [0, 0], [0, 0]]), [[0, 0], [1, 0], [1, 1]]);
+  // 자를 선(경도 180) 위에 꼭짓점이 이미 있는 고리 — clipPolygon 이 자른 점과 겹칠 수 있음
+  const onCut = [...arc(150, 180, 80), ...arc(180, 210, 80).slice(0, 1), ...arc(180, 210, 80).map(([x, y]) => [x - 360, y]), [179, 89.2]];
+  for (const ring of [CROSS, onCut, TEXTBOOK]) {
+    for (const P of G.polarPolygon(ring, { pole: 'N', snapDeg: 1.5 })) {
+      for (const R of P) {
+        assert.deepEqual(R[0], R[R.length - 1], '닫힘');
+        for (let i = 1; i < R.length; i++) assert.ok(R[i][0] !== R[i - 1][0] || R[i][1] !== R[i - 1][1], `겹친 꼭짓점 ${R[i]}`);
+      }
+    }
+  }
+  near(geoArea(mp(G.polarPolygon(onCut, { pole: 'N', snapDeg: 1.5 }))), SECTOR_SR, 0.01);
+});
+
 test('극 꼭짓점을 한 점으로 두면 화면 밖 미리 자르기(경위도 평면)가 면을 세모로 자른다 — 두 점이면 자른 뒤에도 부채꼴 그대로(밀러)', () => {
   const p = makeProjection('miller', { width: W, height: H });
   const rect = [-30, 60, 90, 85]; // 극이 화면 밖인 확대 — 위도 85° 에서 잘림

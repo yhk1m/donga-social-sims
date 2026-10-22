@@ -70,3 +70,12 @@ test('installPolarExtras 뒤: 지구본 뒷면·극 중심 반대 반구 글자�
   assert.equal(typeof layer.drawSvg, 'function');
   assert.equal(typeof layer.hit, 'function');
 });
+
+test('등록 차례: installPolarExtras 뒤 symbolLabels 는 감싼 것(hiddenAware) — installAmericasExtras 를 뒤에 다시 부르면 아메리카 것으로 덮임(그래서 main 은 아메리카 → 극 한 번씩)', () => {
+  PX.installPolarExtras();
+  assert.equal(layerFromRef({ ref: 'm', type: 'symbolLabels' }, DATA).hiddenAware, true);
+  AX.installAmericasExtras();
+  assert.equal(layerFromRef({ ref: 'm', type: 'symbolLabels' }, DATA).hiddenAware, undefined, '덮임(기록)');
+  PX.installPolarExtras();
+  assert.equal(layerFromRef({ ref: 'm', type: 'symbolLabels' }, DATA).hiddenAware, true);
+});

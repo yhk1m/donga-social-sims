@@ -53,6 +53,15 @@ export function fixWinding(rings) {
   return geoArea({ type: 'Polygon', coordinates: rings }) > 2 * Math.PI ? rings.map((r) => [...r].reverse()) : rings;
 }
 
+/** 고리에서 연달아 같은 꼭짓점(날짜변경선 자른 자리에 clipPolygon 이 남기는 것 — 1e-9 안)을 하나로, 닫는 점은 다시 붙임 */
+export function dedupRing(ring) {
+  const same = (a, b) => Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(a[1] - b[1]) < 1e-9;
+  const out = [];
+  for (const q of openRing(ring)) if (!out.length || !same(out[out.length - 1], q)) out.push(q);
+  while (out.length > 1 && same(out[0], out[out.length - 1])) out.pop();
+  return out;
+}
+
 /** 경도를 이어 붙인 면(고리들, 바깥 시계 방향)을 [−180, 180] 조각들로 → 면 목록 [[바깥, 구멍…], …]. 한 창 안이면 옮기기만. */
 export function splitAntimeridian(rings) {
   let lo = Infinity, hi = -Infinity;
@@ -77,7 +86,7 @@ export function polarPolygon(ring, { pole = 'N', snapDeg = 0 } = {}) {
   if (r.some((q) => isPole(q) && Math.sign(q[1]) !== sgn)) throw new Error(`polarPolygon: 극 꼭짓점이 ${pole} 극이 아님`);
   r = unwrapRing(expandPole(r));
   if (planarArea(r) > 0) r.reverse();
-  return splitAntimeridian([closeRing(r)]).map((P) => fixWinding(P.map(closeRing)));
+  return splitAntimeridian([closeRing(r)]).map((P) => fixWinding(P.map((R) => closeRing(dedupRing(R)))));
 }
 
 /**
