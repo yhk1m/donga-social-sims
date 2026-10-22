@@ -250,7 +250,9 @@ class MapsU6(unittest.TestCase):
         self.assertEqual(bm['unitBoxes'], [[131, -23, 180, 17], [-180, -24, -145, 5]])   # U6-2: 48쪽 fit 으로 되돌린 섬나라·속령 범위
         for k in ('cutIsos', 'names', 'mergeIsos'): self.assertNotIn(k, bm)
         lv10a = [lv for lv in bm['levels'] if lv['id'] == '10a'][0]
-        self.assertNotIn('simplifyByIso', lv10a)
+        # U6-3d: 산호초 섬나라·속령 13 은 10a 단순화 안 함(keep-shapes 가 나라마다 가장 큰 고리만 지켜 타라와·푸나푸티 둘레 섬이 사라짐)
+        self.assertEqual(sorted(lv10a['simplifyByIso']), sorted('KIR TUV MHL FSM PLW NRU TON PYF COK WLF ASM MNP NIU'.split()))
+        self.assertEqual(set(lv10a['simplifyByIso'].values()), {'100%'})
         # 지명: 일반도 다섯(48 본 지도·삽입 둘·50·51), 도시 기준점은 타히티 뺀 넷, 인구 지점 상자 넷(48쪽 날짜변경선 둘 + 극 둘레 둘)
         p = c['places']
         self.assertEqual(p['maps'], ['p48-oceania', 'p48-hawaii', 'p48-tahiti', 'p50-arctic', 'p51-antarctic'])
@@ -266,8 +268,11 @@ class MapsU6(unittest.TestCase):
         self.assertEqual([b[0] for b in south], list(range(-180, 180, 30)))
         for b in north: self.assertTrue(b[3] == 90 and 20 <= b[1] <= 45, b)
         for b in south: self.assertTrue(b[1] == -90 and -46 <= b[3] <= -25, b)
-        for k in ('mergePriority', 'mergeKmMaps', 'rankBySizeMaps', 'areaKmByName', 'symbolFix', 'spellAs', 'hidden'):
+        for k in ('mergeKmMaps', 'rankBySizeMaps', 'areaKmByName', 'symbolFix', 'spellAs', 'hidden'):
             self.assertNotIn(k, p)
+        # U6-3d(교사 Q3): 삽입 지명 우선 합치기 — 하와이·타히티 → 48쪽 본 지도 → 극 일반도 둘(places.maps 모두)
+        self.assertEqual(p['mergePriority'], ['p48-hawaii', 'p48-tahiti', 'p48-oceania', 'p50-arctic', 'p51-antarctic'])
+        self.assertEqual(sorted(p['mergePriority']), sorted(p['maps']))
         for k in ('neAlias', 'snapAlways', 'keepTextbookPosition', 'relocate', 'indexExclude', 'extraNames'):
             self.assertEqual(p[k], {})
         self.assertFalse([s for s in p['styles'] if s.get('maps')])
