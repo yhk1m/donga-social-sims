@@ -124,7 +124,10 @@ function convert(layer, feat, fit) {
     for (const poly of p.polygons) {
       const ext = ring(poly[0], p.label); if (!ext) continue;
       // 극점을 품은 면(U6-4 — 설정 polar {pole, snapDeg}, 있을 때만: 55쪽 북극해 영유권 — 극 붙이기·극 두 점·±180 조각·감김, polar_geom.polarPolygon)
-      if (layer.polar) { polys.push(...polarPolygon(ext, layer.polar)); continue; }
+      if (layer.polar) {
+        if (poly.length > 1) throw new Error(`${layer.id}: polar 면에 구멍 ${poly.length - 1}개 — polarPolygon 은 바깥 고리만 다룸(구멍을 버리지 않게 멈춤)`);
+        polys.push(...polarPolygon(ext, layer.polar)); continue;
+      }
       const holes = poly.slice(1).map((h) => ring(h, p.label)).filter(Boolean).map((h) => alignHole(ext, h));
       polys.push([ext, ...holes]);
     }

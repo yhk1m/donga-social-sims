@@ -1728,7 +1728,7 @@
      "_why": "회색 선(#6d6e71 토막 이음 — 확인 그림에서 실선으로 보임) — 교과서 범례에 없는 선(나라 사이 해양 경계로 보임)이라 범례 밖(legend false)"
     }
    ],
-   "_doc": "바다 위 면이라 clipLand false. 면은 교과서 채움(EEZ 밖 북극해 가운데). 감김·극 두 점·±180 조각은 build_layers 의 polar 키"
+   "_doc": "바다 위 면이라 clipLand false. 면은 교과서 채움(EEZ 밖 북극해 가운데). 감김·극 두 점·±180 조각은 build_layers 의 polar 키. 극 면은 clip_land 를 거치지 않은 raw(polarPolygon 결과)를 그대로 쓰므로 이 레이어의 tol·minArea 는 면에는 쓰이지 않음(선 — EEZ·해양 경계 — 의 단순화에만, 면 단순화는 features.py 단계 densifyPt·sliverPt2 뿐)"
   },
   "p55-resources": {
    "map": "p55-claims",

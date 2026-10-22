@@ -84,8 +84,13 @@ t('p55 남극 영유권: 나라 7, 경선은 바깥 → 극, 노르웨이는 극
     const c = f.geometry.coordinates;
     assert.ok(c[0][1] > c[c.length - 1][1] && c[c.length - 1][1] === -90, '경선 방향');
   }
-  const off = (cls) => L.features.find((f) => f.properties.cls === cls && f.properties.part === 'arc').properties.offsetPx || 0;
-  assert.ok(off('chl') < 0 && off('arg') > 0 && off('gbr') === 0);
+  const part = (cls, p) => { const f = L.features.find((x) => x.properties.cls === cls && x.properties.part === p); assert.ok(f, `${cls} ${p} 없음`); return f; };
+  const off = (cls, p = 'arc') => part(cls, p).properties.offsetPx ?? 0;   // 조각이 없으면 위에서 멈춤(없는 조각을 0 으로 통과시키지 않음)
+  // 바깥 호 겹침(남위 60° 위 영국 −80~−20 · 아르헨티나 −74~−25 · 칠레 −90~−53): 칠레 −2.5 · 영국 0 · 아르헨티나 +2.5
+  assert.equal(off('chl'), -2.5); assert.equal(off('gbr'), 0); assert.equal(off('arg'), 2.5);
+  // 160°E 경선을 함께 쓰는 뉴질랜드(서쪽 경선) +2 · 오스트레일리아(동쪽 경선) −2, 프랑스 호(오스트레일리아 호 안) +2.5
+  assert.equal(part('nz', 'w').geometry.coordinates[0][0], 160); assert.equal(part('aus', 'e').geometry.coordinates[0][0], 160);
+  assert.equal(off('nz', 'w'), 2); assert.equal(off('aus', 'e'), -2); assert.equal(off('fra'), 2.5);
 });
 
 t('p51 기지: 세종·장보고가 있고 모두 남극 안, 과학 기지 29 + 우리나라 2', () => {
