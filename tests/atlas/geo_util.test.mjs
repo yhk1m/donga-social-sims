@@ -39,14 +39,16 @@ test('neBoxes·inNeBox: 상자 하나는 예전 비교 그대로, 상자 목록�
     assert.equal(inNeBox(one, lon, lat), old, `${lon},${lat}`);
   }
   const list = u6cfg.places.neBox;
-  assert.equal(neBoxes(list).length, 4);
+  assert.equal(neBoxes(list).length, 27);   // U6-2: 48쪽 둘 + 하와이 + 극 지도 부채꼴 북 12 · 남 12
   assert.ok(inNeBox(list, 151.2, -33.9));     // 시드니(48쪽 서쪽 상자)
   assert.ok(inNeBox(list, -171.8, -13.8));    // 아피아(날짜변경선 건너 동쪽 상자)
-  assert.ok(inNeBox(list, -157.9, 21.3));     // 호놀룰루(동쪽 상자 위 끝 25°N 안)
-  assert.ok(inNeBox(list, 25, 70));           // 북극 둘레
+  assert.ok(inNeBox(list, -157.9, 21.3));     // 호놀룰루(하와이 삽입 상자)
+  assert.ok(inNeBox(list, 25, 70));           // 북극 둘레(0~30°E 부채꼴 35°N 위)
+  assert.ok(inNeBox(list, 51.4, 35.7));       // 테헤란(30~60°E 부채꼴 — 50쪽 왼쪽 아래 모서리 25°N 까지)
+  assert.ok(!inNeBox(list, -77.0, 38.9));     // 워싱턴 — 90~60°W 부채꼴은 44°N 위만(50쪽 틀이 미국 동부를 안 그림)
   assert.ok(inNeBox(list, -60, -62));         // 남극 둘레
   assert.ok(!inNeBox(list, 2.35, 30));        // 사하라 — 어느 상자에도 없음
-  assert.ok(!inNeBox(list, -100, 20));        // 멕시코 — 동쪽 상자(−150° 까지) 밖
+  assert.ok(!inNeBox(list, -100, 20));        // 멕시코 — 48쪽 동쪽 상자(−145° 까지)·북극 부채꼴(44°N 위) 밖
   const wrap = [170, -30, -170, 0];           // 날짜변경선 건넌 상자 하나
   assert.ok(inNeBox(wrap, 175, -10) && inNeBox(wrap, -175, -10) && inNeBox(wrap, 180, -10));
   assert.ok(!inNeBox(wrap, 0, -10) && !inNeBox(wrap, 175, 5));
@@ -63,7 +65,7 @@ test('neIndex: 상자 목록이면 어느 상자 안 지점만, 상자 하나는
   try {
     const byList = neIndex(file, u6cfg.places.neBox);
     assert.deepEqual([...byList.keys()].sort(), ['롱이어비엔', '시드니', '아피아', '해밀턴'].sort());
-    assert.deepEqual(byList.get('해밀턴').map((p) => p.ne + p.lon), ['Hamilton175.3', 'Hamilton-79.9']);   // 캐나다 해밀턴은 북위 35° 넘어 극 둘레 상자 안
+    assert.deepEqual(byList.get('해밀턴').map((p) => p.ne + p.lon), ['Hamilton175.3']);   // 캐나다 해밀턴(43.3°N)은 50쪽 틀 90~60°W 부채꼴(44°N 위) 밖 — U6-2 상자
     const byOne = neIndex(file, [100, -50, 180, 0]);
     assert.deepEqual([...byOne.keys()].sort(), ['시드니', '해밀턴'].sort());
     assert.equal(byOne.get('해밀턴').length, 1);

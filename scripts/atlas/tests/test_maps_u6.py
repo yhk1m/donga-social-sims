@@ -21,9 +21,10 @@ FAMILIES = {'azimuthalEqualArea', 'azimuthalEquidistant', 'conicEqualArea', 'con
             'equirectangular', 'mercator', 'stereographic', 'orthographic'}
 # 극 지도 4장: 고정 후보 {family: azimuthalEquidistant, params: [0, ±90]} — 북극 둘 +90, 남극 둘 −90 (U6-3a)
 POLAR = {'p50-arctic': 90, 'p55-claims': 90, 'p51-antarctic': -90, 'p55-bases': -90}
-# 처음 식(shapes.init)을 U6-2 Step 4 로 미룬 지도(섬·해안 씨앗을 지금 정할 수 없음 — 위성 사진 래스터 지구본 셋·북극해 영유권 원판):
-# init 대신 까닭 _init(손 기준점 후보 자리)을 적는다. 목록을 늘리지 말 것.
-DEFERRED_INIT = {'p55-route', 'p55-claims', 'p55-araon-s', 'p55-araon-n'}
+# 처음 식(shapes.init) 대신 손 기준점(controls, src 없음 — extract_vectors 가 'manual')이 3개 이상이라 그것으로 시작하는 지도(U6-2):
+# 극 지도 둘(경위선 교차점 — polar_grid)·북극 항로 지구본(붉은 점 셋). 아라온 10~4월 지구본은 shapes 없이 손 기준점만(approx).
+HAND_START = {'p50-arctic', 'p51-antarctic', 'p55-route'}
+HAND_ONLY = {'p55-araon-s'}
 
 
 def fam_name(f):
@@ -108,9 +109,11 @@ class MapsU6(unittest.TestCase):
 
     def test_shapes_config(self):
         # 눈금 없는 지도는 섬·호수·해안 기준점(land_shapes·shape_controls)의 원천 shapes 와 처음 식 init 을 적는다
-        # (DEFERRED_INIT 은 init 대신 까닭 _init — U6-2 에서 손 기준점 또는 {fromMap, pts})
+        # (HAND_START 는 init 대신 손 기준점 3개 이상 — U6-2, HAND_ONLY 는 shapes 없이 손 기준점만)
         for m in self.maps:
             if m['graticuleLabels'] and 'shapes' not in m: continue
+            if m['id'] in HAND_ONLY:
+                self.assertNotIn('shapes', m); continue
             if m.get('fitFrom'):
                 self.assertNotIn('shapes', m, m['id']); continue
             with self.subTest(id=m['id']):
@@ -119,8 +122,10 @@ class MapsU6(unittest.TestCase):
                 self.assertIn(mode, ('vector', 'raster'))
                 if mode == 'vector': self.assertTrue(s.get('land') or s.get('sea'))
                 self.assertIn(s.get('target', 'land'), ('land', 'countries'))
-                if m['id'] in DEFERRED_INIT:
-                    self.assertNotIn('init', s); self.assertTrue(s.get('_init'), '미룬 처음 식의 까닭(_init) 없음')
+                self.assertNotIn('_init', s)   # U6-1 에서 미룬 처음 식은 U6-2 에서 모두 정함
+                if m['id'] in HAND_START:
+                    self.assertNotIn('init', s)
+                    self.assertGreaterEqual(sum('src' not in c for c in m['controls']), 3, '손 기준점 3개 이상')
                 elif not m['graticuleLabels']:
                     self.assertTrue(s.get('init'), '처음 식(init) 없음')
                 init = s.get('init') or {}
@@ -132,12 +137,19 @@ class MapsU6(unittest.TestCase):
                 if init.get('seeds'): self.assertGreaterEqual(len(init['seeds']), 3)
                 if init.get('land'): self.assertTrue(-180 <= init['land'][0] <= 180 and -90 <= init['land'][1] <= 90)
 
-    def test_deferred_init_list(self):
-        # 미룬 지도는 정한 넷뿐이고 모두 눈금 없는 지도
-        for mid in DEFERRED_INIT:
-            self.assertFalse(self.by[mid]['graticuleLabels'], mid)
+    def test_hand_start_list(self):
+        # 처음 식 없이 손 기준점으로 시작하는 지도는 정한 셋뿐(U6-2), 손 기준점만 쓰는 지도는 정한 하나(모두 approx) — 손 기준점에는 까닭(_controls)
         later = {m['id'] for m in self.maps if 'shapes' in m and 'init' not in m['shapes'] and not m['graticuleLabels']}
-        self.assertEqual(later, DEFERRED_INIT)
+        self.assertEqual(later, HAND_START)
+        self.assertEqual({m['id'] for m in self.maps if 'shapes' not in m and not m['graticuleLabels']}, HAND_ONLY)
+        for m in self.maps:
+            if any('src' not in c for c in m.get('controls', [])):
+                self.assertTrue(m.get('_controls'), m['id'])
+        for c in self.by['p55-araon-s']['controls']:
+            self.assertTrue(c.get('approx'), c['name'])
+        # 눈금 글자가 있어도 공유 교차점 뽑기가 0 인 지도(하와이 삽입·극 지도 둘)는 graticuleLabels false + 까닭
+        for mid in ('p48-hawaii', 'p50-arctic', 'p51-antarctic'):
+            self.assertFalse(self.by[mid]['graticuleLabels'], mid); self.assertTrue(self.by[mid].get('_graticuleLabels'), mid)
 
     def test_map_references_exist(self):
         # projectionFrom·fitFrom.map·init.fromMap 이 가리키는 지도는 목록에 있고 자기 자신이 아니며, 목록에서 먼저 맞춰진다(georef-cli 차례)
@@ -173,7 +185,9 @@ class MapsU6(unittest.TestCase):
                         self.assertEqual(set(f), {'family', 'params'})
                         self.assertEqual(len(f['params']), 2)
         for mid in ('p48-oceania', 'p49-coloring'): self.assertEqual(self.by[mid]['families'], ['azimuthalEqualArea'])
-        for mid in ('p55-route', 'p55-araon-s', 'p55-araon-n'): self.assertEqual(self.by[mid]['families'], ['orthographic'])
+        for mid in ('p55-route', 'p55-araon-n'): self.assertEqual(self.by[mid]['families'], ['orthographic'])
+        # 아라온 10~4월: 정사 중심 고정(원판 중심 해 — U6-2, 손 기준점 6개로는 중심이 정해지지 않음)
+        self.assertEqual(self.by['p55-araon-s']['families'], [{'family': 'orthographic', 'params': [-137.8, -59.9]}])
         for mid in ('p54-fta', 'p55-treaty'):
             self.assertEqual(self.by[mid]['families'], ['miller', 'equirectangular', 'mercator', 'robinson'])
 
@@ -233,7 +247,7 @@ class MapsU6(unittest.TestCase):
         # 바탕 지도: 태평양 섬 상자 둘(날짜변경선 건넘), 아메리카 기아나 자르기 없음
         bm = c['basemap']
         self.assertEqual(bm['out'], 'sims/atlas-u6-oceania-polar/data/basemap.json')
-        self.assertEqual(bm['unitBoxes'], [[140, -25, 180, 15], [-180, -25, -150, 15]])
+        self.assertEqual(bm['unitBoxes'], [[131, -23, 180, 17], [-180, -24, -145, 5]])   # U6-2: 48쪽 fit 으로 되돌린 섬나라·속령 범위
         for k in ('cutIsos', 'names', 'mergeIsos'): self.assertNotIn(k, bm)
         lv10a = [lv for lv in bm['levels'] if lv['id'] == '10a'][0]
         self.assertNotIn('simplifyByIso', lv10a)
@@ -243,7 +257,15 @@ class MapsU6(unittest.TestCase):
         self.assertEqual(c['cityControls']['maps'], ['p48-oceania', 'p48-hawaii', 'p50-arctic', 'p51-antarctic'])
         self.assertEqual(p['overview'], 'p48-oceania')
         self.assertEqual(p['index']['checkPages'], [48, 51])
-        self.assertEqual(p['neBox'], [[95, -55, 180, 15], [-180, -55, -150, 25], [-180, 35, 180, 90], [-180, -90, 180, -50]])
+        # U6-2: 48쪽 틀 되돌린 범위(날짜변경선 건너 둘) + 하와이 삽입 + 극 지도 틀을 경도 30° 부채꼴마다 되돌린 위도 한계(북 12 · 남 12)
+        nb = p['neBox']
+        self.assertEqual(nb[:3], [[90, -59, 180, 17], [-180, -57, -145, 17], [-161, 18, -153, 24]])
+        north, south = nb[3:15], nb[15:]
+        self.assertEqual(len(nb), 27)
+        self.assertEqual([b[0] for b in north], list(range(-180, 180, 30))); self.assertEqual([b[2] for b in north], list(range(-150, 181, 30)))
+        self.assertEqual([b[0] for b in south], list(range(-180, 180, 30)))
+        for b in north: self.assertTrue(b[3] == 90 and 20 <= b[1] <= 45, b)
+        for b in south: self.assertTrue(b[1] == -90 and -46 <= b[3] <= -25, b)
         for k in ('mergePriority', 'mergeKmMaps', 'rankBySizeMaps', 'areaKmByName', 'symbolFix', 'spellAs', 'hidden'):
             self.assertNotIn(k, p)
         for k in ('neAlias', 'snapAlways', 'keepTextbookPosition', 'relocate', 'indexExclude', 'extraNames'):

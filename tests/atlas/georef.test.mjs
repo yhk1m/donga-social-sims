@@ -436,3 +436,46 @@ test('U6-3a maps_u6 극 지도 4장: families 고정 후보가 familiesFor 를 �
     assert.equal(fit.fixed, true, id); assert.deepEqual(fit.params, [0, sign], id);
   }
 });
+
+// ── Ⅵ 오세아니아·극지방(u6) fit(U6-2): 합격 기준 + 48·49쪽 람베르트 정적 방위 · 극 4장 정거 방위 극 중심(위쪽 경선) · 지구본 정사 · 54쪽 태평양 중심 ─────
+const U6_MAPS = JSON.parse(readFileSync(new URL('../../scripts/atlas/maps_u6.json', import.meta.url), 'utf8'));
+const u6Fits = U6_MAPS.map((m) => [m.id, `${WORK_DIR}/geo/${m.id}.fit.json`]).filter(([, f]) => existsSync(f));
+test('u6 fit: rmsMm·meanMm ≤ 0.5(approx 제외), p48 람베르트 정적 방위, 극 4장 극 중심·위쪽 경선, p55-route 정사, p54-fta 중심 120~180, projectionFrom 고정', { skip: u6Fits.length ? false : '작업 폴더에 u6 fit 없음' }, () => {
+  assert.deepEqual(u6Fits.map(([id]) => id), U6_MAPS.map((m) => m.id), 'u6 fit 파일이 지도 목록과 다름');
+  assert.equal(U6_MAPS.length, 19);
+  const fits = Object.fromEntries(u6Fits.map(([id, f]) => [id, JSON.parse(readFileSync(f, 'utf8'))]));
+  for (const [id, fit] of Object.entries(fits)) {
+    if (fit.approx) continue;
+    assert.ok(fit.rmsMm <= 0.5 && fit.meanMm <= 0.5, `${id} rms ${fit.rmsMm} mean ${fit.meanMm}`);
+  }
+  // approx 는 아라온 10~4월 지구본 하나(손 기준점만 — 결정 기록)
+  assert.deepEqual(Object.keys(fits).filter((id) => fits[id].approx), ['p55-araon-s']);
+  for (const id of ['p48-oceania', 'p49-coloring', 'p53-climate']) assert.equal(fits[id].family, 'azimuthalEqualArea', id);
+  for (const id of ['p55-route', 'p55-araon-s', 'p55-araon-n']) assert.equal(fits[id].family, 'orthographic', id);
+  // 48쪽: 날짜변경선 넘는 지도 — 중심 경도 150°E 어림, 기준점이 날짜변경선 양쪽(동경 170° 와 서경 170° 교차점)
+  assert.ok(Math.abs(fits['p48-oceania'].params[0] - 150) < 2, `p48 중심 ${fits['p48-oceania'].params}`);
+  const p48 = fits['p48-oceania'].resid.map((r) => r.name);
+  assert.ok(p48.includes('-170,-10') && p48.includes('170,-10'), '48쪽 날짜변경선 양쪽 교차점');
+  // 극 4장: 고정 후보(정거 방위 극 중심), 위쪽 경선(U6-3b 보기 회전 입력) — 50·51쪽·남극 기지 90°W, 북극해 영유권 180°
+  const UP = { 'p50-arctic': [90, -90], 'p51-antarctic': [-90, -90], 'p55-claims': [90, 180], 'p55-bases': [-90, -90] };
+  for (const [id, [lat, up]] of Object.entries(UP)) {
+    const f = fits[id];
+    assert.equal(f.family, 'azimuthalEquidistant', id); assert.equal(f.fixed, true, id); assert.equal(f.projectionFrom, undefined, id);
+    assert.ok(Math.abs(f.params[1]) >= 89 && Math.sign(f.params[1]) === Math.sign(lat), `${id} 중심 ${f.params}`);
+    const noTps = { ...f, tps: undefined };
+    const P = applyFit(noTps, [0, lat]), Q = applyFit(noTps, [up, lat - Math.sign(lat) * 10]);
+    assert.ok(Math.abs(Q[0] - P[0]) < 0.5 && Q[1] < P[1], `${id} 위쪽 경선 ${up}: 극 ${P} → ${Q}`);
+  }
+  const fta = fits['p54-fta'];
+  assert.ok(['miller', 'equirectangular', 'mercator', 'robinson'].includes(fta.family), fta.family);
+  const lon0 = ((fta.params[0] % 360) + 360) % 360;
+  assert.ok(lon0 >= 120 && lon0 <= 180, `p54-fta 중심 경도 ${fta.params[0]}`);
+  const pf = U6_MAPS.filter((x) => x.projectionFrom);
+  assert.deepEqual(pf.map((m) => m.id), ['p49-coloring', 'p52-relief', 'p53-jan', 'p53-jul', 'p54-sealevel']);
+  for (const m of pf) {
+    const f = fits[m.id], parent = fits[m.projectionFrom];
+    assert.equal(f.fixed, true, m.id);
+    assert.equal(f.family, parent.family, m.id);
+    assert.deepEqual(f.params, parent.params, m.id);
+  }
+});

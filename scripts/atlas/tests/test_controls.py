@@ -194,4 +194,44 @@ class ControlsU5(unittest.TestCase):
             self.assertFalse(50 <= c['xy'][0] <= 393 and 469 <= c['xy'][1] <= 645, c)
             self.assertEqual(c['lon'] % 20, 0); self.assertEqual(c['lat'] % 20, 0)
 
+
+@NEED_PDF
+class ControlsU6(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.maps = {mid: controls_u3(mid, 'u6') for mid in ('p48-oceania', 'p50-arctic', 'p51-antarctic')}
+
+    def test_p48_controls(self):
+        # 48쪽 오세아니아 일반도: 경위선 교차점 + 도시 기호 기준점 ≥ 12, 날짜변경선 양쪽(동경 90~180 · 서경 145~180), 삽입 틀 안 교차점 없음
+        cps = self.maps['p48-oceania']
+        self.assertGreaterEqual(len(cps), 12)
+        self.assertEqual({c['src'] for c in cps}, {'grid', 'city'})
+        for c in cps:
+            self.assertTrue((90 <= c['lon'] <= 180 or -180 <= c['lon'] <= -145) and -59 <= c['lat'] <= 17, (c['lon'], c['lat']))
+            self.assertEqual(len(c['xy']), 2)
+        self.assertTrue(any(c['lon'] < 0 for c in cps) and any(c['lon'] > 0 for c in cps), '날짜변경선 한쪽만')
+        grid = [c for c in cps if c['src'] == 'grid']
+        self.assertGreaterEqual(len(grid), 40)
+        for c in grid:
+            self.assertEqual(c['lon'] % 10, 0); self.assertEqual(c['lat'] % 10, 0)
+            self.assertFalse(564.9 <= c['xy'][0] <= 750.3 and 27.3 <= c['xy'][1] <= 148.1, c)   # 하와이 삽입(excludeBoxes)
+            self.assertFalse(638.7 <= c['xy'][0] <= 717.1 and 623.8 <= c['xy'][1] <= 701.7, c)  # 타히티 삽입
+
+    def test_polar_controls(self):
+        # 50·51쪽 극 지도: 손 경위선 교차점(극 + 30° 경선 × 10° 위선 — polar_grid, 공유 extract_vectors 는 극 지도에서 0개) + 섬·해안 기준점,
+        # 모두 그 반구 안(51쪽 ≥ 12 — 계획 Step 8)
+        for mid, sign in (('p50-arctic', 1), ('p51-antarctic', -1)):
+            cps = self.maps[mid]
+            self.assertGreaterEqual(len(cps), 12, mid)
+            self.assertEqual({c['src'] for c in cps}, {'manual', 'shape'}, mid)
+            for c in cps:
+                self.assertTrue(-180 <= c['lon'] <= 180 and 0 < sign * c['lat'] <= 90, (mid, c['lon'], c['lat']))
+            hand = [c for c in cps if c['src'] == 'manual']
+            self.assertGreaterEqual(len(hand), 15, mid)
+            pole = [c for c in hand if c['name'] == 'pole']
+            self.assertEqual(len(pole), 1, mid); self.assertEqual(pole[0]['lat'], 90 * sign)
+            for c in hand:
+                if c['name'] == 'pole': continue
+                self.assertEqual(c['lon'] % 30, 0, c); self.assertEqual(c['lat'] % 10, 0, c)
+
 if __name__ == '__main__': unittest.main()
