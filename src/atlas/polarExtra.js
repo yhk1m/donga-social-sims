@@ -19,12 +19,19 @@
 //     자료 = {type:'FeatureCollection', properties:{layerType:'topicView', view:{centerLon?, projection?:'polarN'|'polarS'|'globe', up?(극), rotate?(지구본),
 //     base?:'none'|'tint'|'natural'}, legend:[]}, features:[]}. 그리지 않음(draw 없음 · 맞히기 null · 지명 장애물 [] · 범례 항목 0 → 범례 블록 없음,
 //     묶음 하나라 「지도 고르기」 없음). 만들 때 보기를 바꾸고 destroy 때 되돌림(각각 그사이 사용자가 바꿨으면 그대로 — centerLonOf 꼴).
+//   - 3f 영유권 경계선(registerLayerType('sectorLines') — 55쪽 남극, 교사 Q8 기본값): 나라마다 색·점선 무늬가 다른 경계선만(면 없음).
+//     자료 = {type:'FeatureCollection', properties:{layerType:'sectorLines', legend:[{cls, label(나라), color, kind:'line', dashed?(견본), dash?:[칠, 빔](선 굵기 배수),
+//     width?(pt, 기본 1.2)}]}, features:[{properties:{cls, offsetPx?, name?}, geometry: LineString|MultiLineString(경계 경선 + 바깥 호 — 노르웨이는 바깥만)}]}.
+//     SVG 선(경위도 변을 1° 마다 대원으로 나눠 화면에 옮긴 줄) + 화면 비킴 offsetPx(진행 방향 오른쪽 + — 같은 경선을 쓰는 영국·칠레·아르헨티나를 교과서처럼
+//     나란히), 범례 고름 = 그 나라 선만 굵게(나머지 흐리게), 맞히기 = 선과의 화면 거리 → 「○○ 영유권 주장 경계」(자료 label·name 이 있으면 그것), 장애물 [].
 //   단원 main.js: installAmericasExtras(); installPolarExtras();  (mountAtlas 전에) — mountAtlas 뒤 viewTools(root.atlasMap, root.atlasUi.tools.el)(풀기 함수)
-import { geoAzimuthalEquidistant } from 'd3-geo';
+import { geoAzimuthalEquidistant, geoDistance, geoInterpolate } from 'd3-geo';
+import { s } from '../shared/dom.js';
 import { PROJECTIONS } from './projections.js';
 import { graticuleStep } from './lineStyle.js';
 import { registerLayerType } from './layerRef.js';
-import { metaOf } from './layerCommon.js';
+import { metaOf, featuresOf, isLine, setAttr, connect, hoverClass, round1, LAYER_Z } from './layerCommon.js';
+import { alphaOf, lineWidthPx, unwrapLine, splitJumps, distToPolyline } from './layerStyle.js';
 import { baseOptions, baseModeOf } from './natural.js';
 import { registerProjection, globeCenter, rotateFor, globeView } from './americasExtra.js';
 
@@ -170,6 +177,91 @@ export function topicViewLayer(id, data, { map = null } = {}) {
   };
 }
 
+// ---------- 3f 영유권 경계선 ----------
+const DEG1 = Math.PI / 180;
+/** 경위도 줄의 변을 1° 마다 대원 점으로 나눔(경선은 대원이라 그대로 곧고, 바깥 호는 자료가 촘촘 — 성긴 자료도 화면에서 휘지 않게) */
+function densify(line) {
+  const out = [line[0]];
+  for (let i = 1; i < line.length; i++) {
+    const a = line[i - 1], b = line[i], n = Math.ceil(geoDistance(a, b) / DEG1);
+    if (n > 1) { const f = geoInterpolate(a, b); for (let j = 1; j < n; j++) out.push(f(j / n)); }
+    out.push(b);
+  }
+  return out;
+}
+/** 화면 줄을 d px 비킴(진행 방향 오른쪽 + — 화면 y 아래 기준 법선 (−dy, dx)), 꺾인 곳은 마이터(최대 2배). 같은 점이 이어지면 하나로. */
+export function offsetRun(run, d) {
+  const r = run.filter((q, i) => !i || q[0] !== run[i - 1][0] || q[1] !== run[i - 1][1]);
+  if (!d || r.length < 2) return r;
+  const nrm = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy); return [-dy / L, dx / L]; };
+  return r.map((q, i) => {
+    const n0 = i > 0 ? nrm(r[i - 1], q) : null, n1 = i < r.length - 1 ? nrm(q, r[i + 1]) : null;
+    let m = n0 && n1 ? [n0[0] + n1[0], n0[1] + n1[1]] : n0 || n1;
+    const L = Math.hypot(m[0], m[1]);
+    m = L < 1e-9 ? n1 : [m[0] / L, m[1] / L];
+    const c = n0 && n1 ? Math.max(0.5, m[0] * n1[0] + m[1] * n1[1]) : 1;
+    return [q[0] + (m[0] * d) / c, q[1] + (m[1] * d) / c];
+  });
+}
+const pathD = (runs) => runs.map((r) => `M${r.map((q) => `${round1(q[0])},${round1(q[1])}`).join('L')}`).join('') || null;
+
+/** 영유권 경계선 레이어(SVG, type 'sectorLines'). 나라(선) 하나 = <g class="at-sector"> 안 <title> + <path class="at-sector-line">. */
+export function sectorLinesLayer(id, data, { legend = null, map = null, layerId = id, dimAlpha = 0.2, z = LAYER_Z.symbol - 5 } = {}) {
+  const leg = new Map((data?.properties?.legend || []).map((e) => [e.cls, e]));
+  const items = featuresOf(data).filter(isLine).map((f) => {
+    const p = f.properties || {}, e = leg.get(p.cls) || {};
+    const ff = p.label ? f : { ...f, properties: { ...p, label: p.name || `${e.label ?? p.cls} 영유권 주장 경계` } };
+    const lines = (f.geometry.type === 'MultiLineString' ? f.geometry.coordinates : [f.geometry.coordinates]).map(densify);
+    return { f: ff, e, lines, off: p.offsetPx || 0, runs: [], w: 0 };
+  });
+  const byF = new Map(items.map((it) => [it.f, it]));
+  let root = null;
+  function build(g) {
+    root = s('g', { class: 'at-sectors' });
+    for (const it of items) {
+      it.line = s('path', { class: 'at-sector-line', fill: 'none', stroke: it.e.color || '#231f20', 'data-cls': it.f.properties.cls, 'stroke-linejoin': 'round' });
+      it.el = s('g', { class: 'at-sector' }, s('title', {}, it.f.properties.label), it.line);
+      it.w = 0;
+    }
+    root.append(...items.map((it) => it.el));
+    g.append(root);
+  }
+  const onHover = hoverClass((f) => byF.get(f));
+  const layer = {
+    id, z, meta: metaOf(data), features: items.map((it) => it.f),
+    labelObstacles: () => [],
+    drawSvg(g, project, view) {
+      if (!root || root.parentNode !== g) build(g);
+      const sel = legend?.selected?.() != null;
+      for (const it of items) {
+        const a = alphaOf(legend, it.f.properties.cls, dimAlpha);
+        const base = lineWidthPx(it.e.width ?? 1.2, view.k);
+        const w = sel && a === 1 ? base * 2 : base;
+        if (w !== it.w) {
+          it.w = w;
+          setAttr(it.line, 'stroke-width', round1(w));
+          setAttr(it.line, 'stroke-dasharray', it.e.dash ? it.e.dash.map((v) => round1(v * w)).join(' ') : null);
+        }
+        it.runs = it.lines.flatMap((L) => splitJumps(unwrapLine(L), project)).map((r) => offsetRun(r, it.off));
+        setAttr(it.line, 'd', pathD(it.runs));
+        setAttr(it.el, 'opacity', a === 1 ? null : a);
+        it.el.classList.toggle('is-hover', it.f === onHover.current());
+      }
+    },
+    hit(xy) {
+      for (let i = items.length - 1; i >= 0; i--) {
+        const it = items[i];
+        if (!it.runs.length || alphaOf(legend, it.f.properties.cls, 0) === 0) continue;
+        if (it.runs.some((r) => distToPolyline(xy, r) <= Math.max(4, it.w / 2 + 3))) return it.f;
+      }
+      return null;
+    },
+    destroy() { offs.forEach((off) => off()); offs.length = 0; root?.remove(); root = null; },
+  };
+  const offs = connect({ map, legend, layerId, onHover });
+  return layer;
+}
+
 /** 등록(단원 main 이 mountAtlas 전에, installAmericasExtras 뒤에 — 상자 옵션 차례 지구본 → 북극 중심 → 남극 중심). 두 번 불러도 같음. */
 export function installPolarExtras() {
   // 옵션 차례(지구본 → 극 둘)와 viewTools 의 지구본 몫이 지구본 등록을 전제로 함 — 늦게 등록하면 상자 차례가 틀어지므로 멈춤
@@ -177,4 +269,5 @@ export function installPolarExtras() {
   if (!PROJECTIONS.polarN) registerProjection('polarN', polarProjection({ pole: 'N' }));
   if (!PROJECTIONS.polarS) registerProjection('polarS', polarProjection({ pole: 'S' }));
   registerLayerType('topicView', topicViewLayer);
+  registerLayerType('sectorLines', (id, d, ctx) => sectorLinesLayer(id, d, ctx));
 }
