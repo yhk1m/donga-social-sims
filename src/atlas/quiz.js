@@ -29,8 +29,11 @@ const TARGET = { fill: '#ff922b', stroke: '#c2410c' };
  * 세이셸·카보베르데·코모로(흩어진 섬)는 상자가 커서 상자 기준으로는 동그라미가 안 생기지만 손으로 칠할 수 없다. 조각 경위도 넓이·중심은
  * 한 번만 재고, 화면 넓이는 그 중심의 투영 국소 배율(경위도 0.1° 칸의 화면 넓이)로 어림. 동그라미 자리 = 가장 큰 조각 중심.
  * 없으면('box') 유럽(u3) 그대로.
+ * markAt {iso: [lon, lat]}(U6-9, 오세아니아 49쪽 — 단원 선택값): 그 나라 동그라미를 가장 큰 조각 중심 대신 이 점에(넓이 기준이면 넓이 0 으로 쳐서
+ * 확대해도 늘 동그라미 — 그 점의 섬이 가장 큰 조각보다 훨씬 작음).
+ * 키리바시는 가장 큰 조각이 키리티마티섬(157°W)이라 동그라미가 수도 타라와(길버트 제도)에서 약 3,300km 떨어져 처음 보기 밖에 생겼다. 없으면 옛 길.
  */
-export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85, smallPx = 0, smallIsos = null, smallMetric = 'box' } = {}) {
+export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85, smallPx = 0, smallIsos = null, smallMetric = 'box', markAt = {} } = {}) {
   const sets = Array.isArray(features) ? { 50: features } : features;
   const byIso = {};
   for (const [lv, list] of Object.entries(sets)) {
@@ -101,8 +104,9 @@ export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85,
       const b = geoBounds(f);
       let c = geoCentroid(f);
       if (!Number.isFinite(c[0]) || !Number.isFinite(c[1])) c = [(b[0][0] + b[1][0]) / 2, (b[0][1] + b[1][1]) / 2];
-      v = { b, c };
-      if (smallMetric === 'area') v.big = largestPart(f.geometry);
+      const m = markAt[iso];
+      v = { b, c: m || c };
+      if (smallMetric === 'area') v.big = m ? { a: 0, c: m } : largestPart(f.geometry);
     }
     lonlatInfo.set(key, v);
     return v;

@@ -33,6 +33,7 @@
 //   - 3i 기호 + 글자(symbolLabels) 다시 등록: 아메리카 symbolLabelsLayer 의 글자 몫(areaLayer 지명 글자 — 캔버스)은 view.projection 을 그대로 써서
 //     지구본 뒷면·극 중심 반대 반구 글자까지 그림(기호 몫은 렌더러 project 가 hidden 이면 null 이라 숨음) → 그 레이어의 draw 에 hidden 을 지키는 투영
 //     (hidden 이면 null)을 넘기는 감싸개로 다시 등록(americasExtra·layers.js 고침 없음 — 글자 몫은 지명 Point 뿐이라 draw 가 투영을 점에만 씀).
+//   - U6-9 경로 화살표 다시 등록(pathFlow): 자료 view.base 가 있으면 묶음 바탕을 그것으로(55쪽 지구본 셋 = 자연색, 교사 Q16) — 아메리카 것을 감쌈.
 //   단원 main.js: installAmericasExtras(); installPolarExtras();  (mountAtlas 전에) — mountAtlas 뒤 viewTools(root.atlasMap, root.atlasUi.tools.el)(풀기 함수)
 import { geoAzimuthalEquidistant, geoDistance, geoInterpolate } from 'd3-geo';
 import { s } from '../shared/dom.js';
@@ -42,9 +43,10 @@ import { registerLayerType } from './layerRef.js';
 import { metaOf, featuresOf, isLine, setAttr, connect, hoverClass, round1, LAYER_Z } from './layerCommon.js';
 import { alphaOf, lineWidthPx, unwrapLine, splitJumps, distToPolyline } from './layerStyle.js';
 import { INK, txt, registerSvgChart } from './charts.js';
+import { labelPx } from './layers.js';
 import { linearScale, sectorPath } from './chartCore.js';
 import { baseOptions, baseModeOf } from './natural.js';
-import { registerProjection, globeCenter, rotateFor, globeView, symbolLabelsLayer } from './americasExtra.js';
+import { registerProjection, globeCenter, rotateFor, globeView, symbolLabelsLayer, pathFlowLayer } from './americasExtra.js';
 
 /** 극 중심 규칙: 반구 원판 반지름 = 무대 짧은 변 × fill, 처음(k < 2) 경위선 간격(°), 처음 위쪽 경선(°, 50·51쪽 일반도 = 서경 90°) */
 export const POLAR = Object.freeze({ fill: 0.48, step: 10, up: -90 });
@@ -156,6 +158,14 @@ export function viewTools(map, toolsEl) {
   return () => { off(); sel?.removeEventListener('change', onPick, true); toolsEl?.removeEventListener('click', onClick, true); stage?.removeEventListener('keydown', onKey, true); };
 }
 
+/** 바탕 색 base 를 두고 되돌리기 함수(바꾼 게 없으면 null) — 되돌리기는 지금 바탕이 이 함수가 둔 값일 때만(사용자가 바꿨으면 그대로) */
+function setBase(map, base) {
+  const from = baseModeOf(map.options);
+  if (!base || from === base) return null;
+  map.setOptions(baseOptions(base));
+  return () => { if (baseModeOf(map.options) === base) map.setOptions(baseOptions(from)); };
+}
+
 /**
  * 주제 보기 레이어(type 'topicView' — 그리지 않음). 만들 때(map 이 있을 때만) 차례대로: 바탕 색 base → 중심 경도 centerLon → 극 중심(polarView)·지구본
  * (globeView + 묶음 맞추기 뒤 처음 보기 한 번 더 — pathFlow 와 같은 꼴). destroy = 거꾸로 되돌림(바탕·중심 경도는 지금 값이 이 레이어가 둔 값일 때만).
@@ -165,10 +175,8 @@ export function topicViewLayer(id, data, { map = null } = {}) {
   const undo = [];
   let alive = true;
   if (map?.view) {
-    if (view.base) {
-      const from = baseModeOf(map.options);
-      if (from !== view.base) { map.setOptions(baseOptions(view.base)); undo.push(() => { if (baseModeOf(map.options) === view.base) map.setOptions(baseOptions(from)); }); }
-    }
+    const b = setBase(map, view.base);
+    if (b) undo.push(b);
     if (view.centerLon != null && map.view.centerLon !== view.centerLon) {
       const from = map.view.centerLon;
       map.setCenterLon(view.centerLon);
@@ -380,11 +388,77 @@ export function hiddenAwareView(view) {
   q.hidden = p.hidden;
   return { ...view, projection: q };
 }
-/** symbolLabels(아메리카 것) + 글자 몫 뒷면 숨김 */
+/** 지면 글자 무리(U6-9): 「(」로 시작하는 글자(「(대한민국)」)는 가장 가까운 이름 글자(GAP° 안)와 한 무리 — 무리째 보이거나 숨음 */
+const GAP = 5;
+export function labelGroups(labels) {
+  const lead = labels.filter((f) => !/^\(/.test(f.properties.text || '')), groups = lead.map((f) => [f]);
+  for (const f of labels) {
+    if (lead.includes(f)) continue;
+    let bi = -1, bd = GAP * DEG1;
+    lead.forEach((g, i) => { const dd = geoDistance(g.geometry.coordinates, f.geometry.coordinates); if (dd < bd) { bd = dd; bi = i; } });
+    if (bi >= 0) groups[bi].push(f); else groups.push([f]);
+  }
+  // 차례: 붉은 글자(우리나라 기지)가 든 무리 먼저, 그다음 자료 차례
+  const red = (g) => g.some((f) => /^#d7/i.test(f.properties.color || ''));
+  return [...groups.filter(red), ...groups.filter((g) => !red(g))];
+}
+/** 화면에서 앞 무리 글자 상자와 겹치는 무리를 고름 → {drop(숨길 좌표 배열 Set), moved(좌표 배열 → 화면 자리)} — 같은 자리 겹쳐 그린 사본도
+ *  여기서 빠짐. 무리 안 「(…)」 글자는 화면 글자가 교과서보다 커서 이름 글자와 겹치므로 이름 글자 상자에 붙임(교과서 배치 방향 — 아래면 아래, 옆이면 옆).
+ *  글자 크기·굵기는 layers.js 지명 글자와 같음. */
+export function culledLabels(groups, proj, measure) {
+  const kept = [], drop = new Set(), moved = new Map();
+  const hit = (b) => kept.some((o) => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]);
+  for (const g of groups) {
+    const boxes = [], mv = [];
+    let lead = null;
+    for (const f of g) {
+      const q = proj(f.geometry.coordinates);
+      if (!q || !Number.isFinite(q[0])) continue;
+      const p = f.properties, px = labelPx(p), lines = p.lines?.length ? p.lines : [p.text], lh = px * 1.15;
+      const w = Math.max(...lines.map((t) => measure(t, `${p.role === 'region' ? 600 : 800} ${px}px "Pretendard", "Malgun Gothic", sans-serif`))), hh = lines.length * lh;
+      let [x, y] = q;
+      if (lead && f !== g[0]) {
+        const below = Math.abs(y - lead.y) > Math.abs(x - lead.x);
+        if (below) y = lead.b[3] + hh / 2; else x = lead.b[2] + 3 + w / 2;
+        mv.push([f.geometry.coordinates, [x, y]]);
+      }
+      const b = [x - w / 2, y - hh / 2, x + w / 2, y + hh / 2];
+      if (f === g[0]) lead = { x, y, b };
+      boxes.push(b);
+    }
+    if (boxes.some(hit)) g.forEach((f) => drop.add(f.geometry.coordinates));
+    else { kept.push(...boxes); for (const [k, v] of mv) moved.set(k, v); }
+  }
+  return { drop, moved };
+}
+/** symbolLabels(아메리카 것) + 글자 몫 뒷면 숨김 + 겹치는 글자 무리 숨김(U6-9 — 51쪽 기지 글자 33 이 처음 보기에서 서로 겹쳤음, 확대하면 다시 보임) */
 export function polarSymbolLabelsLayer(id, d, ctx) {
   const layer = symbolLabelsLayer(id, d, ctx), draw = layer.draw;
-  if (draw) layer.draw = (c, path, view) => draw(c, path, hiddenAwareView(view));
+  const groups = labelGroups(featuresOf(d).filter((f) => f.geometry?.type === 'Point' && f.properties?.type === 'label'));
+  if (draw) layer.draw = (c, path, view) => {
+    const v = hiddenAwareView(view), p = v.projection;
+    const measure = (t, font) => { c.font = font; return c.measureText(t).width; };
+    const { drop, moved } = culledLabels(groups, p, measure);
+    if (!drop.size && !moved.size) return draw(c, path, v);
+    const q = (ll) => (drop.has(ll) ? null : moved.get(ll) || p(ll));
+    q.hidden = p.hidden;
+    return draw(c, path, { ...v, projection: q });
+  };
   layer.hiddenAware = true; // 등록 확인용(시험 — installAmericasExtras 를 뒤에 다시 부르면 아메리카 것으로 덮여 이 표시가 없음)
+  return layer;
+}
+
+// ---------- U6-9 경로 화살표: 묶음 바탕 ----------
+/** pathFlow(아메리카 것) + 자료 view.base(55쪽 지구본 묶음 바탕 자연색 — 교사 Q16): 레이어보다 먼저 바탕을 두고, destroy 때 지구본을 되돌린 뒤
+ *  바탕을 되돌림(topicView 와 같은 규칙 — 그사이 사용자가 바탕을 바꿨으면 그대로). base 가 없으면 아메리카 것 그대로. */
+export function polarPathFlowLayer(id, d, ctx = {}) {
+  const map = ctx.map, undo = map?.view ? setBase(map, d?.properties?.view?.base) : null;
+  const layer = pathFlowLayer(id, d, ctx);
+  if (undo) {
+    const des = layer.destroy;
+    let done = false;
+    layer.destroy = () => { des.call(layer); if (!done) { done = true; if (!map.destroyed) undo(); } };
+  }
   return layer;
 }
 
@@ -399,6 +473,7 @@ export function installPolarExtras() {
   // 아메리카 등록을 덮음(뒷면 글자 숨김 — 위 3i). 차례에 기댐: installPolarExtras 뒤에 installAmericasExtras 를 다시 부르면 아메리카 것으로
   // 되돌아가므로 단원 main 은 늘 installAmericasExtras → installPolarExtras 한 번씩(위 지구본 검사가 앞 차례를, 시험이 덮인 상태를 지킴).
   registerLayerType('symbolLabels', polarSymbolLabelsLayer);
+  registerLayerType('pathFlow', polarPathFlowLayer); // 아메리카 등록을 덮음(view.base — 위 U6-9, 없으면 같은 동작)
   registerSvgChart('dualLine', dualLineSvg);
   registerSvgChart('halfPie', halfPieSvg);
 }

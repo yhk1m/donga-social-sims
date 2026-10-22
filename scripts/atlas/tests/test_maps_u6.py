@@ -250,11 +250,11 @@ class MapsU6(unittest.TestCase):
         # 바탕 지도: 태평양 섬 상자 둘(날짜변경선 건넘), 아메리카 기아나 자르기 없음
         bm = c['basemap']
         self.assertEqual(bm['out'], 'sims/atlas-u6-oceania-polar/data/basemap.json')
-        self.assertEqual(bm['unitBoxes'], [[131, -23, 180, 17], [-180, -24, -145, 5]])   # U6-2: 48쪽 fit 으로 되돌린 섬나라·속령 범위
+        self.assertEqual(bm['unitBoxes'], [[131, -23, 180, 21], [-180, -24, -145, 5]])   # U6-2: 48쪽 fit 으로 되돌린 섬나라·속령 범위(U6-9: 북마리아나 20.56°N 까지 북쪽 21)
         for k in ('cutIsos', 'names', 'mergeIsos'): self.assertNotIn(k, bm)
         lv10a = [lv for lv in bm['levels'] if lv['id'] == '10a'][0]
         # U6-3d: 산호초 섬나라·속령 13 은 10a 단순화 안 함(keep-shapes 가 나라마다 가장 큰 고리만 지켜 타라와·푸나푸티 둘레 섬이 사라짐)
-        self.assertEqual(sorted(lv10a['simplifyByIso']), sorted('KIR TUV MHL FSM PLW NRU TON PYF COK WLF ASM MNP NIU'.split()))
+        self.assertEqual(sorted(lv10a['simplifyByIso']), sorted('KIR TUV MHL FSM PLW NRU TON PYF COK WLF ASM MNP NIU FJI'.split()))   # U6-9: 피지 라우 제도
         self.assertEqual(set(lv10a['simplifyByIso'].values()), {'100%'})
         # 지명: 일반도 다섯(48 본 지도·삽입 둘·50·51), 도시 기준점은 타히티 뺀 넷, 인구 지점 상자 넷(48쪽 날짜변경선 둘 + 극 둘레 둘)
         p = c['places']

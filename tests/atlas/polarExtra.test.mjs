@@ -377,6 +377,28 @@ test('topicView 극·지구본·바탕: 북극 중심(up 180)으로 열고 되�
   await tick();
 });
 
+test('pathFlow 다시 등록(U6-9 — 55쪽 지구본 묶음 바탕, 교사 Q16): view.base 자연색으로 열고 destroy 때 지구본 → 앞 바탕, 사용자가 바꿨으면 그대로, base 없으면 바탕 그대로', async () => {
+  const { map } = setupMap();
+  const flow = (view) => ({ type: 'FeatureCollection', properties: { layerType: 'pathFlow', view, legend: [{ cls: 'a', label: '항로', color: '#fff200', kind: 'flow' }] },
+    features: [{ type: 'Feature', properties: { cls: 'a' }, geometry: { type: 'LineString', coordinates: [[129, 35], [4.5, 52]] } }] });
+  map.setOptions({ tint: false, natural: false });
+  const F = layerFromRef({ ref: 'layer-route', type: 'pathFlow' }, flow({ projection: 'globe', rotate: [-100, -58], base: 'natural' }), { map });
+  map.addLayer(F);
+  assert.equal(map.view.key, 'globe'); assert.equal(map.options.natural, true);
+  map.removeLayer('layer-route');
+  assert.equal(map.view.key, 'miller'); assert.equal(map.options.natural, false, '앞 바탕(없음)');
+  const U = layerFromRef({ ref: 'layer-route', type: 'pathFlow' }, flow({ projection: 'globe', rotate: [-100, -58], base: 'natural' }), { map });
+  map.addLayer(U); map.setOptions({ tint: true, natural: false });
+  map.removeLayer('layer-route');
+  assert.equal(map.options.tint, true, '사용자가 고른 바탕 그대로');
+  const N = layerFromRef({ ref: 'layer-route', type: 'pathFlow' }, flow({ projection: 'globe', rotate: [-100, -58] }), { map });
+  map.addLayer(N);
+  assert.equal(map.options.tint, true); assert.equal(map.options.natural, false, 'base 없으면 아메리카 것 그대로');
+  map.removeLayer('layer-route');
+  map.destroy();
+  await tick();
+});
+
 const findAll = (el, pred, out = []) => { if (pred(el)) out.push(el); for (const c of el.childNodes || []) findAll(c, pred, out); return out; };
 const hasClass = (c) => (n) => n.classList?.contains(c);
 test('색칠하기 주제 + topicView(태평양 중심): 퀴즈 나라 수·범례 칸·사이드바 차례·출처 줄 그대로, 「지도 고르기」 없음, 열 때 150 · 버리면 0', async () => {

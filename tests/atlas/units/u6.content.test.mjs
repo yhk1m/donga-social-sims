@@ -63,9 +63,9 @@ test('극 중심(교사 §8 Q1·Q6): 북극·남극·영유권·기지 묶음이
 test('지구본(교사 §8 Q2·Q16): 북극 항로·아라온호 둘 — 경로 자료의 view 가 지구본(회전 = 55쪽 정사 중심)', () => {
   assert.ok(refs(by.arcticRoute).includes('layer-p55-route'));
   for (const id of ['layer-p55-araon-s', 'layer-p55-araon-n']) assert.ok(refs(by.antarcticResearch).includes(id), id);
-  assert.deepEqual(layerData('layer-p55-route').properties.view, { projection: 'globe', rotate: [-100.9, -58] });
-  assert.deepEqual(layerData('layer-p55-araon-s').properties.view, { projection: 'globe', rotate: [137.8, 59.9] });
-  assert.deepEqual(layerData('layer-p55-araon-n').properties.view, { projection: 'globe', rotate: [-163.4, -39.7] });
+  assert.deepEqual(layerData('layer-p55-route').properties.view, { projection: 'globe', rotate: [-100.9, -58], base: 'natural' });   // U6-9: 묶음 바탕 자연색(Q16 — polarExtra pathFlow 감쌈)
+  assert.deepEqual(layerData('layer-p55-araon-s').properties.view, { projection: 'globe', rotate: [137.8, 59.9], base: 'natural' });   // U6-9: 묶음 바탕 자연색(Q16 — polarExtra pathFlow 감쌈)
+  assert.deepEqual(layerData('layer-p55-araon-n').properties.view, { projection: 'globe', rotate: [-163.4, -39.7], base: 'natural' });   // U6-9: 묶음 바탕 자연색(Q16 — polarExtra pathFlow 감쌈)
 });
 
 test('우리나라 윤곽(교사 §8 Q3·Q4): 일반도에 48쪽 같은 경도 거울상 윤곽, 안내 글 = 지면 글자(overrides)', () => {
@@ -129,7 +129,7 @@ test('일반도 바로가기(교사 Q3): 오세아니아·하와이 제도·타�
   assert.deepEqual(by.general.views[2].bounds, [-156.3, -21.1, -145.7, -14]);
   const b = Object.fromEntries(by.general.blocks.map((x) => [x.id, x]));
   assert.deepEqual([b['map-text'].title, b['map-text'].text, b['map-text'].view], ['오세아니아', '람베르트 정적 방위 도법 1:30,000,000', 'oceania']);
-  assert.deepEqual([b['hawaii-text'].title, b['hawaii-text'].text, b['hawaii-text'].view], ['하와이 제도', '0 100km', 'hawaii']);
+  assert.deepEqual([b['hawaii-text'].title, b['hawaii-text'].text, b['hawaii-text'].view], [null, '하와이 제도', 'hawaii']);   // U6-9 고침(축척 막대 글자 「0 100km」 → 틀 제목)
   assert.deepEqual([b['tahiti-text'].text, b['tahiti-text'].view], ['타히티(프)', 'tahiti']);
   for (const id of ['arctic', 'antarctic']) assert.equal(by[id].blocks.find((x) => x.id === 'map-text').text, '정거 방위 도법 1:39,000,000');
 });
@@ -227,9 +227,14 @@ test('출처: 52~55쪽 인쇄 출처 글이 생성물(topics·charts)에 모두 
   assert.equal(n, 16);
 });
 
-test('고침(overrides) 7: 깨진 글 넷(from = 원문 추출) + 묶음 이름 하나 + 잰 값 그래프 주석 둘(from null) — 모두 까닭', () => {
+test('고침(overrides) 9: 깨진 글 넷(from = 원문 추출) + 묶음 이름 하나 + 잰 값 그래프 주석 둘(from null) + 하와이 블록 둘(U6-9) — 모두 까닭', () => {
   assert.deepEqual(Object.keys(OVERRIDES).sort(), ['antarcticResearch.blocks.bases-text.text', 'antarcticResearch.blocks.bases-text.title', 'antarcticResearch.layers.layer-p55-sectors.label',
-    'antarcticResearch.views.bases.label', 'environment.blocks.p54-sealevel.note', 'environment.blocks.p54-temp-co2.note', 'general.blocks.outline-text.text']);
+    'antarcticResearch.views.bases.label', 'environment.blocks.p54-sealevel.note', 'environment.blocks.p54-temp-co2.note', 'general.blocks.hawaii-text.text', 'general.blocks.hawaii-text.title',
+    'general.blocks.outline-text.text']);
+  // U6-9: 하와이 블록 = 축척 막대 글자 「0 100km」 대신 틀 제목 글자, 제목은 비움(타히티 블록 꼴)
+  const hw = by.general.blocks.find((b) => b.id === 'hawaii-text');
+  assert.equal(hw.text, '하와이 제도'); assert.ok(!hw.title); assert.equal(OVERRIDES['general.blocks.hawaii-text.text'].from, '0 100km');
+  assert.ok(!JSON.stringify(by.general.blocks).includes('100km'));
   for (const [k, o] of Object.entries(OVERRIDES)) assert.ok(o.why?.length > 20, k);
   for (const k of ['antarcticResearch.blocks.bases-text.text', 'antarcticResearch.blocks.bases-text.title', 'antarcticResearch.views.bases.label'])
     assert.equal(OVERRIDES[k].value.replace(/\s+/g, ''), OVERRIDES[k].from.replace(/\s+/g, ''), `${k}: 글자는 그대로 — 빈칸만 지움`);
@@ -248,4 +253,29 @@ test('깨진 글자 없음: 「烋」·?글리프··→h·㎢→LN·『』→|�
   }
   assert.ok(JSON.stringify(T).includes('토의·토론'), '55쪽 「·」 바르게');
   assert.ok(JSON.stringify(T).includes('(『이과연표』, 2023)') || JSON.stringify(C).includes('(『이과연표』, 2023)'));
+});
+
+test('main.js(U6-9): 등록 셋을 mountAtlas 전에 이 차례로(옵션 8 — 평면 5 · 지구본 · 극 둘), viewTools 는 뒤에·destroy 때 풂, 선택값 열쇠가 실제 묶음 첫 레이어', async () => {
+  const src = readFileSync('sims/atlas-u6-oceania-polar/main.js', 'utf8').replace(/^\s*\/\/.*$/gm, '');
+  const at = (x) => { const i = src.indexOf(x); assert.ok(i >= 0, x); return i; };
+  const mount = at('mountAtlas(root');
+  assert.ok(at('installExtraCharts();') < at('installAmericasExtras();') && at('installAmericasExtras();') < at('installPolarExtras();') && at('installPolarExtras();') < mount, '등록 차례');
+  assert.ok(at('viewTools(root.atlasMap, root.atlasUi.tools.el)') > mount, 'viewTools 는 mountAtlas 뒤');
+  assert.ok(!src.includes('globeTools'), 'globeTools 대신 viewTools(U6-3b)');
+  assert.match(src, /offView\(\);\s*atlas\.destroy\(\)/);
+  // centerLonOf·boundsOf 열쇠 = 그 묶음의 첫 레이어(topic.js 는 묶음 refs 중 처음 찾은 것)
+  const firsts = new Set(T.flatMap((t) => layerGroups(t).map((g) => g.refs[0].ref)));
+  const keys = [...src.matchAll(/'(layer-p5\d-[a-z-]+)'/g)].map((m) => m[1]);
+  assert.deepEqual([...new Set(keys)].sort(), ['layer-p53-climate', 'layer-p53-jan', 'layer-p53-jul', 'layer-p54-fta', 'layer-p54-garbage', 'layer-p54-sealevel', 'layer-p55-treaty']);
+  for (const k of keys) assert.ok(firsts.has(k), `${k} 는 묶음 첫 레이어`);
+  assert.match(src, /'layer-p54-garbage': 180, 'layer-p54-sealevel': 180/);
+  assert.match(src, /markAt: \{ KIR: \[173\.0, 1\.42\] \}/);
+  const { SIMS } = await import('../../../src/registry.js');
+  assert.deepEqual(SIMS.find((x) => x.id === 'atlas-u6-oceania-polar'), { id: 'atlas-u6-oceania-polar', book: 'atlas', unit: 'Ⅵ. 오세아니아와 극지방', page: 48, title: '사회과부도 오세아니아와 극지방', kind: '지도' });
+});
+
+test('U6-9 자료: 지구본 묶음 셋 경로 view.base 자연색(교사 Q16), 해수면 지도 나라 이름 글자 없음(지명과 둘씩 보였음)', () => {
+  for (const ref of ['layer-p55-route', 'layer-p55-araon-s', 'layer-p55-araon-n']) assert.deepEqual(layerData(ref).properties.view.base, 'natural', ref);
+  assert.equal(layerData('layer-p54-sealevel').features.filter((f) => f.properties.type === 'label').length, 0);
+  assert.ok(UNIT.layers['p54-sealevel']._labelPoints?.length === 3 && !UNIT.layers['p54-sealevel'].labelPoints);
 });

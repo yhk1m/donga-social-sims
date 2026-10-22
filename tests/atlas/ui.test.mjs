@@ -753,6 +753,29 @@ test('coloringLayer smallMetric area: 날짜변경선을 넘는 흩어진 섬나
   assert.equal(arcs.length, 0, '상자 기준(u3): 날짜변경선 넘는 나라는 건너뜀 그대로');
 });
 
+test('coloringLayer markAt(U6-9 — 키리바시): 동그라미를 가장 큰 조각(키리티마티) 대신 준 점(타라와)에, 확대해도 남음, 누르면 그 나라, 없으면 옛 길', async () => {
+  const { geoEquirectangular, geoPath } = await import('d3-geo');
+  const rect = (x, y, w, hh) => [[[x, y], [x, y + hh], [x + w, y + hh], [x + w, y], [x, y]]];
+  // KIR 꼴: 큰 섬 1° (−158°) + 작은 환초 0.05° (173°) — 가장 큰 조각은 −158°
+  const f = { type: 'Feature', properties: { iso: 'KIR', ko: 'KIR' }, geometry: { type: 'MultiPolygon', coordinates: [rect(-158, 1.5, 1, 1), rect(173, 1.4, 0.05, 0.05)] } };
+  const proj = geoEquirectangular().rotate([-180, 0]).scale(2 * 180 / Math.PI).translate([400, 300]);
+  const arcs = [];
+  const ctx = { beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {}, stroke() {}, arc(x, y, r) { arcs.push({ x, y, r }); } };
+  const view = { width: 800, height: 600, geoRect: null };
+  const lonOf = () => Math.round(proj.invert([arcs[0].x, arcs[0].y])[0] * 100) / 100;
+  coloringLayer([f], { smallPx: 16, smallIsos: ['KIR'], smallMetric: 'area' }).draw(ctx, geoPath(proj, ctx), view);
+  assert.equal(lonOf(), -157.5, '없으면 가장 큰 조각 가운데(옛 길)');
+  arcs.length = 0;
+  const L = coloringLayer([f], { smallPx: 16, smallIsos: ['KIR'], smallMetric: 'area', markAt: { KIR: [173.02, 1.42] } });
+  L.draw(ctx, geoPath(proj, ctx), view);
+  assert.equal(arcs.length, 1); assert.equal(lonOf(), 173.02);
+  assert.equal(L.hit(proj([173.02, 1.42]))?.properties.iso, 'KIR');
+  // 크게 확대(1° = 400px — 키리티마티 400px)에도 준 점 동그라미는 남음(넓이 0)
+  const zoom = geoEquirectangular().rotate([-173, -1.4]).scale(400 * 180 / Math.PI).translate([400, 300]);
+  arcs.length = 0; L.draw(ctx, geoPath(zoom, ctx), view);
+  assert.equal(arcs.length, 1);
+});
+
 test('coloringQuiz 칠한 수(U4-9): 지역(region) 항목이 있으면 「칠한 나라 n / 나라 수 · 지역 n / 지역 수」, 없으면 옛 글 「칠한 나라 n / 전체」', () => {
   const sq = (iso, x) => ({ type: 'Feature', properties: { iso, ko: iso }, geometry: { type: 'Polygon', coordinates: [[[x, 0], [x, 1], [x + 1, 1], [x + 1, 0], [x, 0]]] } });
   const names = [{ name: '가', iso: 'AAA' }, { name: '나', iso: 'BBB' }, { name: '다', iso: 'SAH', region: true }];

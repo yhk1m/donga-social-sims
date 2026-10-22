@@ -47,7 +47,11 @@ test('바탕 지도 10a: 날짜변경선 양쪽 피지·키리바시 조각, 산
     assert.ok(lons(iso).some((x) => x < -170), `${iso} 서경 쪽`);
   }
   // simplifyByIso 100% 없이 만들면 키리바시 1·투발루 1·마셜 1·미크로네시아 1(나라마다 가장 큰 고리만) — 원본 Natural Earth 10m 조각 수
-  const min = { KIR: 35, TUV: 9, MHL: 22, FSM: 20, PLW: 9, TON: 10, COK: 13, ASM: 5 };
+  const min = { KIR: 35, TUV: 9, MHL: 22, FSM: 20, PLW: 9, TON: 10, COK: 13, ASM: 5, FJI: 44, MNP: 12 };   // U6-9: 피지 100%(라우 제도) · 북마리아나 상자 북쪽 21(20.56°N 까지)
+  if (BM.endsWith('basemap.json')) {
+    assert.ok(polys('MNP').some((p) => p[0].some(([, y]) => y > 20.5)), '북마리아나 파라욘데파하로스섬(20.56°N)');
+    assert.ok(polys('FJI').some((p) => p[0].some(([x]) => x > -179 && x < -178)), '피지 라우 제도');
+  }
   for (const [iso, n] of Object.entries(min)) assert.ok(polys(iso).length >= n, `${iso} 조각 ${polys(iso).length} < ${n}`);
   // 타라와(길버트 제도 — 수도) 둘레 섬이 있음
   assert.ok(polys('KIR').some((p) => p[0].some(([x, y]) => Math.abs(x - 173) < 0.3 && Math.abs(y - 1.4) < 0.4)), '타라와');
