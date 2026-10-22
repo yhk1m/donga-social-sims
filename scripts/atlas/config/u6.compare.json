@@ -1,0 +1,2237 @@
+{
+ "_doc": "교과서 대조표(compare_shots.mjs · compare.mjs --unit u6) 단원 설정 — u5.compare.json 과 같은 꼴. 출력은 단원 작업 폴더 기본값($ATLAS_WORK/units/u6/shots/compare · compare.html). 경로는 작업 폴더 기준. 만든 스크립트: $ATLAS_WORK/units/u6/u6-10/gen_compare.py(+ teacher_items.py)",
+ "fixedNow": 1760918400000,
+ "_fixedNow": "캡처 쪽의 Date.now 고정값(ms, u2~u5 와 같음) — 색칠하기 퀴즈 seed 기본값이 시각이라 캡처마다 문제가 달라지지 않게.",
+ "projections": {
+  "default": "robinson",
+  "extra": {
+   "general": [
+    "equalEarth"
+   ]
+  }
+ },
+ "_projections": "장면 = 주제마다 기본 도법(로빈슨) + 일반도 둘째 도법 이퀄어스(48쪽 람베르트 정적 방위와 같은 정적 도법). 이 단원은 모든 주제에 묶음이 있음 — 보기 레이어(topicView)·경로 자료 view 가 묶음을 고를 때 태평양 중심 150·극 중심·지구본으로 엶(?proj= 와 상관없음). 극 일반도의 둘째 도법(밀러)은 extraScenes 의 도구 전환 장면(<주제>-miller · -polar-back). 묶음마다 한 장 + 일반도 바로가기(하와이·타히티)는 extraScenes(kind view).",
+ "extraScenes": {
+  "general": [
+   {
+    "name": "general-tint-off",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.setOptions({tint:false, natural:false})"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "general-tint-off",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "고도 색 끔(같은 보기 — 태평양 중심 150)"
+      }
+     },
+     {
+      "eval": "{R}.atlasMap.setOptions({tint:true, natural:false})"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "general-tint-on",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "고도 색 켬(다시 켬 — 기본)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "general-views",
+    "steps": [
+     {
+      "fitView": "hawaii"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "general-view-hawaii",
+      "info": {
+       "kind": "view",
+       "view": "hawaii",
+       "map": "p48-hawaii",
+       "note": "블록 「지도에서 보기」 바로가기 「하와이 제도」(삽입 틀 범위 — 최대 확대 40 이라 조금 넓게)"
+      }
+     },
+     {
+      "fitView": "tahiti"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "general-view-tahiti",
+      "info": {
+       "kind": "view",
+       "view": "tahiti",
+       "map": "p48-tahiti",
+       "note": "바로가기 「타히티」(삽입 틀 범위 — 지명 자리 = 삽입 글자 자리)"
+      }
+     },
+     {
+      "fitView": "oceania"
+     },
+     {
+      "idle": true
+     }
+    ]
+   },
+   {
+    "name": "general-outline",
+    "steps": [
+     {
+      "showGroup": {
+       "ref": "layer-p48-korea"
+      }
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "take": "general-outline-start",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "같은 축척과 같은 경도의 우리나라 — 처음 자리(교과서 실루엣 자리 126.8°E, 38.2°S · 남북 거울상)"
+      }
+     },
+     {
+      "eval": "(async()=>{const el={R}.querySelector('.at-outline-shape');const r=el.getBoundingClientRect();let x=r.x+r.width/2,y=r.y+r.height/2;for(let fy=0.3;fy<0.9;fy+=0.1)for(let fx=0.3;fx<0.8;fx+=0.1){const px=r.x+r.width*fx,py=r.y+r.height*fy;if(document.elementFromPoint(px,py)===el){x=px;y=py;fy=fx=9;}}const ev=(t,i,b)=>el.dispatchEvent(new PointerEvent(t,{pointerId:1,pointerType:'mouse',isPrimary:true,button:0,buttons:b,clientX:x+220*i/12,clientY:y+-110*i/12,bubbles:true,cancelable:true}));ev('pointerdown',0,1);for(let i=1;i<=12;i++){ev('pointermove',i,1);await new Promise(r=>setTimeout(r,30));}ev('pointerup',12,0);})()"
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "general-outline-dragged",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "우리나라 윤곽을 끎(오른쪽 220·위 110px — 거울상 그대로, 실제 크기)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('[aria-label=\"교과서 자리로\"]').click()"
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "general-outline-home",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "「교과서 자리로」 — 처음 자리로 돌아옴"
+      }
+     }
+    ]
+   }
+  ],
+  "coloring": [
+   {
+    "name": "coloring-quiz",
+    "steps": [
+     {
+      "scrollTo": {
+       "sel": ".at-quiz"
+      }
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "coloring-quiz",
+      "info": {
+       "kind": "extra",
+       "note": "색칠하기 활동(섬나라 동그라미 · 칠한 수 「나라 0 / 14」)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "coloring-small-micronesia",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.fitBounds([128, -3, 176, 16])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "coloring-small-micronesia",
+      "info": {
+       "kind": "extra",
+       "note": "섬나라 확대 — 미크로네시아(팔라우·미크로네시아 연방·마셜 제도·나우루·키리바시 — 키리바시 동그라미 = 타라와)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "coloring-small-melanesia",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.fitBounds([140, -24, 183, -1])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "coloring-small-melanesia",
+      "info": {
+       "kind": "extra",
+       "note": "섬나라 확대 — 멜라네시아(파푸아 뉴기니·솔로몬 제도·바누아투·피지, 뉴칼레도니아는 퀴즈 밖)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "coloring-small-polynesia",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.fitBounds([172, -24, 196, -4])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "coloring-small-polynesia",
+      "info": {
+       "kind": "extra",
+       "note": "섬나라 확대 — 폴리네시아(투발루·사모아·통가 — 날짜변경선 양쪽)"
+      }
+     }
+    ]
+   }
+  ],
+  "arctic": [
+   {
+    "name": "arctic-switch",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "(()=>{const s={R}.querySelector('select.at-tools-select');s.value=\"miller\";s.dispatchEvent(new Event('change',{bubbles:true}));})()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "arctic-miller",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "도구 도법 「밀러」 — 평면(극에서 바로 바꾸면 반구 띠 맞춤 = k 1 세계)"
+      }
+     },
+     {
+      "eval": "(()=>{const s={R}.querySelector('select.at-tools-select');s.value=\"polarN\";s.dispatchEvent(new Event('change',{bubbles:true}));})()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "arctic-polar-back",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "다시 「북극 중심」 — 반구 전체(교과서 방향 90°W 위)"
+      }
+     }
+    ]
+   }
+  ],
+  "antarctic": [
+   {
+    "name": "antarctic-switch",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "(()=>{const s={R}.querySelector('select.at-tools-select');s.value=\"miller\";s.dispatchEvent(new Event('change',{bubbles:true}));})()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "antarctic-miller",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "도구 도법 「밀러」 — 평면(반구 띠 맞춤 = k 1 세계 — 기지 글자가 아래 가장자리에 모임)"
+      }
+     },
+     {
+      "eval": "(()=>{const s={R}.querySelector('select.at-tools-select');s.value=\"polarS\";s.dispatchEvent(new Event('change',{bubbles:true}));})()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "antarctic-polar-back",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "다시 「남극 중심」 — 반구 전체(교과서 방향 90°W 위)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "antarctic-shelf",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"빙붕\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "antarctic-legend-shelf",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "범례 「빙붕」 고름(Natural Earth 빙붕 면 — 로스·론·아메리 빙붕)"
+      }
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"빙붕\")).click()"
+     },
+     {
+      "idle": true
+     }
+    ]
+   }
+  ],
+  "relief": [
+   {
+    "name": "relief-base-tint",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.setOptions({tint:true, natural:false})"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "relief-base-tint",
+      "info": {
+       "kind": "extra",
+       "note": "바탕 고도 색(같은 보기)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "relief-base-none",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.setOptions({tint:false, natural:false})"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "relief-base-none",
+      "info": {
+       "kind": "extra",
+       "note": "바탕 색 없음(같은 보기)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "relief-base-natural",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.setOptions({tint:false, natural:true})"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "relief-base-natural",
+      "info": {
+       "kind": "extra",
+       "note": "바탕 자연색(기본으로 되돌림)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "relief-pins",
+    "steps": [
+     {
+      "scrollTo": {
+       "sel": ".at-reveal-btn"
+      }
+     },
+     {
+      "take": "relief-pins-hidden",
+      "info": {
+       "kind": "extra",
+       "note": "핀 번호 숨김(처음)"
+      }
+     },
+     {
+      "eval": "{R}.atlasTopic.pins.reveal({R}.atlasTopic.pins.markers[3].id)"
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "take": "relief-pins-one",
+      "info": {
+       "kind": "extra",
+       "note": "핀 하나 번호 보임(울루루)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-reveal-btn').click()"
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "take": "relief-pins-all",
+      "info": {
+       "kind": "extra",
+       "note": "번호 모두 보기(블루마운틴·와이오타푸·밀퍼드 사운드 핀은 교과서 자리)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-reveal-btn').click()"
+     },
+     {
+      "sleep": 200
+     }
+    ]
+   }
+  ],
+  "climate": [
+   {
+    "name": "climate-charts",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "scrollTo": {
+       "sel": ".at-reveal-btn"
+      }
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "eval": "{R}.querySelector('.at-reveal-btn').click()"
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "take": "climate-pins-all",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "기후 그래프 핀 번호 모두 보기(다윈·앨리스스프링스·퍼스·크라이스트처치 — 처음 범위 동쪽 210° 라 크라이스트처치 핀이 범례 칸 밖)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-reveal-btn').click()"
+     },
+     {
+      "sleep": 200
+     }
+    ]
+   }
+  ],
+  "exchange": [
+   {
+    "name": "exchange-fta-aus",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"오스트레일리아\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "exchange-legend-aus",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "FTA 범례 「오스트레일리아」 고름(손 견본 범례 — 교과서엔 범례 상자 없음)"
+      }
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"오스트레일리아\")).click()"
+     },
+     {
+      "idle": true
+     }
+    ]
+   },
+   {
+    "name": "exchange-pie",
+    "steps": [
+     {
+      "scrollTo": {
+       "sel": ".at-chart[data-chart=p54-aus-exports]"
+      }
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "exchange-pie",
+      "info": {
+       "kind": "extra",
+       "note": "오스트레일리아 수출 원그래프(csat 원 — 12시부터 시계 방향)",
+       "chart": "p54-aus-exports"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-chart[data-chart=p54-aus-exports]').closest('.at-card-chart').querySelector('.at-expand').click()"
+     },
+     {
+      "sleep": 800
+     },
+     {
+      "take": "exchange-pie-expand",
+      "info": {
+       "kind": "extra",
+       "note": "원그래프 크게 보기",
+       "chart": "p54-aus-exports"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   },
+   {
+    "name": "exchange-half",
+    "steps": [
+     {
+      "scrollTo": {
+       "sel": ".at-chart[data-chart=p54-partners]"
+      }
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "exchange-half",
+      "info": {
+       "kind": "extra",
+       "note": "무역 상대국 반원 둘(1965 위 · 2022 아래 지름 맞댐 — 반지름 비 0.587)",
+       "chart": "p54-partners"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-chart[data-chart=p54-partners]').closest('.at-card-chart').querySelector('.at-expand').click()"
+     },
+     {
+      "sleep": 800
+     },
+     {
+      "take": "exchange-half-expand",
+      "info": {
+       "kind": "extra",
+       "note": "반원 크게 보기",
+       "chart": "p54-partners"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   }
+  ],
+  "environment": [
+   {
+    "name": "environment-plastic",
+    "steps": [
+     {
+      "scrollTo": {
+       "sel": ".at-chart[data-chart=p54-plastic]"
+      }
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "environment-plastic",
+      "info": {
+       "kind": "extra",
+       "note": "해양 쓰레기 유입 경로 = 표 카드(Q11) + 표 아래 문장 둘",
+       "chart": "p54-plastic"
+      }
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-page-btn')].filter(b=>b.textContent.includes('부분'))[0].click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "take": "environment-page-plastic",
+      "info": {
+       "kind": "extra",
+       "note": "54쪽 해양 쓰레기 삽화 원본 쪽 보기(부분)"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   },
+   {
+    "name": "environment-dual",
+    "steps": [
+     {
+      "scrollTo": {
+       "sel": ".at-chart[data-chart=p54-temp-co2]"
+      }
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "environment-dual",
+      "info": {
+       "kind": "extra",
+       "note": "기온 편차·CO₂ 두 축 선(잰 값 — 주석)",
+       "chart": "p54-temp-co2"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-chart[data-chart=p54-temp-co2]').closest('.at-card-chart').querySelector('.at-expand').click()"
+     },
+     {
+      "sleep": 800
+     },
+     {
+      "take": "environment-dual-expand",
+      "info": {
+       "kind": "extra",
+       "note": "두 축 선 크게 보기",
+       "chart": "p54-temp-co2"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   },
+   {
+    "name": "environment-sea",
+    "steps": [
+     {
+      "scrollTo": {
+       "sel": ".at-chart[data-chart=p54-sealevel]"
+      }
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "environment-sea",
+      "info": {
+       "kind": "extra",
+       "note": "해수면 변화 예측(잰 값 점 5 — 2000 점이 0 아래, 해 간격 고름)",
+       "chart": "p54-sealevel"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-chart[data-chart=p54-sealevel]').closest('.at-card-chart').querySelector('.at-expand').click()"
+     },
+     {
+      "sleep": 800
+     },
+     {
+      "take": "environment-sea-expand",
+      "info": {
+       "kind": "extra",
+       "note": "해수면 그래프 크게 보기",
+       "chart": "p54-sealevel"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   },
+   {
+    "name": "environment-page-sea",
+    "steps": [
+     {
+      "eval": "[...{R}.querySelectorAll('.at-page-btn')].filter(b=>b.textContent.includes('부분'))[1].click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "take": "environment-page-sealevel",
+      "info": {
+       "kind": "extra",
+       "note": "54쪽 해수면 그림 그래프·지도 원본 쪽 보기(부분)"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   }
+  ],
+  "arcticRoute": [
+   {
+    "name": "arcticRoute-globe",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "(async()=>{const el={R}.querySelector('svg.at-overlay');const r=el.getBoundingClientRect();const x=r.x+r.width*0.4,y=r.y+r.height/2;const ev=(t,i,b)=>el.dispatchEvent(new PointerEvent(t,{pointerId:1,pointerType:'mouse',isPrimary:true,button:0,buttons:b,clientX:x+160*i/10,clientY:y+60*i/10,bubbles:true,cancelable:true}));ev('pointerdown',0,1);for(let i=1;i<=10;i++){ev('pointermove',i,1);await new Promise(r=>setTimeout(r,30));}ev('pointerup',10,0);})()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "arcticRoute-globe-dragged",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "지구본 끌어 돌림(오른쪽 160·아래 60px — 항로·붉은 점이 따라 돎, 바탕 자연색)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('[aria-label=\"세계 전체 보기\"]').click()"
+     },
+     {
+      "sleep": 700
+     },
+     {
+      "idle": true
+     },
+     {
+      "take": "arcticRoute-globe-home",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "「세계 전체 보기」 — 처음 회전"
+      }
+     }
+    ]
+   },
+   {
+    "name": "arcticRoute-stats",
+    "steps": [
+     {
+      "scrollTo": {
+       "sel": ".at-chart[data-chart=p55-route-stats]"
+      }
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "arcticRoute-stats",
+      "info": {
+       "kind": "extra",
+       "note": "북극 항로 수치 = 표 카드(▸▸ → 「→」)",
+       "chart": "p55-route-stats"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-chart[data-chart=p55-route-stats]').closest('.at-card-chart').querySelector('.at-expand').click()"
+     },
+     {
+      "sleep": 800
+     },
+     {
+      "take": "arcticRoute-stats-expand",
+      "info": {
+       "kind": "extra",
+       "note": "표 크게 보기",
+       "chart": "p55-route-stats"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   },
+   {
+    "name": "arcticRoute-claims-rus",
+    "steps": [
+     {
+      "showGroup": 1
+     },
+     {
+      "idle": true
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"러시아\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "arcticRoute-legend-russia",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "영유권 범례 「러시아」 고름"
+      }
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"러시아\")).click()"
+     },
+     {
+      "idle": true
+     }
+    ]
+   }
+  ],
+  "antarcticResearch": [
+   {
+    "name": "antarcticResearch-bases",
+    "steps": [
+     {
+      "showGroup": 1
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"영국\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "antarcticResearch-legend-uk",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "영유권 범례 「영국」 고름(영국 선만 굵게, 나머지 흐림)"
+      }
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"영국\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "eval": "(()=>{const r={R};const m=r.atlasMap;const o=r.querySelector('svg.at-overlay');const b=o.getBoundingClientRect();const q=m.project([-58.586, -62.583]);const x=q[0]+b.x,y=q[1]+b.y;const el=document.elementFromPoint(x,y);const o2={clientX:x,clientY:y,bubbles:true,cancelable:true,pointerId:1,pointerType:'mouse',isPrimary:true,button:0};el.dispatchEvent(new PointerEvent('pointermove',{...o2,buttons:0}));el.dispatchEvent(new PointerEvent('pointerdown',{...o2,buttons:1}));el.dispatchEvent(new PointerEvent('pointerup',{...o2,buttons:0}));el.dispatchEvent(new MouseEvent('click',o2));})()"
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "antarcticResearch-sejong",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "세종 과학 기지 점 누름 → 이름 말풍선(큰 빨간 점 + 흰 테두리 — 태극기 그림 없음)"
+      }
+     },
+     {
+      "mouse": [
+       5,
+       5
+      ]
+     }
+    ]
+   },
+   {
+    "name": "antarcticResearch-araon",
+    "steps": [
+     {
+      "showGroup": 2
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "(async()=>{const el={R}.querySelector('svg.at-overlay');const r=el.getBoundingClientRect();const x=r.x+r.width*0.4,y=r.y+r.height/2;const ev=(t,i,b)=>el.dispatchEvent(new PointerEvent(t,{pointerId:1,pointerType:'mouse',isPrimary:true,button:0,buttons:b,clientX:x+160*i/10,clientY:y+-60*i/10,bubbles:true,cancelable:true}));ev('pointerdown',0,1);for(let i=1;i<=10;i++){ev('pointermove',i,1);await new Promise(r=>setTimeout(r,30));}ev('pointerup',10,0);})()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "antarcticResearch-araon-s-dragged",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "아라온호 10월~4월 지구본 끌어 돌림(위치 근사 approx)"
+      }
+     },
+     {
+      "showGroup": 3
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "eval": "(async()=>{const el={R}.querySelector('svg.at-overlay');const r=el.getBoundingClientRect();const x=r.x+r.width*0.4,y=r.y+r.height/2;const ev=(t,i,b)=>el.dispatchEvent(new PointerEvent(t,{pointerId:1,pointerType:'mouse',isPrimary:true,button:0,buttons:b,clientX:x+-160*i/10,clientY:y+60*i/10,bubbles:true,cancelable:true}));ev('pointerdown',0,1);for(let i=1;i<=10;i++){ev('pointermove',i,1);await new Promise(r=>setTimeout(r,30));}ev('pointerup',10,0);})()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "antarcticResearch-araon-n-dragged",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "아라온호 7월~9월 지구본 끌어 돌림(번호 ①~⑤)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "antarcticResearch-pages",
+    "steps": [
+     {
+      "eval": "[...{R}.querySelectorAll('.at-page-btn')].filter(b=>b.textContent.includes('부분'))[0].click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "take": "antarcticResearch-page-araon",
+      "info": {
+       "kind": "extra",
+       "note": "55쪽 아라온호 지구본 원본 쪽 보기(부분)"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-page-btn')].filter(b=>b.textContent.includes('부분'))[1].click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "take": "antarcticResearch-page-theme",
+      "info": {
+       "kind": "extra",
+       "note": "55쪽 주제도 활동 원본 쪽 보기(부분)"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   }
+  ]
+ },
+ "checks": {
+  "_doc": "compare.mjs 의 단원 고유 확인(u5.compare.json checks 와 같은 키 + polarUp·sectorCountries·sectorClaimsNote). coloringLabels = 49쪽 색칠하기 지면 글자(작업 폴더 기준), mainMap = 주제 대표 지도, centerChecks = 태평양 중심 묶음(main.js centerLonOf·보기 레이어), polarUp = 극 지도 4장의 위쪽 경선(U6-2 가 지면 닮음 회전에서 잰 값 — 보기 레이어 처음 보기와 견줌), sectorCountries = 55쪽 기지 지도 영유권 선 나라(지면 선 곁 글자 7).",
+  "coloringLabels": "units/u6/text/p49-labels.json",
+  "insetLayers": [],
+  "noScreenSymbols": [],
+  "polarUp": {
+   "p50-arctic": -90,
+   "p51-antarctic": -90,
+   "p55-claims": 180,
+   "p55-bases": -90
+  },
+  "sectorCountries": {
+   "layer-p55-sectors": [
+    "뉴질랜드",
+    "칠레",
+    "아르헨티나",
+    "영국",
+    "오스트레일리아",
+    "프랑스",
+    "노르웨이"
+   ]
+  },
+  "sectorClaimsNote": "실제 주장 경선: 뉴질랜드 160°E~150°W · 칠레 53°~90°W · 아르헨티나 25°~74°W · 영국 20°~80°W · 오스트레일리아 44°38′E~160°E(프랑스 136~142°E 빼고) · 프랑스 136°~142°E · 노르웨이 20°W~44°38′E(극까지 안 감) — 교과서 선 되돌린 값과 모두 1° 안(교사 Q8 기본값: 교과서 값). 교과서는 오스트레일리아를 45~160°E 한 부채꼴로 그리고 프랑스 선이 그 안",
+  "centerChecks": [
+   {
+    "ref": "layer-p48-view",
+    "tb": "람베르트 정적 방위 149.9°E 중심(U6-2 맞춤) — 날짜변경선을 넘는 지도",
+    "web": "묶음을 고르면 중심 경도 150(보기 레이어) · 떠나면 0 으로"
+   },
+   {
+    "ref": "layer-p53-climate",
+    "tb": "람베르트 정적 방위 150.0°E 중심(U6-2 맞춤)",
+    "web": "묶음을 고르면 중심 경도 150(main.js centerLonOf) · 처음 범위 동쪽 210°"
+   },
+   {
+    "ref": "layer-p53-jan",
+    "tb": "← 기후 구분 식(projectionFrom)",
+    "web": "중심 경도 150 · 기후 셋 같은 범위"
+   },
+   {
+    "ref": "layer-p53-jul",
+    "tb": "← 기후 구분 식(projectionFrom)",
+    "web": "중심 경도 150 · 기후 셋 같은 범위"
+   },
+   {
+    "ref": "layer-p54-fta",
+    "tb": "밀러 169.7°E 중심(U6-2 맞춤)",
+    "web": "묶음을 고르면 중심 경도 150"
+   },
+   {
+    "ref": "layer-p54-garbage",
+    "tb": "밀러 175.4°W 중심(U6-2 맞춤)",
+    "web": "묶음을 고르면 중심 경도 180(범위 동쪽 248.5°)"
+   },
+   {
+    "ref": "layer-p54-sealevel",
+    "tb": "← 48쪽 식(projectionFrom)",
+    "web": "묶음을 고르면 중심 경도 180(범위 동쪽 212°)"
+   },
+   {
+    "ref": "layer-p55-treaty",
+    "tb": "밀러 153.3°E 중심(U6-2 맞춤)",
+    "web": "묶음을 고르면 중심 경도 150"
+   }
+  ],
+  "mainMap": {
+   "general": "p48-oceania",
+   "coloring": "p49-coloring",
+   "arctic": "p50-arctic",
+   "antarctic": "p51-antarctic",
+   "relief": "p52-relief"
+  },
+  "_known": "자동 확인의 「다름」 중 결정 기록에 까닭이 있는 것 → 「알려진 차이」(주제·항목 이름 + tb/web/webIncludes/pct 가 맞을 때만 — 값이 바뀌면 다시 「다름」). pct = 그 항목(webIncludes 바로 뒤)의 글 일치율 % 를 고정.",
+  "known": [
+   {
+    "topic": "general",
+    "item": "글 일치(본문·제목·설명, 펼침면)",
+    "webIncludes": "블록 outline-text",
+    "pct": 0,
+    "note": "U6-8 overrides: 윤곽 안내 글은 래스터 밑 PDF 글자 토막이라 지면 세 줄 「같은 축척과 같은 경도의 우리나라」로 고침(글 일치 0% 는 PDF 글자 때문)"
+   },
+   {
+    "topic": "general",
+    "map": "p48-oceania",
+    "item": "지도 제목",
+    "tb": "오세아니아 일반도",
+    "web": "오세아니아",
+    "note": "U6-8: 묶음 이름 = 지면 제목 풍선 「오세아니아」(labelSrc) — 지도 목록 제목의 「일반도」는 구별용"
+   },
+   {
+    "topic": "general",
+    "map": "p48-oceania",
+    "item": "[p48-korea] 윤곽 글자 ↔ 지면",
+    "webIncludes": "같은 경도의 우리나라 (지면과",
+    "pct": 0,
+    "note": "위 overrides 와 같은 래스터 밑 글자 — 지면에 보이나 PDF 글자가 토막이라 일치율 0%"
+   },
+   {
+    "topic": "coloring",
+    "item": "색칠하기 나라 수",
+    "tb": 11,
+    "web": 14,
+    "note": "U6-8 ①: 큰 초성 셋(ㅇㅅㅌㄹㅇㄹㅇ·ㅍㅍㅇ ㄴㄱ·ㄴㅈㄹㄷ)은 윤곽 도형 + 투명 글자라 지면 글자 11 — 퀴즈는 독립국 14(교사 Q5)"
+   },
+   {
+    "topic": "arctic",
+    "map": "p50-arctic",
+    "item": "[p50-lines] 범례 분류 수",
+    "tb": 3,
+    "web": 4,
+    "note": "U6-4: 「북극권」은 뽑은 선이 아니라 지리 위선 66.56°N(교과서 가는 파선과 겹침) — 범례 견본 하나 더(교사 Q10)"
+   },
+   {
+    "topic": "arctic",
+    "map": "p50-arctic",
+    "item": "[p50-lines] 지도에 있는 분류",
+    "tb": 3,
+    "web": 4,
+    "note": "위와 같음(북극권 위선)"
+   },
+   {
+    "topic": "arctic",
+    "map": "p50-arctic",
+    "item": "[p50-lines] 선 수(흐름선)",
+    "tb": 44,
+    "webIncludes": "45 (line 45)",
+    "note": "뽑은 선 44 + 북극권 위선 1"
+   },
+   {
+    "topic": "antarctic",
+    "map": "p51-antarctic",
+    "item": "[p51-lines] 범례 분류 수",
+    "tb": 2,
+    "web": 3,
+    "note": "U6-4: 「남극권」 = 지리 위선(뽑은 선 아님) — 견본 하나 더(교사 Q10)"
+   },
+   {
+    "topic": "antarctic",
+    "map": "p51-antarctic",
+    "item": "[p51-lines] 선 수(흐름선)",
+    "tb": 25,
+    "webIncludes": "26 (line 26)",
+    "note": "뽑은 선 25(날짜 변경선 포함) + 남극권 위선 1"
+   },
+   {
+    "topic": "climate",
+    "map": "p53-climate",
+    "item": "범례 분류 수",
+    "tb": 10,
+    "web": 9,
+    "note": "U6-4·교사 Q15: 뽑기에는 파푸아 뉴기니 고지대 빗금이 분류로 있으나 교과서 범례에 없어 웹 범례에서 뺌(빗금은 그림, issues.md 4)"
+   },
+   {
+    "topic": "climate",
+    "map": "p53-climate",
+    "item": "범례 글자",
+    "webIncludes": "파푸아 뉴기니 고지대",
+    "note": "위와 같음(범례 없는 빗금)"
+   },
+   {
+    "topic": "climate",
+    "map": "p53-climate",
+    "item": "지도에 있는 분류",
+    "tb": 10,
+    "web": 9,
+    "note": "위와 같음(범례 없는 빗금)"
+   },
+   {
+    "topic": "exchange",
+    "map": "p54-fta",
+    "item": "[p54-fta] 범례 글자 ↔ 지면 범례",
+    "webIncludes": "자유 무역 협정을 맺은 국가",
+    "note": "교사 Q14: FTA 지도는 범례 상자가 없어 손 견본 legendItems(「자유 무역 협정을 맺은 국가」·「오스트레일리아」)"
+   },
+   {
+    "topic": "exchange",
+    "map": "p54-fta",
+    "item": "[p54-fta-labels] 지도에 있는 분류",
+    "tb": 1,
+    "web": 0,
+    "note": "연도 글자·지시선 레이어는 범례가 없음(지시선 한 분류는 그림 몫)"
+   },
+   {
+    "topic": "exchange",
+    "map": "p54-fta",
+    "item": "[p54-fta-labels] 선 수(흐름선)",
+    "tb": 10,
+    "webIncludes": "label 17, line 10",
+    "note": "지시선 10 = 10 — 글자 17(연도 14 + 동해·독도·이어도)은 선이 아니라 같은 레이어의 글자"
+   },
+   {
+    "topic": "environment",
+    "item": "글 일치(본문·제목·설명, 펼침면)",
+    "webIncludes": "지면과 다름 3: 블록 p54-1",
+    "pct": 89,
+    "note": "p54-1 쓰레기 섬 사진 설명 「약 160만 km²」 위 첨자(지면은 따로 된 글자 「km 2」 — U6-6 captionOverride) · 잰 값 그래프 둘(두 축 선·해수면)의 블록 주석은 교과서에 없는 글(U6-8 overrides from null)"
+   },
+   {
+    "topic": "environment",
+    "map": "p54-sealevel",
+    "item": "지도 제목",
+    "tb": "남태평양의 해수면 변화 예측(지도)",
+    "note": "지도 목록 제목의 「(지도)」는 그래프와 구별용 — 묶음 이름 = 지면 제목"
+   },
+   {
+    "topic": "environment",
+    "map": "p54-sealevel",
+    "item": "범례 분류 수",
+    "tb": 1,
+    "web": 0,
+    "note": "U6-4 hideLegend: 해수면 작은 지도는 범례 없이(교과서도 범례 상자 없음 — 분홍 면 한 가지)"
+   },
+   {
+    "topic": "environment",
+    "map": "p54-sealevel",
+    "item": "범례 글자",
+    "webIncludes": "해수면 상승 위협 지역",
+    "note": "위와 같음(hideLegend)"
+   },
+   {
+    "topic": "environment",
+    "map": "p54-sealevel",
+    "item": "지도에 있는 분류",
+    "tb": 1,
+    "web": 0,
+    "note": "위와 같음(hideLegend)"
+   },
+   {
+    "topic": "environment",
+    "map": "p54-sealevel",
+    "item": "출처",
+    "webIncludes": "IPCC",
+    "note": "U6-8: 54쪽 IPCC 출처는 괄호가 겹쳐 인쇄 출처 찾기가 못 읽음(설정 notPrinted) — 지면에 인쇄돼 있음"
+   },
+   {
+    "topic": "arcticRoute",
+    "map": "p55-route",
+    "item": "지도 제목",
+    "tb": "북극 항로(지구본)",
+    "note": "지도 목록 제목의 「(지구본)」은 구별용 — 묶음 이름 = 지면 제목 「북극 항로」"
+   },
+   {
+    "topic": "arcticRoute",
+    "map": "p55-claims",
+    "item": "[p55-claims] 지도에 있는 분류",
+    "tb": 7,
+    "web": 6,
+    "note": "U6-4: 해양 경계 회색 파선은 범례 밖 선(교과서 범례 5나라 + 배타적 경제 수역 = 6)"
+   },
+   {
+    "topic": "antarcticResearch",
+    "map": "p55-araon-s",
+    "item": "지도 제목",
+    "tb": "쇄빙선 아라온호 운항 경로(10월~4월, 지구본)",
+    "note": "U6-8 ⑤: 묶음 이름 「10월~4월」(지면 괄호 뺌 — 지도 목록 제목은 구별용)"
+   },
+   {
+    "topic": "antarcticResearch",
+    "map": "p55-araon-n",
+    "item": "지도 제목",
+    "tb": "쇄빙선 아라온호 운항 경로(7월~9월, 지구본)",
+    "note": "U6-8 ⑤: 묶음 이름 「7월~9월」"
+   },
+   {
+    "topic": "general",
+    "map": "p48-oceania",
+    "item": "[p48-boundaries] 흐름선(화면)",
+    "tb": 65,
+    "web": 0,
+    "note": "이 선들은 area 레이어 선(캔버스에 그림 — 해양 경계·극 선·지시선)이라 화면 SVG 흐름선(.at-flow) 셈이 0 — 선 수(자료)는 위 줄, 그려진 것은 캡처로 확인"
+   },
+   {
+    "topic": "arctic",
+    "map": "p50-arctic",
+    "item": "[p50-lines] 흐름선(화면)",
+    "tb": 44,
+    "web": 0,
+    "note": "이 선들은 area 레이어 선(캔버스에 그림 — 해양 경계·극 선·지시선)이라 화면 SVG 흐름선(.at-flow) 셈이 0 — 선 수(자료)는 위 줄, 그려진 것은 캡처로 확인"
+   },
+   {
+    "topic": "antarctic",
+    "map": "p51-antarctic",
+    "item": "[p51-lines] 흐름선(화면)",
+    "tb": 25,
+    "web": 0,
+    "note": "이 선들은 area 레이어 선(캔버스에 그림 — 해양 경계·극 선·지시선)이라 화면 SVG 흐름선(.at-flow) 셈이 0 — 선 수(자료)는 위 줄, 그려진 것은 캡처로 확인"
+   },
+   {
+    "topic": "exchange",
+    "map": "p54-fta",
+    "item": "[p54-fta-labels] 흐름선(화면)",
+    "tb": 10,
+    "web": 0,
+    "note": "이 선들은 area 레이어 선(캔버스에 그림 — 해양 경계·극 선·지시선)이라 화면 SVG 흐름선(.at-flow) 셈이 0 — 선 수(자료)는 위 줄, 그려진 것은 캡처로 확인"
+   },
+   {
+    "topic": "arcticRoute",
+    "map": "p55-claims",
+    "item": "[p55-claims] 흐름선(화면)",
+    "tb": 10,
+    "web": 0,
+    "note": "이 선들은 area 레이어 선(캔버스에 그림 — 해양 경계·극 선·지시선)이라 화면 SVG 흐름선(.at-flow) 셈이 0 — 선 수(자료)는 위 줄, 그려진 것은 캡처로 확인"
+   }
+  ],
+  "_teacher": "교사 확인 항목(계획 「실행 중 결정」 U6-1~U6-9 의 「U6-10 알려진 차이 후보」·교사 확인 후보 + 교사 Q1~Q16 답 반영 상태 + issues.md 4) — 그 행에 노랑(known)·회색(info) 「교사 확인 ·」 줄 + 대조표 머리 쪽별 목록. page = 목록 묶음 이름, map 이 없으면 주제 확인 행. 항목 이름 앞 ★ = 교사 판단이 필요한 것(note 에 기본값).",
+  "teacher": [
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "item": "주제 10 · 55쪽 두 주제로 나눔(Q1)",
+    "tb": "48~55쪽 — 55쪽 「극지방의 중요성」 한 쪽",
+    "web": "목차 10(일반도·색칠하기·북극·남극·지형·기후·상호 교류·환경 문제·북극의 지리적 중요성·남극의 지리적 중요성과 극지 연구)",
+    "status": "info",
+    "note": "교사 답 Q1 기본값대로"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "map": "p48-oceania",
+    "item": "태평양 중심으로 엶(Q2)",
+    "tb": "48·49·52~55쪽 지도가 날짜변경선(180°)을 넘음",
+    "web": "일반도·색칠하기·지형 = 보기 레이어 중심 경도 150, 기후·FTA·남극 조약 150, 쓰레기 섬·해수면 180 — 다른 주제로 가면 되돌림, 지도 도구 「중심 경도」로 바꿈",
+    "status": "info",
+    "note": "교사 Q2 기본값"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "map": "p48-hawaii",
+    "item": "하와이·타히티 = 일반도 바로가기(Q3)",
+    "tb": "48쪽 삽입 지도 둘",
+    "web": "따로 창 없이 블록 「지도에서 보기」 단추(삽입 틀 범위로 날아감) — 묶음이 있는 주제라 바로가기 줄은 없음, 삽입 지명은 일반도 지명에 합침",
+    "status": "info",
+    "note": "교사 Q3 기본값(덧붙임 캡처 general-view-*)"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "map": "p48-hawaii",
+    "item": "하와이 바로가기 조금 넓게 · 50m 바탕",
+    "tb": "하와이 삽입 틀(약 7.5° × 4.5°)",
+    "web": "최대 확대 40 에 막혀 틀보다 조금 넓게 보임 · 하와이는 10a 상자 밖이라 50m 해안 · 고도 색·음영 화상 칸이 굵음(타히티 바로가기 k 32 도 같음)",
+    "note": "그 범위에 k 약 47 이 필요 — 최대 확대(공용)를 늘리지 않음"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "map": "p48-hawaii",
+    "item": "하와이 삽입 「미국」·「태평양」 뺌 · 「하와이 제도」 = 바로가기 이름",
+    "tb": "삽입 안 나라·바다 이름 · 틀 위 탭 「하와이 제도」",
+    "web": "지명에서 뺌(합치면 미국·태평양 자리가 하와이로 감) — 탭 글은 바로가기·블록 글(틀 제목)",
+    "note": "U6-5 ③ · U6-9 ③(하와이 블록 = 틀 제목, 삽입 축척 막대 「0 100km」 없음)"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "map": "p48-tahiti",
+    "item": "타히티 지명 자리 = 삽입 글자 자리",
+    "tb": "타히티(프) 삽입 글자",
+    "web": "섬 서쪽 약 270km 의 삽입 글자 자리(바로가기 보기에서는 교과서 삽입과 같은 배치)",
+    "note": "U6-5 ⑩ — 타히티 블록 글 = 틀 제목 「타히티(프)」"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "map": "p48-oceania",
+    "item": "같은 경도 거울상 우리나라 윤곽(Q4)",
+    "tb": "오스트레일리아 남쪽 바다 회색 실루엣(남북 뒤집힌 모양)",
+    "web": "교과서 자리(126.8°E, 38.2°S — 실제 거울상 넓이 중심과 70km) · 어디로든 끎 · 끌어도 거울상 · 「교과서 자리로」",
+    "status": "info",
+    "note": "교사 Q4 기본값(덧붙임 캡처 general-outline-*)"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "map": "p48-oceania",
+    "item": "윤곽 글자 자리 위쪽",
+    "tb": "실루엣 오른쪽 세 줄 글자",
+    "web": "윤곽 위 한 줄(공용 compareOutline) — 「그레이트오스트레일리아만」 지명에 조금 닿음",
+    "note": "U6-3h·U6-4 ⑯·U6-9 ⑦ — 공용 코드라 그대로"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "map": "p48-oceania",
+    "item": "윤곽 안내 글 고침(overrides)",
+    "tb": "래스터 밑 PDF 글자 토막(「은 같은 경도의은 경 나」)",
+    "web": "지면 세 줄 그대로 「같은 축척과 같은 경도의 우리나라」",
+    "status": "info",
+    "note": "U6-8 overrides — 대조표 글 일치 0% 는 PDF 글자 때문"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "map": "p48-oceania",
+    "item": "48쪽 날짜 변경선 없음",
+    "tb": "날짜 변경선(래스터)",
+    "web": "그리지 않음",
+    "note": "U6-4 ③: 벡터 후보 둘 다 날짜 변경선이 아님(자홍 점선 = 인도네시아·파푸아 뉴기니 경계, 검은 파선 = 가려진 꺾은 선) — 보이는 선은 래스터"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "map": "p48-oceania",
+    "item": "해양 경계 범례 = 손 견본",
+    "tb": "범례 없음(지도 위 붉은 파선)",
+    "web": "범례 칸 「해양 경계」 견본(고를 수 있음)",
+    "note": "교사 Q10 기본값"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "map": "p48-oceania",
+    "item": "그레이트오스트레일리아만·소순다 열도 손 넣음",
+    "tb": "곡선 글자(래스터)·낱자 사이 3.8em 벌린 글자",
+    "web": "곧은 짧은 글자 줄로 손 넣음(addLabels)",
+    "note": "U6-5 ⑤"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "map": "p48-oceania",
+    "item": "옮긴 기호(snapped) 12",
+    "tb": "교과서가 좁은 자리에 옮겨 그린 기호",
+    "web": "Natural Earth 자리 — 마주로 134km(하와이 잘린 자리 옆) · 수르구트 69 · 브라츠크 64 · 리오가예고스 59 · 누크 48 · 오호츠크 43 · 버크타운 37 · 헬싱키 33 · 푼타아레나스 30 · 톰스크 52 · 야쿠츠크 56 · 베르호얀스크 143km",
+    "note": "U6-5 ⑨·리뷰 — 아시아~아메리카와 같은 규칙(snapKm 30)"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "map": "p48-oceania",
+    "item": "오거스타(오스트레일리아 서부) 교과서 자리",
+    "tb": "48쪽 오거스타",
+    "web": "교과서 자리(Natural Earth 에 한글 이름이 없어 미국 메인주로 옮겨지던 것을 막음)",
+    "status": "info",
+    "note": "U6-5 ⑪"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "map": "p48-oceania",
+    "item": "찾아보기 격자 칸 차이 7",
+    "tb": "뉴먼 48B5 · 울런공 48D6 · 쿡산 48F7 · 수바 48G3 · 남극해 51D3 · 라센 빙붕 51A2 · 윌크스랜드 51H2",
+    "web": "모두 경선·위선 바로 곁(48쪽 = 경위선 칸, 50·51쪽 = 극 부채꼴 × 위도 고리)",
+    "status": "info",
+    "note": "102줄 중 95줄은 칸이 맞음 — 지명 오류 아님(U6-5 ⑦)"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "map": "p48-oceania",
+    "item": "붉은 국립 공원·유적 글자·소속 표시 뺌",
+    "tb": "붉은 글자(「울루루-카타 추타」 등) · (노)(영)(뉴)(프)",
+    "web": "지명에 넣지 않음(아시아~아메리카와 같음)",
+    "status": "info",
+    "note": "U6-5"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "item": "작은 지도 도법 고정(projectionFrom) · approx",
+    "tb": "49·52·54쪽 해수면 ← 48쪽, 53쪽 1·7월 ← 기후 구분 · 아라온 10~4월",
+    "web": "19장 모두 평균 잔차 ≤ 0.44mm, approx 1(아라온 10~4월)",
+    "status": "info",
+    "note": "기준점이 모자라거나 자유 맞춤이 엉뚱한 식으로 가는 지도는 본 지도 식을 빌림(U6-2)"
+   },
+   {
+    "page": "48쪽 일반도",
+    "topic": "general",
+    "item": "1024×768 화면의 범례 칸",
+    "tb": "—",
+    "web": "범례 칸이 지도 오른쪽 아래를 가림(접기·끌기 가능)",
+    "status": "info",
+    "note": "아시아~아메리카와 같은 공용 화면"
+   },
+   {
+    "page": "49쪽 색칠하기",
+    "topic": "coloring",
+    "item": "색칠하기 독립국 14 · 뉴칼레도니아 퀴즈 밖(Q5)",
+    "tb": "초성 나라 13 + 미크로네시아 · 수도 ★ 14 · 뉴칼레도니아는 노랗게 칠했으나 이름 없음",
+    "web": "퀴즈 나라 14·수도 14, 지역 0 — 뉴칼레도니아는 칠한 바탕만(누르면 「퀴즈에 없는 곳」)",
+    "note": "교사 Q5 답"
+   },
+   {
+    "page": "49쪽 색칠하기",
+    "topic": "coloring",
+    "item": "큰 초성 셋은 지면 글자 없음으로 셈",
+    "tb": "ㅇㅅㅌㄹㅇㄹㅇ·ㅍㅍㅇ ㄴㄱ·ㄴㅈㄹㄷ(12.8pt — 윤곽 도형 + 투명 글자)",
+    "web": "퀴즈에는 셋 다 있음(이름·수도 같음) — 대조표 「색칠하기 나라 수 11 / 14」",
+    "note": "U6-8 ①: 공용 글자 추출을 고치지 않고 extraCountries 로 넣음(퀴즈 화면은 label 을 안 씀)"
+   },
+   {
+    "page": "49쪽 색칠하기",
+    "topic": "coloring",
+    "map": "p49-coloring",
+    "item": "키리바시 동그라미 = 타라와",
+    "tb": "「ㅋㄹㅂㅅ」 글자는 길버트 제도 곁",
+    "web": "동그라미를 수도 타라와 환초에(가장 큰 섬 키리티마티는 처음 보기 밖) — 동그라미가 「타라와」 지명 글자에 조금 닿음(다른 산호초 나라도 같은 꼴)",
+    "note": "U6-9 ⑤·리뷰 ④(quiz.js markAt — 키가 있을 때만)"
+   },
+   {
+    "page": "49쪽 색칠하기",
+    "topic": "coloring",
+    "map": "p49-coloring",
+    "item": "50m(k 2~4)에서 키리바시 땅 = 키리티마티뿐",
+    "tb": "—",
+    "web": "k 2~4 에서 타라와 수도 기호가 바다 위(k ≥ 4 는 10a 35조각 · 환초 보임), 110m 에는 섬나라 8 이 땅이 없음",
+    "status": "info",
+    "note": "Natural Earth 50m 에 타라와가 없음(U6-9) — 칠하기·누르기는 10a 라 됨"
+   },
+   {
+    "page": "49쪽 색칠하기",
+    "topic": "coloring",
+    "map": "p49-coloring",
+    "item": "섬나라 동그라미 16px",
+    "tb": "표시 없음(이름만)",
+    "web": "넓이 기준 16px 동그라미 — 처음 보기에서 섬나라 66번 누르기 모두 칠함(U6-9)",
+    "status": "info",
+    "note": "덧붙임 캡처 coloring-small-*"
+   },
+   {
+    "page": "49쪽 색칠하기",
+    "topic": "coloring",
+    "map": "p49-coloring",
+    "item": "수도 「응어룰무드」 교과서 표기 그대로",
+    "tb": "49쪽 손글씨·48쪽 지명 「응어룰무드」",
+    "web": "그대로",
+    "status": "info",
+    "note": "교과서 안 표기가 같음"
+   },
+   {
+    "page": "50쪽 북극",
+    "topic": "arctic",
+    "map": "p50-arctic",
+    "item": "극 중심 보기 · 도법 고르기 옵션 8(Q6)",
+    "tb": "50쪽 정거 방위 — 북아메리카 위(90°W 위)",
+    "web": "묶음을 고르면 북극 중심(위쪽 경선 90°W) · 도구 도법 상자 8(평면 5 + 지구본 + 북극·남극 중심) — 이 단원 모든 주제",
+    "status": "info",
+    "note": "교사 Q6 답(덧붙임 캡처 arctic-miller·-polar-back)"
+   },
+   {
+    "page": "50쪽 북극",
+    "topic": "arctic",
+    "map": "p50-arctic",
+    "item": "극 묶음 처음 범위 = 위선 원",
+    "tb": "50쪽 네모 틀",
+    "web": "북위 44° 원(틀 변 가운데 위선)으로 맞춤 — 1440 에서 원판이 무대 높이에 맞음",
+    "status": "info",
+    "note": "U6-8 ⑨: 틀 격자 범위는 경도 한 바퀴를 못 덮어 극 보기에서 뜻이 없음"
+   },
+   {
+    "page": "50쪽 북극",
+    "topic": "arctic",
+    "map": "p50-arctic",
+    "item": "경위선 간격",
+    "tb": "경선 30° · 위선 10°",
+    "web": "경선 10°(80° 에서 멈춤 — 90° 배수만 극까지) · 위선 10°, 극 둘레가 촘촘",
+    "note": "U6-3b: 공용 경위선(graticule)을 고쳐야 해 그대로"
+   },
+   {
+    "page": "50쪽 북극",
+    "topic": "arctic",
+    "map": "p50-arctic",
+    "item": "극 일반도 선 범례 = 손 견본(Q10)",
+    "tb": "범례 없음(지도 위 글자 — 북극권·유빙 한계·영구빙 한계·해양 경계)",
+    "web": "범례 칸 선 견본 4(고를 수 있음) · 북극권 = 지리 위선 66.56°N(뽑은 선 아님 — 대조표 범례·선 수 +1)",
+    "note": "교사 Q10 기본값 · U6-4 ②"
+   },
+   {
+    "page": "50쪽 북극",
+    "topic": "arctic",
+    "map": "p50-arctic",
+    "item": "★ 극 일반도 범례 블록 제목 반복",
+    "tb": "범례 없음",
+    "web": "범례 칸 블록마다 레이어 제목 「북극 일반도」(50쪽 ×2 · 51쪽 「남극 일반도」 ×3)",
+    "note": "기본값: 그대로(블록 제목을 바꾸려면 공용 topic.js 를 고쳐야 해 앞 단원 조각이 바뀜) — 고칠지"
+   },
+   {
+    "page": "50쪽 북극",
+    "topic": "arctic",
+    "map": "p50-arctic",
+    "item": "유빙 한계 물결 → 실선 · 영구빙 한계 색",
+    "tb": "유빙 한계 물결 선 · 영구빙 한계 갈고리 파선(둘 다 #00a6e9 계열)",
+    "web": "유빙 한계 실선 · 영구빙 한계 #0089cf 파선(둘을 가르려고) — 지명 글자 자리에서 끊긴 곳은 교과서 그대로",
+    "note": "U6-4 ①⑳ · 화면용 색"
+   },
+   {
+    "page": "50쪽 북극",
+    "topic": "arctic",
+    "map": "p50-arctic",
+    "item": "50쪽 래스터 선 뺌(날짜 변경선·우랄 대륙 경계·그린란드 빙상 두께)",
+    "tb": "날짜 변경선·우랄 붉은 점선·빙상 두께 갈색 선 1,000~3,000m(모두 래스터)",
+    "web": "그리지 않음(빙상 두께 글자도 없음)",
+    "note": "U6-4 ③④⑤ · U6-3j — 벡터 도형이 없어 뽑을 수 없음"
+   },
+   {
+    "page": "50쪽 북극",
+    "topic": "arctic",
+    "map": "p50-arctic",
+    "item": "★ 50쪽 강·호수 이름 없음(래스터 글자)",
+    "tb": "볼가강·오브강·레나강·예니세이강·아무르강·발하슈호 등 파란 글자",
+    "web": "지명에 없음 — 나라 19·수도 9·그린란드·도시 22·산맥/평원 상자 글자 14·산 손 넣음",
+    "note": "기본값: 그대로(지면 글자가 래스터라 PDF 에 없음) — 강·호수 이름도 손으로 넣을지(U6-5 ①)"
+   },
+   {
+    "page": "50쪽 북극",
+    "topic": "arctic",
+    "map": "p50-arctic",
+    "item": "50쪽 손 넣은 지명 자리",
+    "tb": "래스터 글자·토막 글자(「앙」카라·「디」날리산)",
+    "web": "도시 22: 기호와 1pt 안이면 Natural Earth 자리(12) · 넘으면 교과서 기호 자리(10) · 토막 글자 빼고 손 넣은 이름 · 디날리산 = 교과서 삼각형 자리(실제 정상과 약 70km)",
+    "status": "info",
+    "note": "U6-5 ⑫⑬⑭"
+   },
+   {
+    "page": "50쪽 북극",
+    "topic": "arctic",
+    "map": "p50-arctic",
+    "item": "북극점·남극점 = 극 위",
+    "tb": "글자는 극 「+」 옆",
+    "web": "지명 자리 = 극(relocate)",
+    "status": "info",
+    "note": "U6-5 ②"
+   },
+   {
+    "page": "50쪽 북극",
+    "topic": "arctic",
+    "map": "p50-arctic",
+    "item": "다산 기지 = 큰 빨간 점(Q9)",
+    "tb": "태극기 그림 + 「다산 과학 기지 (대한민국)」",
+    "web": "큰 빨간 점 + 흰 테두리 + 붉은 「(대한민국)」(국기 그림 넣지 않음) · 글자가 점과 겹치면 점을 비켜 곁에 붙이고 멀어지면 가는 지시선",
+    "note": "교사 Q9 기본값 · U6-4 ⑰ → U6-9 리뷰·U6-10 고침"
+   },
+   {
+    "page": "51쪽 남극",
+    "topic": "antarctic",
+    "map": "p51-antarctic",
+    "item": "빙붕 = 내려받은 면(Q7)",
+    "tb": "흰 얼음 + 갈라진 무늬",
+    "web": "Natural Earth 10m 빙붕 면(퍼블릭 도메인 — 옅은 하늘빛 흰색 + 테두리, 180° 이음매 없음) · 갈라진 무늬 없음",
+    "note": "교사 Q7 답(덧붙임 캡처 antarctic-legend-shelf)"
+   },
+   {
+    "page": "51쪽 남극",
+    "topic": "antarctic",
+    "map": "p51-antarctic",
+    "item": "51쪽 선 범례 손 견본 · 날짜 변경선 일부 없음",
+    "tb": "범례 없음 · 날짜 변경선 북서쪽 꺾인 부분(회색 래스터)",
+    "web": "남극권(지리 위선)·유빙 한계·영구빙 한계 견본 · 날짜 변경선 = 180° 경선 토막만(범례 밖)",
+    "note": "교사 Q10 · U6-4 ⑥"
+   },
+   {
+    "page": "51쪽 남극",
+    "topic": "antarctic",
+    "map": "p51-antarctic",
+    "item": "남극 빙상 두께 등고선 없음",
+    "tb": "빙상 두께 1,000~4,000m(선은 보이지 않고 글자만)",
+    "web": "그리지 않음",
+    "note": "U6-4 ⑤"
+   },
+   {
+    "page": "51쪽 남극",
+    "topic": "antarctic",
+    "map": "p51-antarctic",
+    "item": "기지 글자 겹치면 숨김 · 「(대한민국)」 붙임",
+    "tb": "기지 약 30곳 「이름(약칭)」 교과서 자리",
+    "web": "처음 보기에서 글자끼리 겹치면 뒤 무리를 숨김(확대하면 다시 — 점·말풍선은 그대로), 「(대한민국)」은 이름 바로 아래·옆",
+    "note": "U6-9 ④ — 화면 글자(최소 10px)가 교과서보다 커서 남극반도·로스해에서 서로 덮였음"
+   },
+   {
+    "page": "51쪽 남극",
+    "topic": "antarctic",
+    "map": "p51-antarctic",
+    "item": "51쪽 랜드·산맥·남극점·「남 극 해」",
+    "tb": "래스터 글자 · 「남 극 해」 글자 둘",
+    "web": "랜드 7·산맥 4·남극점·빈슨산 손 넣음 · 남극해 한 이름 · 웨델해(찾아보기 「웨들해」는 다른 이름)",
+    "status": "info",
+    "note": "U6-5 ⑥⑧"
+   },
+   {
+    "page": "51쪽 남극",
+    "topic": "antarctic",
+    "map": "p51-antarctic",
+    "item": "기지 이름 = 렌더를 보고 적음",
+    "tb": "글꼴에 유니코드가 없는 글자(PDF 추출 깨짐)",
+    "web": "29곳 + 세종·장보고를 쪽 렌더 확대로 읽어 적음 — 우리나라 기지 범례 분류 따로(51·55쪽 범례 2)",
+    "status": "info",
+    "note": "U6-4"
+   },
+   {
+    "page": "52쪽 지형",
+    "topic": "relief",
+    "item": "핀 자리 교과서대로",
+    "tb": "교과서 핀 7",
+    "web": "그대로 — 블루마운틴 핀은 시드니 남서쪽 약 300km, 와이오타푸 핀은 호크스베이 쪽(약 140km 남쪽), 밀퍼드 사운드 핀은 앞바다(약 95km)",
+    "status": "info",
+    "note": "U6-6 ⑤(덧붙임 캡처 relief-pins-*)"
+   },
+   {
+    "page": "52쪽 지형",
+    "topic": "relief",
+    "item": "사진 카드에 지도·그래프 출처 안 넣음",
+    "tb": "52쪽 naturalearthdata · 53쪽 『이과연표』",
+    "web": "출처는 지도·그래프에만",
+    "status": "info",
+    "note": "U6-6 ⑥"
+   },
+   {
+    "page": "53쪽 기후",
+    "topic": "climate",
+    "item": "★ 퍼스·크라이스트처치 그래프 = 97쪽 표 값(교과서 문제)",
+    "tb": "53쪽 그림이 97쪽 표보다 기온 7~8℃ 높고 강수 약 10% 많게 그려짐(퍼스 1월 24.7 ↔ 약 32.9℃ · 7월 137.1 ↔ 약 151.9mm, 크라이스트처치 1월 16.8 ↔ 약 24.2℃ · 7월 67.6 ↔ 약 73.6mm)",
+    "web": "97쪽 표 값으로 그림 — 앱 그래프가 교과서 그림보다 낮게 보임",
+    "note": "issues.md 2 — 기본값: 표 값(다윈은 그림 = 표) · 교과서 그림 값을 따를지"
+   },
+   {
+    "page": "53쪽 기후",
+    "topic": "climate",
+    "item": "★ 앨리스스프링스 강수 눈금 「350」 두 번(교과서 문제)",
+    "tb": "400 자리에 「350」이 한 번 더 인쇄",
+    "web": "그 눈금을 400 으로 읽어 잰 값(97쪽 표에 없음 — 기온 ±0.3℃ · 강수 ±1.5mm), 마커 카드라 주석 칸 없음",
+    "note": "issues.md 3 — 기본값: 400 으로 바로잡음. 퍼스·크라이스트처치처럼 그림 자체가 부풀었을 수 있으나 확인할 길 없음"
+   },
+   {
+    "page": "53쪽 기후",
+    "topic": "climate",
+    "map": "p53-climate",
+    "item": "★ 파푸아 뉴기니 고지대 빗금(교과서 문제·Q15)",
+    "tb": "범례에 없는 초록 사선 빗금",
+    "web": "교과서 그대로 빗금을 그림 · 범례에는 넣지 않음(대조표 범례 수 10 / 9)",
+    "note": "issues.md 4 · 교사 Q15 기본값 — 범례에 「고산 기후(빗금)」을 더할지"
+   },
+   {
+    "page": "53쪽 기후",
+    "topic": "climate",
+    "map": "p53-climate",
+    "item": "기후 셋 처음 범위 동쪽 210°",
+    "tb": "기후 구분 틀(오스트레일리아 + 뉴질랜드)",
+    "web": "동쪽 210° 까지 넓혀 크라이스트처치 핀이 범례 칸 밖(1440·1024 모두 누름) — 오스트레일리아가 교과서 틀보다 작게(무대 폭 약 45%)",
+    "note": "U6-9 ①(덧붙임 캡처 climate-pins-all)"
+   },
+   {
+    "page": "53쪽 기후",
+    "topic": "climate",
+    "map": "p53-climate",
+    "item": "기후 그래프 마커 4 → 그래프 도시",
+    "tb": "교과서 핀",
+    "web": "그래프 도시 자리 · 핀 둘레 래스터 구멍(0.04~0.12°²)은 핀 표식이 덮음",
+    "status": "info",
+    "note": "아시아~아메리카와 같음 · U6-4 ⑧"
+   },
+   {
+    "page": "53쪽 기후",
+    "topic": "climate",
+    "map": "p53-climate",
+    "item": "53쪽 뉴질랜드 = 같은 지도",
+    "tb": "틀 선 없는 오른쪽 아래 뉴질랜드",
+    "web": "삽입이 아니라 본 지도(경위선 이어짐 — 맞춤 잔차 0.5pt 안)",
+    "status": "info",
+    "note": "U6-1·U6-2"
+   },
+   {
+    "page": "54쪽 상호 교류",
+    "topic": "exchange",
+    "map": "p54-fta",
+    "item": "FTA 분류·범례 손 견본(Q14)",
+    "tb": "범례 상자 없음 · 협정국 보라 · 오스트레일리아 분홍 · 연도 글자 14 + 지시선",
+    "web": "2분류 「자유 무역 협정을 맺은 국가」·「오스트레일리아」(손 견본) · 연도 글자·지시선 교과서 자리 · 「*다자간 협정은 제외함」은 블록 글",
+    "note": "교사 Q14 기본값(덧붙임 캡처 exchange-legend-aus)"
+   },
+   {
+    "page": "54쪽 상호 교류",
+    "topic": "exchange",
+    "map": "p54-fta",
+    "item": "FTA·남극 조약 지도 도법",
+    "tb": "밀러(태평양 중심 — FTA 169.7°E · 남극 조약 153.3°E)",
+    "web": "로빈슨(기본) · 중심 경도 150 — 도구에서 「밀러」로 바꿈",
+    "status": "info",
+    "note": "웹 기본 도법은 단원마다 로빈슨(아시아~아메리카와 같음, 덧붙임 없음)"
+   },
+   {
+    "page": "54쪽 상호 교류",
+    "topic": "exchange",
+    "map": "p54-fta",
+    "item": "FTA 고친 나라 · 하이난섬",
+    "tb": "표본 보라 18 + 분홍 1 · 하이난섬 회색",
+    "web": "북한·네팔·부탄·맨섬 분류 없음, 싱가포르·마카오 협정국(둘레 값) · 하이난섬은 중국 전체로 칠함",
+    "note": "U6-4 ⑲ — 1000~2400dpi 확대로 하나씩 봄"
+   },
+   {
+    "page": "54쪽 상호 교류",
+    "topic": "exchange",
+    "map": "p54-fta",
+    "item": "1024 에서 FTA 연도 글자 닿음",
+    "tb": "—",
+    "web": "1024(k 1)에서 「중국(2015년)」이 「이어도 종합 해양 과학 기지」 글자에 조금 닿음(1440 은 닿지 않음)",
+    "status": "info",
+    "note": "U6-9 ⑧ — 확대하면 풀림"
+   },
+   {
+    "page": "54쪽 상호 교류",
+    "topic": "exchange",
+    "item": "반원 크기 비 = 교과서 그림 비(Q13)",
+    "tb": "1965 27억 달러 · 2022 6,706억 달러 반원(반지름 비 약 0.59)",
+    "web": "잰 반지름 비 0.587(금액 넓이 비 아님) · 1965 위 · 2022 아래 지름 맞댐 · 반원 앞 소제목 없음(그래프 제목이 같은 글)",
+    "status": "info",
+    "note": "교사 Q13 기본값 · U6-7 ⑤ · U6-8 ⑫(덧붙임 캡처 exchange-half*)"
+   },
+   {
+    "page": "54쪽 상호 교류",
+    "topic": "exchange",
+    "item": "원그래프 제목·부제",
+    "tb": "머리 두 줄 「오스트레일리아(2022년)」·「6,706(억 달러)」",
+    "web": "제목 + 부제(두 줄)",
+    "status": "info",
+    "note": "U6-7 ⑧"
+   },
+   {
+    "page": "54쪽 환경 문제",
+    "topic": "environment",
+    "item": "해양 쓰레기 유입 경로 = 표 카드(Q11)",
+    "tb": "삽화 막대(353·82·19·6·1.7 백만 톤) + 문장 둘",
+    "web": "표 카드(단계·값 — 지면 글자 그대로) + 표 아래 글 문장 둘 + 원본 쪽 부분 보기(삽화)",
+    "note": "교사 Q11 기본값 · U6-7 ⑦ · U6-8 ⑧(덧붙임 캡처 environment-plastic·-page-plastic)"
+   },
+   {
+    "page": "54쪽 환경 문제",
+    "topic": "environment",
+    "item": "해수면 그래프 = 잰 값(Q12)",
+    "tb": "점 5개(값 글자 없음)",
+    "web": "잰 값 선 그래프 ±0.4cm + 주석(교과서에 없는 글) · 2000 점이 0 아래(−3.6cm — 교과서 그림 그대로) · 해 비례 간격(교과서와 같음)이나 「2013」 눈금 글자와 점 표식은 없음(공용 csat 꺾은선 — 2013 은 선 꺾임으로만)",
+    "note": "교사 Q12 기본값 · U6-7 ③⑥"
+   },
+   {
+    "page": "54쪽 환경 문제",
+    "topic": "environment",
+    "item": "두 축 선 = 잰 값",
+    "tb": "기온 편차·CO₂ 곡선(값 글자 없음)",
+    "web": "해마다 잰 곡선 높이(±0.014℃ · ±1.9PPM) + 주석(교과서에 없는 글)",
+    "status": "info",
+    "note": "U6-7 ③ · U6-8 ⑦ — 대조표 글 일치의 주석 2줄"
+   },
+   {
+    "page": "54쪽 환경 문제",
+    "topic": "environment",
+    "map": "p54-sealevel",
+    "item": "해수면 지도 나라 이름 = 지명 자리",
+    "tb": "분홍 면 가운데 이름(키리바시·투발루·피지)",
+    "web": "지명 자리(섬 위) — 레이어 글자는 뺌(지명과 둘씩 겹쳤음) · 범례 없음(hideLegend)",
+    "note": "U6-9 ② · U6-10 고침: 교과서 붉은 테두리를 더함(채움만이면 세 면이 한 덩어리로 보였음) — 뽑은 세 면이 좁은 목으로 맞닿아 교과서 타원보다 이어져 보임(덧붙임 캡처 environment-g1)"
+   },
+   {
+    "page": "54쪽 환경 문제",
+    "topic": "environment",
+    "map": "p54-garbage",
+    "item": "쓰레기 섬 범례·해류",
+    "tb": "범례 없음 · 해류 화살표(가운데 큰 S자 소용돌이 띠 포함)",
+    "web": "「쓰레기 지대」·「해류」 손 견본 · 점 무리 면이 1.2pt 넓음 · S자 소용돌이 띠 없음(채운 꺾인 띠라 가운데 선을 못 뽑음)",
+    "note": "U6-4 ⑨⑩⑱"
+   },
+   {
+    "page": "54쪽 환경 문제",
+    "topic": "environment",
+    "item": "사람 사진 셋 둘레 삽화·해상도",
+    "tb": "쪽 너비 삽화 위에 오려 낸 사람 사진",
+    "web": "사람 둘레만 자름(삽화 조각이 조금 보임) · 원본이 작아 201~246px",
+    "status": "info",
+    "note": "U6-6 ④"
+   },
+   {
+    "page": "54쪽 환경 문제",
+    "topic": "environment",
+    "item": "쓰레기 섬 본문 = 사진 카드 설명",
+    "tb": "사진 옆 설명 글",
+    "web": "사진 카드 설명으로만(따로 된 글 블록 없음)",
+    "status": "info",
+    "note": "U6-8 ⑩"
+   },
+   {
+    "page": "55쪽 북극의 지리적 중요성",
+    "topic": "arcticRoute",
+    "map": "p55-route",
+    "item": "북극 항로 지구본(Q2·Q16)",
+    "tb": "위성 사진 같은 지구본",
+    "web": "끌어 돌리는 지구본 + 자연색 바탕(도구 「바탕」으로 바꿈) · 수치(32%·25%)는 표 카드",
+    "status": "info",
+    "note": "교사 Q2·Q16 기본값(덧붙임 캡처 arcticRoute-globe-*)"
+   },
+   {
+    "page": "55쪽 북극의 지리적 중요성",
+    "topic": "arcticRoute",
+    "map": "p55-route",
+    "item": "★ 북극 항로 화살촉",
+    "tb": "화살촉 없음",
+    "web": "끝(로테르담) 쪽에 화살촉 — 경로 방향 = 부산 → 로테르담",
+    "note": "U6-4 ⑪ — 기본값: 화살촉 그대로(공용 pathFlow) · 방향이 맞는지, 화살촉을 뺄지"
+   },
+   {
+    "page": "55쪽 북극의 지리적 중요성",
+    "topic": "arcticRoute",
+    "map": "p55-route",
+    "item": "지구본 가장자리 지명 넘침",
+    "tb": "—",
+    "web": "원판 가장자리에서 지명이 원판 밖으로 조금 넘침(아메리카와 같음)",
+    "status": "info",
+    "note": "U6-9 ⑩"
+   },
+   {
+    "page": "55쪽 북극의 지리적 중요성",
+    "topic": "arcticRoute",
+    "map": "p55-claims",
+    "item": "영유권 원판 = 극 중심 고정(위쪽 180°)",
+    "tb": "알래스카 위 원판",
+    "web": "북극 중심 · 위쪽 경선 180° · 꼭짓점을 극에 붙임(지면 「+」 는 88.7°N)",
+    "status": "info",
+    "note": "U6-2: 자유 맞춤 중심이 84~87°N 로 흔들려 고정 후보 유지"
+   },
+   {
+    "page": "55쪽 북극의 지리적 중요성",
+    "topic": "arcticRoute",
+    "map": "p55-claims",
+    "item": "가스전·유전·분쟁 지역 그림 기호 → 단순 모양",
+    "tb": "그림 기호",
+    "web": "세모·세모·마름모(크기·색 교과서 쪽)",
+    "note": "U6-4 ⑬"
+   },
+   {
+    "page": "55쪽 남극의 지리적 중요성과 극지 연구",
+    "topic": "antarcticResearch",
+    "map": "p55-treaty",
+    "item": "★ 남극 조약 나라 69 / 회원국 56",
+    "tb": "자문 회원국·비자문 회원국 2분류(본문 회원국 수 56)",
+    "web": "나라 69 칠함 — 지면 색 표본 71 에서 멕시코·볼리비아를 회색(분류 없음)으로 고침, 둘레에 묻힌 작은 나라·영역(안도라·산마리노·바티칸·레소토·에스와티니·홍콩·리히텐슈타인)은 둘레 나라 값",
+    "note": "기본값: 교과서 지면 색 그대로(캅카스·발칸 작은 나라는 지면에서 가를 수 없어 표본 그대로) — 실제 회원국 명단으로 고칠지"
+   },
+   {
+    "page": "55쪽 남극의 지리적 중요성과 극지 연구",
+    "topic": "antarcticResearch",
+    "map": "p55-bases",
+    "item": "영유권 선 = 교과서 값(Q8)",
+    "tb": "나라마다 색·선 모양이 다른 경계선만(면 없음)",
+    "web": "교과서 선을 되돌린 경도(실제 주장 경선과 1° 안) · 겹치는 호 비킴(칠레 −2.5 · 아르헨티나 +2.5 · 프랑스 +2.5 · 160°E 뉴질랜드 +2 · 오스트레일리아 −2) · 범례 고름 = 그 나라 선만 굵게",
+    "status": "info",
+    "note": "교사 Q8 기본값(덧붙임 캡처 antarcticResearch-legend-uk)"
+   },
+   {
+    "page": "55쪽 남극의 지리적 중요성과 극지 연구",
+    "topic": "antarcticResearch",
+    "map": "p55-bases",
+    "item": "영국·오스트레일리아 선 색 진하게",
+    "tb": "영국 #fdb913 · 오스트레일리아 #fff200",
+    "web": "#f7941d · #e8c600(흰 남극 대륙 위에서 묻혀서)",
+    "note": "U6-4 ⑮ — 화면용 색"
+   },
+   {
+    "page": "55쪽 남극의 지리적 중요성과 극지 연구",
+    "topic": "antarcticResearch",
+    "map": "p55-bases",
+    "item": "선 곁 나라 이름 → 범례",
+    "tb": "선 곁 흰 글자(나라 이름)",
+    "web": "범례 칸 나라 7 이 대신",
+    "note": "U6-4 ⑭"
+   },
+   {
+    "page": "55쪽 남극의 지리적 중요성과 극지 연구",
+    "topic": "antarcticResearch",
+    "map": "p55-bases",
+    "item": "기지 표시(Q9) · 세종·장보고 글자",
+    "tb": "약칭 「(러)」 꼴 + 세종·장보고 태극기 그림",
+    "web": "빨간 점 + 약칭 · 세종·장보고는 큰 빨간 점 + 흰 테두리 + 붉은 「(대한민국)」 — 글자는 점 곁에 붙임(교과서 쪽 먼저, 막히면 다른 쪽, 다 막혀 멀어지면 가는 지시선)",
+    "note": "교사 Q9 기본값 · U6-10 고침(점 비킴으로 60px 떨어져 점과 이어져 보이지 않던 것)"
+   },
+   {
+    "page": "55쪽 남극의 지리적 중요성과 극지 연구",
+    "topic": "antarcticResearch",
+    "map": "p55-bases",
+    "item": "★ 55쪽 기지 지도 「200km」 축척 막대(교과서 문제)",
+    "tb": "막대 13.9pt = 「200km」",
+    "web": "지도 경위선으로 잰 축척으로는 막대가 약 640km(200km 이면 약 4.3pt) — 앱은 축척 막대를 지도 축척으로 다시 그림",
+    "note": "issues.md 1 — 기본값: 교과서 원문 그대로(앱 축척 막대는 확대에 따라) · 바로잡을지"
+   },
+   {
+    "page": "55쪽 남극의 지리적 중요성과 극지 연구",
+    "topic": "antarcticResearch",
+    "map": "p55-bases",
+    "item": "범례 칸이 기지 원판 오른쪽 아래를 덮음",
+    "tb": "—",
+    "web": "1440 에서 범례 칸이 노르웨이·오스트레일리아 호 일부를 가림(접기·끌기 가능)",
+    "status": "info",
+    "note": "U6-9 ⑨ — 공용 UI"
+   },
+   {
+    "page": "55쪽 남극의 지리적 중요성과 극지 연구",
+    "topic": "antarcticResearch",
+    "map": "p55-araon-s",
+    "item": "★ 아라온호 10월~4월 경로 = 위치 근사",
+    "tb": "지구본 그림(경위선 없음)",
+    "web": "손 기준점 6 모두 approx(크라이스트처치·푼타아레나스·테라노바 만·세종·뉴질랜드 두 섬) — 범례 칸 「위치 근사」 표시",
+    "note": "U6-2 — 기본값: 근사 경로 + 표시 · 실제 항로 자료로 바꿀지(교과서에 없는 자료라 기본은 그대로)"
+   },
+   {
+    "page": "55쪽 남극의 지리적 중요성과 극지 연구",
+    "topic": "antarcticResearch",
+    "map": "p55-araon-n",
+    "item": "★ 아라온호 7월~9월 번호 ①~⑤",
+    "tb": "지면 번호 다섯(지도 목록 설명은 ①~⑥)",
+    "web": "번호 원문자 5(①~⑤) — 노랑 원 가운데",
+    "note": "U6-4 — 기본값: 지면에 보이는 다섯 · 여섯째가 있는지"
+   },
+   {
+    "page": "55쪽 남극의 지리적 중요성과 극지 연구",
+    "topic": "antarcticResearch",
+    "map": "p55-araon-s",
+    "item": "아라온 번호 = 원문자 글자 · 지구본 바탕(Q16)",
+    "tb": "노랑 원 안 검은 숫자 · 위성 사진 같은 지구본",
+    "web": "노랑 원 자리 원문자 글자(①~⑦) · 누르면 지면 글자 · 자연색 바탕 · 묶음 이름 「10월~4월」·「7월~9월」(지면 괄호 뺌)",
+    "status": "info",
+    "note": "교사 Q16 기본값 · U6-4 ⑫ · U6-8 ⑤"
+   },
+   {
+    "page": "55쪽 남극의 지리적 중요성과 극지 연구",
+    "topic": "antarcticResearch",
+    "item": "기지 사진 셋 같은 설명 · 아라온호 사진 설명",
+    "tb": "오른쪽 한 글(세 사진 공통) · 지구본 아래 글",
+    "web": "같은 설명 세 카드 · 아라온호 사진 설명 = 지구본 아래 글",
+    "status": "info",
+    "note": "U6-6 ①③ · U6-8 ⑩"
+   },
+   {
+    "page": "55쪽 남극의 지리적 중요성과 극지 연구",
+    "topic": "antarcticResearch",
+    "item": "주제도 활동 화면 셋 설명 = 굵은 제목",
+    "tb": "누리집 화면 3(제목만)",
+    "web": "굵은 글을 설명으로",
+    "status": "info",
+    "note": "U6-6 ②(덧붙임 캡처 antarcticResearch-page-theme)"
+   },
+   {
+    "page": "55쪽 남극의 지리적 중요성과 극지 연구",
+    "topic": "antarcticResearch",
+    "item": "기지 지도 제목·본문 고침(overrides)",
+    "tb": "두 줄 제목(줄 바꿈 빈칸 「기 지」) · 원판 둘레 글 빈칸",
+    "web": "빈칸만 고친 지면 글",
+    "status": "info",
+    "note": "U6-8 ⑥"
+   }
+  ]
+ },
+ "notes": {
+  "_doc": "대조표 「알려진 차이」·「참고」 줄의 단원 고유 설명.",
+  "viewProjection": "로빈슨(기본) · 둘째 캡처 이퀄어스(정적 도법)",
+  "viewProjectionNote": "웹은 세계 도법 5종 + 지구본 + 북극·남극 중심(원뿔 도법 없음)"
+ }
+}

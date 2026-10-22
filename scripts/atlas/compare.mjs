@@ -200,6 +200,34 @@ function mapChecks(mapId, refs, shot, topicId) {
       out.push(check(`${tag}윤곽 글자 ↔ 지면`, '지면 실루엣 글자', `${lab}${c >= 0.99 ? ' · 지면에 있음' : ` (지면과 ${Math.round(c * 100)}%)`}`, c >= 0.99 ? OK : DIFF));
       out.push(check(`${tag}윤곽 크기`, '교과서 축척으로 그린 실루엣', '실제 크기 — 끌어 옮겨도 대권 거리 그대로(구면 회전), 「교과서 자리로」 단추', INFO));
     }
+    if (!isOverlay && L.properties?.layerType === 'topicView') { // 주제 보기 레이어(u6 — 그리지 않고 묶음을 열 때 보기만 바꿈: 극 중심·중심 경도·바탕)
+      const v = L.properties.view || {}, lonTxt = (x) => (x == null ? '없음' : x === 180 || x === -180 ? '180°' : x < 0 ? `${-x}°W` : `${x}°E`);
+      if (v.projection === 'polarN' || v.projection === 'polarS') {
+        const fam = (m.families || []).find((f) => typeof f === 'object' && f.family === 'azimuthalEquidistant');
+        const tbPole = fam ? (fam.params[1] > 0 ? 'polarN' : 'polarS') : null, tbUp = CHECKS.polarUp?.[mapId];
+        const pole = (x) => (x === 'polarN' ? '북극 중심' : x === 'polarS' ? '남극 중심' : '극 중심 아님');
+        out.push(check(`${tag}처음 보기(극 중심)`, `${m.projection || '—'} ${pole(tbPole)} · 위쪽 경선 ${lonTxt(tbUp)}`, `${pole(v.projection)} · 위쪽 경선 ${lonTxt(v.up)}`,
+          tbPole === v.projection && tbUp === v.up ? OK : DIFF, '위쪽 경선 = U6-2 가 지면 닮음 회전에서 잰 값(checks.polarUp) · 끌기 = 옮기기(회전 고정)'));
+      } else if (v.centerLon != null) {
+        out.push(check(`${tag}처음 보기(중심 경도)`, '태평양 중심(날짜변경선을 넘는 지도)', `중심 경도 ${v.centerLon} — 떠나면 되돌림`, INFO, '보기 레이어(그리지 않음) — 지도 도구 「중심 경도」로 바꿈'));
+      }
+      if (v.base) out.push(check(`${tag}처음 바탕`, '—', v.base, INFO));
+    }
+    if (!isOverlay && L.properties?.layerType === 'sectorLines') { // 영유권 경계선(u6 55쪽 — 교과서 경계선만, 면 없음)
+      const tbN = CHECKS.sectorCountries?.[r.ref] || [];
+      const miss = tbN.filter((n) => !legend.some((e) => e.label === n)), extra = legend.filter((e) => !tbN.includes(e.label)).map((e) => e.label);
+      out.push(check(`${tag}영유권 선 나라`, `${tbN.length} (${tbN.join(', ')})`, `${legend.length}${miss.length ? ` · 없음: ${miss.join(', ')}` : ''}${extra.length ? ` · 더함: ${extra.join(', ')}` : ''}`, miss.length || extra.length ? DIFF : OK));
+      const mer = {};
+      for (const f of L.features) {
+        const lines = f.geometry.type === 'LineString' ? [f.geometry.coordinates] : f.geometry.coordinates;
+        for (const ln of lines) if (ln.length > 1 && ln.every((q) => Math.abs(q[0] - ln[0][0]) < 1e-6)) (mer[f.properties.cls] ||= new Set()).add(ln[0][0]);
+      }
+      const name = (k) => legend.find((e) => e.cls === k)?.label || k, fmt = (x) => (x < 0 ? `${-x}°W` : `${x}°E`);
+      const got = legend.map((e) => `${e.label} ${mer[e.cls] ? [...mer[e.cls]].sort((a, b) => a - b).map(fmt).join('·') : '경선 없음(바깥 경계만)'}`);
+      out.push(check(`${tag}영유권 경선(교과서 선을 되돌린 값)`, '교과서 경계선', got.join(' / '), INFO, CHECKS.sectorClaimsNote || ''));
+      const off = L.features.filter((f) => f.properties.offsetPx).map((f) => `${name(f.properties.cls)} ${f.properties.offsetPx > 0 ? '+' : ''}${f.properties.offsetPx}`);
+      if (off.length) out.push(check(`${tag}겹친 선 비킴(화면 px)`, '교과서는 나란히 그림', off.join(' · '), INFO, '같은 호·경선을 쓰는 나라를 화면에서 몇 px 비켜 모두 보이게'));
+    }
     if (!isOverlay && L.type === 'chartSymbols') { // 지도 위 고리 기호(u4) — 교과서 수 = 단원 설정 레이어 items(지면 고리 가운데 자리)
       const tbN = cfg.layers?.[r.ref.replace(/^layer-/, '')]?.items?.length ?? '설정 없음';
       out.push(eq(`${tag}지도 위 그래프 기호 수`, tbN, (L.items || []).length));
@@ -356,10 +384,27 @@ for (const t of topics) {
       const checks = [check('지도 제목', mapById[mapId].title, g.label, squash(mapById[mapId].title) === squash(g.label) ? OK : DIFF)];
       const cov = coverage(g.label, mapById[mapId].page);
       checks.push(check('지도 제목 ↔ 지면', '지면 글', cov >= 0.99 ? '지면에 있음' : `지면에 없음(${Math.round(cov * 100)}%)`, cov >= 0.99 ? OK : INFO, cov >= 0.99 ? '' : '교과서 활동 지도는 제목이 따로 인쇄되지 않음 — 목록 제목'));
+      // 주제 보기 레이어(topicView, u6)가 든 묶음은 일반도처럼 지면 지명도 견줌(u2~u5 에는 이 레이어 종류가 없어 그대로)
+      const tv = g.refs.map((r) => layerFile(r.ref)?.properties).filter((P) => P?.layerType === 'topicView');
+      if (tv.length) checks.push(...placeChecks(mapId, main));
       checks.push(...mapChecks(mapId, g.refs, main, t.id));
-      if (mapById[mapId].projection) checks.push(check('도법', mapById[mapId].projection, '로빈슨(기본) · 도구에서 바꿈', KNOWN, '웹은 세계 도법 5종만'));
+      const polar = tv.find((P) => /^polar[NS]$/.test(P.view?.projection || ''));
+      if (polar && mapById[mapId].projection) checks.push(check('도법', mapById[mapId].projection, `${polar.view.projection === 'polarN' ? '북극' : '남극'} 중심(정거 방위 — 극 중심 보기, 도구에서 평면·지구본으로 바꿈)`, OK));
+      else if (mapById[mapId].projection) checks.push(check('도법', mapById[mapId].projection, '로빈슨(기본) · 도구에서 바꿈', KNOWN, '웹은 세계 도법 5종만'));
       for (const c of CHECKS.centerChecks) if (g.refs.some((r) => r.ref === c.ref)) checks.push(check('도법·중심', c.tb, c.web, OK));
       rows.push({ kind: 'map', topic: t, title: g.label, mapId, shots, checks });
+    }
+    // 묶음이 있는 주제의 바로가기 중 묶음 지도가 아닌 것(u6 48쪽 하와이·타히티 삽입 — 보기 레이어 주제만, u2~u5 그대로): 바로가기 행(캡처는 extraScenes 의 kind 'view')
+    const gMaps = new Set(groups.map((g) => mapOfRef(g.refs[0].ref)));
+    const hasTv = (t.layers || []).some((r) => layerFile(r.ref)?.properties?.layerType === 'topicView');
+    for (const v of hasTv ? (t.views || []).filter((x) => x.map && !gMaps.has(x.map)) : []) {
+      const shots = shotsOf((s) => s.topic === t.id && s.kind === 'view' && s.view === v.id);
+      const m = mapById[v.map];
+      const checks = [check('지도', `${m.title} (${m.page}쪽)`, `바로가기 「${v.label}」`, INFO)];
+      checks.push(...placeChecks(v.map, shots[0]));
+      if (m.projection) checks.push(check('도법', m.projection, NOTES.viewProjection, KNOWN, NOTES.viewProjectionNote));
+      if (m.scale) checks.push(check('축척', m.scale, '축척 막대(확대에 따라 바뀜)', INFO));
+      rows.push({ kind: 'map', topic: t, title: `바로가기 · ${v.label}`, mapId: v.map, shots, checks });
     }
   } else {
     const views = t.views?.length ? t.views.map((v, i) => ({ id: i ? v.id : null, label: v.label, map: mapOfView(v) })) : [{ id: null, label: t.title, map: MAIN_MAP[t.id] }];

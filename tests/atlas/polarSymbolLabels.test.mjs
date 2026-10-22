@@ -107,6 +107,26 @@ test('culledLabels: 앞 무리 상자와 겹치는 무리는 숨김(같은 자�
   const r2 = PX.culledLabels(PX.labelGroups([nm]), proj, measure, [{ ll: [10, 10], r: 40 }]);   // 큰 점이 글자를 다 덮음 → 못 비킴
   assert.ok(r2.drop.has(nm.geometry.coordinates));
 });
+test('culledLabels(U6-10): 붉은 무리는 자기 기지 점(둘레 가장 큰 점) 곁 — 교과서 쪽 먼저, 그 자리가 막히면 다른 쪽, 다 막혀 멀어지면 지시선', () => {
+  const measure = (t) => t.length * 10;
+  const proj = ([x, y]) => [x * 10, y * 10];
+  const grp = () => PX.labelGroups([lab('세종 과학 기지', 10, 10), lab('(대한민국)', 10, 10.4, '#d71920')]);
+  // 이름 상자 [60, 92.5, 140, 107.5] + 「(대한민국)」 아래 — 큰 점 (180, 100) r 6(오른쪽 40px), 작은 점 (150, 140) r 3
+  const r1 = PX.culledLabels(grp(), proj, measure, [{ ll: [18, 10], r: 6 }, { ll: [15, 14], r: 3 }]);
+  assert.deepEqual(r1.leaders, [], '점 곁에 붙어 지시선 없음');
+  const nm = [...r1.moved.entries()].find(([ll]) => ll[1] === 10)[1];
+  assert.ok(nm[0] + 40 <= 180 - 6 && 180 - 6 - (nm[0] + 40) < 8, `점 왼쪽에 붙음(교과서 쪽) ${nm}`);
+  // 점 왼쪽·오른쪽·위·아래가 모두 다른 점으로 막히면 → 점에서 먼 자리 + 지시선(상자 가장자리 → 점 테두리)
+  const block = [[13, 10], [23, 10], [18, 7.5], [18, 12.5], [18, 6.5], [18, 13.5]].map((ll) => ({ ll, r: 4 }));
+  const r2 = PX.culledLabels(grp(), proj, measure, [{ ll: [18, 10], r: 6 }, ...block]);
+  assert.equal(r2.drop.size, 0);
+  assert.equal(r2.leaders.length, 1);
+  const [x1, y1, x2, y2] = r2.leaders[0];
+  assert.ok(Math.abs(Math.hypot(x2 - 180, y2 - 100) - 6) < 1e-6, '선 끝 = 점 테두리');
+  assert.ok(Math.hypot(x1 - x2, y1 - y2) > 10);
+  // 붉지 않은 무리는 옛 길 그대로(지시선 없음)
+  assert.deepEqual(PX.culledLabels(PX.labelGroups([lab('파머', 10, 10)]), proj, measure, [{ ll: [18, 10], r: 6 }]).leaders, []);
+});
 test('installPolarExtras 뒤 symbolLabels: 겹치는 글자는 그리지 않음 — 확대하면 다시', () => {
   PX.installPolarExtras();
   const D2 = { type: 'FeatureCollection', properties: { layerType: 'symbol', legend: [] }, features: [lab('가나다라(영)', 0, -70), lab('마바사아(미)', 0.5, -70.2), lab('자차카(러)', 90, -70)] };

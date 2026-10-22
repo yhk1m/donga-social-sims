@@ -1477,6 +1477,8 @@
    "expectLegend": 1,
    "clipLand": false,
    "hideLegend": true,
+   "outlineColor": "#ed1c24",
+   "_outlineColor": "U6-10: 교과서 분홍 면 셋은 붉은 테두리(키리바시·투발루·피지 따로 된 타원) — 채움만이면 세 면이 맞닿아 한 덩어리로 보여(대조표 캡처) 빙붕과 같은 테두리 선(같은 분류)을 더함",
    "legendItems": [
     {
      "color": "#fad5e5",

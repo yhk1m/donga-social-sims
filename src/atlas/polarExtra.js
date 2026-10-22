@@ -416,7 +416,7 @@ export function labelGroups(labels) {
  *  글자 크기·굵기는 layers.js 지명 글자와 같음. */
 const LGAP = 3, LMOVE = 24;
 export function culledLabels(groups, proj, measure, dots = []) {
-  const kept = [], drop = new Set(), moved = new Map();
+  const kept = [], drop = new Set(), moved = new Map(), leaders = [];
   const over = (b, o) => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1];
   const pad = (b, d) => [b[0] - d, b[1] - d, b[2] + d, b[3] + d];
   const blocks = [];
@@ -451,15 +451,48 @@ export function culledLabels(groups, proj, measure, dots = []) {
       for (const o of blocks) if (over(v, o)) shifts.push([sx, sy + o[1] - v[3]], [sx, sy + o[3] - v[1]], [sx + o[0] - v[2], sy], [sx + o[2] - v[0], sy]);
     }
     // 우리나라 기지(붉은 글자 무리)는 숨기지 않게 더 멀리(LMOVE × 2.5)까지 — 자기 큰 점(흰 테두리)을 비키려면 두 줄 높이만큼 옮겨야 함
-    const lim = g.some((f) => /^#d7/i.test(f.properties.color || '')) ? LMOVE * 2.5 : LMOVE;
-    const ok = shifts.filter(([dx, dy]) => Math.abs(dx) + Math.abs(dy) <= lim).sort((a, b) => Math.abs(a[0]) + Math.abs(a[1]) - Math.abs(b[0]) - Math.abs(b[1]))
-      .find(([dx, dy]) => free(boxes.map((b) => [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])));
+    const red = g.some((f) => /^#d7/i.test(f.properties.color || ''));
+    const lim = red ? LMOVE * 2.5 : LMOVE;
+    const cand = shifts.filter(([dx, dy]) => Math.abs(dx) + Math.abs(dy) <= lim).sort((a, b) => Math.abs(a[0]) + Math.abs(a[1]) - Math.abs(b[0]) - Math.abs(b[1]));
+    // U6-10: 붉은 무리는 자기 기지 점(무리 둘레 LDOT px 안 가장 큰 점) 곁에 붙여 두는 자리(교과서 쪽 먼저 — 왼·오른쪽이면 가운데 높이,
+    // 위·아래면 가운데 줄)를 앞에 — 점을 비키다 멀어져(60px) 글자와 점이 이어져 보이지 않던 것. 그래도 멀면 지시선(leaders).
+    const own = red ? ownDot(u, dots, proj) : null;
+    if (own) {
+      const [ox, oy, orr] = own, cx = (u[0] + u[2]) / 2, cy = (u[1] + u[3]) / 2, d = orr + LGAP + 0.5;
+      const sides = [[ox - d - u[2], oy - cy], [ox + d - u[0], oy - cy], [ox - cx, oy - d - u[3]], [ox - cx, oy + d - u[1]]];
+      const tb = Math.abs(cx - ox) > Math.abs(cy - oy) ? (cx < ox ? 0 : 1) : (cy < oy ? 2 : 3);
+      const near = cand.length && cand[0][0] === 0 && cand[0][1] === 0 && gapTo(u, ox, oy) - orr <= LLEAD ? [[0, 0]] : [];
+      cand.unshift(...near, sides[tb], ...sides.filter((_, i) => i !== tb));
+    }
+    const ok = cand.find(([dx, dy]) => free(boxes.map((b) => [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])));
     if (!ok) { g.forEach((f) => drop.add(f.geometry.coordinates)); continue; }
     const [dx, dy] = ok;
     kept.push(...boxes.map((b) => [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]));
     for (const it of items) if (it.mv || dx || dy) moved.set(it.f.geometry.coordinates, [it.x + dx, it.y + dy]);
+    if (own) {
+      const v = [u[0] + dx + LGAP / 2, u[1] + dy + LGAP / 2, u[2] + dx - LGAP / 2, u[3] + dy - LGAP / 2], [ox, oy, orr] = own;
+      const gap = gapTo(v, ox, oy);
+      if (gap - orr > LLEAD) {
+        const px = Math.min(Math.max(ox, v[0]), v[2]), py = Math.min(Math.max(oy, v[1]), v[3]);
+        leaders.push([px, py, ox + ((px - ox) / gap) * orr, oy + ((py - oy) / gap) * orr]);
+      }
+    }
   }
-  return { drop, moved };
+  return { drop, moved, leaders };
+}
+const LDOT = 90, LLEAD = 10;
+/** 상자 b 에서 점 (x, y) 까지 화면 거리(안이면 0) */
+const gapTo = (b, x, y) => Math.hypot(Math.max(b[0] - x, 0, x - b[2]), Math.max(b[1] - y, 0, y - b[3]));
+/** 붉은 글자 무리의 자기 기지 점: 상자 u 둘레 LDOT px 안 점 중 가장 큰 것(같으면 가까운 것) → [x, y, r] 또는 null */
+function ownDot(u, dots, proj) {
+  let best = null;
+  for (const { ll, r } of dots) {
+    const q = proj(ll);
+    if (!q || !Number.isFinite(q[0])) continue;
+    const g = gapTo(u, q[0], q[1]);
+    if (g <= LDOT && (!best || r > best[2] + 1e-9 || (Math.abs(r - best[2]) <= 1e-9 && g < best[3]))) best = [q[0], q[1], r, g];
+  }
+  return best && best.slice(0, 3);
 }
 /** symbolLabels(아메리카 것) + 글자 몫 뒷면 숨김 + 겹치는 글자 무리 숨김·점 비킴(U6-9 — 51쪽 기지 글자 33 이 처음 보기에서 서로 겹쳤음, 확대하면 다시 보임).
  *  거르기 결과는 화면 투영이 같으면(글자 둘레 점 둘의 화면 자리·k) 다시 쓰고, 글자 폭은 (글자, 글꼴)로 기억. */
@@ -479,11 +512,23 @@ export function polarSymbolLabelsLayer(id, d, ctx) {
       const dots = syms.map((f) => ({ ll: f.geometry.coordinates, r: symbolPx(f.properties.size || 3, view.k ?? 1) / 2 }));
       memo = { key, ...culledLabels(groups, p, measure, dots) };
     }
-    const { drop, moved } = memo;
-    if (!drop.size && !moved.size) return draw(c, path, v);
+    const { drop, moved, leaders } = memo;
+    if (!drop.size && !moved.size && !leaders.length) return draw(c, path, v);
     const q = (ll) => (drop.has(ll) ? null : moved.get(ll) || p(ll));
     q.hidden = p.hidden;
-    return draw(c, path, { ...v, projection: q });
+    const r = draw(c, path, { ...v, projection: q });
+    // 우리나라 기지 글자가 점에서 멀어졌을 때 가는 지시선(흰 테두리 + 붉은 선 — U6-10)
+    if (leaders.length) {
+      c.save();
+      c.lineCap = 'round';
+      for (const [x1, y1, x2, y2] of leaders) {
+        c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2);
+        c.strokeStyle = 'rgba(255,255,255,0.9)'; c.lineWidth = 3; c.stroke();
+        c.strokeStyle = '#d71920'; c.lineWidth = 1; c.stroke();
+      }
+      c.restore();
+    }
+    return r;
   };
   layer.hiddenAware = true; // 등록 확인용(시험 — installAmericasExtras 를 뒤에 다시 부르면 아메리카 것으로 덮여 이 표시가 없음)
   return layer;
