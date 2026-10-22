@@ -14,11 +14,19 @@
 //     처음 회전, 극은 그 반구 전체 · 사용자가 도법 상자로 고를 때만: 평면 → 지구본 = 앞 평면 화면 가운데를 원판 가운데로, → 극 = 반구 전체,
 //     특별 → 평면 = 마지막 평면 보기(가운데·확대) 그대로(지구본 ↔ 극 직접 전환에도 잃지 않음). 코드가 바꾼 것(globeView·polarView·되돌리기)에는
 //     페이드·단추만(되돌리기가 두 번 일어나지 않게).
+//   - 3c 주제 보기 레이어(registerLayerType('topicView')): 그리는 레이어가 없는 주제(색칠하기·지형·일반도 처음 보기 — 태평양 중심 Q2)나
+//     그리는 레이어가 공유 종류(면·기호 — properties.view 를 안 읽음)인 극·지구본 묶음이 보기를 정하는 길(topic.js 를 고치지 않으려고 — 주제 layers 에 넣음).
+//     자료 = {type:'FeatureCollection', properties:{layerType:'topicView', view:{centerLon?, projection?:'polarN'|'polarS'|'globe', up?(극), rotate?(지구본),
+//     base?:'none'|'tint'|'natural'}, legend:[]}, features:[]}. 그리지 않음(draw 없음 · 맞히기 null · 지명 장애물 [] · 범례 항목 0 → 범례 블록 없음,
+//     묶음 하나라 「지도 고르기」 없음). 만들 때 보기를 바꾸고 destroy 때 되돌림(각각 그사이 사용자가 바꿨으면 그대로 — centerLonOf 꼴).
 //   단원 main.js: installAmericasExtras(); installPolarExtras();  (mountAtlas 전에) — mountAtlas 뒤 viewTools(root.atlasMap, root.atlasUi.tools.el)(풀기 함수)
 import { geoAzimuthalEquidistant } from 'd3-geo';
 import { PROJECTIONS } from './projections.js';
 import { graticuleStep } from './lineStyle.js';
-import { registerProjection, globeCenter, rotateFor } from './americasExtra.js';
+import { registerLayerType } from './layerRef.js';
+import { metaOf } from './layerCommon.js';
+import { baseOptions, baseModeOf } from './natural.js';
+import { registerProjection, globeCenter, rotateFor, globeView } from './americasExtra.js';
 
 /** 극 중심 규칙: 반구 원판 반지름 = 무대 짧은 변 × fill, 처음(k < 2) 경위선 간격(°), 처음 위쪽 경선(°, 50·51쪽 일반도 = 서경 90°) */
 export const POLAR = Object.freeze({ fill: 0.48, step: 10, up: -90 });
@@ -126,8 +134,41 @@ export function viewTools(map, toolsEl) {
   return () => { off(); sel?.removeEventListener('change', onPick, true); toolsEl?.removeEventListener('click', onClick, true); stage?.removeEventListener('keydown', onKey, true); };
 }
 
+/**
+ * 주제 보기 레이어(type 'topicView' — 그리지 않음). 만들 때(map 이 있을 때만) 차례대로: 바탕 색 base → 중심 경도 centerLon → 극 중심(polarView)·지구본
+ * (globeView + 묶음 맞추기 뒤 처음 보기 한 번 더 — pathFlow 와 같은 꼴). destroy = 거꾸로 되돌림(바탕·중심 경도는 지금 값이 이 레이어가 둔 값일 때만).
+ */
+export function topicViewLayer(id, data, { map = null } = {}) {
+  const view = data?.properties?.view || {};
+  const undo = [];
+  let alive = true;
+  if (map?.view) {
+    if (view.base) {
+      const from = baseModeOf(map.options);
+      if (from !== view.base) { map.setOptions(baseOptions(view.base)); undo.push(() => { if (baseModeOf(map.options) === view.base) map.setOptions(baseOptions(from)); }); }
+    }
+    if (view.centerLon != null && map.view.centerLon !== view.centerLon) {
+      const from = map.view.centerLon;
+      map.setCenterLon(view.centerLon);
+      undo.push(() => { if (map.view?.centerLon === view.centerLon) map.setCenterLon(from); });
+    }
+    if (PROJECTIONS[view.projection]?.pole) undo.push(polarView(map, view));
+    else if (view.projection === 'globe' && PROJECTIONS.globe) {
+      undo.push(globeView(map, view));
+      Promise.resolve().then(() => { if (alive && !map.destroyed && map.view?.key === 'globe') globeHome(map); });
+    }
+  }
+  return {
+    id, z: 0, meta: metaOf(data), features: [],
+    labelObstacles: () => [],
+    hit: () => null,
+    destroy() { if (!alive) return; alive = false; if (!map?.destroyed) for (let i = undo.length - 1; i >= 0; i--) undo[i](); undo.length = 0; },
+  };
+}
+
 /** 등록(단원 main 이 mountAtlas 전에, installAmericasExtras 뒤에 — 상자 옵션 차례 지구본 → 북극 중심 → 남극 중심). 두 번 불러도 같음. */
 export function installPolarExtras() {
   if (!PROJECTIONS.polarN) registerProjection('polarN', polarProjection({ pole: 'N' }));
   if (!PROJECTIONS.polarS) registerProjection('polarS', polarProjection({ pole: 'S' }));
+  registerLayerType('topicView', topicViewLayer);
 }

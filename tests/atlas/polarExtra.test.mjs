@@ -18,7 +18,9 @@ const { viewRect } = await import('../../src/atlas/geoClip.js');
 const { invertGrid } = await import('../../src/atlas/relief.js');
 const { scaleBarSpec } = await import('../../src/atlas/uiCore.js');
 const { createMap } = await import('../../src/atlas/renderer.js');
-const { mapTools } = await import('../../src/atlas/ui.js');
+const { mapTools, legendPanel, creditBlock, pageViewer, tooltip } = await import('../../src/atlas/ui.js');
+const { layerFromRef } = await import('../../src/atlas/layerRef.js');
+const { buildTopic } = await import('../../src/atlas/topic.js');
 const AX = await import('../../src/atlas/americasExtra.js');
 const PX = await import('../../src/atlas/polarExtra.js');
 const basemap = readJson(path.join(REPO, 'sims/atlas-u5-americas/data/basemap.json'));
@@ -27,12 +29,14 @@ test.after(() => dom.restore());
 const near = (a, b, eps, msg) => assert.ok(Math.abs(a - b) <= eps, `${msg ?? ''} ${a} ≠ ${b}`);
 const tick = () => new Promise((r) => setTimeout(r, 0));
 /** 화면 점 q 가 가운데 c 에서 본 방향(°, 0 = 위, 90 = 오른쪽) */
+const tvData = (view) => ({ type: 'FeatureCollection', properties: { layerType: 'topicView', view, legend: [] }, features: [] });
 const bearing = (c, q) => (Math.atan2(q[0] - c[0], c[1] - q[1]) * 180) / Math.PI;
 
 test('등록 전: 극 중심은 모르는 도법, 도법 5개', () => {
   assert.deepEqual(Object.keys(PROJECTIONS), ['miller', 'mercator', 'robinson', 'goode', 'equalEarth']);
   assert.throws(() => makeProjection('polarN', { width: 800, height: 600 }), /모르는 도법/);
   assert.throws(() => makeProjection('polarS', { width: 800, height: 600 }), /모르는 도법/);
+  assert.throws(() => layerFromRef({ ref: 'layer-tv', type: 'topicView' }, tvData({ centerLon: 150 })), /모르는 레이어 종류/);
 });
 
 test('등록 뒤: 옵션 차례 평면 5 + 지구본 + 극 둘, 라벨, 두 번 불러도 같음', () => {
@@ -295,6 +299,123 @@ test('도법 고르기 상자 옵션 8 + viewTools: 밀러 → 북극 중심 →
   assert.equal(map.view.key, 'miller'); near(map.view.k, 2, 1e-9);
   off(); tools.destroy();
   assert.equal(sel.listenerCount, 1, '풀기 — 상자 자신의 change 만 남음');
+  map.destroy();
+  await tick();
+});
+
+// ---------- 3c 주제 보기 레이어 ----------
+test('topicView: 그리지 않음(범례 0·맞히기 null·장애물 []) · 중심 경도 150 → destroy 0 · 그사이 사용자가 바꿨으면 그대로 · map 없으면 아무것도 안 함', async () => {
+  const { map } = setupMap();
+  const L = layerFromRef({ ref: 'layer-tv', type: 'topicView' }, tvData({ centerLon: 150 }), { map });
+  assert.equal(map.view.centerLon, 150);
+  assert.deepEqual(L.legendItems, []); assert.equal(L.legend, null, '범례 상태 없음');
+  assert.equal(L.hit([10, 10]), null); assert.deepEqual(L.labelObstacles(), []);
+  assert.equal(typeof L.draw, 'undefined'); assert.equal(typeof L.drawSvg, 'undefined');
+  map.addLayer(L);
+  map.removeLayer('layer-tv');
+  assert.equal(map.view.centerLon, 0, '되돌림');
+  const L2 = layerFromRef({ ref: 'layer-tv', type: 'topicView' }, tvData({ centerLon: 150 }), { map });
+  map.setCenterLon(30); // 사용자가(지도 도구 등) 바꿈
+  L2.destroy();
+  assert.equal(map.view.centerLon, 30, '사용자 값 그대로');
+  L2.destroy(); // 두 번 불러도
+  map.setCenterLon(150);
+  const L3 = layerFromRef({ ref: 'layer-tv', type: 'topicView' }, tvData({ centerLon: 150 }), { map });
+  L3.destroy();
+  assert.equal(map.view.centerLon, 150, '이미 150 이었으면 되돌릴 것 없음');
+  map.setCenterLon(0);
+  const L4 = layerFromRef({ ref: 'layer-tv', type: 'topicView' }, tvData({ centerLon: 150, projection: 'polarN' }));
+  L4.destroy(); // map 없음
+  assert.equal(map.view.key, 'miller');
+  map.destroy();
+  await tick();
+});
+
+test('topicView 극·지구본·바탕: 북극 중심(up 180)으로 열고 되돌림, 지구본은 회전 그대로 + 묶음 맞추기 뒤 처음 보기, 바탕 자연색 → 앞 바탕', async () => {
+  const { map } = setupMap();
+  map.flyTo({ center: [150, -20], zoom: 3 }, 0);
+  const P = layerFromRef({ ref: 'layer-tv', type: 'topicView' }, tvData({ projection: 'polarN', up: 180 }), { map });
+  map.addLayer(P);
+  assert.equal(map.view.key, 'polarN'); assert.equal(PROJECTIONS.polarN.up, 180);
+  map.fitBounds([-180, 60, 180, 90], { ms: 0 });
+  await tick();
+  assert.ok(map.view.k > 2, '묶음 범위(극 묶음의 처음 보기)는 그대로');
+  map.removeLayer('layer-tv');
+  assert.equal(map.view.key, 'miller'); assert.equal(PROJECTIONS.polarN.up, -90);
+  near(map.view.k, 3, 1e-9); near(map.view.center[0], 150, 1e-6);
+  // 지구본 + 자연색(55쪽 지구본 묶음 꼴)
+  map.setOptions({ tint: true, natural: false });
+  const G = layerFromRef({ ref: 'layer-tv', type: 'topicView' }, tvData({ projection: 'globe', rotate: [-100, -60], base: 'natural' }), { map });
+  map.addLayer(G);
+  assert.equal(map.view.key, 'globe'); assert.equal(map.options.natural, true);
+  map.fitBounds([60, 20, 160, 80], { ms: 0 });
+  await tick();
+  near(map.view.k, 1, 1e-9, '지구본 처음 보기');
+  const c = map.project([100, 60]); near(c[0], 500, 0.5); near(c[1], 400, 0.5);
+  map.removeLayer('layer-tv');
+  assert.equal(map.view.key, 'miller');
+  assert.equal(map.options.tint, true, '앞 바탕(고도 색)'); assert.equal(map.options.natural, false);
+  // 바탕을 사용자가 바꿨으면 그대로
+  const B = layerFromRef({ ref: 'layer-tv', type: 'topicView' }, tvData({ base: 'natural' }), { map });
+  map.setOptions({ tint: false, natural: false });
+  B.destroy();
+  assert.equal(map.options.tint, false); assert.equal(map.options.natural, false);
+  map.destroy();
+  await tick();
+});
+
+const findAll = (el, pred, out = []) => { if (pred(el)) out.push(el); for (const c of el.childNodes || []) findAll(c, pred, out); return out; };
+const hasClass = (c) => (n) => n.classList?.contains(c);
+test('색칠하기 주제 + topicView(태평양 중심): 퀴즈 나라 수·범례 칸·사이드바 차례·출처 줄 그대로, 「지도 고르기」 없음, 열 때 150 · 버리면 0', async () => {
+  const { stage, map } = setupMap();
+  const panel = document.createElement('div'), body = document.createElement('div');
+  panel.append(body);
+  const P = legendPanel(stage);
+  const credits = creditBlock(panel), viewer = pageViewer(stage), tip = tooltip(stage, { map });
+  const topics = readJson(path.join(REPO, 'sims/atlas-u5-americas/data/topics.json'));
+  const coloring = topics.find((t) => t.id === 'coloring');
+  const countryFeatures = { 50: feature(basemap, basemap.objects.countries50).features, '10a': feature(basemap, basemap.objects.countries10a).features };
+  const build = (topic, layers = {}) => buildTopic({ map, stage, body, viewer, credits, tip, topic, layers, countryFeatures, legendPanel: P, seed: 7, coloring: { smallPx: 16, smallMetric: 'area' } });
+  const shape = (T) => ({
+    body: body.childNodes.map((n) => n.getAttribute?.('class')),
+    legends: findAll(P.body, hasClass('at-legend')).length,
+    panelHidden: P.el.hidden,
+    maps: findAll(body, hasClass('at-topic-maps')).length,
+    credits: findAll(panel, hasClass('at-credits-item')).length,
+    quizItems: T.quiz?.el ? findAll(T.quiz.el, (n) => n.tagName === 'button').length : null,
+    fits: null,
+  });
+  const A = build(coloring);
+  const a = shape(A);
+  assert.ok(a.quizItems > 0, '퀴즈 단추');
+  assert.equal(map.view.centerLon, 0);
+  A.destroy();
+  const withTv = { ...coloring, layers: [{ ref: 'layer-p41-view', type: 'topicView' }] };
+  const B = build(withTv, { 'layer-p41-view': tvData({ centerLon: 150 }) });
+  assert.equal(map.view.centerLon, 150, '태평양 중심으로 열림');
+  assert.deepEqual(shape(B), a, '사이드바·범례 칸·출처 줄·퀴즈 그대로');
+  assert.equal(B.groups.length, 1); assert.equal(B.layers.length, 1);
+  B.destroy();
+  assert.equal(map.view.centerLon, 0, '주제를 버리면 되돌림');
+  P.destroy(); credits.destroy(); viewer.destroy(); tip.destroy();
+  map.destroy();
+  await tick();
+});
+
+test('주의(기록): 바로가기(views)가 있고 그리는 레이어가 없는 주제에 topicView 를 넣으면 「바로가기」 줄이 없어짐(topic.js 는 묶음이 없을 때만 그 줄) — 블록의 「지도에서 보기」는 그대로', async () => {
+  const { stage, map } = setupMap();
+  const body = document.createElement('div');
+  const topics = readJson(path.join(REPO, 'sims/atlas-u5-americas/data/topics.json'));
+  const general = topics.find((t) => t.id === 'general');
+  const count = (T) => ({ row: findAll(body, hasClass('at-topic-views')).length, viewBtns: findAll(body, hasClass('at-view-btn')).length });
+  const A = buildTopic({ map, stage, body, topic: general });
+  const a = count(A);
+  A.destroy();
+  const B = buildTopic({ map, stage, body, topic: { ...general, layers: [{ ref: 'tv', type: 'topicView' }] }, layers: { tv: tvData({ centerLon: 150 }) } });
+  const b = count(B);
+  B.destroy();
+  assert.deepEqual([a.row, b.row], [1, 0]);
+  assert.equal(b.viewBtns, a.viewBtns);
   map.destroy();
   await tick();
 });
