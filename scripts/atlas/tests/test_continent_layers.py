@@ -1,5 +1,6 @@
 # © 2026 김용현
 # scripts/atlas/tests/test_continent_layers.py — 대륙·대양 면(continent_layers.py, U1-3c·3d) 검사: 합성 나라·쪼개는 선·색 견본(PDF 없이)
+#   python -I -m unittest discover -s scripts/atlas/tests -p test_continent_layers.py
 import os, sys, unittest
 import numpy as np
 from shapely.geometry import box, Polygon, MultiPolygon, LineString, Point, shape
@@ -129,6 +130,23 @@ class Geometry(unittest.TestCase):
         self.assertIsInstance(u, Polygon)
         self.assertAlmostEqual(u.bounds[2], 190)
         self.assertIs(cl.unwrap_dateline(box(10, 10, 20, 20)).geom_type, 'Polygon')
+
+    def test_rewrap_dateline_back_to_180(self):
+        u = cl.unwrap_dateline(MultiPolygon([box(170, 60, 180, 70), box(-180, 60, -170, 70)]))
+        r = cl.rewrap_dateline(u)
+        self.assertEqual(sorted(tuple(round(v, 6) for v in p.bounds) for p in r.geoms), [(-180, 60, -170, 70), (170, 60, 180, 70)])
+        self.assertAlmostEqual(r.area, 200)
+        self.assertIs(cl.rewrap_dateline(box(10, 10, 20, 20)).geom_type, 'Polygon')   # 180 안이면 그대로
+
+    def test_lon_bbox(self):
+        self.assertEqual(cl.lon_bbox([box(10, 40, 20, 50)]), [10, 40, 20, 50])
+        self.assertEqual(cl.lon_bbox([box(170, 60, 180, 70), box(-180, 60, -170, 70), box(30, 50, 60, 60)]), [30, 50, 190, 70])   # 축치 + 우랄 서쪽
+        self.assertEqual(cl.lon_bbox([box(110, -40, 155, -10), box(-180, -20, -170, -10), box(175, -20, 180, -15)]), [110, -40, 190, -10])   # 오세아니아(피지·사모아)
+        self.assertEqual(cl.lon_bbox([box(-180, -90, 180, -60)]), [-180, -90, 180, -60])
+
+    def test_round_geom_empty_is_none(self):
+        self.assertIsNone(cl.round_geom(box(0, 0, 0.0001, 0.0001), 2))
+        self.assertIsNone(cl.round_geom(Polygon(), 3))
 
     def test_d3_winding_clockwise(self):
         g = cl.round_geom(Polygon([(0, 0), (10, 0), (10, 10), (0, 10)], [[(2, 2), (2, 4), (4, 4), (4, 2)]]))

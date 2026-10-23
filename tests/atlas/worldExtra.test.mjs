@@ -65,10 +65,11 @@ const COUNTRIES = () => ({ 50: [
 ] });
 const DATA = () => ({ type: 'FeatureCollection', properties: {
   layerType: 'continents', legend: LEGEND, classes: { AAA: 'asia', BBB: 'europe', USA: 'northAmerica' },
-  centers: { asia: [91, 43], europe: [25, 55] }, names: { asia: ['가나라', '러시아'], europe: ['나나라', '러시아'] },
+  centers: { asia: [91, 43], europe: [25, 55] }, bounds: { asia: [60, 30, 190, 70] }, names: { asia: ['가나라', '러시아'], europe: ['나나라', '러시아'] },
   oceans: [{ cls: 'pacific', label: '태평양' }] }, features: [
   { type: 'Feature', properties: { cls: 'oceania', iso: 'USA', mode: 'parts' }, geometry: { type: 'MultiPolygon', coordinates: [sq(-156.5, 18.5, 2)] } },
-  { type: 'Feature', properties: { cls: 'asia', iso: 'RUS', mode: 'geom' }, geometry: { type: 'MultiPolygon', coordinates: [[[[60, 60], [60, 70], [190, 70], [190, 60], [60, 60]]]] } },
+  { type: 'Feature', properties: { cls: 'asia', iso: 'RUS', mode: 'geom' }, geometry: { type: 'MultiPolygon', coordinates: [   // 180° 에서 두 면(축치는 −180~−170)
+    [[[60, 60], [60, 70], [180, 70], [180, 60], [60, 60]]], [[[-180, 60], [-180, 70], [-170, 70], [-170, 60], [-180, 60]]]] } },
   { type: 'Feature', properties: { cls: 'europe', iso: 'RUS', mode: 'geom' }, geometry: { type: 'MultiPolygon', coordinates: [sq(40, 55, 10)] } },
   { type: 'Feature', properties: { cls: 'pacific', ocean: true }, geometry: { type: 'MultiPolygon', coordinates: [sq(-170, -10, 20)] } },
 ] });
@@ -82,7 +83,7 @@ test('등록 전: continents 는 모르는 레이어 종류, 극 중심 등록 �
 test('나라 Feature: classes 나라는 대륙색, 섬 단위 조각(하와이)은 그 섬만 오세아니아, 쪼갠 나라(러시아)는 조각 면, 분류 없는 그린란드는 없음', () => {
   const fs_ = WX.continentFeatures(DATA(), COUNTRIES()[50]);
   const rows = fs_.map((f) => `${f.properties.iso}:${f.properties.cls}:${f.geometry.coordinates.length}`).sort();
-  assert.deepEqual(rows, ['AAA:asia:1', 'BBB:europe:1', 'RUS:asia:1', 'RUS:europe:1', 'USA:northAmerica:1', 'USA:oceania:1']);
+  assert.deepEqual(rows, ['AAA:asia:1', 'BBB:europe:1', 'RUS:asia:2', 'RUS:europe:1', 'USA:northAmerica:1', 'USA:oceania:1']);
   const haw = fs_.find((f) => f.properties.iso === 'USA' && f.properties.cls === 'oceania');
   assert.deepEqual(haw.geometry.coordinates, [sq(-156, 19, 1)], '바탕 지도의 하와이 섬 면을 씀(조각 면이 아님)');
   assert.equal(fs_.find((f) => f.properties.iso === 'AAA').properties.label, '가나라(아시아)');
@@ -133,17 +134,45 @@ test('맞히기·질의: 나라 → 「이름(대륙)」, 안 고른 대양은 �
   assert.equal(L.hit([0, 0], [-160, 0]), null);
   assert.equal(L.hit([0, 0], [-45, 70]), null, '그린란드는 칠하지 않음');
   assert.equal(L.classOf('AAA'), 'asia'); assert.deepEqual(L.classOf('RUS'), ['asia', 'europe']); assert.equal(L.classOf('GRL'), null);
-  assert.deepEqual(L.centers.asia, [91, 43]); assert.deepEqual(L.names.europe, ['나나라', '러시아']); assert.deepEqual(L.oceans, ['pacific']);
+  assert.deepEqual(L.centers.asia, [91, 43]); assert.deepEqual(L.bounds.asia, [60, 30, 190, 70]); assert.deepEqual(L.names.europe, ['나나라', '러시아']);
+  assert.deepEqual(L.oceans, [{ cls: 'pacific', label: '태평양', color: WX.CONTINENTS.oceanColor }]);
   assert.ok(legend.subs > 0);
   L.destroy();
   assert.equal(legend.subs, 0);
 });
 
-test('날짜변경선: 경도 190 까지 이은 러시아 아시아 조각은 태평양 중심(150)에서 한 덩어리, 대서양 중심(0)에서는 가장자리에서 둘로', () => {
+test('날짜변경선: 러시아 아시아 조각은 180° 에서 두 면 — 180°E 둘레를 확대한 자르기 상자(geoRect)에서도 축치 쪽이 남고, 태평양 중심·지구본에서 두 면이 맞닿음', async () => {
+  const { geoOrthographic } = await import('d3-geo');
+  const L = WX.continentsLayer('c', DATA(), { countryFeatures: COUNTRIES() });
+  const view = { ...viewOf({ lon0: 150 }), geoRect: [140, 30, 200, 75] };   // e > 180 — geoClip 이 [140..180] + [−180..−160] 둘로 자름
+  const rus = fills(L, view).filter((o) => o.fillStyle === '#f0a580').map((o) => o.g.coordinates.flat(2));
+  const lons = rus.flat().map((q) => q[0]);
+  assert.ok(lons.some((x) => x <= -170 + 1e-9) && lons.some((x) => x >= 179.999), `잘린 뒤 경도 ${Math.min(...lons)}~${Math.max(...lons)}`);
+  assert.ok(lons.every((x) => x >= -180 && x <= 180));
   const piece = DATA().features[1];
-  const subpaths = (lon0) => (geoPath(geoRobinson().rotate([-lon0, 0]))(piece).match(/M/g) || []).length;
-  assert.equal(subpaths(150), 1);
-  assert.equal(subpaths(0), 2);
+  for (const proj of [geoRobinson().rotate([-150, 0]), geoOrthographic().rotate([-175, -60])]) {
+    const a = proj([180, 65]), b = proj([-180, 65]);
+    assert.ok(Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-6, '180° 양쪽 변이 같은 자리');
+    assert.equal((geoPath(proj)(piece).match(/M/g) || []).length, 2, '두 면 = 한 Feature(한 번에 칠함)');
+  }
+});
+
+test('onSelect: select·범례 누르기·대양·풀기마다 한 번씩(값이 바뀔 때만), 풀기 함수 · 범례 없이 만든 레이어도 select', () => {
+  const legend = createLegendState(LEGEND.map((e) => e.cls)); const map = fakeMap();
+  const L = WX.continentsLayer('c', DATA(), { countryFeatures: COUNTRIES(), legend, map });
+  const got = []; const off = L.onSelect((v) => got.push(v));
+  L.select('asia'); L.select('asia'); legend.toggle('europe'); L.select('pacific'); L.select('pacific'); L.select(null); L.select(null);
+  legend.toggle('oceania'); legend.toggle('oceania');
+  assert.deepEqual(got, ['asia', 'europe', 'pacific', null, 'oceania', null]);
+  off(); L.select('asia'); assert.equal(got.length, 6);
+  const N = WX.continentsLayer('n', DATA(), { countryFeatures: COUNTRIES() });
+  const g2 = []; N.onSelect((v) => g2.push(v));
+  N.select('europe'); assert.equal(N.selected, 'europe');
+  const a = Object.fromEntries(fills(N).map((o) => [o.fillStyle, o.alpha]));
+  assert.equal(a['#b6cedd'], 0.85); assert.equal(a['#f0a580'], +(0.85 * 0.25).toFixed(4));
+  N.select('pacific'); N.select(null);
+  assert.deepEqual(g2, ['europe', 'pacific', null]);
+  N.destroy();
 });
 
 // ── 실제 자료(작업 폴더 — 있을 때만) ─────────────────────────────────────
@@ -166,7 +195,11 @@ test('실제 10·11쪽 대륙 자료: 대륙 7 모두 나라가 있음, 러시�
   assert.ok(!geoContains(rus('asia'), [50.0, 51.0]), '러시아–카자흐스탄 국경 곁(오렌부르크 서쪽)은 아시아 조각이 아님 — 국경 띠 없음');
   assert.ok(fs_.some((f) => f.properties.iso === 'USA' && f.properties.cls === 'oceania'));
   assert.ok(!fs_.some((f) => f.properties.iso === 'GRL'));
-  for (const k of Object.keys(by)) assert.ok(data.properties.centers[k], k);
+  for (const k of Object.keys(by)) assert.ok(data.properties.centers[k] && data.properties.bounds[k], k);
+  for (const f of data.features) for (const q of f.geometry.coordinates.flat(2)) assert.ok(q[0] >= -180 && q[0] <= 180, `${f.properties.cls} 경도 ${q[0]}`);
+  assert.ok(data.properties.bounds.asia[2] > 180, '아시아 상자는 축치까지 편 동쪽 끝 > 180');
+  const eu = data.properties.bounds.europe;
+  assert.ok(eu[0] >= -32 && eu[1] >= 27, `유럽 상자 ${eu} — 섬 단위 조각(기아나·레위니옹)은 본토 대륙 상자에서 뺌(남쪽 끝 = 카나리아 제도)`);
 });
 
 test('실제 대양 면(U1-3d, Q7 A): 다섯, 서로 안 겹침(표본점), 넓이 합 ≈ 바다(지구의 약 71%) ±3%, 대표 바다 점 판정, 극 면 넓이 < 반구', { skip: fs.existsSync(REAL) && readJson(REAL).properties.oceans ? false : '대양 자료 없음' }, async () => {
@@ -183,5 +216,7 @@ test('실제 대양 면(U1-3d, Q7 A): 다섯, 서로 안 겹침(표본점), 넓�
     assert.deepEqual(at(ll), [want], `${ll}`);
   assert.deepEqual(at([100, 40]), [], '육지(몽골)는 어느 대양도 아님');
   for (let lon = -180; lon < 180; lon += 7) for (let lat = -80; lat <= 85; lat += 7) assert.ok(at([lon, lat]).length <= 1, `겹침 ${lon},${lat}`);
-  for (const k of ['pacific', 'atlantic', 'indian', 'arctic', 'southern']) assert.ok(data.properties.centers[k], k);
+  for (const k of ['pacific', 'atlantic', 'indian', 'arctic', 'southern']) assert.ok(data.properties.centers[k] && data.properties.bounds[k], k);
+  assert.ok(data.properties.bounds.pacific[2] > 180, '태평양 상자는 날짜변경선을 넘어 폄');
+  assert.ok(data.properties.oceans.every((o) => o.color && !o.center && !o.bbox));
 });

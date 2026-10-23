@@ -8,7 +8,8 @@
 //     없고 조각 면(mode 'geom')을 그림, 섬 단위로 갈린 나라(미국 하와이·프랑스 기아나 — classes 에 본토 대륙)는 바탕 지도 나라의 섬 면마다 그 섬이 든
 //     조각(mode 'parts')의 대륙으로. 대양 면(3d)은 고를 때만 옅은 파랑(육지를 뺀 면이라 육지를 덮지 않음).
 //     select(cls) = 대륙이면 범례 고름(그 대륙만 진하게, 나머지 흐림 0.25 — 9쪽 지구본 그림처럼), 대양이면 그 대양 면 + 대륙 모두 흐림, null = 전체.
-//     맞히기 = 나라 → 「나라 이름(대륙 이름)」, 대양 → 대양 이름(고른 대양만). layer.centers·names·classOf(iso) 는 3e 맞히기·3f 지구본 단추가 쓴다.
+//     맞히기 = 나라 → 「나라 이름(대륙 이름)」, 대양 → 대양 이름(고른 대양만). layer.onSelect·centers·bounds·names·oceans·classOf 는 3e 맞히기·3f 지구본 단추가 쓴다.
+//     면 좌표는 모두 −180~180(180° 를 넘는 러시아 아시아 조각·태평양은 180° 에서 두 면 — geoClip 자르기가 경도 > 180 을 옮기지 않으므로).
 //   단원 main.js: installAmericasExtras(); installPolarExtras(); installWorldExtras();  (이 차례, mountAtlas 전에 — 뒤 등록이 이김)
 import { geoContains, geoCentroid } from 'd3-geo';
 import { PROJECTIONS } from './projections.js';
@@ -16,6 +17,7 @@ import { registerLayerType, combineLayers } from './layerRef.js';
 import { areaLayer } from './layers.js';
 import { legendItems } from './layerStyle.js';
 import { countryLevel } from './countryClass.js';
+import { createLegendState } from './legendState.js';
 import { metaOf, LAYER_Z } from './layerCommon.js';
 
 /** 대륙 면 흐림(고르지 않은 대륙 — 9쪽 지구본 그림의 「그 대륙만 초록」), 대양 강조 색·불투명도 */
@@ -65,18 +67,23 @@ export function oceanFeatures(data) {
 }
 
 /**
- * 대륙·대양 면 레이어. legend = 대륙 7 범례 상태(layerFromRef 가 만듦), countryFeatures = 바탕 지도 나라 도형 {'50': [...], …}.
- * 지금은 기본 상세도(countryLevel — 세계 단원은 10a 없음) 나라로 한 번 만든다.
+ * 대륙·대양 면 레이어. legend = 대륙 7 범례 상태(layerFromRef 가 만듦 — 없으면 이 레이어가 자기 범례 상태를 만듦), countryFeatures = 바탕 지도 나라
+ * 도형 {'50': [...], …}. 지금은 기본 상세도(countryLevel — 세계 단원은 10a 없음) 나라로 한 번 만든다.
+ * 3e·3f 가 쓰는 것: select(cls|null) · selected · onSelect(cb) → 풀기(select·범례 누르기·풀기 모두 — 값이 바뀔 때만 cb(cls|null)) ·
+ * centers {cls: [lon, lat]} · bounds {cls: [w, s, e, n]}(날짜변경선을 넘으면 e > 180 — fitBounds 대안) · names {cls: [나라…]} ·
+ * oceans [{cls, label, color}] · classOf(iso).
  */
 export function continentsLayer(id, data, { countryFeatures = null, legend = null, map = null, layerId = id } = {}) {
   if (!countryFeatures || !Object.keys(countryFeatures).length) throw new Error(`continentsLayer ${id}: 바탕 지도 나라 도형(countryFeatures)이 없음`);
   const lv = countryLevel(null, countryFeatures);
-  const oceanCls = new Set((data?.properties?.oceans || []).map((o) => o.cls));
+  const oceans = oceanFeatures(data).map((f) => ({ cls: f.properties.cls, label: f.properties.label, color: f.properties.color }));
+  const oceanCls = new Set(oceans.map((o) => o.cls));
+  const lg = legend || createLegendState(legendItems(data).map((e) => e.cls)); // 범례 없이 만들어도 select 가 됨
   let ocean = null; // 고른 대양
   // 대륙 면이 보는 범례: 대양을 고르면 모두 흐림, 아니면 범례 그대로
   const landLegend = {
-    isActive: (c) => (ocean ? false : legend ? legend.isActive(c) : true),
-    selected: () => (ocean ? `ocean:${ocean}` : legend?.selected?.() ?? null),
+    isActive: (c) => (ocean ? false : lg.isActive(c)),
+    selected: () => (ocean ? `ocean:${ocean}` : lg.selected()),
     onChange: () => () => {},
   };
   const seaLegend = { isActive: (c) => c === ocean, selected: () => ocean, onChange: () => () => {} };
@@ -85,17 +92,27 @@ export function continentsLayer(id, data, { countryFeatures = null, legend = nul
     { ...part, legend: landLegend, dimAlpha: CONTINENTS.dimAlpha });
   const sea = areaLayer(`${id}:sea`, { type: 'FeatureCollection', properties: { legend: [] }, features: oceanFeatures(data) },
     { ...part, legend: seaLegend, dimAlpha: 0, fillOpacity: CONTINENTS.oceanOpacity });
-  const layer = combineLayers(id, [land, sea], { legend, map });
+  const layer = combineLayers(id, [land, sea], { legend: lg, map });
   const refresh = () => { if (map && !map.destroyed) map.refreshLayer(id); };
+  const current = () => ocean || lg.selected();
+  const subs = new Set();
+  let last = current();
+  const notify = () => {
+    const v = current();
+    if (v === last) return;
+    last = v;
+    for (const cb of [...subs]) { try { cb(v); } catch (e) { console.error('continents onSelect 구독자 오류', e); } }
+  };
   // 사용자가 범례에서 대륙을 고르면 대양 고름은 풀림
-  const off = legend?.onChange?.(() => { if (ocean && legend.selected() != null) { ocean = null; refresh(); } });
+  const off = lg.onChange(() => { if (ocean && lg.selected() != null) { ocean = null; refresh(); } notify(); });
   const destroy = layer.destroy;
   Object.assign(layer, {
     meta: metaOf(data),
     classes: { ...(data?.properties?.classes || {}) },
     centers: { ...(data?.properties?.centers || {}) },
+    bounds: { ...(data?.properties?.bounds || {}) },
     names: { ...(data?.properties?.names || {}) },
-    oceans: [...oceanCls],
+    oceans,
     /** 나라 iso → 대륙 cls(쪼갠 나라는 조각 대륙들 배열), 없으면 null */
     classOf(iso) {
       if (this.classes[iso]) return this.classes[iso];
@@ -104,16 +121,23 @@ export function continentsLayer(id, data, { countryFeatures = null, legend = nul
     },
     /** cls = 대륙(범례 고름)·대양(그 면 강조)·null(전체 보기) */
     select(cls) {
-      if (cls != null && !oceanCls.has(cls) && !legend?.classes?.includes(cls)) throw new Error(`continentsLayer ${id}: 모르는 대륙·대양 ${cls}`);
-      if (cls != null && oceanCls.has(cls)) { ocean = cls; legend?.reset?.(); refresh(); return; }
-      const had = ocean; ocean = null;
-      if (cls == null) { legend?.reset?.(); if (had) refresh(); return; }
-      if (legend.selected() !== cls) legend.toggle(cls); else if (had) refresh();
+      if (cls != null && !oceanCls.has(cls) && !lg.classes.includes(cls)) throw new Error(`continentsLayer ${id}: 모르는 대륙·대양 ${cls}`);
+      const had = ocean;
+      if (cls != null && oceanCls.has(cls)) { ocean = cls; lg.reset(); if (had !== cls) refresh(); }
+      else {
+        ocean = null;
+        if (cls == null) lg.reset();
+        else if (lg.selected() !== cls) lg.toggle(cls);
+        if (had) refresh();
+      }
+      notify();
     },
-    destroy() { off?.(); destroy(); },
+    /** 고른 것이 바뀔 때마다 cb(cls|null) — 풀기 함수를 돌려줌 */
+    onSelect(cb) { subs.add(cb); return () => subs.delete(cb); },
+    destroy() { off(); subs.clear(); destroy(); },
   });
   /** 지금 고른 대륙·대양 cls(없으면 null) — Object.assign 은 getter 를 값으로 굳히므로 따로 */
-  Object.defineProperty(layer, 'selected', { get: () => ocean || (legend?.selected?.() ?? null) });
+  Object.defineProperty(layer, 'selected', { get: current });
   return layer;
 }
 

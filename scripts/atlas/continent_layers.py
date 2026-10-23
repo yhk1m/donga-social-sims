@@ -159,6 +159,42 @@ def unwrap_dateline(g):
     return unary_union(moved)
 
 
+def rewrap_dateline(g):
+    """unwrap_dateline 으로 경도 > 180 까지 이은 면을 −180~180 으로 되접음(180° 에서 두 면 — 바탕 지도·다른 레이어와 같은 꼴). 앱 자르기
+    (geoClip.clipIndexed)는 경도 > 180 좌표를 옮기지 않아 확대하면 그 쪽이 잘렸음(U1-3c 리뷰). 이음매는 d3 가 맡고, 한 Feature 의 두 면은
+    한 번에 칠하므로 틈이 보이지 않음."""
+    ps = polys(g)
+    if not ps or max(p.bounds[2] for p in ps) <= 180: return g
+    east = g.intersection(box(-180, -90, 180, 90))
+    west = translate(g.intersection(box(180, -90, 540, 90)), -360)
+    return MultiPolygon([q for q in polys(east) + polys(west) if not q.is_empty])
+
+
+def lon_bbox(geoms):
+    """경위도 면들 → 날짜변경선을 넘으면 동쪽 > 180 으로 편 상자 [w, s, e, n](경도 원 위에서 가장 넓은 빈 틈의 바깥 — fitBounds 대안용).
+    빈 틈이 없으면(남극·북극해) 경도 −180~180."""
+    iv, s_, n_ = [], 90.0, -90.0
+    for g in geoms:
+        for p in polys(g):
+            x0, y0, x1, y1 = p.bounds
+            s_, n_ = min(s_, y0), max(n_, y1)
+            if x1 - x0 >= 360: iv.append((-180.0, 180.0)); continue
+            a, b = ((x0 + 180) % 360) - 180, ((x0 + 180) % 360) - 180 + (x1 - x0)
+            iv.extend([(a, min(b, 180.0))] + ([(-180.0, b - 360)] if b > 180 else []))
+    if not iv: return None
+    iv.sort(); merged = [list(iv[0])]
+    for a, b in iv[1:]:
+        if a <= merged[-1][1] + 1e-9: merged[-1][1] = max(merged[-1][1], b)
+        else: merged.append([a, b])
+    gaps = [(merged[i + 1][0] - merged[i][1], merged[i][1], merged[i + 1][0]) for i in range(len(merged) - 1)]
+    gaps.append((merged[0][0] + 360 - merged[-1][1], merged[-1][1], merged[0][0] + 360))   # 180 을 건너는 틈
+    size, g0, g1 = max(gaps)
+    if size <= 1e-6: return [-180.0, round(s_, 2), 180.0, round(n_, 2)]
+    w = g1 if g1 <= 180 else g1 - 360
+    e = g0 if g0 >= w else g0 + 360
+    return [round(w, 2), round(s_, 2), round(e, 2), round(n_, 2)]
+
+
 def d3_wind(g):
     """shapely 면 → d3 감김(바깥 고리 시계 방향 — 경도 x · 위도 y 평면, 구멍 반시계)."""
     out = [orient(p, sign=-1.0) for p in polys(g)]
@@ -166,16 +202,19 @@ def d3_wind(g):
 
 
 def round_geom(g, nd=3):
-    """d3 감김 + 소수 nd 자리 GeoJSON geometry(MultiPolygon). 격자에 맞춘 뒤(set_precision — 반올림이 고리를 꼬지 않게) 퇴화한 고리는 뺌."""
+    """d3 감김 + 소수 nd 자리 GeoJSON geometry(MultiPolygon) | None(격자에 맞추니 비면). 격자에 맞춘 뒤(set_precision — 반올림이 고리를 꼬지 않게)
+    퇴화한 고리는 뺌. 자리 수: 대륙 조각 3(0.001° ≈ 0.1km — build_layers·바탕 지도와 같은 격자, 이웃 나라 바탕 면과 만나야 함),
+    대양 2(설정 oceans.digits — 대양 면은 0.25~0.5° 로 단순화하고 고를 때만 옅게 칠하므로 0.01° 는 단순화 문턱보다 훨씬 작음, 용량 약 30% 줄임)."""
     import shapely
     g = shapely.set_precision(g, 10 ** -nd)
+    if g.is_empty: return None
     out = []
     for p in polys(d3_wind(g)):
         ext = [[round(x, nd), round(y, nd)] for x, y in p.exterior.coords]
         if len({tuple(q) for q in ext}) < 3: continue
         holes = [[[round(x, nd), round(y, nd)] for x, y in r.coords] for r in p.interiors]
         out.append([ext] + [h for h in holes if len({tuple(q) for q in h}) >= 3])
-    return {'type': 'MultiPolygon', 'coordinates': out}
+    return {'type': 'MultiPolygon', 'coordinates': out} if out else None
 
 
 def sphere_center(geoms):
@@ -645,13 +684,21 @@ def build(layer_id, oceans=False, log=print):
     for iso, ko, g in ne_countries(): geo_of[iso] = (ko, g)
     feats = []
     for pc in sorted(pieces, key=lambda q: (q['iso'], order.index(q['cls']))):
-        g = unwrap_dateline(pc['geom']).simplify(tol, preserve_topology=True)
-        feats.append({'type': 'Feature', 'properties': {'cls': pc['cls'], 'iso': pc['iso'], 'mode': pc['mode']}, 'geometry': round_geom(g)})
+        g = rewrap_dateline(unwrap_dateline(pc['geom']).simplify(tol, preserve_topology=True))   # 이어서 단순화(180° 양쪽이 같게) → 되접음
+        geom = round_geom(g)
+        if geom is None: continue
+        feats.append({'type': 'Feature', 'properties': {'cls': pc['cls'], 'iso': pc['iso'], 'mode': pc['mode']}, 'geometry': geom})
     by_cls = {k: [] for k in order}
+    minor = {}   # 섬 단위 조각(parts)은 본토 대륙 넓이·상자에서 뺌(프랑스 기아나·레위니옹이 유럽 상자를 남아메리카·인도양까지 넓히지 않게)
+    for pc in pieces:
+        if pc['mode'] == 'parts': minor.setdefault(pc['iso'], []).append(pc['geom'])
     for iso, c in classes.items():
-        if iso in geo_of and c in by_cls: by_cls[c].append(geo_of[iso][1])
+        if iso in geo_of and c in by_cls:
+            g = geo_of[iso][1]
+            by_cls[c].append(g.difference(unary_union(minor[iso]).buffer(1e-6)) if iso in minor else g)
     for pc in pieces: by_cls[pc['cls']].append(pc['geom'])
     centers = {k: sphere_center([unwrap_dateline(g) for g in v]) for k, v in by_cls.items() if v}
+    bounds = {k: lon_bbox(v) for k, v in by_cls.items() if v}
     hits, nrep = page_names(cfg, mps, {ko.replace(' ', ''): (iso, ko) for iso, (ko, g) in geo_of.items() if ko})
     geom_cls = {}
     for pc in pieces:
@@ -681,12 +728,13 @@ def build(layer_id, oceans=False, log=print):
     rep['partOverrides'] = [{'iso': p['iso'], 'cls': p['cls']} for p in parts if p.get('partOverride')]
     props = {'id': layer_id, 'map': cfg['map'], 'maps': cfg['maps'], 'page': m0['page'], 'title': cfg.get('title') or m0['title'], 'kind': m0.get('kind'),
              'layerType': 'continents', 'legend': legend, 'classes': dict(sorted(classes.items())),
-             'centers': centers, 'names': name_list}
+             'centers': centers, 'bounds': bounds, 'names': name_list}
     if oceans or cfg.get('oceans'):
         oc, ofeats, orep = build_oceans(cfg)
         props['oceans'] = oc; feats.extend(ofeats); rep['oceans'] = orep
         for o in oc:
             if o.get('center'): centers[o['cls']] = o.pop('center')
+            if o.get('bbox'): bounds[o['cls']] = o.pop('bbox')
     return {'type': 'FeatureCollection', 'properties': props, 'features': feats}, rep
 
 
@@ -728,9 +776,13 @@ def ocean_polygons(land, rules, seeds, gap=0.005, join_deg=1.5):
     return out, rep
 
 
+OCEAN_COLOR = '#3d8fd1'   # 대양 강조 기본색(앱 worldExtra.CONTINENTS.oceanColor 와 같음)
+
+
 def build_oceans(cfg):
     """설정 oceans {classes:[{cls, label, color?}], rules, seeds, simplifyDeg, gap, joinDeg, polar:[cls…]} → (oceans 범례, Feature 들, 보고).
-    극을 품는 대양(polar — 북극해·남극해)은 날짜변경선에서 잇지 않음(±180 경선 두 변이 극에서 만나는 d3 극 면), 나머지는 unwrap_dateline(태평양 한 면)."""
+    극을 품는 대양(polar — 북극해·남극해)은 날짜변경선에서 잇지 않음(±180 경선 두 변이 극에서 만나는 d3 극 면), 나머지는 unwrap_dateline 으로 이어
+    단순화한 뒤 −180~180 으로 되접음(태평양 — 180° 에서 두 면, 한 Feature). 범례 항목 {cls, label, color, center, bbox}(center·bbox 는 build 가 떼어 냄)."""
     oc = cfg['oceans']
     land = unary_union([g for _, _, g in ne_countries()]).buffer(0)
     geoms, rep = ocean_polygons(land, oc['rules'], oc['seeds'], oc.get('gap', 0.005), oc.get('joinDeg', 1.5))
@@ -745,10 +797,13 @@ def build_oceans(cfg):
         if hole: g = unary_union([Polygon(p.exterior, [r for r in p.interiors if Polygon(r).area >= hole]) for p in polys(g) if p.area >= oc.get('minPartDeg2', 0)])
         g = g.simplify(c.get('simplifyDeg', tol), preserve_topology=True)
         import shapely   # 위선 변(북극권·남위 60°)·극 면의 ±180 경선 변을 촘촘히 — d3 는 꼭짓점 사이를 대원으로 이어 긴 위선 변이 극 쪽으로 처짐
+        bbox = lon_bbox([g])
+        if c['cls'] not in polar: g = rewrap_dateline(g)
         g = shapely.segmentize(g, oc.get('stepDeg', 3.0))
         geom = round_geom(g, oc.get('digits', 3))
+        if geom is None: raise ValueError(f"대양 {c['cls']}: 면이 비었음")
         feats.append({'type': 'Feature', 'properties': {'cls': c['cls'], 'ocean': True}, 'geometry': geom})
-        legend.append({'cls': c['cls'], 'label': c['label'], **({'color': c['color']} if c.get('color') else {}), 'center': center})
+        legend.append({'cls': c['cls'], 'label': c['label'], 'color': c.get('color') or OCEAN_COLOR, 'center': center, 'bbox': bbox})
         rep.setdefault('kb', {})[c['cls']] = round(len(json.dumps(geom, separators=(',', ':'))) / 1024, 1)
         rep.setdefault('areaDeg2', {})[c['cls']] = round(geoms[c['cls']].area, 1)
     return legend, feats, rep
