@@ -47,11 +47,13 @@ t('p08 해양 경계(8·9쪽 한 레이어) + 날짜 변경선(범례 밖): 범�
   assert.ok(Math.min(...dpts.map((p) => p[1])) < -60 && Math.max(...dpts.map((p) => p[1])) > 60);
 });
 
-t('p08 우리나라 과학 기지 3(다산·장보고·세종) + 지면 글자 6', () => {
+t('p08 우리나라 과학 기지 3(다산·장보고·세종) + 지면 글자 6 + 이어도 종합 해양 과학 기지 글자 2(U1-8)', () => {
   const L = read('p08-stations');
   const sym = L.features.filter((f) => f.properties.type === 'symbol'), lab = L.features.filter((f) => f.properties.type === 'label');
   assert.equal(L.properties.legend.length, 1);
-  assert.equal(lab.length, 6);
+  assert.equal(lab.length, 8);
+  assert.deepEqual(lab.slice(6).map((f) => f.properties.text), ['이어도', '종합 해양 과학 기지']);   // U1-8: 8쪽 명조 4.9pt 두 줄(기호 없음)
+  assert.ok(geoDistance(lab[6].geometry.coordinates, [125.18, 32.12]) < 0.02, `이어도 ${lab[6].geometry.coordinates}`);   // 약 130km 안(지면 글자 자리 — 기지 실제 자리 남서쪽)
   const want = { 다산: [11.93, 78.92], 장보고: [164.23, -74.62], 세종: [-58.79, -62.22] };
   for (const [k, ll] of Object.entries(want)) {
     const f = sym.find((x) => x.properties.name.startsWith(k));

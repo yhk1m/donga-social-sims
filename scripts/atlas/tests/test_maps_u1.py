@@ -258,10 +258,12 @@ class MapsU1(unittest.TestCase):
         self.assertEqual(c['content']['labels'], 'units/u1/text/p10-labels.json')
         self.assertEqual(c['content']['charts'], 'units/u1/tables/charts-u1.json')
         self.assertEqual(c['content']['pages'], [8, 15])
-        self.assertEqual(c['content']['expect'], {'topics': TOPICS})
+        # U1-8 실측(핀 지형 8 · 기후 사진 8 + 그래프 6 · 햄버거 4, 그래프 7 — 자세한 검사는 tests/atlas/units/u1.content.test.mjs)
+        self.assertEqual(c['content']['expect'], {'topics': TOPICS, 'markers': {'relief': 8, 'climate': 14, 'glocal': 4}, 'chartMarkers': {'climate': 6}, 'charts': 7})
         self.assertEqual(c['photos']['topics'], TOPICS)
-        for k in ('topics', 'overrides', 'photos', 'coloringOut'):
+        for k in ('topics', 'overrides', 'photos'):
             self.assertTrue(c['content'][k].startswith('content/atlas/u1/'), k)
+        self.assertNotIn('coloringOut', c['content'])   # U1-8: 색칠하기 퀴즈 없음 — build_content 가 색칠하기 산출물을 읽지 않음(_coloringOut)
         self.assertEqual(c['content']['pageDir'], 'docs/assets/atlas/u1/page')
         self.assertEqual(c['content']['photoDir'], 'docs/assets/atlas/u1/photo')
         self.assertEqual(c['charts']['out'], {'climate': 'units/u1/tables/climate-world.json', 'charts': 'units/u1/tables/charts-u1.json', 'sheets': 'units/u1/shots/c4'})
@@ -330,7 +332,8 @@ class MapsU1(unittest.TestCase):
         col = c['content']['coloring']
         for k in ('extraCountries', 'isoByLabel', 'regions', 'noCapital', 'joinLabels', 'cutIsos', 'capitalAlias', 'splitLabels'):
             self.assertNotIn(k, col)
-        self.assertNotIn('layerTypeAs', c['content'])
+        # U1-8: layerTypeAs 는 오세아니아 값이 아니라 이 단원 값(기지 symbolLabels + 대륙 맞히기·지구본 단추·색칠하기 도구)
+        self.assertEqual(c['content']['layerTypeAs'], {'symbolLabels': ['symbol'], 'continentQuiz': ['continents'], 'continentGlobes': ['continents'], 'paintTool': ['topicView']})
         # 공용 절은 u6 와 같은 값(복사): defaults·shapeControls 수치·글자 묶기 수치·기호 분류·사진 후보·그래프 기본값·바탕 지도 50m 층
         with open(os.path.join(HERE, '..', 'config', 'u6.json'), encoding='utf-8') as f: u6 = json.load(f)
         self.assertEqual(c['defaults'], u6['defaults'])

@@ -210,9 +210,27 @@
      ],
      "size": 5.7,
      "color": "#ed1064"
+    },
+    {
+     "text": "이어도",
+     "xy": [
+      631.638,
+      230.995
+     ],
+     "size": 4.9,
+     "color": "#231f20"
+    },
+    {
+     "text": "종합 해양 과학 기지",
+     "xy": [
+      644.246,
+      235.947
+     ],
+     "size": 4.9,
+     "color": "#231f20"
     }
    ],
-   "_labelPoints": "지면 글자 상자 가운데·크기·색 그대로(YDVYGOStd33 검정 이름 + YDVYGOStd32 자홍 「(대한민국)」). 앱 레이어 종류 symbolLabels(지구본 뒷면·극 반대 반구 글자 숨김 — polarExtra). U1-5 지명은 이 글자를 일반도 지명에서 빼야 함(같은 글자 둘)",
+   "_labelPoints": "지면 글자 상자 가운데·크기·색 그대로(YDVYGOStd33 검정 이름 + YDVYGOStd32 자홍 「(대한민국)」). 앱 레이어 종류 symbolLabels(지구본 뒷면·극 반대 반구 글자 숨김 — polarExtra). U1-5 지명은 이 글자를 일반도 지명에서 빼야 함(같은 글자 둘). U1-8: 「이어도 / 종합 해양 과학 기지」 두 줄(8쪽 YDVYMjOStd32 4.9pt #231f20 — 기호 없이 글자만, 줄마다 글자 상자 가운데)을 더함 — U1-5 가 기지 글자라 지명에서 뺐고(윗줄 「이어도」만 남으면 섬이 됨 — 이어도는 수중 암초) 어느 레이어에도 없던 것. 10쪽에도 같은 글자가 인쇄된 우리나라 해양 과학 기지라 일반도에서 보이게 하되, 기호(빨간 점 — 「우리나라 과학 기지」 범례 = 극지 기지 셋)는 두지 않음(지면도 글자만).",
    "_doc": "U1-4 우리나라 과학 기지 셋(8쪽 다산·장보고, 9쪽 세종 — 「여러 지도 한 레이어」 대신 9쪽 자리를 8쪽 좌표로)"
   },
   "p10-continents": {
@@ -5388,7 +5406,7 @@
   "topics": "content/atlas/u1/topics.json",
   "overrides": "content/atlas/u1/overrides.json",
   "photos": "content/atlas/u1/photos.json",
-  "coloringOut": "content/atlas/u1/coloring.json",
+  "_coloringOut": "U1-8: coloringOut 키를 두지 않음 — 이 단원에는 색칠하기 퀴즈(quiz type coloring)가 없음(10·11쪽 = 대륙·대양 맞히기 continentQuiz, 15쪽 = 세계 색칠하기 도구 paintTool — 교사 Q6·Q15 A). build_content.mjs 는 coloringOut 이 없으면 색칠하기 산출물을 읽지 않고 도장·나라 수 검사도 건너뜀(키가 있는 u2~u6 은 옛 길 그대로). coloring 절·labels 는 regress_unit 이 content.labels 를 요구하고 10쪽 나라 이름 글자(Q8 목록 원천 후보)라 남김.",
   "places": "sims/atlas-u1-world/data/places.json",
   "out": "sims/atlas-u1-world/data",
   "pageDir": "docs/assets/atlas/u1/page",
@@ -5409,11 +5427,40 @@
     "interaction",
     "glocal",
     "themeActivity"
-   ]
+   ],
+   "markers": {
+    "relief": 8,
+    "climate": 14,
+    "glocal": 4
+   },
+   "chartMarkers": {
+    "climate": 6
+   },
+   "charts": 7
   },
-  "_expect": "교사 Q1 답(기본값 A): 주제 8(세계 일반도 general 8~9 · 대륙과 대양 continents 10~11 · 지형 relief 12 · 기후 climate 13 · 세계의 연결 connection 14 ①③④⑤⑥ · 공간적 상호 작용 interaction 14 ② · 세계화와 지역화 glocal 15 ①~④ · 주제도 활동 themeActivity 15). U1-6·U1-7·U1-8 실측으로 markers(지형 8·기후 8 — 계획 어림)·chartMarkers(기후 6)·charts(어림 7 — 기후 6 + 횡단 시간 표 1)를 더함. coloringCountries 는 없음(10·11쪽은 색칠하기 퀴즈가 아니라 대륙·대양 맞히기 — Q6, 레이어 continentQuiz).",
+  "_expect": "교사 Q1 답(기본값 A): 주제 8(세계 일반도 general 8~9 · 대륙과 대양 continents 10~11 · 지형 relief 12 · 기후 climate 13 · 세계의 연결 connection 14 ①③④⑤⑥ · 공간적 상호 작용 interaction 14 ② · 세계화와 지역화 glocal 15 ①~④ · 주제도 활동 themeActivity 15). U1-8 실측: 지형 핀 8(12쪽 번호 핀 — 번호 숨김 Q9), 기후 14 = 사진 핀 8(13쪽 번호 핀 — 번호 숨김) + 기후 그래프 마커 6(싱가포르·리야드·런던·몬트리올·보스토크·보고타 — 사진 없이 그래프만, 13쪽 그래프 6은 97쪽 표 값), 세계화와 지역화 핀 4(15쪽 햄버거 사진 나라 — 번호 보임 Q13), 그래프 7(기후 6 + 14쪽 「작아지는 지구」 표 1 — U1-7). coloringCountries 는 없음(색칠하기 퀴즈가 없음 — 10·11쪽 맞히기 continentQuiz Q6, 15쪽 색칠하기 도구 paintTool Q15).",
   "expectCredits": {
-   "_doc": "8~15쪽에 인쇄된 출처 글(쪽: 목록) — U1-8 에서 채움(조사: 12쪽 naturalearthdata.com 2023, 13쪽 gloh2o.org·『이과연표』 2023, 14쪽 Pearson·국가 지도집·국가데이터처·세계 보건 기구, 15쪽 M사 누리집·문화 체육 관광부).",
+   "12": [
+    "(naturalearthdata.com, 2023)"
+   ],
+   "13": [
+    "(www.gloh2o.org, 1991~2020 평균, 2023)",
+    "(『이과연표』, 2023)"
+   ],
+   "14": [
+    "(「대한민국 국가 지도집 1권」, 2019)",
+    "(Pearson, 『The cultural landscape』, 2020)",
+    "(국가데이터처, 2020)",
+    "(세계 보건 기구, 2020)"
+   ],
+   "15": [
+    "(M사 누리집, 2022)",
+    "(문화 체육 관광부, 2020)"
+   ],
+   "_doc": "8~15쪽에 인쇄된 출처 글(쪽: 목록, U1-8 — extract_text.printed_credits 로 확인). 생성물 topics.json·charts.json 어딘가에 있어야 한다(공백 무시, tests/atlas/units/u1.content.test.mjs). 8~11쪽에는 출처 글이 없다. 14쪽 「(국가데이터처, 2020)」은 인터넷 이용률·이동 전화 가입자 두 지도에 같은 글(목록에는 한 번). 15쪽 「(문화 체육 관광부, 2020)」은 지면 글자 조각이 「)(문화 체육 관광부」처럼 앞 출처의 닫는 괄호와 한 묶음으로 나와 printed_credits(줄마다 「(…, 2020)」 꼴)가 찾지 못함 — 지면 대조 시험은 빼고 본다(notPrinted, 글은 box_text 로 원문 그대로 레이어 credit 에 있음).",
+   "notPrinted": [
+    "(문화 체육 관광부, 2020)"
+   ],
    "notCredits": []
   },
   "viewGrid": 20,
@@ -5670,7 +5717,22 @@
    "_nearKm": "u6 값 그대로(나라 찾기: NAME_KO 초성이 글자와 같은 나라 중 nameKm 안 가장 가까운 면, 없으면 글자 자리의 면(nearKm 안)). U1-8 에서 확인.",
    "_fonts": "countryFont·capitalFont·capitalSize 는 u6 값 복사 — 10·11쪽 나라 이름 KCCChassam 7.2pt·초성 꼬리표 KCCChassam 12pt(계획 조사), 수도 이름 없음. U1-8 에서 확인.",
    "_doc": "U1-8 에서 정함(뼈대 — u6 값 복사): 10·11쪽은 앞 단원 색칠하기 쪽과 같은 손글씨풍 나라 이름(KCCChassam 7.2pt 약 108)이 있지만 퀴즈는 색칠하기가 아니라 대륙·대양 이름 맞히기(교사 Q6 — 레이어 continentQuiz, U1-3e). build_content.mjs 가 coloringOut 을 늘 읽고 regress_unit 이 content.labels 를 요구하므로 절은 남겨 둠 — 10·11쪽 나라 이름 글자는 대륙 나라 목록(Q8 names — U1-3c)의 원천 후보. 두 쪽(11쪽 = map p11-continents)을 함께 읽을지도 U1-3c·U1-8 에서."
-  }
+  },
+  "layerTypeAs": {
+   "symbolLabels": [
+    "symbol"
+   ],
+   "continentQuiz": [
+    "continents"
+   ],
+   "continentGlobes": [
+    "continents"
+   ],
+   "paintTool": [
+    "topicView"
+   ]
+  },
+  "_layerTypeAs": "U1-8: 주제 레이어 type ↔ 레이어 자료 layerType 이 다른 것(build_content 검사 예외 — u5·u6 와 같은 키). 기지 기호 + 글자(8쪽 p08-stations)는 symbol 자료를 symbolLabels(polarExtra 가 지구본 뒷면 글자를 숨김)로, 대륙·대양 면 자료(p10-continents, layerType continents)는 10~11쪽 continentQuiz(맞히기 + 대양 단추 — U1-3e·3f)와 일반도 continentGlobes(대륙 단추 — U1-3f)로, 15쪽 백지도 보기 자료(p15-paint, layerType topicView)는 paintTool(세계 색칠하기 도구 — U1-3h, 같은 ref 의 topicView 를 따로 두지 않음)로 그린다. 레이어 make 는 ref 의 다른 키를 받지 못해 종류 이름이 동작을 고름."
  },
  "insets": [],
  "_insets": "확대 창 — 필요하면 U1-4·U1-9(9쪽 태평양 섬나라·15쪽 한국어 점 겹침은 U1-9 캡처로 판단, Q14 기본값은 겹침 허용). 8쪽 유럽 삽입은 창을 띄우지 않고 일반도 바로가기(u6 Q3 기본값)."

@@ -377,8 +377,22 @@ export function withGlobeButtons(layer, set, { map = null, idleHidden = false, m
   return layer;
 }
 
-/** 등록(installWorldExtras 가 installWorldQuiz 뒤에 부름 — 뒤 등록이 이김): 일반도 대륙 단추 · 10~11쪽 맞히기 + 대양 단추 */
+/**
+ * 범례 블록 없음(U1-8 — 주제 레이어 항목 legend:false 를 지킴): topic.js 는 layer.legendItems 가 있으면 범례 블록을 만들고, layerFromRef 는 make 가 끝난 뒤
+ * layer.legendItems = 자료 범례 를 덮어씀 → 읽으면 늘 빈 목록·쓰기는 무시하는 접근자로 막는다(공유 topic.js·layerRef.js 를 고치지 않음 — u1 전용).
+ * 레이어 안의 고름·흐림은 자기 범례 상태(continentsLayer 의 lg)를 쓰므로 그대로.
+ */
+export function withoutLegendBlock(layer) {
+  Object.defineProperty(layer, 'legendItems', { get: () => [], set: () => {}, configurable: true, enumerable: true });
+  return layer;
+}
+
+/** 등록(installWorldExtras 가 installWorldQuiz 뒤에 부름 — 뒤 등록이 이김): 일반도 대륙 단추 · 10~11쪽 맞히기 + 대양 단추.
+ *  일반도는 단추를 누르기 전에 면이 없어(idleHidden) 범례 블록(대륙 7)이 뜨면 안 맞음 — 항목이 legend:false(layerFromRef 가 ctx.legend 를 null 로 줌)면 블록 없음. */
 export function installWorldGlobe(makeContinents) {
-  registerLayerType('continentGlobes', (id, d, ctx) => withGlobeButtons(makeContinents(id, d, ctx), 'continents', { map: ctx?.map, idleHidden: true }));
+  registerLayerType('continentGlobes', (id, d, ctx) => {
+    const layer = withGlobeButtons(makeContinents(id, d, ctx), 'continents', { map: ctx?.map, idleHidden: true });
+    return ctx?.legend === null ? withoutLegendBlock(layer) : layer;
+  });
   registerLayerType('continentQuiz', (id, d, ctx) => withGlobeButtons(withContinentQuiz(makeContinents(id, d, ctx), d, ctx), 'oceans', { map: ctx?.map }));
 }

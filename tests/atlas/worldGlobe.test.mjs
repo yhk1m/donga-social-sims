@@ -487,3 +487,24 @@ test('select 가 멈추면(모르는 cls) 세션 없음 — 보기·바탕 그�
   assert.equal(one(stage, 'at-wg-flat').disabled, true);
   L.destroy();
 });
+
+test('U1-8: continentGlobes 항목 legend:false 면 범례 블록 없음(legendItems 늘 빈 목록 — layerFromRef 덮어쓰기도 무시), 고름은 그대로 · legend 를 주면 옛 길', () => {
+  AX.installAmericasExtras(); PX.installPolarExtras(); WX.installWorldExtras();
+  const sq = (lon, lat, d = 2) => [[[lon, lat], [lon, lat + d], [lon + d, lat + d], [lon + d, lat], [lon, lat]]];
+  const data = () => ({ type: 'FeatureCollection', properties: { layerType: 'continents', legend: [{ cls: 'asia', label: '아시아', color: '#f2bc97' },
+    { cls: 'europe', label: '유럽', color: '#a5d3e6' }], classes: { AAA: 'asia' }, centers: CENTERS, names: {}, oceans: [], tags: [] }, features: [] });
+  const cf = { 50: [{ type: 'Feature', properties: { iso: 'AAA', ko: '가나라' }, geometry: { type: 'MultiPolygon', coordinates: [sq(100, 30)] } }] };
+  const off = layerFromRef({ ref: 'cg', type: 'continentGlobes', legend: false }, data(), { countryFeatures: cf, map: fakeMap() });
+  assert.deepEqual(off.legendItems, [], '범례 블록 없음');
+  off.legendItems = [{ cls: 'asia' }];
+  assert.deepEqual(off.legendItems, [], '덮어쓰기 무시');
+  off.select('asia');
+  assert.equal(off.selected, 'asia', '고름은 자기 범례 상태로');
+  off.destroy();
+  const on = layerFromRef({ ref: 'cg', type: 'continentGlobes' }, data(), { countryFeatures: cf, map: fakeMap() });
+  assert.deepEqual(on.legendItems.map((e) => e.cls), ['asia', 'europe'], 'legend 를 끄지 않으면 옛 길(범례 7 꼴)');
+  on.destroy();
+  const q = layerFromRef({ ref: 'cq', type: 'continentQuiz' }, data(), { countryFeatures: cf, map: fakeMap() });
+  assert.equal(q.legendItems.length, 2, '10~11쪽 맞히기는 범례 그대로');
+  q.destroy();
+});
