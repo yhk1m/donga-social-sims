@@ -114,8 +114,10 @@ export function coloringLayer(features, { id = 'coloring', z = 12, alpha = 0.85,
   /** 작은 나라 동그라미(나라 전체 화면 크기 < smallPx) — 칠한 색·문제 강조 위에 덧그림, 자리는 hit 이 씀 */
   function drawSmall(ctx, path, view) {
     marks = [];
-    const proj = path.projection?.();
-    if (!proj) return;
+    const p0 = path.projection?.();
+    if (!p0) return;
+    // 뒷면(u5·u6 지구본·극 중심 — hidden 있음)은 투영 못 함(null)으로: raw 투영은 뒷면 점을 원판 안 거울 자리에 돌려줌
+    const proj = p0.hidden ? (ll) => (p0.hidden(ll) ? null : p0(ll)) : p0;
     const W = view?.width ?? Infinity, H = view?.height ?? Infinity;
     for (const iso of smallIsos || [...(byIso['50']?.keys() || [])]) {
       const inf = infoOf(iso, view);
