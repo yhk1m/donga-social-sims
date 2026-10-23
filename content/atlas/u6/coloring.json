@@ -2,7 +2,7 @@
  "_doc": "coloring_quiz.mjs 생성물(직접 고치지 말고 고칠 값은 overrides.json). name = 나라 이름(교과서 지명), label = 색칠하기 지도 글자(초성 또는 이름), iso = Natural Earth ADM0_A3, labelIso = 글자가 놓인 다른 나라, capitalFrom = printed(색칠하기 지도에 적힌 수도)·places(일반도 수도 지명)·places+ne(여럿 중 Natural Earth 수도에 가까운 것).",
  "page": 49,
  "map": "p49-coloring",
- "inputsHash": "dc8d405c37d275b3ee5299f825d829c18b740c0d1563609da1313b5848bfbc02",
+ "inputsHash": "ffc92b3b0e918a16a58d5fb69c72531865494a8aa85abe9a9d1c936644eca167",
  "countries": [
   {
    "name": "오스트레일리아",

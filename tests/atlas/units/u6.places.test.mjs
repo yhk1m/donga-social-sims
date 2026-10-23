@@ -60,11 +60,11 @@ test('수도: 오세아니아 독립국 14 영문 병기 + 48쪽 아시아 이�
 
 test('종류별 수(48쪽 셋 + 50·51쪽 합친 한 벌)', () => {
   const n = (k) => places.filter((p) => p.kind === k).length;
-  assert.equal(places.length, 626);
+  assert.equal(places.length, 638);   // U6-10t: 50쪽 강·호수 래스터 글자 10 + 51쪽 래스터 산 2(교사 답 Q2)
   assert.deepEqual({ country: n('country'), capital: n('capital'), city: n('city'), sea: n('sea'), river: n('river'), mountain: n('mountain'), island: n('island'), region: n('region'), plain: n('plain'), desert: n('desert'), other: n('other') },
-    { country: 72, capital: 36, city: 168, sea: 88, river: 10, mountain: 38, island: 153, region: 31, plain: 9, desert: 5, other: 16 });
+    { country: 72, capital: 36, city: 168, sea: 89, river: 19, mountain: 40, island: 153, region: 31, plain: 9, desert: 5, other: 16 });
   const from = (m) => places.filter((p) => p.from.includes(m)).length;
-  assert.deepEqual(['p48-hawaii', 'p48-tahiti', 'p48-oceania', 'p50-arctic', 'p51-antarctic'].map(from), [21, 1, 343, 214, 60]);
+  assert.deepEqual(['p48-hawaii', 'p48-tahiti', 'p48-oceania', 'p50-arctic', 'p51-antarctic'].map(from), [21, 1, 343, 224, 62]);
   const by = {}; for (const p of places) (by[p.name] ||= []).push(p);
   assert.deepEqual(Object.entries(by).filter(([, v]) => v.length > 1).map(([k]) => k).sort(), ['미크로네시아', '솔로몬 제도', '포틀랜드'].sort());   // 나라 ↔ 지역·섬, 오리건 ↔ 빅토리아주
 });
@@ -84,6 +84,15 @@ test('고친 글자: 덮개 밖 상자·소속 표시·래스터 글자 손 넣�
   assert.ok(near(one('백두산'), 128.06, 41.99, 0.5) && one('백두산').elev === 2744 && one('군비요른산').elev === 3700);
   assert.ok(near(one('디날리산'), -151.0, 63.07, 1) && one('디날리산').elev === 6190);
   assert.ok(near(one('그레이트오스트레일리아만'), 130, -34, 2) && one('그레이트오스트레일리아만').from[0] === 'p48-oceania');
+  // U6-10t 교사 답 Q2: 50쪽 강·호수 파란 래스터 글자 10(교과서 글자 자리 — 강줄기 곁) + 51쪽 래스터 산 둘(삼각형 자리 + 높이)
+  for (const [n, lon, lat] of [['볼가강', 46, 51.5], ['페초라강', 52.5, 66], ['오비강', 65.5, 64.5], ['예니세이강', 86.5, 67], ['레나강', 124, 68],
+    ['안가라강', 97, 58.5], ['아무르강', 127, 52], ['시르다리야강', 65, 45], ['매켄지강', -125, 64.5]]) {
+    const p = one(n, 'river'); assert.ok(near(p, lon, lat, 2.5), `${n} ${p.lon},${p.lat}`); assert.deepEqual(p.from, ['p50-arctic']);
+  }
+  assert.equal(one('아무르강').alt, '헤이룽강');
+  assert.ok(near(one('발하슈호', 'sea'), 75, 46.5, 2));
+  assert.ok(one('시들리산', 'mountain').elev === 4181 && near(one('시들리산'), -126.1, -77.0, 6));   // 교과서 삼각형 자리(실제 정상과 약 145km)
+  assert.ok(one('멘지스산', 'mountain').elev === 3355 && near(one('멘지스산'), 61.8, -73.5, 2.5));   // 교과서 삼각형 자리(실제 정상과 약 225km — 극 쪽으로 그려짐)
 });
 
 test('찾아보기 48·50·51쪽 지명이 모두 places 에 있음(뺀 것은 indexExclude 에 까닭 — 기지 레이어·alt)', () => {

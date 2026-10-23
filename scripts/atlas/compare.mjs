@@ -438,6 +438,7 @@ for (const it of CHECKS.teacher) {
   if (!row) throw new Error(`checks.teacher: 행 없음 ${it.topic}${it.map ? ` / ${it.map}` : ''} — ${it.item}`);
   const c = check(`교사 확인 · ${it.item}`, it.tb ?? '', it.web ?? '', it.status === 'info' ? INFO : KNOWN, it.note || '');
   c.teacher = true;
+  if (it.flag) c.flag = it.flag;   // 단원 설정 teacher.flag(u6 「교과서 담당자 확인 필요」 — 있을 때만): 행·목록에 따로 된 표시
   row.checks.push(c);
   teacher.push({ ...it, row });
 }
@@ -469,7 +470,7 @@ const shotImg = (s) => `<figure class="shot"><button class="thumb" data-full="${
   <figcaption>${esc(s.proj === 'robinson' ? '로빈슨' : s.proj === 'equalEarth' ? '이퀄어스' : s.proj === 'miller' ? '밀러' : s.proj)}${s.note ? ` · ${esc(s.note)}` : ''}</figcaption></figure>`;
 const LABEL = { ok: '같음', diff: '다름', known: '알려진 차이', info: '참고' };
 const table = (checks) => `<table class="ck"><thead><tr><th>확인 항목</th><th>교과서</th><th>웹</th><th>상태</th></tr></thead><tbody>
-${checks.map((c) => `<tr class="st-${c.status}"><td>${esc(c.item)}</td><td>${esc(c.tb)}</td><td>${esc(c.web)}${c.note ? `<div class="note">${esc(c.note)}</div>` : ''}</td><td><span class="badge b-${c.status}">${LABEL[c.status]}</span></td></tr>`).join('\n')}
+${checks.map((c) => `<tr class="st-${c.status}"><td>${esc(c.item)}${c.flag ? ` <span class="badge b-flag">${esc(c.flag)}</span>` : ''}</td><td>${esc(c.tb)}</td><td>${esc(c.web)}${c.note ? `<div class="note">${esc(c.note)}</div>` : ''}</td><td><span class="badge b-${c.status}">${LABEL[c.status]}</span></td></tr>`).join('\n')}
 </tbody></table>`;
 
 const all = rows.flatMap((r) => r.checks);
@@ -523,8 +524,8 @@ body.simple .grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}body.simple 
 <nav class="toc">${topics.map((t) => `<a href="#t-${t.id}">${esc(t.title)}</a>`).join('')}</nav>
 ${teacher.length ? `<style>/* 교사 확인 목록(checks.teacher 가 있을 때만 — u2 대조표 HTML 은 그대로) */
 .teacher{background:var(--card);border:1px solid var(--line);border-left:4px solid #e9c46a;border-radius:8px;padding:10px 14px;margin:8px 0 16px}.teacher h4{margin:8px 0 2px;font-size:13px}.teacher ol{margin:2px 0;padding-left:20px}.teacher li{margin:2px 0}
-body.simple .teacher{display:none}</style>
-<div class="teacher"><strong>교사 확인 항목 ${teacher.length}건</strong> <span class="cap">(아래 각 행의 노랑 「교사 확인 ·」 줄과 같음)</span>${[...new Set(teacher.map((x) => x.page))].map((pg) => `<h4>${esc(pg)}</h4><ol>${teacher.filter((x) => x.page === pg).map((x) => `<li><a href="#t-${x.topic}">${esc(x.item)}</a> — ${esc(x.note || x.web)}</li>`).join('')}</ol>`).join('')}</div>
+body.simple .teacher{display:none}${teacher.some((x) => x.flag) ? '.b-flag{background:#fde8e7;color:#b42318;border:1px solid #f4a29c}' : ''}</style>
+<div class="teacher"><strong>교사 확인 항목 ${teacher.length}건</strong>${teacher.some((x) => x.flag) ? [...new Set(teacher.filter((x) => x.flag).map((x) => x.flag))].map((f) => ` <span class="badge b-flag">${esc(f)} ${teacher.filter((x) => x.flag === f).length}건</span>`).join('') : ''} <span class="cap">(아래 각 행의 노랑 「교사 확인 ·」 줄과 같음)</span>${[...new Set(teacher.map((x) => x.page))].map((pg) => `<h4>${esc(pg)}</h4><ol>${teacher.filter((x) => x.page === pg).map((x) => `<li><a href="#t-${x.topic}">${esc(x.item)}</a>${x.flag ? ` <span class="badge b-flag">${esc(x.flag)}</span>` : ''} — ${esc(x.note || x.web)}</li>`).join('')}</ol>`).join('')}</div>
 ` : ''}${diffs.length ? `<div class="diffs"><strong>다름 ${diffs.length}건</strong><ol>${diffs.map(({ r, c }) => `<li><a href="#t-${r.topic.id}">${esc(r.topic.title)}</a>${r.title ? ` · ${esc(r.title)}` : ''} — ${esc(c.item)}: 교과서 ${esc(c.tb)} / 웹 ${esc(c.web)}</li>`).join('')}</ol></div>` : ''}
 `;
 for (const t of topics) {

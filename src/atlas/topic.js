@@ -164,6 +164,7 @@ export function buildTopic({
         const lb = legendBlock(null, L.legend, L.legendItems, {
           ...L.meta, title: L.meta.legendTitle || L.meta.title, lineTitle: L.meta.lineLegendTitle, ready: L.ready,
         });
+        if (ref.legendHead === false) lb.el.firstChild.hidden = true; // 앞 블록과 같은 제목(u6 극 일반도 — 자료 키가 있을 때만)
         legendBox.append(lb.el);
         groupParts.push(lb);
       }

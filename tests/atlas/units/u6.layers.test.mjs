@@ -11,17 +11,18 @@ const has = existsSync(`${D}/layer-p53-climate.json`);
 const t = has ? test : test.skip;
 const labelOf = (L, cls) => L.properties.legend.find((e) => e.cls === cls)?.label;
 
-t('p53 기후 구분: 범례 9(열대 3·건조 2·온대 4), 면 경위도가 오세아니아, 범례 없는 고지대 빗금은 그리되 범례 밖(교사 Q15)', () => {
+t('p53 기후 구분: 범례 9(열대 3·건조 2·온대 4) + 교과서 범례에 없는 고지대 빗금 「고산 기후(빗금)」(교사 답 Q15 — U6-10t), 면 경위도가 오세아니아', () => {
   const gj = read('p53-climate');
-  assert.equal(gj.properties.legend.length, 9);
-  assert.deepEqual([...new Set(gj.properties.legend.map((e) => e.group))], ['열대', '건조', '온대']);
+  assert.equal(gj.properties.legend.length, 10);
+  assert.deepEqual([...new Set(gj.properties.legend.slice(0, 9).map((e) => e.group))], ['열대', '건조', '온대']);
   for (const f of gj.features) {
     const [lon, lat] = f.properties.centroid;
     assert.ok(lon > 110 && lon < 180 && lat > -50 && lat < 0, `${f.properties.label} ${lon},${lat}`);
   }
   const hatch = gj.features.filter((f) => f.properties.pattern === 'hatch');
   assert.equal(hatch.length, 1);
-  assert.ok(!gj.properties.legend.some((e) => e.cls === hatch[0].properties.cls), '빗금은 범례 밖');
+  const e = gj.properties.legend.find((x) => x.cls === hatch[0].properties.cls);
+  assert.deepEqual([e.label, e.pattern, e.angle, e.group, e.legendHidden], ['고산 기후(빗금)', 'hatch', 45, undefined, undefined], '빗금 범례 견본');
   const [lon, lat] = hatch[0].properties.centroid;
   assert.ok(lon > 140 && lon < 148 && lat > -8 && lat < -3, '파푸아 뉴기니 고지대');
 });
@@ -133,6 +134,10 @@ t('p54 FTA: 협정국 14 연도 글자 나라 + 오스트레일리아 따로, �
   assert.equal(T.legend.length, 2);
   for (const iso of ['KOR', 'AUS', 'ARG', 'USA']) assert.equal(T.classes[iso], 'c1', iso);
   assert.equal(T.classes.MEX, undefined);
+  // U6-10t: 교과서 지면 그대로 — 레소토·에스와티니·캅카스 셋·북마케도니아 회색, 코스타리카는 지면 초록(2022년 가입 당사국)
+  for (const iso of ['LSO', 'SWZ', 'GEO', 'ARM', 'AZE', 'MKD', 'BOL']) assert.equal(T.classes[iso], undefined, iso);
+  assert.equal(T.classes.CRI, 'c2');
+  assert.equal(Object.keys(T.classes).length, 64);
 });
 
 t('극 일반도 선: 50쪽 범례 4(북극권 위선 66.56°N)·51쪽 범례 3, 빙붕 면은 채움 + 이음매 없는 테두리', () => {

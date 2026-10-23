@@ -66,6 +66,8 @@ def _chain(cand, x_start):
 
 def hatch_legend(m, hcfg, pattern='hatch'):
     """빗금 견본(채움이 무늬라 get_drawings 에 안 잡힘 → 설정의 견본 상자) + 오른쪽 글자. 점무늬(U4-3b)는 pattern 'dots' 로 같은 길."""
+    if hcfg.get('legendLabel'):   # 교과서 범례에 없는 빗금을 웹 범례에 이 이름으로(U6-10t — 53쪽 고산 기후, 교사 답 Q5, 있을 때만)
+        return {'color': hcfg['color'], 'kind': 'fill', 'pattern': pattern, 'label': hcfg['legendLabel']}
     if hcfg.get('noLegend'):   # 교과서 범례에 없는 빗금(U6-4 — 53쪽 파푸아 뉴기니 고지대, 교사 Q15 기본값, 있을 때만): 이름은 설정, 웹 범례에서 뺌(legendHidden)
         if not hcfg.get('label'): raise ValueError('빗금 noLegend 에 label 이 있어야 함')
         return {'color': hcfg['color'], 'kind': 'fill', 'pattern': pattern, 'label': hcfg['label'], 'legendHidden': True}

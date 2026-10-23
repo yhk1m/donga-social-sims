@@ -222,6 +222,7 @@
    },
    {
     "ref": "layer-p50-dasan",
+    "legendHead": false,
     "type": "symbolLabels",
     "legend": true,
     "group": "map"
@@ -276,12 +277,14 @@
    },
    {
     "ref": "layer-p51-lines",
+    "legendHead": false,
     "type": "area",
     "legend": true,
     "group": "map"
    },
    {
     "ref": "layer-p51-stations",
+    "legendHead": false,
     "type": "symbolLabels",
     "legend": true,
     "group": "map"
@@ -761,6 +764,7 @@
    },
    {
     "ref": "layer-p54-currents",
+    "legendHead": false,
     "type": "pathFlow",
     "legend": true,
     "group": "map",
@@ -1031,6 +1035,7 @@
    },
    {
     "ref": "layer-p55-route-cities",
+    "legendHead": false,
     "type": "symbolLabels",
     "legend": true,
     "group": "map",
@@ -1225,6 +1230,7 @@
    },
    {
     "ref": "layer-p55-bases",
+    "legendHead": false,
     "type": "symbolLabels",
     "legend": true,
     "group": "map"

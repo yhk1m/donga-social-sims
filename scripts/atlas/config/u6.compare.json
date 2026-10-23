@@ -308,6 +308,80 @@
       }
      }
     ]
+   },
+   {
+    "name": "arctic-rivers",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([42, 44, 92, 68])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "arctic-rivers-west",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "50쪽 강·호수 이름 확대(교사 답 — 래스터 글자 손 넣음): 볼가강·페초라강·오비강·예니세이강·시르다리야강·발하슈호"
+      }
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([90, 45, 140, 72])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "arctic-rivers-east",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "50쪽 강 이름 확대: 레나강·안가라강·아무르강(헤이룽강)"
+      }
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([-140, 58, -112, 70])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "arctic-rivers-mackenzie",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "50쪽 매켄지강(강 이름 — 매켄지산맥 곁)"
+      }
+     }
+    ]
    }
   ],
   "antarctic": [
@@ -402,6 +476,61 @@
      },
      {
       "idle": true
+     }
+    ]
+   },
+   {
+    "name": "antarctic-mountains",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([-150, -80, -110, -72])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "antarctic-mount-sidley",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "51쪽 시들리산 4181(교사 답 — 래스터 산 이름 손 넣음, 교과서 삼각형 자리)"
+      }
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([45, -80, 80, -70])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "antarctic-mount-menzies",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "51쪽 멘지스산 3355(교과서 삼각형 자리 — 실제 정상과 약 225km)"
+      }
      }
     ]
    }
@@ -530,6 +659,45 @@
    }
   ],
   "climate": [
+   {
+    "name": "climate-legend-alpine",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"고산 기후(빗금)\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "climate-legend-alpine",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "범례 「고산 기후(빗금)」 고름(교사 답 ★5 — 교과서 범례에 없는 빗금 견본을 더함)"
+      }
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"고산 기후(빗금)\")).click()"
+     },
+     {
+      "idle": true
+     }
+    ]
+   },
    {
     "name": "climate-charts",
     "steps": [
@@ -1003,6 +1171,80 @@
   ],
   "antarcticResearch": [
    {
+    "name": "antarcticResearch-treaty-zoom",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([12, 36, 52, 48])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "antarcticResearch-treaty-balkan",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "남극 조약 확대 — 캅카스 셋·서발칸 회색(교과서 지면대로, U6-10t)"
+      }
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([14, -36, 36, -20])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "antarcticResearch-treaty-saf",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "남극 조약 확대 — 레소토·에스와티니 회색(교과서 지면대로)"
+      }
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([-90, 5, -78, 16])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "antarcticResearch-treaty-cri",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "남극 조약 확대 — 코스타리카 초록(교과서 그대로 — 2022년 가입 비자문 당사국)"
+      }
+     }
+    ]
+   },
+   {
     "name": "antarcticResearch-bases",
     "steps": [
      {
@@ -1326,29 +1568,6 @@
     "note": "뽑은 선 25(날짜 변경선 포함) + 남극권 위선 1"
    },
    {
-    "topic": "climate",
-    "map": "p53-climate",
-    "item": "범례 분류 수",
-    "tb": 10,
-    "web": 9,
-    "note": "U6-4·교사 Q15: 뽑기에는 파푸아 뉴기니 고지대 빗금이 분류로 있으나 교과서 범례에 없어 웹 범례에서 뺌(빗금은 그림, issues.md 4)"
-   },
-   {
-    "topic": "climate",
-    "map": "p53-climate",
-    "item": "범례 글자",
-    "webIncludes": "파푸아 뉴기니 고지대",
-    "note": "위와 같음(범례 없는 빗금)"
-   },
-   {
-    "topic": "climate",
-    "map": "p53-climate",
-    "item": "지도에 있는 분류",
-    "tb": 10,
-    "web": 9,
-    "note": "위와 같음(범례 없는 빗금)"
-   },
-   {
     "topic": "exchange",
     "map": "p54-fta",
     "item": "[p54-fta] 범례 글자 ↔ 지면 범례",
@@ -1485,7 +1704,7 @@
     "note": "이 선들은 area 레이어 선(캔버스에 그림 — 해양 경계·극 선·지시선)이라 화면 SVG 흐름선(.at-flow) 셈이 0 — 선 수(자료)는 위 줄, 그려진 것은 캡처로 확인"
    }
   ],
-  "_teacher": "교사 확인 항목(계획 「실행 중 결정」 U6-1~U6-9 의 「U6-10 알려진 차이 후보」·교사 확인 후보 + 교사 Q1~Q16 답 반영 상태 + issues.md 4) — 그 행에 노랑(known)·회색(info) 「교사 확인 ·」 줄 + 대조표 머리 쪽별 목록. page = 목록 묶음 이름, map 이 없으면 주제 확인 행. 항목 이름 앞 ★ = 교사 판단이 필요한 것(note 에 기본값).",
+  "_teacher": "교사 확인 항목(계획 「실행 중 결정」 U6-1~U6-9 의 「U6-10 알려진 차이 후보」·교사 확인 후보 + 교사 Q1~Q16 답 반영 상태 + issues.md 4) — 그 행에 노랑(known)·회색(info) 「교사 확인 ·」 줄 + 대조표 머리 쪽별 목록. page = 목록 묶음 이름, map 이 없으면 주제 확인 행. 항목 이름 앞 ★ = 교사 판단이 아직 남은 것(note 에 기본값·교사 답). flag = 「교과서 담당자 확인 필요」(교사 답 2026-10-23 — 앱은 지금대로 두고 교과서 담당자에게 확인할 것, 행과 목록에 붉은 표시 · issues.md 같은 표시). 교사 답으로 고친 것은 「(교사 답 — 고침)」 참고 줄.",
   "teacher": [
    {
     "page": "48쪽 일반도",
@@ -1753,10 +1972,11 @@
     "page": "50쪽 북극",
     "topic": "arctic",
     "map": "p50-arctic",
-    "item": "★ 극 일반도 범례 블록 제목 반복",
+    "item": "극 일반도 범례 블록 제목 한 번만(교사 답 — 고침)",
     "tb": "범례 없음",
-    "web": "범례 칸 블록마다 레이어 제목 「북극 일반도」(50쪽 ×2 · 51쪽 「남극 일반도」 ×3)",
-    "note": "기본값: 그대로(블록 제목을 바꾸려면 공용 topic.js 를 고쳐야 해 앞 단원 조각이 바뀜) — 고칠지"
+    "web": "같은 제목이 이어지는 범례 블록은 머리를 숨김 — 50쪽 「북극 일반도」 1번(×2 였음) · 51쪽 「남극 일반도」 1번(×3) · 55쪽 기지 「세계 각국의 남극 연구 기지와 영유권 분쟁」 1번(×2), 같은 꼴 쓰레기 섬·북극 항로도",
+    "status": "info",
+    "note": "교사 답 ★1(U6-10t): 고침 — 주제 자료 레이어 키 legendHead:false(u6 만) + 공용 topic.js 한 줄(키가 있을 때만 — u2~u5 회귀 없음)"
    },
    {
     "page": "50쪽 북극",
@@ -1780,10 +2000,11 @@
     "page": "50쪽 북극",
     "topic": "arctic",
     "map": "p50-arctic",
-    "item": "★ 50쪽 강·호수 이름 없음(래스터 글자)",
-    "tb": "볼가강·오브강·레나강·예니세이강·아무르강·발하슈호 등 파란 글자",
-    "web": "지명에 없음 — 나라 19·수도 9·그린란드·도시 22·산맥/평원 상자 글자 14·산 손 넣음",
-    "note": "기본값: 그대로(지면 글자가 래스터라 PDF 에 없음) — 강·호수 이름도 손으로 넣을지(U6-5 ①)"
+    "item": "50쪽 강·호수 이름 넣음(교사 답 — 고침)",
+    "tb": "볼가강·페초라강·오비강·예니세이강·레나강·안가라강·아무르강(헤이룽강)·시르다리야강·발하슈호·매켄지강 파란 글자(래스터)",
+    "web": "지면에 있는 10 모두 손 넣음(addLabels — 200dpi 렌더에서 잰 교과서 글자 자리·방향, 강 이름은 강줄기 곁이라 NE 점으로 옮기지 않음) + 51쪽 래스터 산 둘(시들리산 4181·멘지스산 3355 — 교과서 삼각형 자리, 실제 정상과 약 145·225km) · 48쪽은 래스터에만 있는 이름 없음",
+    "status": "info",
+    "note": "교사 답 ★2(U6-10t): 고침 — 지명 626 → 638"
    },
    {
     "page": "50쪽 북극",
@@ -1891,27 +2112,30 @@
    {
     "page": "53쪽 기후",
     "topic": "climate",
-    "item": "★ 퍼스·크라이스트처치 그래프 = 97쪽 표 값(교과서 문제)",
+    "item": "퍼스·크라이스트처치 그래프 = 97쪽 표 값(교과서 문제)",
     "tb": "53쪽 그림이 97쪽 표보다 기온 7~8℃ 높고 강수 약 10% 많게 그려짐(퍼스 1월 24.7 ↔ 약 32.9℃ · 7월 137.1 ↔ 약 151.9mm, 크라이스트처치 1월 16.8 ↔ 약 24.2℃ · 7월 67.6 ↔ 약 73.6mm)",
     "web": "97쪽 표 값으로 그림 — 앱 그래프가 교과서 그림보다 낮게 보임",
-    "note": "issues.md 2 — 기본값: 표 값(다윈은 그림 = 표) · 교과서 그림 값을 따를지"
+    "note": "교사 답 ★3: 97쪽 표 값 그대로 · issues.md 2",
+    "flag": "교과서 담당자 확인 필요"
    },
    {
     "page": "53쪽 기후",
     "topic": "climate",
-    "item": "★ 앨리스스프링스 강수 눈금 「350」 두 번(교과서 문제)",
+    "item": "앨리스스프링스 강수 눈금 「350」 두 번(교과서 문제)",
     "tb": "400 자리에 「350」이 한 번 더 인쇄",
     "web": "그 눈금을 400 으로 읽어 잰 값(97쪽 표에 없음 — 기온 ±0.3℃ · 강수 ±1.5mm), 마커 카드라 주석 칸 없음",
-    "note": "issues.md 3 — 기본값: 400 으로 바로잡음. 퍼스·크라이스트처치처럼 그림 자체가 부풀었을 수 있으나 확인할 길 없음"
+    "note": "교사 답 ★4: 400 으로 읽는 것이 맞음 · issues.md 3",
+    "flag": "교과서 담당자 확인 필요"
    },
    {
     "page": "53쪽 기후",
     "topic": "climate",
     "map": "p53-climate",
-    "item": "★ 파푸아 뉴기니 고지대 빗금(교과서 문제·Q15)",
-    "tb": "범례에 없는 초록 사선 빗금",
-    "web": "교과서 그대로 빗금을 그림 · 범례에는 넣지 않음(대조표 범례 수 10 / 9)",
-    "note": "issues.md 4 · 교사 Q15 기본값 — 범례에 「고산 기후(빗금)」을 더할지"
+    "item": "파푸아 뉴기니 고지대 빗금 = 범례 「고산 기후(빗금)」(교사 답 — 고침)",
+    "tb": "범례에 없는 초록 사선 빗금(범례 9칸)",
+    "web": "교과서 그대로 빗금을 그리고 웹 범례 끝에 빗금 견본 「고산 기후(빗금)」을 더함(웹 범례 10 / 교과서 9)",
+    "status": "info",
+    "note": "교사 답 ★5(U6-10t, Q15): 고침 — 설정 hatch.legendLabel(legend.py 키, 있을 때만) · issues.md 4"
    },
    {
     "page": "53쪽 기후",
@@ -2073,10 +2297,10 @@
     "page": "55쪽 북극의 지리적 중요성",
     "topic": "arcticRoute",
     "map": "p55-route",
-    "item": "★ 북극 항로 화살촉",
+    "item": "★ 북극 항로 화살촉 — 교사가 웹앱에서 확인 예정",
     "tb": "화살촉 없음",
     "web": "끝(로테르담) 쪽에 화살촉 — 경로 방향 = 부산 → 로테르담",
-    "note": "U6-4 ⑪ — 기본값: 화살촉 그대로(공용 pathFlow) · 방향이 맞는지, 화살촉을 뺄지"
+    "note": "교사 답 ★6: 지금은 그대로(공용 pathFlow) — 교사가 웹앱에서 확인 예정"
    },
    {
     "page": "55쪽 북극의 지리적 중요성",
@@ -2111,10 +2335,11 @@
     "page": "55쪽 남극의 지리적 중요성과 극지 연구",
     "topic": "antarcticResearch",
     "map": "p55-treaty",
-    "item": "★ 남극 조약 나라 69 / 회원국 56",
-    "tb": "자문 회원국·비자문 회원국 2분류(본문 회원국 수 56)",
-    "web": "나라 69 칠함 — 지면 색 표본 71 에서 멕시코·볼리비아를 회색(분류 없음)으로 고침, 둘레에 묻힌 작은 나라·영역(안도라·산마리노·바티칸·레소토·에스와티니·홍콩·리히텐슈타인)은 둘레 나라 값",
-    "note": "기본값: 교과서 지면 색 그대로(캅카스·발칸 작은 나라는 지면에서 가를 수 없어 표본 그대로) — 실제 회원국 명단으로 고칠지"
+    "item": "남극 조약 = 교과서 지면 색 그대로(교사 답)",
+    "tb": "자문·비자문 회원국 2분류(본문 회원국 56)",
+    "web": "교과서 지면 색 그대로 64 나라(자문 35 · 비자문 29) — 레소토·에스와티니·캅카스 셋·북마케도니아·멕시코·볼리비아는 지면대로 회색(U6-10t 2,000~3,000dpi 확인으로 표본 잘못 고침 — 처음 69), 코스타리카 초록(2022년 가입 당사국 — 교사 확인), 인쇄 크기로 가를 수 없는 작은 나라·영역(안도라·산마리노·바티칸·리히텐슈타인·룩셈부르크·홍콩·싱가포르·브루나이·몰타)은 둘레·표본 값",
+    "status": "info",
+    "note": "교사 답 ★7: 교과서대로 — 지면 색에 잘못 없음(코스타리카는 2022-08-11 가입 비자문 당사국)"
    },
    {
     "page": "55쪽 남극의 지리적 중요성과 극지 연구",
@@ -2157,10 +2382,11 @@
     "page": "55쪽 남극의 지리적 중요성과 극지 연구",
     "topic": "antarcticResearch",
     "map": "p55-bases",
-    "item": "★ 55쪽 기지 지도 「200km」 축척 막대(교과서 문제)",
+    "item": "55쪽 기지 지도 「200km」 축척 막대(교과서 문제)",
     "tb": "막대 13.9pt = 「200km」",
     "web": "지도 경위선으로 잰 축척으로는 막대가 약 640km(200km 이면 약 4.3pt) — 앱은 축척 막대를 지도 축척으로 다시 그림",
-    "note": "issues.md 1 — 기본값: 교과서 원문 그대로(앱 축척 막대는 확대에 따라) · 바로잡을지"
+    "note": "교사 답 ★8: 교과서 원문 그대로 · issues.md 1",
+    "flag": "교과서 담당자 확인 필요"
    },
    {
     "page": "55쪽 남극의 지리적 중요성과 극지 연구",
@@ -2176,10 +2402,11 @@
     "page": "55쪽 남극의 지리적 중요성과 극지 연구",
     "topic": "antarcticResearch",
     "map": "p55-araon-s",
-    "item": "★ 아라온호 10월~4월 경로 = 위치 근사",
+    "item": "아라온호 10월~4월 경로 = 위치 근사(교사 답 — 그대로)",
     "tb": "지구본 그림(경위선 없음)",
     "web": "손 기준점 6 모두 approx(크라이스트처치·푼타아레나스·테라노바 만·세종·뉴질랜드 두 섬) — 범례 칸 「위치 근사」 표시",
-    "note": "U6-2 — 기본값: 근사 경로 + 표시 · 실제 항로 자료로 바꿀지(교과서에 없는 자료라 기본은 그대로)"
+    "status": "info",
+    "note": "교사 답 ★9: 근사 경로 + 표시 그대로 좋음(U6-2)"
    },
    {
     "page": "55쪽 남극의 지리적 중요성과 극지 연구",
@@ -2188,7 +2415,7 @@
     "item": "★ 아라온호 7월~9월 번호 ①~⑤",
     "tb": "지면 번호 다섯(지도 목록 설명은 ①~⑥)",
     "web": "번호 원문자 5(①~⑤) — 노랑 원 가운데",
-    "note": "U6-4 — 기본값: 지면에 보이는 다섯 · 여섯째가 있는지"
+    "note": "교사 답 ★10 아직 없음(열린 질문) — 지면에 보이는 다섯 그대로 · 여섯째가 있는지"
    },
    {
     "page": "55쪽 남극의 지리적 중요성과 극지 연구",
