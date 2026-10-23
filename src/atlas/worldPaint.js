@@ -80,6 +80,7 @@ export function paintToolLayer(id, data, { map = null, countryFeatures = null, l
   const markR = PAINT.smallPx / 2 + 3;
   const parts = new Map(); // iso → 가장 큰 조각 {a, c}(markAt 이면 넓이 0 — 늘 동그라미) | null, 처음 한 번
   let marks = [];          // 마지막 그림의 동그라미 [{iso, x, y}]
+  let moving = false;      // 마지막 drawSvg 의 view.moving(움직이는 동안 동그라미 hit 끔)
   const view = data?.properties?.view ? topicViewLayer(id, data, { map }) : null;
   let color = PALETTE[0], dead = false, stageEl = null, placed = null;
   const refresh = () => { if (map && !map.destroyed) map.refreshLayer?.(layer.id); };
@@ -151,6 +152,7 @@ export function paintToolLayer(id, data, { map = null, countryFeatures = null, l
   // 나라 누르기: 바탕 지도 나라(layerId 'basemap') 또는 이 레이어의 작은 나라 동그라미(hit)
   const offClick = map?.on ? map.on('click', (e) => {
     if (e?.layerId !== 'basemap' && e?.layerId !== layerId) return;
+    if ((e.detail ?? 1) > 1) return; // 두 번 누르기(확대)의 두 번째 click — 칠 → 지움이 되지 않게 첫 click 만
     paintIso(e.feature?.properties?.iso);
   }) : () => {};
 
@@ -169,12 +171,15 @@ export function paintToolLayer(id, data, { map = null, countryFeatures = null, l
       const px = areaPx(proj, big);
       if (px == null || px >= PAINT.smallPx) continue;
       const q = proj(big.c);
-      if (!q || !Number.isFinite(q[0]) || !Number.isFinite(q[1]) || q[0] < -markR || q[1] < -markR || q[0] > W + markR || q[1] > H + markR) continue;
+      if (!q || !Number.isFinite(q[0]) || !Number.isFinite(q[1])) continue;
       cands.push({ iso, x: q[0], y: q[1], px, c: layer.colorOf(iso) });
     }
     cands.sort((a, b) => (!!b.c - !!a.c) || b.px - a.px);
     const min2 = (2 * markR + 1) ** 2;
-    for (const m of cands) if (marks.every((k) => (k.x - m.x) ** 2 + (k.y - m.y) ** 2 >= min2)) marks.push(m);
+    // 겹침 거름은 보이는 쪽 동그라미 모두에 먼저(화면 밖 이웃도 셈 — 조금 옮겨도 같은 동그라미가 남음), 화면 자르기는 그 뒤
+    const kept = [];
+    for (const m of cands) if (kept.every((k) => (k.x - m.x) ** 2 + (k.y - m.y) ** 2 >= min2)) kept.push(m);
+    marks = kept.filter((m) => m.x >= -markR && m.y >= -markR && m.x <= W + markR && m.y <= H + markR);
     ctx.globalAlpha = 1; ctx.lineWidth = 2; ctx.strokeStyle = '#4d4d4d';
     for (const m of marks) {
       ctx.beginPath(); ctx.arc(m.x, m.y, markR, 0, 2 * Math.PI);
@@ -188,12 +193,14 @@ export function paintToolLayer(id, data, { map = null, countryFeatures = null, l
     draw(ctx, path, view) { baseDraw(ctx, path, view); drawMarks(ctx, path, view); },
     /** 동그라미 누르기(반지름 + 3px, 가장 가까운 것) → 그 나라 Feature(renderer 가 layerId = 이 레이어로 click 을 냄) */
     hit(xy) {
+      if (moving) return null; // 휠·끌기 중(멈춰 다시 그리기 전)에는 동그라미 자리가 화면과 달라 안 맞힘 — 바탕 나라로
       let best = null, bd = markR + 3;
       for (const m of marks) { const d = Math.hypot(xy[0] - m.x, xy[1] - m.y); if (d <= bd) { bd = d; best = m; } }
       return best ? layer.feature(best.iso) : null;
     },
     drawSvg(group, project, v) {
       if (dead) return; // destroy 뒤 늦게 온 다시 그리기가 칸을 다시 붙이지 않게
+      moving = !!v?.moving;
       if (!stageEl) {
         stageEl = upTo(group, 'at-stage');
         if (stageEl) stageEl.append(panel);
@@ -212,6 +219,7 @@ export function paintToolLayer(id, data, { map = null, countryFeatures = null, l
       offClick();
       panel.remove();
       baseClear.call(layer);
+      marks = [];
       view?.destroy();
     },
   });

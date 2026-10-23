@@ -25,7 +25,10 @@
 .ds-sim .at-wp[data-mode="col"] { flex-direction: column; gap: 6px; padding: 8px 6px; }
 .ds-sim .at-wp[data-mode="col"] .at-wp-palette { flex-direction: column; }
 .ds-sim .at-wp[data-mode="col"] .at-wp-title-text,
-.ds-sim .at-wp[data-mode="col"] .at-wp-clear-text,
-.ds-sim .at-wp[data-mode="col"] .at-wp-count { display: none; }
+.ds-sim .at-wp[data-mode="col"] .at-wp-clear-text { display: none; }
+/* 세로 열: 칠한 나라 수는 화면에서만 숨김(role status — 화면 읽기 프로그램은 「칠한 나라 n」을 그대로 읽음) */
+.ds-sim .at-wp[data-mode="col"] .at-wp-count {
+  position: absolute; width: 1px; height: 1px; min-width: 0; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+}
 .ds-sim .at-wp[data-mode="col"] .at-wp-clear { padding: 5px; }
 @media (prefers-reduced-motion: reduce) { .ds-sim .at-wp-color, .ds-sim .at-wp-erase { transition: none; } }

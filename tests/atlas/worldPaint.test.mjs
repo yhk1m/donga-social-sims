@@ -207,6 +207,45 @@ test('작은 나라 동그라미: 지구본 뒷면(proj.hidden)은 안 그림 ·
   L.destroy();
 });
 
+test('두 번 누르기(확대): 두 번째 click(detail 2)은 칠하기에 안 씀 — 칠 → 지움이 되지 않음', () => {
+  const a = make();
+  a.map.emit('click', { layerId: 'basemap', feature: { properties: { iso: 'KOR' } }, detail: 1 });
+  a.map.emit('click', { layerId: 'basemap', feature: { properties: { iso: 'KOR' } }, detail: 2 });
+  assert.equal(a.L.colorOf('KOR'), PALETTE[0], '칠한 채 그대로');
+  a.map.emit('click', { layerId: 'basemap', feature: { properties: { iso: 'KOR' } }, detail: 1 });
+  assert.equal(a.L.colorOf('KOR'), null, '따로 한 번 더 누르면 지움');
+  a.L.destroy();
+});
+
+test('동그라미: 조금 옮겨도(끌기) 보이는 동그라미 묶음이 그대로 — 겹침 거름을 화면 자르기보다 먼저 · 움직이는 동안 hit 끔 · destroy 뒤 marks 없음', () => {
+  // 화면 왼쪽 끝 밖 AAA(큰) 와 화면 안 BBB(작은)가 겹침: 자르기를 먼저 하면 AAA 가 화면 밖일 때 BBB 가 튀어나왔다 사라짐
+  const tiny = (iso, lon, lat, d) => country(iso, iso, [sq(lon, lat, d)]);
+  const cf = { 50: [tiny('AAA', -179.9, 0, 0.3), tiny('BBB', -177.2, 0, 0.1), tiny('CCC', 0, 0, 0.1)], '10a': [] };
+  const map = fakeMap();
+  const L = layerFromRef({ ref: 'p15-paint', type: 'paintTool' }, VIEW_DATA(), { countryFeatures: cf, map });
+  const sh = shell();
+  const view = { width: 1440, height: 720, detail: '50', k: 1 };
+  const drawAt = (dx) => {
+    const p = geoEquirectangular().scale(1440 / (2 * Math.PI)).translate([720 + dx, 360]);
+    const ctx = fakeCtx(); L.draw(ctx, geoPath(p, ctx), view);
+    return L.marks.map((m) => m.iso).sort();
+  };
+  const sets = [-30, -20, -12, -4, 0, 6].map(drawAt);
+  // AAA 는 dx 에 따라 화면 안팎을 오가지만 BBB 는 늘 AAA 에 가려 안 나옴(묶음은 CCC 와 AAA 의 보임 여부로만 달라짐)
+  for (const s0 of sets) assert.ok(!s0.includes('BBB'), `BBB 가 튀어나옴: ${sets.map((x) => x.join('+')).join(' | ')}`);
+  assert.ok(sets.every((s0) => s0.includes('CCC')));
+  // 움직이는 동안 hit 끔
+  drawAt(0);
+  const c = L.marks.find((m) => m.iso === 'CCC');
+  L.drawSvg(sh.g, (ll) => ll, { k: 1, moving: true });
+  assert.equal(L.hit([c.x, c.y]), null, '움직이는 동안 동그라미 안 맞힘');
+  L.drawSvg(sh.g, (ll) => ll, { k: 1, moving: false });
+  assert.equal(L.hit([c.x, c.y])?.properties?.iso, 'CCC');
+  L.destroy();
+  assert.equal(L.marks.length, 0, 'destroy 뒤 동그라미 자리 없음');
+  assert.equal(L.hit([c.x, c.y]), null);
+});
+
 test('보기: topicView 자료(centerLon 150)면 만들 때 태평양 중심 → destroy 때 되돌림, view 없는 자료도 됨', () => {
   const map = fakeMap({ centerLon: 0 });
   const a = make({ map });
