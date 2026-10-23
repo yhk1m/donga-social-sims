@@ -240,3 +240,26 @@ test('색칠하기 산출물 없음(U1-8 — 설정 coloringOut 없음): build_c
   assert.equal((r.stdout.match(/같음, 그대로/g) || []).length, 3, r.stdout);
   assert.match(r.stdout, /경고 없음/);
 });
+
+test('main.js(U1-9): 등록 셋을 mountAtlas 전에 이 차례로(옵션 8 — 평면 5 · 지구본 · 극 둘, 교사 Q3), 빈 10a 심, viewTools 는 뒤에·destroy 때 풂, centerLonOf 열쇠 8 = 묶음 첫 레이어 150', async () => {
+  const src = readFileSync('sims/atlas-u1-world/main.js', 'utf8').replace(/^\s*\/\/.*$/gm, '');
+  const at = (x) => { const i = src.indexOf(x); assert.ok(i >= 0, x); return i; };
+  const mount = at('mountAtlas(root');
+  assert.ok(at('installAmericasExtras();') < at('installPolarExtras();') && at('installPolarExtras();') < at('installWorldExtras();') && at('installWorldExtras();') < mount, '등록 차례');
+  assert.ok(!src.includes('installExtraCharts'), '원그래프 없음');
+  assert.ok(at('basemap.objects.countries10a = { type: \'GeometryCollection\', geometries: [] }') < mount, '빈 10a 심(U1-3b 결정 ①)');
+  assert.ok(at('viewTools(root.atlasMap, root.atlasUi.tools.el)') > mount, 'viewTools 는 mountAtlas 뒤');
+  assert.ok(!src.includes('globeTools'), 'globeTools 대신 viewTools(U6-3b)');
+  assert.match(src, /offView\(\);\s*atlas\.destroy\(\)/);
+  assert.match(src, /BASE_COLOR = \{ general: 'tint', relief: 'natural' \}/);
+  const firsts = new Set(T.flatMap((t) => layerGroups(t).map((g) => g.refs[0].ref)));
+  const keys = [...src.matchAll(/'(layer-p1\d-[a-z-]+)'/g)].map((m) => m[1]);
+  assert.deepEqual([...new Set(keys)].sort(), ['layer-p10-continents', 'layer-p13-climate', 'layer-p14-covid', 'layer-p14-internet', 'layer-p14-mobile', 'layer-p14-routes', 'layer-p15-burger', 'layer-p15-korean']);
+  for (const k of keys) assert.ok(firsts.has(k), `${k} 는 묶음 첫 레이어`);
+  assert.match(src, /\]\.map\(\(ref\) => \[ref, 150\]\)\)/);
+  const basemap = JSON.parse(readFileSync(`${D}/basemap.json`, 'utf8'));
+  assert.equal(basemap.objects.countries10a, undefined, '바탕 지도는 110m·50m 만(설계 §7 — U1-9 태평양 상자 넣지 않음)');
+  assert.deepEqual(basemap.meta.unitBoxes, []);
+  const { SIMS } = await import('../../../src/registry.js');
+  assert.deepEqual(SIMS.find((x) => x.id === 'atlas-u1-world'), { id: 'atlas-u1-world', book: 'atlas', unit: 'Ⅰ. 세계화 시대, 지리의 힘', page: 8, title: '사회과부도 세계화 시대, 지리의 힘', kind: '지도' });
+});

@@ -7,7 +7,7 @@
   pointer-events: none; width: max-content;
 }
 .ds-sim .at-wg[style*="left"] { right: auto; }
-.ds-sim .at-wg > * { pointer-events: auto; }
+.ds-sim .at-wg > .at-wg-toggle, .ds-sim .at-wg > .at-wg-pop { pointer-events: auto; } /* 전체 선택자는 조각 규칙 위반(U1-9) — 직계 자식 둘만 */
 .ds-sim .at-wg:focus { outline: none; }
 .ds-sim .at-wg-pop { display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
 .ds-sim .at-wg-list { display: flex; flex-direction: column; gap: 6px; align-items: center; }
