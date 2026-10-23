@@ -266,7 +266,13 @@ class MapsU1(unittest.TestCase):
         self.assertEqual(c['charts']['climateTable']['notInTable'], {})
         self.assertEqual(c['places']['index']['out'], 'units/u1/tables/index.json')
         self.assertNotIn('tint', c); self.assertNotIn('natural', c)
-        self.assertEqual(c['layers'], {})
+        # 레이어는 U1-3·U1-4 가 채움(U1-3c·3d 대륙·대양 p10-continents 부터) — 있으면 지도 목록의 지도를 가리킴
+        ids = {m['id'] for m in json.load(open(os.path.join(HERE, '..', 'maps_u1.json'), encoding='utf-8'))}
+        for lid, L in c['layers'].items():
+            if lid.startswith('_'): continue
+            self.assertIn('type', L, lid)
+            for mid in L.get('maps') or [L['map']]:
+                self.assertIn(mid, ids, lid)
         self.assertEqual(c['insets'], [])
         # 도장(@unit/…) 자리
         st = c['content']['stamps']
