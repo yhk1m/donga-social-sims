@@ -10,6 +10,7 @@
 #          boxes?:[[x0, y0, x1, y1]](이 안의 조각만), excludeBoxes?, gapPt?(기본 6), minPts?(이은 선의 최소 점 수, 기본 2),
 #          minLenPt?(이은 선 최소 길이, 기본 0), dedupPt?(기본 0.4), dashed?, rings?(참이면 채움 하나를 고리마다 조각으로 — 점선 하나가 채움 하나), fillDE?(fills 첫 색과 ΔE 안이면 같은 색),
 #          strokeDashes?:['[ 5 1.5 ] 0', …](획 파선 무늬), legend?(false 면 범례 항목 없음 — 지시선·날짜 변경선)}
+#          cutExcluded?(참이면 획을 덮개·excludeBoxes 상자 안 꼭짓점에서 끊음 — U1-4), spreadMaps?:[지도 id](U1-4 두 쪽 지도 — spreadOf 가 이 지도인 오른쪽 쪽 지도의 같은 조각을 그 지도 offsetPt 만큼 옮겨 보탬, 가름선 겹침 띠의 같은 조각은 dedupPt 로 하나, boxes·excludeBoxes 는 본 지도에만)
 #   결과 lines [{points, cls, kind:'line', color, dashed?, label}], legend [{cls, color, kind:'line', label, dashed?}]
 import math
 import numpy as np
@@ -76,6 +77,18 @@ def chain(pieces, gap):
 
 
 def _pieces(m, spec):
+    if spec.get('spreadMaps'):   # 두 쪽 지도(U1-4 — 8·9쪽 해양 경계·날짜 변경선, 키가 있을 때만): 오른쪽 쪽 지도 조각을 offsetPt 만큼 옮겨 본 지도 좌표로 보탬
+        from atlas_common import maps
+        own = {k: v for k, v in spec.items() if k != 'spreadMaps'}
+        out = _pieces(m, own)
+        for mid in spec['spreadMaps']:
+            mm = maps()[mid]
+            if mm.get('spreadOf') != m['id'] or len(mm.get('offsetPt') or []) != 2:
+                raise ValueError(f"lineChains spreadMaps {mid}: spreadOf {m['id']} + offsetPt 인 지도여야 함")
+            off = np.asarray(mm['offsetPt'], float)
+            side = {k: v for k, v in own.items() if k not in ('excludeBoxes', 'boxes')}   # 상자는 본 지도 좌표 — 오른쪽 쪽에는 그 지도 자체 덮개만
+            out += [(a + off, b + off, c + off, None if P is None else P + off) for a, b, c, P in _pieces(mm, side)]
+        return out
     fills = set(spec.get('fills') or []); strokes = set(spec.get('strokes') or [])
     fde, ref = spec.get('fillDE'), (spec.get('fills') or [None])[0]   # 겹쳐 그린 판마다 색이 조금씩 다른 선(50·51쪽 날짜 변경선 검은 토막): 첫 색과 ΔE 안이면 같은 선
     dashes = set(spec.get('strokeDashes') or [])                       # 획 파선 무늬로 가름(같은 색 국경선 · 지시선 · 날짜 변경선)
@@ -94,6 +107,17 @@ def _pieces(m, spec):
         elif d.get('color') is not None and d['type'] in ('s', 'fs') and _near(hexc(d['color']), strokes) and wlo <= (d.get('width') or 0) <= whi \
                 and (not dashes or d.get('dashes') in dashes):
             parts = stroke_paths(d)
+            if spec.get('cutExcluded'):   # 덮개 상자 밑을 지나는 긴 획(U1-4 — 8쪽 유럽 삽입 원 밑 국경, 있을 때만): 상자 안 꼭짓점에서 끊어 밖 토막만
+                cut = []
+                for P in parts:
+                    run = []
+                    for q in np.asarray(P, float):
+                        if any(b[0] <= q[0] <= b[2] and b[1] <= q[1] <= b[3] for b in ex):
+                            if len(run) >= 2: cut.append(np.array(run))
+                            run = []
+                        else: run.append(q)
+                    if len(run) >= 2: cut.append(np.array(run))
+                parts = cut
         else:
             continue
         for P in parts:
@@ -162,6 +186,10 @@ def line_chains(m, specs, warnings):
 def _join_strokes(paths, gap):
     """획 꺾은선들 → 끝점이 gap 안에서 닿는 것끼리 이음(방향 맞춤)."""
     if not paths: return []
+    shut = [np.allclose(np.asarray(P)[0], np.asarray(P)[-1]) for P in paths]
+    if any(shut):   # 닫힌 획(U1-4 — 8쪽 해양 경계 섬 둘레 고리, 있을 때만): 끝점 사슬이 점 하나로 줄어 짝이 어긋나므로 고리는 그대로 따로(길이 0 획은 버림)
+        loops = [np.asarray(P).tolist() for P, s in zip(paths, shut) if s and len(P) > 2]
+        return loops + _join_strokes([P for P, s in zip(paths, shut) if not s], gap)
     ends = [(np.asarray(P)[0], np.asarray(P)[-1]) for P in paths]
     order = chain(ends, gap)   # 끝점 사슬 — 점 차례로 다시 조각을 찾아 꺾은선을 붙임
     out = []

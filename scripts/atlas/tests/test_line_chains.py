@@ -119,5 +119,45 @@ class Synthetic(unittest.TestCase):
         self.assertAlmostEqual(out2[0]['tip'][0], 10)
 
 
+class SpreadAndLoops(unittest.TestCase):
+    """U1-4 키(있을 때만): spreadMaps(두 쪽 지도 오른쪽 쪽 조각을 offsetPt 만큼 옮겨 보탬)·cutExcluded(덮개 상자 안 꼭짓점에서 획을 끊음)·닫힌 획."""
+    L = {'id': 'L', 'page': 1, 'bbox': [0, 0, 100, 100], 'insetBbox': [0, 60, 30, 100]}
+    R = {'id': 'R', 'page': 2, 'bbox': [5, 0, 100, 100], 'spreadOf': 'L', 'offsetPt': [90, 0]}
+
+    def run_with(self, pages, fn):
+        import atlas_common
+        old, oldm = LC.drawings, atlas_common.maps
+        LC.drawings = lambda pno: pages.get(pno, [])
+        atlas_common.maps = lambda: {'L': self.L, 'R': self.R}
+        try: return fn()
+        finally: LC.drawings, atlas_common.maps = old, oldm
+
+    def test_spread_maps_joins_across_seam(self):
+        left = [_stroke([(50, 50), (95, 50)], '#f58466')]
+        right = [_stroke([(5, 50), (40, 50)], '#f58466')]          # 오른쪽 쪽 좌표 → +90 = (95..130)
+        spec = {'label': '해양 경계', 'color': '#f48365', 'strokes': ['#f58466'], 'gapPt': 1, 'spreadMaps': ['R']}
+        leg, lines, rep = self.run_with({1: left, 2: right}, lambda: LC.line_chains(self.L, [spec], []))
+        self.assertEqual(len(leg), 1); self.assertEqual(len(lines), 1)
+        xs = [q[0] for q in lines[0]['points']]
+        self.assertAlmostEqual(min(xs), 50); self.assertAlmostEqual(max(xs), 130)
+        _, lines0, _ = self.run_with({1: left, 2: right}, lambda: LC.line_chains(self.L, [{k: v for k, v in spec.items() if k != 'spreadMaps'}], []))
+        self.assertEqual(max(q[0] for q in lines0[0]['points']), 95, '키가 없으면 옛 길(본 지도만)')
+        bad = {**self.R, 'spreadOf': 'X'}
+        self.R, keep = bad, self.R
+        try: self.assertRaises(ValueError, lambda: self.run_with({1: left, 2: right}, lambda: LC.line_chains(self.L, [spec], [])))
+        finally: self.R = keep
+
+    def test_cut_excluded_and_closed_strokes(self):
+        long = _stroke([(10, 50), (20, 70), (25, 80), (40, 90), (60, 90)], '#f58466')   # 덮개(insetBbox) 안으로 지나는 긴 획 — 가운데가 바깥
+        loop = _stroke([(70, 10), (80, 10), (80, 20), (70, 20), (70, 10)], '#f58466')   # 닫힌 고리
+        spec = {'label': '선', 'color': '#f48365', 'strokes': ['#f58466'], 'gapPt': 1}
+        _, lines, _ = self.run_with({1: [long, loop]}, lambda: LC.line_chains(self.L, [{**spec, 'cutExcluded': True}], []))
+        pts = [q for l in lines for q in l['points']]
+        self.assertFalse(any(0 <= x <= 30 and 60 <= y <= 100 for x, y in pts), '덮개 안 꼭짓점 없음')
+        self.assertTrue(any(l['points'][0] == l['points'][-1] and len(l['points']) == 5 for l in lines), '고리는 그대로')
+        _, lines2, _ = self.run_with({1: [long, loop]}, lambda: LC.line_chains(self.L, [spec], []))
+        self.assertTrue(any(len(l['points']) == 5 and l['points'][0][0] == 10 for l in lines2), '키가 없으면 획 그대로')
+
+
 if __name__ == '__main__':
     unittest.main()
