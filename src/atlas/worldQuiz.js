@@ -35,7 +35,7 @@ function allIn(el, cs, skip, out = []) {
   return out;
 }
 /** 보기 칸이 피할 무대 위 부품과 무게(지도 도구·확대 단추·축척은 꼭 피함 — 휴대폰처럼 다 못 피하면 범례 칸·꼬리표를 덮는 쪽을 고름) */
-const STAGE_UI = { 'at-tools-card': 100, 'at-tools-zoom': 100, 'at-scale': 100, 'at-legend-panel': 1, 'at-locator': 1, 'at-inset': 1 };
+const STAGE_UI = { 'at-tools-card': 100, 'at-tools-zoom': 100, 'at-scale': 100, 'at-wg': 100, 'at-legend-panel': 1, 'at-locator': 1, 'at-inset': 1 }; // at-wg = 3f 지구본 단추 열
 const PANEL_GAP = 10, SCALE_GAP = 44;
 const overlapArea = (a, b) => Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0])) * Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
 

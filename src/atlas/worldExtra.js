@@ -21,6 +21,7 @@ import { createLegendState } from './legendState.js';
 import { metaOf, LAYER_Z } from './layerCommon.js';
 import { installWorldRoutes } from './worldRoutes.js';   // 3g 대권 노선 routeFan(따로 된 모듈)
 import { installWorldQuiz } from './worldQuiz.js';     // 3e 대륙·대양 맞히기 continentQuiz(따로 된 모듈)
+import { installWorldGlobe } from './worldGlobe.js';   // 3f 지구본 단추 continentGlobes + continentQuiz 대양 단추(따로 된 모듈)
 
 /** 대륙 면 흐림(고르지 않은 대륙 — 9쪽 지구본 그림의 「그 대륙만 초록」), 대양 강조 색·불투명도 */
 export const CONTINENTS = Object.freeze({ dimAlpha: 0.25, oceanColor: '#3d8fd1', oceanOpacity: 0.45 });
@@ -121,8 +122,18 @@ export function continentsLayer(id, data, { countryFeatures = null, legend = nul
       const ks = [...new Set((data?.features || []).filter((f) => f.properties?.iso === iso && f.properties.mode === 'geom').map((f) => f.properties.cls))];
       return ks.length ? ks : null;
     },
-    /** cls = 대륙(범례 고름)·대양(그 면 강조)·null(전체 보기) */
+    /** cls = 대륙(범례 고름)·대양(그 면 강조)·null(전체 보기)·대륙 배열(묶음 고름 — 3f 「아메리카」 = 북·남, selected 'group:a+b') */
     select(cls) {
+      if (Array.isArray(cls)) {
+        const bad = cls.filter((c) => !lg.classes.includes(c));
+        if (bad.length || !cls.length) throw new Error(`continentsLayer ${id}: 모르는 대륙 묶음 ${cls}`);
+        const had = ocean, name = cls.join('+');
+        ocean = null;
+        if (lg.selected() !== `group:${name}`) lg.toggleGroup(name, cls);
+        if (had) refresh();
+        notify();
+        return;
+      }
       if (cls != null && !oceanCls.has(cls) && !lg.classes.includes(cls)) throw new Error(`continentsLayer ${id}: 모르는 대륙·대양 ${cls}`);
       const had = ocean;
       if (cls != null && oceanCls.has(cls)) { ocean = cls; lg.reset(); if (had !== cls) refresh(); }
@@ -149,4 +160,5 @@ export function installWorldExtras() {
   registerLayerType('continents', (id, d, ctx) => continentsLayer(id, d, ctx));
   installWorldRoutes();
   installWorldQuiz(continentsLayer);
+  installWorldGlobe(continentsLayer); // installWorldQuiz 뒤(continentQuiz 를 대양 단추와 함께 다시 등록)
 }
