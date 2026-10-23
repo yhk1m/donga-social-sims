@@ -191,7 +191,7 @@ $ATLAS_WORK/raw/ne-marine/                                                      
 
 - [x] **Step 1: 낡은 시험** — `tests/atlas/hub.test.mjs:52~61` 「공개 전 registry 단원도 준비 중」은 `atlas-u6-oceania-polar`를 공개 전 예로 쓴다(지금 실패 — `docs/versions.json`에 u6 v1). 예를 **`atlas-u1-world`(order 1, page 8, unit 「Ⅰ. 세계화 시대, 지리의 힘」, title 「사회과부도 세계화 시대, 지리의 힘」)**로 바꾼다(검사 뜻 그대로 — `ATLAS_PLAN` u1 [8, 15], `find((u) => u.order === 1)`). `node --test tests/atlas/hub.test.mjs` 통과.
 - [x] **Step 2: 돌리개** — `$ATLAS_WORK/units/u1/regress.sh <tag>`(조사 때 만들어 둠 — u6 regress.sh 꼴, 단원 목록에 `"u6 atlas-u6-oceania-polar"`, 스스로 `heavy.lock`, 로그 `units/u1/regress-<tag>.log`). `bash -n` 통과 확인.
-- [ ] **Step 3: 다섯 다 확인**(u2~u5 회귀 없음 · u6 흔들림 고침·기준선 다시 찍음 — 남은 것: 공유 `compare_shots.mjs` 를 고친 뒤 u2~u5 재확인 `regress.sh g0d`, 아래 「실행 중 결정」 U1-G0) — `bash $ATLAS_WORK/units/u1/regress.sh g0`(약 40분 — 이 동안 다른 무거운 일 금지). 기대: 다섯 모두 「다른 파일 0(또는 도장만 — u2~u5 coloring 1)」·화소 차 0·대조표 수 위 표 그대로·조각 ±0.02% 안(u2~u5 는 기준선보다 +313~317 B — U6-3g·U6-9·U6-10t 공유 몫, u6 은 +0). `[경고]`면 그 단원을 다시 찍고 check. **u6 은 처음 `--check`** — 결정성(캡처를 한 번 더 → 같은 결과)도 본다. 흔들림(u4 자원 잠재력·u5 tnc)은 그 단원만 다시.
+- [x] **Step 3: 다섯 다 확인**(u2~u6 모두 회귀 없음 — 공유 `compare_shots.mjs` 수정(20c1afd) 뒤 `regress.sh g0d` 재확인: u2~u5 도장만 1 · 화소 차 0, u6 화소 차 0, `units/u1/regress-g0d.log`, 아래 「실행 중 결정」 U1-G0) — `bash $ATLAS_WORK/units/u1/regress.sh g0`(약 40분 — 이 동안 다른 무거운 일 금지). 기대: 다섯 모두 「다른 파일 0(또는 도장만 — u2~u5 coloring 1)」·화소 차 0·대조표 수 위 표 그대로·조각 ±0.02% 안(u2~u5 는 기준선보다 +313~317 B — U6-3g·U6-9·U6-10t 공유 몫, u6 은 +0). `[경고]`면 그 단원을 다시 찍고 check. **u6 은 처음 `--check`** — 결정성(캡처를 한 번 더 → 같은 결과)도 본다. 흔들림(u4 자원 잠재력·u5 tnc)은 그 단원만 다시.
 - [x] **Step 4:** `npm test` 수를 적고(heavy.lock) 커밋(`tests/atlas/hub.test.mjs`). 「실행 중 결정」에 다섯의 check 결과 한 줄씩.
 
 ---
