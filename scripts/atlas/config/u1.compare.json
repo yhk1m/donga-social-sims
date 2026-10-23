@@ -1,0 +1,2629 @@
+{
+ "_doc": "교과서 대조표(compare_shots.mjs · compare.mjs --unit u1) 단원 설정 — u6.compare.json 과 같은 꼴. 출력은 단원 작업 폴더 기본값($ATLAS_WORK/units/u1/shots/compare · compare.html). 경로는 작업 폴더 기준. 만든 스크립트: $ATLAS_WORK/units/u1/u1-10/gen_compare.py(+ teacher_items.py)",
+ "fixedNow": 1760918400000,
+ "_fixedNow": "캡처 쪽의 Date.now 고정값(ms, u2~u6 과 같음) — 퀴즈 seed 기본값이 시각이라 캡처마다 문제가 달라지지 않게.",
+ "freshSvgLayout": true,
+ "_freshSvgLayout": "찍기 직전 지도 SVG 의 non-scaling-stroke 경로를 Chrome 이 새로 계산하게(compare_shots → capture_opts.mjs, U1-G0 — u6 과 같음). 8쪽 기지·15쪽 한국어 점이 같은 기호 레이어.",
+ "projections": {
+  "default": "robinson",
+  "extra": {
+   "general": [
+    "equalEarth"
+   ]
+  }
+ },
+ "_projections": "장면 = 주제마다 기본 도법(로빈슨 — U1-10 코디네이터 결정으로 조각의 처음 도법도 로빈슨, 교과서 8~15쪽 세계 지도와 같음) + 일반도 둘째 도법 이퀄어스. 묶음을 고르면 태평양 중심 150(보기 레이어·main.js centerLonOf). 지구본 단추·노선 지구본은 extraScenes.",
+ "extraScenes": {
+  "general": [
+   {
+    "name": "general-tint-off",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.setOptions({tint:false, natural:false})"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "general-tint-off",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "고도 색 끔(같은 보기 — 태평양 중심 150)"
+      }
+     },
+     {
+      "eval": "{R}.atlasMap.setOptions({tint:true, natural:false})"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "general-tint-on",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "고도 색 켬(다시 켬 — 기본)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "general-views",
+    "steps": [
+     {
+      "fitView": "europe"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "general-view-europe",
+      "info": {
+       "kind": "view",
+       "view": "europe",
+       "map": "p08-europe",
+       "note": "블록 「지도에서 보기」 바로가기 「유럽」(8쪽 삽입 람베르트 정각 원뿔 틀 범위 — 삽입 지명은 일반도 지명에 합침)"
+      }
+     },
+     {
+      "fitView": "world"
+     },
+     {
+      "idle": true
+     }
+    ]
+   },
+   {
+    "name": "general-seam",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([165, 52, 195, 72])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "general-seam-bering",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "8·9쪽 가름선(약 180°) 확대 — 추코트카·베링 해 둘레: 해안·국경·지명이 끊기지 않음(두 쪽 한 식 — U1-3a)"
+      }
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([160, -22, 190, 6])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "general-seam-pacific",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "가름선 확대 — 솔로몬·바누아투·피지·투발루·나우루: 8쪽 끝에서 잘린 「나」(나우루)가 9쪽 온전한 이름 하나로"
+      }
+     }
+    ]
+   },
+   {
+    "name": "general-ieodo",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([119, 28, 134, 40])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "general-ieodo",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "우리나라 둘레 확대 — 동해·독도·「이어도 / 종합 해양 과학 기지」 글자(8쪽 명조 두 줄, 기호 없음 — U1-8 결정 ②)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "general-stations",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([-75, -72, -45, -55])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "general-station-sejong",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "세종 과학 기지(대한민국) — 빨간 점 + 붉은 글자(9쪽, 범례 「우리나라 과학 기지」)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "general-globe",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.querySelector('.at-wg-btn[data-id=\"asia\"]').click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "general-globe-asia",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "9쪽 지구본 단추 「아시아」 누름 → 지구본(자연색)으로 바꿔 아시아을(를) 가운데로 돌리고 강조(교사 Q4 A)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-wg-btn[data-id=\"europe\"]').click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "general-globe-europe",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "9쪽 지구본 단추 「유럽」 누름 → 지구본(자연색)으로 바꿔 유럽을(를) 가운데로 돌리고 강조(교사 Q4 A)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-wg-btn[data-id=\"africa\"]').click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "general-globe-africa",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "9쪽 지구본 단추 「아프리카」 누름 → 지구본(자연색)으로 바꿔 아프리카을(를) 가운데로 돌리고 강조(교사 Q4 A)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-wg-btn[data-id=\"america\"]').click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "general-globe-america",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "9쪽 지구본 단추 「아메리카」 누름 → 지구본(자연색)으로 바꿔 아메리카을(를) 가운데로 돌리고 강조(교사 Q4 A)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-wg-btn[data-id=\"oceania\"]').click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "general-globe-oceania",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "9쪽 지구본 단추 「오세아니아」 누름 → 지구본(자연색)으로 바꿔 오세아니아을(를) 가운데로 돌리고 강조(교사 Q4 A)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-wg-flat').click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "general-globe-flat",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "「평면 지도로」 — 앞 평면 보기(로빈슨·중심 150)로 되돌아옴, 대륙 강조 풂"
+      }
+     }
+    ]
+   },
+   {
+    "name": "general-pages",
+    "steps": [
+     {
+      "eval": "[...{R}.querySelectorAll('.at-page-btn')].filter(b=>b.textContent.includes('부분'))[0].click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "take": "general-page-globes",
+      "info": {
+       "kind": "extra",
+       "note": "9쪽 대륙 지구본 열 원본 쪽 보기(부분 — 지구본 단추 그림의 출처)"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   }
+  ],
+  "continents": [
+   {
+    "name": "continents-quiz",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.querySelector('.at-wq-tag[data-cls=\"africa\"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))"
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "continents-quiz-africa",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "초성 꼬리표 「ㅇㅍㄹㅋ 대륙」 누름 → 아프리카 강조 + 보기 4 + 사이드바 끝 「아프리카의 나라 55」(교사 Q6 A·Q8 A)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-wq-reveal').click()"
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "continents-quiz-reveal",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "「정답 모두 보기」 — 꼬리표 12 모두 이름"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-wq-reset').click()"
+     },
+     {
+      "sleep": 400
+     }
+    ]
+   },
+   {
+    "name": "continents-europe",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"유럽\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "continents-legend-europe",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "범례 「유럽」 고름 — 러시아는 우랄 점선 서쪽 조각만 유럽(교사 Q5 A), 튀르키예(트라키아 포함)·카자흐스탄은 아시아"
+      }
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([20, 35, 75, 62])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "continents-legend-europe-ural",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "유럽 고름 확대 — 우랄산맥·우랄강·카스피해·캅카스 경계(교과서 자홍 점선을 되돌린 조각 면)"
+      }
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"유럽\")).click()"
+     },
+     {
+      "idle": true
+     }
+    ]
+   },
+   {
+    "name": "continents-greenland",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([-80, 55, 0, 85])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "continents-greenland",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "그린란드(덴) 확대 — 어느 대륙 색도 아님(교과서 회색, 교사 Q5 A)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "continents-globe",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.querySelector('.at-wg-btn[data-id=\"pacific\"]').click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "continents-globe-pacific",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "11쪽 지구본 단추 「태평양」 누름 → 지구본(자연색)으로 바꿔 태평양을(를) 가운데로 돌리고 강조(교사 Q4 A)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-wg-btn[data-id=\"indian\"]').click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "continents-globe-indian",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "11쪽 지구본 단추 「인도양」 누름 → 지구본(자연색)으로 바꿔 인도양을(를) 가운데로 돌리고 강조(교사 Q4 A)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-wg-btn[data-id=\"atlantic\"]').click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "continents-globe-atlantic",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "11쪽 지구본 단추 「대서양」 누름 → 지구본(자연색)으로 바꿔 대서양을(를) 가운데로 돌리고 강조(교사 Q4 A)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-wg-btn[data-id=\"arctic\"]').click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "continents-globe-arctic",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "11쪽 지구본 단추 「북극해」 누름 → 지구본(자연색)으로 바꿔 북극해을(를) 가운데로 돌리고 강조(교사 Q4 A)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-wg-btn[data-id=\"southern\"]').click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 500
+     },
+     {
+      "take": "continents-globe-southern",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "11쪽 지구본 단추 「남극해」 누름 → 지구본(자연색)으로 바꿔 남극해을(를) 가운데로 돌리고 강조(교사 Q4 A)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-wg-flat').click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "continents-globe-flat",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "「평면 지도로」 — 앞 평면 보기로, 대양 강조 풂(맞히기 꼬리표 그대로)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "continents-pages",
+    "steps": [
+     {
+      "eval": "[...{R}.querySelectorAll('.at-page-btn')].filter(b=>b.textContent.includes('부분'))[0].click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "take": "continents-page-globes",
+      "info": {
+       "kind": "extra",
+       "note": "11쪽 대양 지구본 열 원본 쪽 보기(부분)"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   }
+  ],
+  "relief": [
+   {
+    "name": "relief-base-tint",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.setOptions({tint:true, natural:false})"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "relief-base-tint",
+      "info": {
+       "kind": "extra",
+       "note": "바탕 고도 색(같은 보기)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "relief-base-none",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.setOptions({tint:false, natural:false})"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "relief-base-none",
+      "info": {
+       "kind": "extra",
+       "note": "바탕 색 없음(같은 보기)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "relief-base-natural",
+    "steps": [
+     {
+      "eval": "{R}.atlasMap.setOptions({tint:false, natural:true})"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "relief-base-natural",
+      "info": {
+       "kind": "extra",
+       "note": "바탕 자연색(기본으로 되돌림 — 12쪽 자연색 래스터)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "relief-pins",
+    "steps": [
+     {
+      "scrollTo": {
+       "sel": ".at-reveal-btn"
+      }
+     },
+     {
+      "take": "relief-pins-hidden",
+      "info": {
+       "kind": "extra",
+       "note": "핀 번호 숨김(처음 — 교사 Q9 A: 앞 단원과 같은 방향)"
+      }
+     },
+     {
+      "eval": "{R}.atlasTopic.pins.reveal({R}.atlasTopic.pins.markers[0].id)"
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "take": "relief-pins-one",
+      "info": {
+       "kind": "extra",
+       "note": "핀 하나 번호 보임"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-reveal-btn').click()"
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "take": "relief-pins-all",
+      "info": {
+       "kind": "extra",
+       "note": "번호 모두 보기 — ②(필라투스산)·③(알파인 스키)·④(모로코) 핀은 지면 자리(12쪽 밀러 맞춤 오차 포함)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-reveal-btn').click()"
+     },
+     {
+      "sleep": 200
+     }
+    ]
+   },
+   {
+    "name": "relief-alps",
+    "steps": [
+     {
+      "eval": "{R}.querySelector('.at-reveal-btn').click()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([-12, 22, 28, 50])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "relief-pins-alps",
+      "info": {
+       "kind": "extra",
+       "note": "알프스·모로코 확대(번호 모두 보기) — ② 필라투스산 약 266km · ③ 18.5°E · ④ 모로코 남동 국경 바로 바깥"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-reveal-btn').click()"
+     },
+     {
+      "sleep": 200
+     }
+    ]
+   }
+  ],
+  "climate": [
+   {
+    "name": "climate-legend-alpine",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"고산 기후\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "climate-legend-alpine",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "범례 「고산 기후」 고름(빗금 — 교과서 범례 견본 그대로)"
+      }
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"고산 기후\")).click()"
+     },
+     {
+      "idle": true
+     }
+    ]
+   },
+   {
+    "name": "climate-pins",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "scrollTo": {
+       "sel": ".at-reveal-btn"
+      }
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "eval": "{R}.querySelector('.at-reveal-btn').click()"
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "take": "climate-pins-all",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "핀 번호 모두 보기 — 사진 핀 8 + 기후 그래프 마커 6(보스토크 마커 = 기지 실제 자리, 교과서 점과 약 410km)"
+      }
+     },
+     {
+      "eval": "{R}.querySelector('.at-reveal-btn').click()"
+     },
+     {
+      "sleep": 200
+     }
+    ]
+   },
+   {
+    "name": "climate-photo-pins",
+    "steps": [
+     {
+      "scrollTo": {
+       "sel": ".at-photo-img"
+      }
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "climate-photo-pin-baked",
+      "info": {
+       "kind": "extra",
+       "note": "13쪽 사진 왼쪽 위 교과서 보라 빈 핀(그림째 — 활동의 빈칸, U1-8 결정 ③)"
+      }
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   },
+   {
+    "name": "climate-chart-singapore",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.querySelector('.at-pin[data-id=\"c-singapore\"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))"
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "eval": "{R}.querySelector('.at-card .at-expand').click()"
+     },
+     {
+      "sleep": 800
+     },
+     {
+      "take": "climate-chart-singapore",
+      "info": {
+       "kind": "extra",
+       "note": "열대 기후(싱가포르) 크게 보기 — 97쪽 표 값",
+       "chart": "p13-singapore"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   },
+   {
+    "name": "climate-chart-riyadh",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.querySelector('.at-pin[data-id=\"c-riyadh\"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))"
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "eval": "{R}.querySelector('.at-card .at-expand').click()"
+     },
+     {
+      "sleep": 800
+     },
+     {
+      "take": "climate-chart-riyadh",
+      "info": {
+       "kind": "extra",
+       "note": "건조 기후(리야드) 크게 보기",
+       "chart": "p13-riyadh"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   },
+   {
+    "name": "climate-chart-london",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.querySelector('.at-pin[data-id=\"c-london\"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))"
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "eval": "{R}.querySelector('.at-card .at-expand').click()"
+     },
+     {
+      "sleep": 800
+     },
+     {
+      "take": "climate-chart-london",
+      "info": {
+       "kind": "extra",
+       "note": "온대 기후(런던) 크게 보기 — 97쪽 표 「런던(히스로)」",
+       "chart": "p13-london"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   },
+   {
+    "name": "climate-chart-montreal",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.querySelector('.at-pin[data-id=\"c-montreal\"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))"
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "eval": "{R}.querySelector('.at-card .at-expand').click()"
+     },
+     {
+      "sleep": 800
+     },
+     {
+      "take": "climate-chart-montreal",
+      "info": {
+       "kind": "extra",
+       "note": "냉대 기후(몬트리올) 크게 보기",
+       "chart": "p13-montreal"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   },
+   {
+    "name": "climate-chart-vostok",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.querySelector('.at-pin[data-id=\"c-vostok\"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))"
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "eval": "{R}.querySelector('.at-card .at-expand').click()"
+     },
+     {
+      "sleep": 800
+     },
+     {
+      "take": "climate-chart-vostok",
+      "info": {
+       "kind": "extra",
+       "note": "한대 기후(보스토크) 크게 보기 — 기온 축 −70~10(지면 그대로)",
+       "chart": "p13-vostok"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   },
+   {
+    "name": "climate-chart-bogota",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.querySelector('.at-pin[data-id=\"c-bogota\"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))"
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "eval": "{R}.querySelector('.at-card .at-expand').click()"
+     },
+     {
+      "sleep": 800
+     },
+     {
+      "take": "climate-chart-bogota",
+      "info": {
+       "kind": "extra",
+       "note": "고산 기후(보고타) 크게 보기",
+       "chart": "p13-bogota"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   }
+  ],
+  "connection": [
+   {
+    "name": "connection-shrink",
+    "steps": [
+     {
+      "scrollTo": {
+       "sel": ".at-chart[data-chart=p14-shrink]"
+      }
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "connection-shrink-table",
+      "info": {
+       "kind": "extra",
+       "note": "「작아지는 지구」 표 카드 — 글 ①②③ 지면 글자 그대로(교사 Q11 A)",
+       "chart": "p14-shrink"
+      }
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-page-btn')].filter(b=>b.textContent.includes('부분'))[0].click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "take": "connection-page-shrink",
+      "info": {
+       "kind": "extra",
+       "note": "14쪽 「작아지는 지구」 지구본 그림 원본 쪽 보기(부분)"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   },
+   {
+    "name": "connection-illust",
+    "steps": [
+     {
+      "eval": "[...{R}.querySelectorAll('.at-page-btn')].filter(b=>b.textContent.includes('부분'))[1].click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "take": "connection-page-division",
+      "info": {
+       "kind": "extra",
+       "note": "14쪽 ③ 국제적 분업 삽화 원본 쪽 보기(부분 — 교사 Q12 A)"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-page-btn')].filter(b=>b.textContent.includes('부분'))[2].click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "take": "connection-page-ict",
+      "info": {
+       "kind": "extra",
+       "note": "14쪽 ④ 정보 통신 기술의 발달 삽화 원본 쪽 보기(부분)"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-page-btn')].filter(b=>b.textContent.includes('부분'))[3].click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "take": "connection-page-exchange",
+      "info": {
+       "kind": "extra",
+       "note": "14쪽 ⑤ 활발한 인적 교류 삽화 원본 쪽 보기(부분)"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   },
+   {
+    "name": "connection-covid",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"2020년 1월 20일\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "connection-legend-jan",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "코로나 범례 「2020년 1월 20일(8개국)」 고름 — 중국·대한민국·일본·미국·독일·에스파냐·핀란드·미얀마(지면 칠 그대로, issues 6)"
+      }
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"2020년 1월 20일\")).click()"
+     },
+     {
+      "idle": true
+     }
+    ]
+   }
+  ],
+  "interaction": [
+   {
+    "name": "interaction-routes-globe",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "(()=>{const s={R}.querySelector('select.at-tools-select');s.value=\"globe\";s.dispatchEvent(new Event('change',{bubbles:true}));})()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "interaction-routes-globe",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "도법 「지구본」 — 대권 노선이 실제 길(인천에서 퍼짐, 교사 Q10 A)"
+      }
+     },
+     {
+      "eval": "(async()=>{const el={R}.querySelector('svg.at-overlay');const r=el.getBoundingClientRect();const x=r.x+r.width*0.4,y=r.y+r.height/2;const ev=(t,i,b)=>el.dispatchEvent(new PointerEvent(t,{pointerId:1,pointerType:'mouse',isPrimary:true,button:0,buttons:b,clientX:x+200*i/10,clientY:y+40*i/10,bubbles:true,cancelable:true}));ev('pointerdown',0,1);for(let i=1;i<=10;i++){ev('pointermove',i,1);await new Promise(r=>setTimeout(r,30));}ev('pointerup',10,0);})()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "interaction-routes-globe-dragged",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "지구본 끌어 돌림 — 뒷면 노선·도시 점 숨김"
+      }
+     },
+     {
+      "eval": "(()=>{const s={R}.querySelector('select.at-tools-select');s.value=\"robinson\";s.dispatchEvent(new Event('change',{bubbles:true}));})()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     }
+    ]
+   },
+   {
+    "name": "interaction-routes-zoom",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([100, 10, 150, 50])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "interaction-routes-eastasia",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "동아시아 확대 — 교과서에 선이 없는 도시 점 21(대부분 가까운 동아시아)도 노선으로(점 188 = 노선 188)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "interaction-internet",
+    "steps": [
+     {
+      "showGroup": 1
+     },
+     {
+      "idle": true
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"80 ~ 100\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "interaction-legend-internet",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "인터넷 이용률 범례 「80 ~ 100」 고름"
+      }
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"80 ~ 100\")).click()"
+     },
+     {
+      "idle": true
+     }
+    ]
+   },
+   {
+    "name": "interaction-mobile",
+    "steps": [
+     {
+      "showGroup": 2
+     },
+     {
+      "idle": true
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"120 초과\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "interaction-legend-mobile",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "이동 전화 가입자 범례 「120 초과」 고름"
+      }
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"120 초과\")).click()"
+     },
+     {
+      "idle": true
+     }
+    ]
+   }
+  ],
+  "glocal": [
+   {
+    "name": "glocal-burger",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"1,000 이상\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "take": "glocal-legend-burger",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "햄버거 범례 「1,000 이상」 고름"
+      }
+     },
+     {
+      "eval": "[...{R}.querySelectorAll('.at-legend-item')].find(b=>b.textContent.trim().startsWith(\"1,000 이상\")).click()"
+     },
+     {
+      "idle": true
+     },
+     {
+      "eval": "{R}.atlasTopic.pins.markers[0] && {R}.querySelector('.at-pin').dispatchEvent(new MouseEvent('click',{bubbles:true}))"
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "glocal-burger-pin",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "햄버거 사진 핀 ① 누름 → 사진 카드(번호 보임 — 교사 Q13 A)"
+      }
+     }
+    ]
+   },
+   {
+    "name": "glocal-korean",
+    "steps": [
+     {
+      "showGroup": 1
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([-12, 35, 32, 62])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "glocal-korean-europe",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "한국어 점 유럽 확대 — 겹침 허용(교사 Q14 A), 햄버거 사진 핀은 이 묶음에서 안 보임(U1-10 고침)"
+      }
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([100, 15, 150, 48])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "glocal-korean-eastasia",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "한국어 점 동아시아 확대(일본 남쪽 교육원 줄 — 지면 2~3pt 안에 6~8개)"
+      }
+     }
+    ]
+   }
+  ],
+  "themeActivity": [
+   {
+    "name": "theme-paint",
+    "steps": [
+     {
+      "showGroup": 0
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 300
+     },
+     {
+      "scrollTop": true
+     },
+     {
+      "eval": "{R}.querySelectorAll('.at-wp-color')[0].click()"
+     },
+     {
+      "eval": "(()=>{const r={R};const m=r.atlasMap;const o=r.querySelector('svg.at-overlay');const b=o.getBoundingClientRect();const q=m.project([104, 35]);const x=q[0]+b.x,y=q[1]+b.y;const el=document.elementFromPoint(x,y);const o2={clientX:x,clientY:y,bubbles:true,cancelable:true,pointerId:1,pointerType:'mouse',isPrimary:true,button:0};el.dispatchEvent(new PointerEvent('pointermove',{...o2,buttons:0}));el.dispatchEvent(new PointerEvent('pointerdown',{...o2,buttons:1}));el.dispatchEvent(new PointerEvent('pointerup',{...o2,buttons:0}));el.dispatchEvent(new MouseEvent('click',o2));})()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "eval": "{R}.querySelectorAll('.at-wp-color')[1].click()"
+     },
+     {
+      "eval": "(()=>{const r={R};const m=r.atlasMap;const o=r.querySelector('svg.at-overlay');const b=o.getBoundingClientRect();const q=m.project([106, 16]);const x=q[0]+b.x,y=q[1]+b.y;const el=document.elementFromPoint(x,y);const o2={clientX:x,clientY:y,bubbles:true,cancelable:true,pointerId:1,pointerType:'mouse',isPrimary:true,button:0};el.dispatchEvent(new PointerEvent('pointermove',{...o2,buttons:0}));el.dispatchEvent(new PointerEvent('pointerdown',{...o2,buttons:1}));el.dispatchEvent(new PointerEvent('pointerup',{...o2,buttons:0}));el.dispatchEvent(new MouseEvent('click',o2));})()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "eval": "{R}.querySelectorAll('.at-wp-color')[2].click()"
+     },
+     {
+      "eval": "(()=>{const r={R};const m=r.atlasMap;const o=r.querySelector('svg.at-overlay');const b=o.getBoundingClientRect();const q=m.project([10.5, 51]);const x=q[0]+b.x,y=q[1]+b.y;const el=document.elementFromPoint(x,y);const o2={clientX:x,clientY:y,bubbles:true,cancelable:true,pointerId:1,pointerType:'mouse',isPrimary:true,button:0};el.dispatchEvent(new PointerEvent('pointermove',{...o2,buttons:0}));el.dispatchEvent(new PointerEvent('pointerdown',{...o2,buttons:1}));el.dispatchEvent(new PointerEvent('pointerup',{...o2,buttons:0}));el.dispatchEvent(new MouseEvent('click',o2));})()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "eval": "{R}.querySelectorAll('.at-wp-color')[3].click()"
+     },
+     {
+      "eval": "(()=>{const r={R};const m=r.atlasMap;const o=r.querySelector('svg.at-overlay');const b=o.getBoundingClientRect();const q=m.project([-100, 40]);const x=q[0]+b.x,y=q[1]+b.y;const el=document.elementFromPoint(x,y);const o2={clientX:x,clientY:y,bubbles:true,cancelable:true,pointerId:1,pointerType:'mouse',isPrimary:true,button:0};el.dispatchEvent(new PointerEvent('pointermove',{...o2,buttons:0}));el.dispatchEvent(new PointerEvent('pointerdown',{...o2,buttons:1}));el.dispatchEvent(new PointerEvent('pointerup',{...o2,buttons:0}));el.dispatchEvent(new MouseEvent('click',o2));})()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "eval": "{R}.querySelectorAll('.at-wp-color')[4].click()"
+     },
+     {
+      "eval": "(()=>{const r={R};const m=r.atlasMap;const o=r.querySelector('svg.at-overlay');const b=o.getBoundingClientRect();const q=m.project([-52, -10]);const x=q[0]+b.x,y=q[1]+b.y;const el=document.elementFromPoint(x,y);const o2={clientX:x,clientY:y,bubbles:true,cancelable:true,pointerId:1,pointerType:'mouse',isPrimary:true,button:0};el.dispatchEvent(new PointerEvent('pointermove',{...o2,buttons:0}));el.dispatchEvent(new PointerEvent('pointerdown',{...o2,buttons:1}));el.dispatchEvent(new PointerEvent('pointerup',{...o2,buttons:0}));el.dispatchEvent(new MouseEvent('click',o2));})()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "eval": "{R}.querySelectorAll('.at-wp-color')[5].click()"
+     },
+     {
+      "eval": "(()=>{const r={R};const m=r.atlasMap;const o=r.querySelector('svg.at-overlay');const b=o.getBoundingClientRect();const q=m.project([134, -25]);const x=q[0]+b.x,y=q[1]+b.y;const el=document.elementFromPoint(x,y);const o2={clientX:x,clientY:y,bubbles:true,cancelable:true,pointerId:1,pointerType:'mouse',isPrimary:true,button:0};el.dispatchEvent(new PointerEvent('pointermove',{...o2,buttons:0}));el.dispatchEvent(new PointerEvent('pointerdown',{...o2,buttons:1}));el.dispatchEvent(new PointerEvent('pointerup',{...o2,buttons:0}));el.dispatchEvent(new MouseEvent('click',o2));})()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 400
+     },
+     {
+      "take": "theme-painted",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "세계 색칠하기 도구 — 6색으로 나라 6 칠함(중국·베트남·독일·미국·브라질·오스트레일리아 — 조사표 예시 운동화/베트남·볼펜/독일 포함, 교사 Q15 A)"
+      }
+     },
+     {
+      "eval": "{R}.atlasMap.fitBounds([160, -25, 200, 10])"
+     },
+     {
+      "idle": true
+     },
+     {
+      "sleep": 600
+     },
+     {
+      "take": "theme-paint-pacific",
+      "info": {
+       "group": "@groupLabel",
+       "groupIndex": "@groupIndex",
+       "refs": "@groupRefs",
+       "kind": "extra",
+       "note": "태평양 섬나라 확대 — 작은 나라 동그라미(넓이 16px 기준)로 칠할 수 있음"
+      }
+     }
+    ]
+   },
+   {
+    "name": "theme-pages",
+    "steps": [
+     {
+      "eval": "[...{R}.querySelectorAll('.at-page-btn')].filter(b=>b.textContent.includes('부분'))[0].click()"
+     },
+     {
+      "sleep": 900
+     },
+     {
+      "take": "theme-page",
+      "info": {
+       "kind": "extra",
+       "note": "15쪽 주제도 활동(제작 순서·조사표·백지도) 원본 쪽 보기(부분)"
+      }
+     },
+     {
+      "eval": "{R}.atlasUi.viewer.hide()"
+     },
+     {
+      "sleep": 200
+     },
+     {
+      "scrollTop": true
+     }
+    ]
+   }
+  ]
+ },
+ "checks": {
+  "_doc": "compare.mjs 의 단원 고유 확인(u6.compare.json checks 와 같은 키). mainMap = 주제 대표 지도, centerChecks = 태평양 중심 묶음(main.js centerLonOf·보기 레이어). 새 확인 줄(U1-10 — 그 레이어 종류가 있을 때만): 대륙·대양 면(continents)·초성 꼬리표·지구본 단추 그림·대권 노선(routeFan)·색칠하기 도구(paintTool)·두 쪽 지도 오른쪽 반 지명(spreadOf).",
+  "insetLayers": [],
+  "noScreenSymbols": [],
+  "centerChecks": [
+   {
+    "ref": "layer-p08-view",
+    "tb": "로빈슨 150.07°E 중심(8·9쪽 두 쪽 한 식 — U1-2)",
+    "web": "보기 레이어 중심 경도 150 · 떠나면 되돌림"
+   },
+   {
+    "ref": "layer-p10-continents",
+    "tb": "로빈슨 150.07°E(← 8쪽 식, 10·11쪽 두 쪽)",
+    "web": "묶음을 고르면 중심 경도 150(main.js centerLonOf)"
+   },
+   {
+    "ref": "layer-p12-view",
+    "tb": "밀러 143.9°E 중심(자연색 래스터 — U1-2)",
+    "web": "보기 레이어 중심 경도 150"
+   },
+   {
+    "ref": "layer-p13-climate",
+    "tb": "로빈슨 150.02°E 중심",
+    "web": "묶음을 고르면 중심 경도 150"
+   },
+   {
+    "ref": "layer-p14-covid",
+    "tb": "로빈슨 150.06°E 중심",
+    "web": "묶음을 고르면 중심 경도 150"
+   },
+   {
+    "ref": "layer-p14-routes",
+    "tb": "로빈슨 149.90°E 중심",
+    "web": "묶음을 고르면 중심 경도 150"
+   },
+   {
+    "ref": "layer-p14-internet",
+    "tb": "← 항공망 식(149.90°E)",
+    "web": "묶음을 고르면 중심 경도 150"
+   },
+   {
+    "ref": "layer-p14-mobile",
+    "tb": "← 항공망 식(149.90°E)",
+    "web": "묶음을 고르면 중심 경도 150"
+   },
+   {
+    "ref": "layer-p15-burger",
+    "tb": "로빈슨 149.61°E 중심",
+    "web": "묶음을 고르면 중심 경도 150"
+   },
+   {
+    "ref": "layer-p15-korean",
+    "tb": "← 햄버거 식(149.61°E)",
+    "web": "묶음을 고르면 중심 경도 150"
+   },
+   {
+    "ref": "layer-p15-paint",
+    "tb": "로빈슨 149.61°E(← 햄버거 식)",
+    "web": "색칠하기 도구 보기 레이어 중심 경도 150"
+   }
+  ],
+  "mainMap": {
+   "general": "p08-world",
+   "continents": "p10-continents",
+   "relief": "p12-relief",
+   "climate": "p13-climate",
+   "themeActivity": "p15-blank"
+  },
+  "_known": "자동 확인의 「다름」 중 결정 기록에 까닭이 있는 것 → 「알려진 차이」(주제·항목 이름 + tb/web/webIncludes/pct 가 맞을 때만 — 값이 바뀌면 다시 「다름」).",
+  "known": [
+   {
+    "topic": "general",
+    "map": "p08-world",
+    "item": "지도 제목",
+    "tb": "세계의 여러 나라(일반도 — 두 쪽 지도 왼쪽 반)",
+    "web": "세계의 여러 나라",
+    "note": "지도 목록 제목의 괄호(「일반도 — 두 쪽 지도 왼쪽 반」 등)는 지도를 가르는 구별용 — 묶음 이름 = 지면 제목 글자(labelSrc)"
+   },
+   {
+    "topic": "continents",
+    "map": "p10-continents",
+    "item": "지도 제목",
+    "tb": "세계의 여러 나라(대륙과 대양 — 두 쪽 지도 왼쪽 반)",
+    "web": "세계의 여러 나라",
+    "note": "지도 목록 제목의 괄호(「일반도 — 두 쪽 지도 왼쪽 반」 등)는 지도를 가르는 구별용 — 묶음 이름 = 지면 제목 글자(labelSrc)"
+   },
+   {
+    "topic": "connection",
+    "map": "p14-covid",
+    "item": "지도 제목",
+    "tb": "급속한 질병의 확산(코로나 19 확진자 발생국)",
+    "web": "급속한 질병의 확산",
+    "note": "지도 목록 제목의 괄호(「일반도 — 두 쪽 지도 왼쪽 반」 등)는 지도를 가르는 구별용 — 묶음 이름 = 지면 제목 글자(labelSrc) — 범례 제목 줄에 「코로나 19 확진자 발생국」"
+   },
+   {
+    "topic": "glocal",
+    "map": "p15-burger",
+    "item": "지도 제목",
+    "tb": "음식 문화의 세계화(M햄버거 매장 수)",
+    "web": "음식 문화의 세계화",
+    "note": "지도 목록 제목의 괄호(「일반도 — 두 쪽 지도 왼쪽 반」 등)는 지도를 가르는 구별용 — 묶음 이름 = 지면 제목 글자(labelSrc) — 범례 제목 「M햄버거 매장 수(개소)」"
+   },
+   {
+    "topic": "glocal",
+    "map": "p15-korean",
+    "item": "지도 제목",
+    "tb": "세계를 잇는 한국어(한국 문화 보급 기관)",
+    "web": "세계를 잇는 한국어",
+    "note": "지도 목록 제목의 괄호(「일반도 — 두 쪽 지도 왼쪽 반」 등)는 지도를 가르는 구별용 — 묶음 이름 = 지면 제목 글자(labelSrc) — 범례 제목 「한국 문화 보급 기관」"
+   },
+   {
+    "topic": "themeActivity",
+    "map": "p15-blank",
+    "item": "지도 제목",
+    "tb": "생활 속의 세계화 지도 만들기(백지도)",
+    "web": "생활 속의 세계화 지도 만들기",
+    "note": "지도 목록 제목의 괄호(「일반도 — 두 쪽 지도 왼쪽 반」 등)는 지도를 가르는 구별용 — 묶음 이름 = 지면 제목 글자(labelSrc)"
+   },
+   {
+    "topic": "general",
+    "map": "p08-world",
+    "item": "지면 지명(이름 종류)",
+    "webIncludes": "없음 1: 룹압할리사막",
+    "note": "U1-5 spellAs: 8쪽 지면 「룹압할리 사막」 → 찾아보기·16쪽 표기 「룹알할리 사막」(issues 8 — 교사 확인 ★)"
+   },
+   {
+    "topic": "general",
+    "map": "p08-world",
+    "item": "[p08-boundaries] 지도에 있는 분류",
+    "tb": 2,
+    "web": 1,
+    "note": "U1-4: 9쪽 날짜 변경선(검은 파선)은 범례 밖 선(legend false — 교과서도 범례 없음), 범례는 「해양 경계」 하나(손 견본)"
+   },
+   {
+    "topic": "general",
+    "map": "p08-world",
+    "item": "[p08-boundaries] 선 수(흐름선)",
+    "tb": 325,
+    "webIncludes": "186 (line 186)",
+    "note": "U1-4: 8·9쪽은 국경과 해양 경계가 같은 기호 — 획 325 중 바다 위 몫만(seaOnly — 육지 국경은 바탕 국경과 겹치므로 뺌) 이어 붙여 해양 경계 185 + 날짜 변경선 1"
+   },
+   {
+    "topic": "general",
+    "map": "p08-world",
+    "item": "[p10-continents] 범례 글자 ↔ 지면 범례",
+    "webIncludes": "지면에 없는 글자: 아시아, 북아메리카, 남아메리카, 오세아니아",
+    "note": "U1-3f·U1-8: 일반도의 대륙 지구본 단추 레이어(continentGlobes)는 범례 블록 없음(legend false) — 대륙 이름은 9쪽 지구본 그림 안 초록 글자(글꼴 부호가 깨져 PDF 글자로 못 읽음), 10·11쪽 행에서는 같음"
+   },
+   {
+    "topic": "relief",
+    "item": "글 일치(본문·제목·설명, 펼침면)",
+    "webIncludes": "블록 activity-1",
+    "pct": 76,
+    "note": "U1-8 overrides: 활동하기 1 「1 ~ 8」 → 「①~⑧」(보라 핀 그림 안 흰 숫자 — PDF 글자는 「1 ~ 8」)"
+   },
+   {
+    "topic": "climate",
+    "item": "글 일치(본문·제목·설명, 펼침면)",
+    "webIncludes": "블록 activity-2",
+    "pct": 76,
+    "note": "U1-8 overrides: 활동하기 2 「1 ~ 8」 → 「①~⑧」"
+   },
+   {
+    "topic": "climate",
+    "item": "지도 핀(번호 사진)",
+    "tb": "8 (설정 기대 14)",
+    "note": "사진 핀 8 + 기후 그래프 마커 6(사진 없는 핀 — 지면 도시 점 6, 설정 expect markers.climate 14 · chartMarkers 6)"
+   },
+   {
+    "topic": "interaction",
+    "map": "p14-routes",
+    "item": "범례 글자 ↔ 지면 범례",
+    "webIncludes": "인천 국제공항 직항 노선",
+    "note": "교사 Q10 A: 14쪽 항공망은 지면 범례가 없음 — 범례 한 칸 「인천 국제공항 직항 노선」은 손 견본(U1-3g)"
+   },
+   {
+    "topic": "glocal",
+    "map": "p15-korean",
+    "item": "출처",
+    "tb": "지면 인쇄 출처에 없음",
+    "note": "U1-8: 15쪽 「(문화 체육 관광부, 2020)」은 지면 조각이 앞 출처의 「)」와 한 묶음이라 인쇄 출처 찾기가 못 읽음(설정 notPrinted) — 지면에 인쇄돼 있음"
+   },
+   {
+    "topic": "themeActivity",
+    "item": "글 일치(본문·제목·설명, 펼침면)",
+    "webIncludes": "블록 theme-1",
+    "pct": 73,
+    "note": "U1-8 overrides: 주제도 제작 순서(원 숫자·글머리 「?」 글리프·빠진 빈칸)와 조사표(칸 이음 「항목기호국가운동화베트남 볼펜독일」 → 「항목 · 기호 · 국가 — 운동화 · 베트남 / 볼펜 · 독일」 0%)"
+   },
+   {
+    "topic": "general",
+    "map": "p08-world",
+    "item": "[p08-boundaries] 흐름선(화면)",
+    "tb": 325,
+    "web": 0,
+    "note": "해양 경계·날짜 변경선은 area 레이어 선(캔버스에 그림)이라 화면 SVG 흐름선(.at-flow) 셈이 0 — 선 수(자료)는 위 줄, 그려진 것은 캡처로 확인(u6 와 같음)"
+   }
+  ],
+  "_teacher": "교사 확인 항목(계획 「실행 중 결정」 U1-G0~U1-9 의 교사 확인 거리 + 교사 Q1~Q15 답 반영 상태 + issues.md 1~8) — 그 행에 노랑(known)·회색(info) 「교사 확인 ·」 줄 + 대조표 머리 쪽별 목록. 항목 이름 앞 ★ = 교사 판단이 남은 것(note 에 기본값). issues.md 항목은 교사가 「담당자 확인」으로 정하면 flag.",
+  "teacher": [
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "item": "주제 8(Q1)",
+    "tb": "8~15쪽 — 14쪽에 「작아지는 지구」·삽화 3·코로나·세계 지도 셋이 한 쪽",
+    "web": "목차 8(세계 일반도·대륙과 대양·지형·기후·세계의 연결·공간적 상호 작용·세계화와 지역화·주제도 활동)",
+    "status": "info",
+    "note": "교사 Q1 A 그대로"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-world",
+    "item": "처음 도법 = 로빈슨",
+    "tb": "8~15쪽 세계 지도 모두 로빈슨 도법(8·11쪽 「로빈슨 도법 1:75,000,000」)",
+    "web": "조각을 열면 로빈슨(엔진 기본은 밀러 — u1 만 main.js 에서 로빈슨으로), 도구 「도법」에서 8가지로 바꿈",
+    "status": "info",
+    "note": "U1-10 코디네이터 결정(U1-9 캡처에서 처음 도법 밀러 ↔ 사이드바 「로빈슨 도법」 글이 어긋났음)"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-world",
+    "item": "태평양 중심으로 엶(Q2)",
+    "tb": "세계 지도 13장 모두 태평양 중심(가운데 약 150°E)",
+    "web": "모든 주제·묶음 중심 경도 150 — 다른 주제로 가면 되돌림, 지도 도구 「중심 경도」로 바꿈",
+    "status": "info",
+    "note": "교사 Q2 A"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-world",
+    "item": "도법 상자 8(Q3)",
+    "tb": "—",
+    "web": "밀러·메르카토르·로빈슨·구드·이퀄어스·지구본·북극 중심·남극 중심",
+    "status": "info",
+    "note": "교사 Q3 A"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-world",
+    "item": "대륙 지구본 단추 5(Q4)",
+    "tb": "9쪽 오른쪽 열 지구본 그림 5(그 대륙만 초록)",
+    "web": "단추 그림 = 교과서 지구본 그림을 잘라 씀, 누르면 지구본(자연색)으로 바꿔 그 대륙을 가운데로 돌리고 강조, 「평면 지도로」 = 앞 평면 보기(로빈슨·150)",
+    "status": "info",
+    "note": "교사 Q4 A(덧붙임 캡처 general-globe-*). 지구본 위 대륙 강조는 대륙색 그대로(9쪽 그림은 초록)"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-world",
+    "item": "두 쪽 한 지도 · 가름선",
+    "tb": "8쪽 오른쪽 끝과 9쪽 왼쪽 끝이 약 12pt 겹침, 8쪽 끝 「나」(나우루)가 잘림",
+    "web": "두 쪽을 한 식으로 맞춤(가름선 어긋남 0) · 토막 글자 없음(나우루는 9쪽 온전한 이름 하나)",
+    "status": "info",
+    "note": "U1-3a·U1-5(덧붙임 캡처 general-seam-*)"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-world",
+    "item": "해양 경계 = 바다 위 몫만 · 손 견본 범례",
+    "tb": "8·9쪽 주황 실선 + 검은 파선(국경과 같은 기호, 범례 없음)",
+    "web": "바다 위 선만 「해양 경계」(범례 칸 손 견본) — 육지 국경은 바탕 국경, 날짜 변경선은 범례 밖 검은 파선",
+    "note": "U1-4(교과서는 국경·해양 경계가 같은 기호라 육지 몫을 빼면 바탕 국경과 겹치지 않음)"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-world",
+    "item": "기지 글자 · 이어도",
+    "tb": "「다산·장보고·세종 과학 기지(대한민국)」 붉은 글자 + 점 · 「이어도 / 종합 해양 과학 기지」 명조 두 줄(기호 없음)",
+    "web": "기지 셋 = 빨간 점 + 붉은 글자(범례 「우리나라 과학 기지」), 이어도 = 글자만 두 줄(세계 보기는 윗줄만, 확대하면 두 줄)",
+    "status": "info",
+    "note": "U1-4·U1-8 결정 ②(덧붙임 캡처 general-ieodo · general-station-sejong)"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-world",
+    "item": "지명 660 · 찾아보기 누락 0",
+    "tb": "8·9쪽 + 유럽 삽입 글자(출현 693), 찾아보기 8·9쪽 578줄",
+    "web": "지명 660(나라 194·수도 192·도시 26·바다 75·섬 61·산 37·강 33·지역 23·평야 10·사막 9), 찾아보기 578줄 모두 있음",
+    "status": "info",
+    "note": "U1-5"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-world",
+    "item": "찾아보기 격자 칸 차이 6",
+    "tb": "그린란드 9R2 · 대서양 9R4 · 북대서양 9R3 · 남대서양 9R8 · 남극해 9M9 · 킹스턴 9P5",
+    "web": "두 쪽에 모두 찍힌 대양 이름 다섯은 하나로 합쳐 8쪽 자리, 킹스턴은 기호가 80°W 동쪽 3.2°(글자가 기호 왼쪽)",
+    "status": "info",
+    "note": "578줄 중 572줄은 경계 3° 안에서 칸이 맞음(U1-5) — 지명 오류 아님"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-world",
+    "item": "프랑스 지명 등급 5(본 지도 3)",
+    "tb": "8쪽 본 지도 「프랑스」 6.7pt(등급 3)",
+    "web": "유럽 삽입 글자(8.6pt)를 먼저 합쳐 등급 5 — 세계 보기에서 프랑스 이름이 조금 늦게 나옴",
+    "note": "U1-5(삽입 글자가 같은 나라를 본 지도보다 크게 써서 삽입 등급표 — 프랑스만 걸림)"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-world",
+    "item": "우리나라 섬·바다 지명",
+    "tb": "8쪽 지면 제주도·울릉도·독도·동해·황해·남해(찾아보기는 56쪽 참조)",
+    "web": "지면 글자 그대로 지명에 넣음",
+    "status": "info",
+    "note": "U1-5"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-world",
+    "item": "옮긴 기호(snapped) 6",
+    "tb": "교과서가 겹치지 않게 옮겨 그린 수도·도시 기호",
+    "web": "Natural Earth 자리 — 도도마 114 · 브라자빌 66 · 킨샤사 58 · 기테가 54 · 비엔티안 44 · 마이애미 34km",
+    "status": "info",
+    "note": "U1-5(아시아~오세아니아와 같은 규칙 snapKm 30). 브라자빌·킨샤사는 글자를 북서·남동으로 나눠 겹침 없음"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-world",
+    "item": "9쪽 태평양 섬나라",
+    "tb": "마셜·나우루·투발루·통가·키리바시 섬과 수도",
+    "web": "세계 단원 바탕(110m·50m)에는 작은 산호초 섬 도형이 없거나 아주 작음 — 수도 기호·이름으로 보이고 고도 색·음영 화상에 섬이 보임(색칠하기 도구는 동그라미로 칠함)",
+    "status": "info",
+    "note": "U1-9 코디네이터 결정(태평양 상자 + 10a 를 넣으면 바탕 +60KB)"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-world",
+    "item": "★ 「룹압할리 사막」 표기(issues 8)",
+    "tb": "8쪽 지면 「룹압할리 사막」 · 찾아보기·16쪽 「룹알할리 사막」",
+    "web": "앱 지명은 찾아보기 표기 「룹알할리 사막」",
+    "note": "issues.md 8 — 앱은 교과서 인쇄 그대로. 「교과서 담당자 확인 필요」로 표시할지·바로잡을지 교사 답 대기"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-world",
+    "item": "바로가기 「8쪽 범위」·「9쪽 범위」 없음",
+    "tb": "계획 초안의 바로가기 넷(세계·유럽·8쪽·9쪽)",
+    "web": "「세계의 여러 나라」(두 쪽 모두)·「유럽」 둘만",
+    "status": "info",
+    "note": "U1-8: 원본 쪽 블록에는 「지도에서 보기」 단추가 달리지 않고 9쪽에 매달 지면 글이 없음 — 「세계의 여러 나라」 범위가 두 쪽을 다 담음"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "item": "★ 휴대폰(390) 화면의 칸 겹침",
+    "tb": "—",
+    "web": "무대 390×약 460 에서 지도 도구 칸·처음 펼친 범례 칸이 지도 대부분을 덮음(10~11쪽 꼬리표 12 중 8, 지형 핀 1·기후 핀 3 이 범례 칸 밑 — 범례 칸을 접으면 보임)",
+    "note": "기본값: 고치지 않음 — 범례 칸 처음 펼침·도구 칸 크기는 공용 화면(u2~u6 휴대폰도 같은 꼴)이라 단원마다 다르게 하지 않음. 휴대폰에서 범례 칸을 접힌 채 시작할지(모든 단원 공통 고침)는 교사·코디네이터 판단"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "item": "작은 지도 도법 빌림(fitFrom·projectionFrom) · 12쪽 밀러",
+    "tb": "10·11쪽 ← 8쪽 식, 14쪽 인터넷·이동 전화 ← 항공망, 15쪽 한국어 ← 햄버거, 백지도 ← 햄버거 도법",
+    "web": "14장 모두 평균 잔차 ≤ 0.45mm, approx 0 · 12쪽 자연색 래스터는 밀러로 판정(서아프리카·브라질 동쪽 해안 4~5pt 어긋남)",
+    "status": "info",
+    "note": "U1-1·U1-2(같은 바탕 그림 되풀이 실측)"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "item": "축척 막대",
+    "tb": "8쪽 1cm = 750km · 13쪽 1,000km · 14쪽 2,000km·3,000km · 15쪽 2,000km",
+    "web": "로빈슨 지도 막대는 모두 맞음(1~3%) — 웹 축척 막대는 확대에 따라 바뀜",
+    "status": "info",
+    "note": "U1-2 Step 7(유럽 삽입·12쪽은 ★ 따로)"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "item": "화면용 색 보정 없음",
+    "tb": "—",
+    "web": "범례 색은 모두 추출·지면 견본 그대로(legendColors 없음)",
+    "status": "info",
+    "note": "U1-4"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-europe",
+    "item": "유럽 삽입 = 일반도 바로가기",
+    "tb": "8쪽 왼쪽 아래 원형 삽입 「유럽」(람베르트 정각 원뿔 1:20,000,000)",
+    "web": "따로 창 없이 블록 「지도에서 보기 — 유럽」(삽입 틀 범위로 날아감), 삽입 지명은 일반도 지명에 합침(삽입 우선)",
+    "status": "info",
+    "note": "u6 Q3 기본값(덧붙임 캡처 general-view-europe)"
+   },
+   {
+    "page": "8~9쪽 일반도",
+    "topic": "general",
+    "map": "p08-europe",
+    "item": "★ 유럽 삽입 축척 1:20,000,000 ↔ 지도 크기(issues 1)",
+    "tb": "막대 200km = 28.2pt · 「1:20,000,000」",
+    "web": "도시 11개 90쌍·경위선 맞춤 모두 약 1:28,500,000(막대·축척 글자가 1.42배 큼)",
+    "note": "issues.md 1 — 앱은 교과서 인쇄 그대로. 「교과서 담당자 확인 필요」로 표시할지·바로잡을지 교사 답 대기"
+   },
+   {
+    "page": "10~11쪽 대륙과 대양",
+    "topic": "continents",
+    "map": "p10-continents",
+    "item": "대륙 나눔 = 교과서 칠 그대로(Q5)",
+    "tb": "러시아 우랄 점선 서쪽 유럽색 · 그린란드(덴) 회색",
+    "web": "러시아 = 점선으로 쪼갠 조각 면(유럽·아시아), 그린란드 = 어느 대륙 강조에도 안 들어감, 하와이 = 오세아니아·프랑스 기아나 = 남아메리카 등 섬 단위",
+    "status": "info",
+    "note": "교사 Q5 A(덧붙임 캡처 continents-legend-europe*·continents-greenland)"
+   },
+   {
+    "page": "10~11쪽 대륙과 대양",
+    "topic": "continents",
+    "map": "p10-continents",
+    "item": "카자흐스탄 = 아시아",
+    "tb": "계획 Q5 설명 「카자흐스탄 우랄 서쪽 유럽색」",
+    "web": "지면 실측: 카자흐스탄 전체가 아시아 주황(점선이 러시아–카자흐스탄 국경을 따라감) — 교과서 그대로 아시아",
+    "status": "info",
+    "note": "U1-3c 실측(계획 설명이 틀렸음 — 교과서와 다른 것 아님)"
+   },
+   {
+    "page": "10~11쪽 대륙과 대양",
+    "topic": "continents",
+    "map": "p10-continents",
+    "item": "맞히기 = 보기 4개(Q6)",
+    "tb": "초성 꼬리표 12(대륙 7 · 대양 5)",
+    "web": "꼬리표를 누르면 강조 + 보기 4, 맞히면 이름으로, 「정답 모두 보기」·「다시 하기」, 맞힌 수/푼 수(점수는 꼬리표마다 첫 답)",
+    "status": "info",
+    "note": "교사 Q6 A(덧붙임 캡처 continents-quiz-*)"
+   },
+   {
+    "page": "10~11쪽 대륙과 대양",
+    "topic": "continents",
+    "map": "p10-continents",
+    "item": "대양 경계 = 단순 경계(Q7)",
+    "tb": "교과서에는 대양 경계선이 없음",
+    "web": "대서양·인도양 20°E · 인도양·태평양 147°E + 말레이 제도 · 태평양·대서양 68°W · 남극해 남위 60° · 북극해 북극권(지구의 71.5% — 개관 글 71.1%)",
+    "note": "교사 Q7 A — 대양을 고를 때만 옅은 파랑"
+   },
+   {
+    "page": "10~11쪽 대륙과 대양",
+    "topic": "continents",
+    "map": "p10-continents",
+    "item": "대륙 나라 목록(Q8)",
+    "tb": "「각 대륙에는 어떤 나라들이 있는지 이야기해 보자」",
+    "web": "대륙을 고르면 사이드바 끝에 10·11쪽 지면 나라 이름 목록(가나다순 — 아시아 49·유럽 39·아프리카 55·북아메리카 24·남아메리카 13·오세아니아 12, 러시아는 아시아·유럽 둘 다), 누르면 그 나라로 날아감",
+    "status": "info",
+    "note": "교사 Q8 A"
+   },
+   {
+    "page": "10~11쪽 대륙과 대양",
+    "topic": "continents",
+    "map": "p10-continents",
+    "item": "대양 지구본 단추 5(Q4)",
+    "tb": "11쪽 오른쪽 열 대양 지구본 그림 5",
+    "web": "누르면 지구본(자연색)으로 돌리고 대양 면 옅은 파랑 + 대륙 모두 흐림 — 인도양만 회전 중심 손 값(인도 반도가 위 가운데 — 11쪽 그림처럼)",
+    "status": "info",
+    "note": "교사 Q4 A(덧붙임 캡처 continents-globe-*). 교과서 그림은 바다 하늘색·육지 초록 — 결은 다르지만 강조는 분명(U1-3f)"
+   },
+   {
+    "page": "10~11쪽 대륙과 대양",
+    "topic": "continents",
+    "map": "p10-continents",
+    "item": "고른 대륙이 있을 때 지도 누르기",
+    "tb": "—",
+    "web": "대륙을 하나 고른 채 지도에서 다른 대륙 나라를 누르면 바뀌지 않음(흐린 대륙은 누르기 대상이 아님) — 범례·꼬리표·「전체 보기」로 바꿈",
+    "status": "info",
+    "note": "U1-9 캡처에서 봄(3e 설계 그대로) — 그대로 둠"
+   },
+   {
+    "page": "10~11쪽 대륙과 대양",
+    "topic": "continents",
+    "map": "p10-continents",
+    "item": "★ 수에즈 점선 ↔ 시나이반도 색(issues 3)",
+    "tb": "점선은 시나이를 아시아 쪽에 두나 시나이는 아프리카 초록",
+    "web": "이집트 전체 아프리카(교과서 칠 그대로)",
+    "note": "issues.md 3 — 앱은 교과서 인쇄 그대로. 「교과서 담당자 확인 필요」로 표시할지·바로잡을지 교사 답 대기"
+   },
+   {
+    "page": "10~11쪽 대륙과 대양",
+    "topic": "continents",
+    "map": "p10-continents",
+    "item": "★ 튀르키예 트라키아 = 아시아(issues 4)",
+    "tb": "점선이 튀르키예–그리스·불가리아 국경을 따라감",
+    "web": "튀르키예 전체 아시아(교과서 그대로)",
+    "note": "issues.md 4 — 앱은 교과서 인쇄 그대로. 「교과서 담당자 확인 필요」로 표시할지·바로잡을지 교사 답 대기"
+   },
+   {
+    "page": "10~11쪽 대륙과 대양",
+    "topic": "continents",
+    "map": "p10-continents",
+    "item": "★ 팔라우·미크로네시아(·괌·북마리아나) = 아시아색(issues 5)",
+    "tb": "같은 쪽 마셜·나우루·키리바시는 오세아니아 연두",
+    "web": "아시아(교과서 칠 그대로) — 대륙 나라 목록에서도 「팔라우」·「미크로네시아」가 아시아",
+    "note": "issues.md 5 — 앱은 교과서 인쇄 그대로. 「교과서 담당자 확인 필요」로 표시할지·바로잡을지 교사 답 대기"
+   },
+   {
+    "page": "12쪽 지형",
+    "topic": "relief",
+    "map": "p12-relief",
+    "item": "핀 번호 숨김 = 앞 단원과 같은 방향(Q9)",
+    "tb": "지도 핀에 ①~⑧ 번호, 사진 쪽 핀이 빈칸(「사진의 빈칸에 해당 지역의 번호를 써 보자」)",
+    "web": "지도 핀 번호 숨김 + 「번호 모두 보기」(누른 핀은 번호·사진 카드) — 교과서와 방향 반대",
+    "note": "교사 Q9 A(pinNumbers hidden — 엔진 고침 없음)"
+   },
+   {
+    "page": "12쪽 지형",
+    "topic": "relief",
+    "map": "p12-relief",
+    "item": "★ 핀 ②③④ 자리",
+    "tb": "12쪽 지면 핀 자리",
+    "web": "② 필라투스산에서 약 266km(알프스 핀 둘 중 서쪽) · ③ 알파인 스키 18.5°E(실제 알프스보다 동쪽) · ④ 모로코 남동 국경 바로 바깥",
+    "note": "기본값: 지면 핀 자리 그대로(12쪽 자연색 래스터 밀러 맞춤 4~5pt 오차 + 교과서 핀 자리) — 실제 자리로 옮길지 교사 판단(덧붙임 캡처 relief-pins-alps)"
+   },
+   {
+    "page": "12쪽 지형",
+    "topic": "relief",
+    "map": "p12-relief",
+    "item": "★ 12쪽 축척 막대 1,000km(issues 2)",
+    "tb": "막대 16.7pt",
+    "web": "맞춘 밀러 식으로는 약 18.3pt 여야 함(약 9% 짧음 — 확신 낮음)",
+    "note": "issues.md 2 — 앱은 교과서 인쇄 그대로. 「교과서 담당자 확인 필요」로 표시할지·바로잡을지 교사 답 대기"
+   },
+   {
+    "page": "12쪽 지형",
+    "topic": "relief",
+    "map": "p12-relief",
+    "item": "바탕 자연색",
+    "tb": "12쪽 자연색 래스터(naturalearthdata.com)",
+    "web": "지형 주제 처음 바탕 = 자연색(지도 도구 「바탕」으로 고도 색·없음)",
+    "status": "info",
+    "note": "덧붙임 캡처 relief-base-*"
+   },
+   {
+    "page": "13쪽 기후",
+    "topic": "climate",
+    "map": "p13-climate",
+    "item": "핀 번호 숨김(Q9) · 기후 그래프 마커 6",
+    "tb": "지도 핀 ①~⑧ + 도시 점 6",
+    "web": "사진 핀 8 + 그래프 마커 6 모두 번호 숨김 + 「번호 모두 보기」",
+    "status": "info",
+    "note": "교사 Q9 A"
+   },
+   {
+    "page": "13쪽 기후",
+    "topic": "climate",
+    "map": "p13-climate",
+    "item": "★ 13쪽 사진 왼쪽 위 교과서 보라 빈 핀",
+    "tb": "사진마다 번호 칸이 빈 보라 핀(활동의 빈칸)",
+    "web": "사진을 자르지 않아 보라 빈 핀이 그림째 보임(12쪽도 같음)",
+    "note": "기본값: 지면 그대로(활동의 빈칸 — U1-8 결정 ③). 자르면 사진 다시 뽑기(U1-6)(덧붙임 캡처 climate-photo-pin-baked)"
+   },
+   {
+    "page": "13쪽 기후",
+    "topic": "climate",
+    "map": "p13-climate",
+    "item": "★ 보스토크 그래프 마커 자리",
+    "tb": "13쪽 지도 보스토크 점(124.4°E)",
+    "web": "마커 = 보스토크 기지 실제 자리(106.8°E — 교과서 점과 약 410km, 로빈슨 극 늘어남)",
+    "note": "기본값: 실제 자리(나머지 다섯은 지면 점과 15~140km). 교과서 점 자리로 옮길지 교사 판단"
+   },
+   {
+    "page": "13쪽 기후",
+    "topic": "climate",
+    "map": "p13-climate",
+    "item": "기후 그래프 6 = 97쪽 표 값",
+    "tb": "13쪽 그래프 그림(『이과연표』 2023)",
+    "web": "97쪽 표 값 — 그림과 최대 차 0.09~0.14℃ · 0.5~0.9mm(어긋남 없음), 보스토크 기온 축 −70~10 그대로",
+    "status": "info",
+    "note": "U1-7(덧붙임 캡처 climate-chart-*)"
+   },
+   {
+    "page": "13쪽 기후",
+    "topic": "climate",
+    "map": "p13-climate",
+    "item": "작은 섬 기후 칠 없음",
+    "tb": "싱가포르섬 등 작은 섬도 기후색",
+    "web": "0.3°² 보다 작은 섬은 칠 없음(바탕 육지색) — 싱가포르 그래프 마커는 그대로",
+    "note": "U1-4(레이어 용량 250KB 안 — minArea·postSimplify)"
+   },
+   {
+    "page": "13쪽 기후",
+    "topic": "climate",
+    "map": "p13-climate",
+    "item": "기후 면 단순화의 가는 틈",
+    "tb": "—",
+    "web": "확대하면 이웃 기후 사이·해안에 흰 틈이 조금(세계 보기에선 안 보임)",
+    "note": "U1-4 postSimplify 0.2°(21,723 조각 → 222KB)"
+   },
+   {
+    "page": "14쪽 세계의 연결",
+    "topic": "connection",
+    "item": "「작아지는 지구」(Q11)",
+    "tb": "대서양 지구본 그림 + 인물 사진 3 + 글 ①②③",
+    "web": "원본 쪽 부분(지구본 그림) + 인물 사진 3 카드 + 표 카드(글 ①②③ 지면 글자 그대로 — 「거의 900시간(약 37일)」)",
+    "status": "info",
+    "note": "교사 Q11 A(덧붙임 캡처 connection-shrink-table · connection-page-shrink)"
+   },
+   {
+    "page": "14쪽 세계의 연결",
+    "topic": "connection",
+    "item": "삽화 3(Q12)",
+    "tb": "국제적 분업·정보 통신·인적 교류 삽화",
+    "web": "원본 쪽 부분 + 설명 글",
+    "status": "info",
+    "note": "교사 Q12 A(덧붙임 캡처 connection-page-*)"
+   },
+   {
+    "page": "14쪽 세계의 연결",
+    "topic": "connection",
+    "item": "인물 사진 겹침",
+    "tb": "린드버그·글렌 사진 위에 지구본 그림이 조금 얹힘",
+    "web": "교과서 그대로(사진만 자르면 지구본 끝이 조금 보임)",
+    "status": "info",
+    "note": "U1-6"
+   },
+   {
+    "page": "14쪽 세계의 연결",
+    "topic": "connection",
+    "map": "p14-covid",
+    "item": "★ 코로나 「2020년 1월 20일(8개국)」(issues 6)",
+    "tb": "짙은 색 8 = 중국·대한민국·일본·미국·독일·에스파냐·핀란드·미얀마(타이는 연한 색)",
+    "web": "지면 칠 그대로(WHO 1월 20일 확진국은 중국·타이·일본·대한민국 4)",
+    "note": "issues.md 6 — 앱은 교과서 인쇄 그대로. 「교과서 담당자 확인 필요」로 표시할지·바로잡을지 교사 답 대기"
+   },
+   {
+    "page": "14쪽 세계의 연결",
+    "topic": "connection",
+    "map": "p14-covid",
+    "item": "코로나 고친 나라 6",
+    "tb": "홍콩·마카오·올란드·푸에르토리코 · 괌·아메리칸사모아",
+    "web": "홍콩·마카오(중국 면)·올란드(핀란드 면)·푸에르토리코 = 1월 20일, 괌·아메리칸사모아 = 없음(3000dpi 섬 윤곽선만)",
+    "status": "info",
+    "note": "U1-4 countryOverrides(까닭 — 설정)"
+   },
+   {
+    "page": "14쪽 세계의 연결",
+    "topic": "connection",
+    "map": "p14-covid",
+    "item": "작은 섬 나라 분류(코로나)",
+    "tb": "작은 섬 나라·속령 59",
+    "web": "도구의 벡터 채움 표본 값 그대로(지도 폭 168pt — 섬 안이 해안선 획으로 덮여 화소로 못 가름)",
+    "status": "info",
+    "note": "U1-4"
+   },
+   {
+    "page": "14쪽 공간적 상호 작용",
+    "topic": "interaction",
+    "map": "p14-routes",
+    "item": "노선 = 대권 곡선(Q10)",
+    "tb": "인천에서 퍼지는 매끈한 곡선(대권 아님) · 화살촉 없음",
+    "web": "인천 국제공항 → 교과서 도시 점마다 대권 곡선(지구본·극 중심에서도 실제 길), 한 색·한 굵기, 화살촉 없음, 범례 「인천 국제공항 직항 노선」 한 칸(손 견본), 도시 이름 없음",
+    "note": "교사 Q10 A(덧붙임 캡처 interaction-routes-*)"
+   },
+   {
+    "page": "14쪽 공간적 상호 작용",
+    "topic": "interaction",
+    "map": "p14-routes",
+    "item": "★ 노선 수 188 · 선 167 ↔ 본문 「175개 도시」(issues 7)",
+    "tb": "빨간 도시 점 188 · 분홍 선 167 · 본문 「83개 항공사를 통해 전 세계 175개 도시와 직항」",
+    "web": "노선 188(점마다 — 선이 없는 점 21 도 노선으로: 대부분 가까운 동아시아·모스크바·북미 3)",
+    "note": "issues.md 7 — 앱은 교과서 인쇄 그대로. 「교과서 담당자 확인 필요」로 표시할지·바로잡을지 교사 답 대기 · 선 없는 점 21 을 노선으로 그린 것도 교사 판단(기본값: 점마다 노선)"
+   },
+   {
+    "page": "14쪽 공간적 상호 작용",
+    "topic": "interaction",
+    "map": "p14-internet",
+    "item": "인터넷·이동 전화 고친 나라",
+    "tb": "둘레 나라 면에 묻힌 작은 나라·특별 행정구",
+    "web": "인터넷 7 · 이동 전화 7(안도라·리히텐슈타인·모나코·산마리노·바티칸·홍콩·마카오 — 둘레 면 화소)",
+    "status": "info",
+    "note": "U1-4 countryOverrides(까닭 — 설정)"
+   },
+   {
+    "page": "14쪽 공간적 상호 작용",
+    "topic": "interaction",
+    "map": "p14-internet",
+    "item": "작은 섬 나라 분류(인터넷·이동 전화)",
+    "tb": "작은 섬 나라·속령 56",
+    "web": "도구의 벡터 채움 표본 값 그대로(화소로 못 가름)",
+    "status": "info",
+    "note": "U1-4"
+   },
+   {
+    "page": "14쪽 공간적 상호 작용",
+    "topic": "interaction",
+    "map": "p14-mobile",
+    "item": "인터넷·이동 전화 출처",
+    "tb": "지면 「(국가데이터처, 2020)」",
+    "web": "지면 글자 그대로",
+    "status": "info",
+    "note": "U1-1(계획 조사의 「국제 전기 통신 연합」이 아님)"
+   },
+   {
+    "page": "15쪽 세계화와 지역화",
+    "topic": "glocal",
+    "map": "p15-burger",
+    "item": "햄버거 사진 카드 + 나라 핀(Q13)",
+    "tb": "오려 낸 햄버거 사진 4 + 지시선(대한민국·일본·독일·아랍 에미리트)",
+    "web": "사진 카드 + 그 나라 자리 핀 1~4(번호 보임), 라이스버거는 지시선이 없어 대한민국 넓이 중심",
+    "status": "info",
+    "note": "교사 Q13 A(덧붙임 캡처 glocal-burger-pin)"
+   },
+   {
+    "page": "15쪽 세계화와 지역화",
+    "topic": "glocal",
+    "map": "p15-korean",
+    "item": "햄버거 핀은 「음식 문화의 세계화」 묶음에만",
+    "tb": "—",
+    "web": "「세계를 잇는 한국어」 묶음으로 바꾸면 햄버거 핀 4 를 지도에서 내림(돌아오면 다시 보임)",
+    "status": "info",
+    "note": "U1-10 고침(U1-9 캡처에서 한국어 점 위에 햄버거 핀이 떠서 어색했음 — u1 전용 레이어 종류 symbolHidePins, 공유 코드 고침 없음)"
+   },
+   {
+    "page": "15쪽 세계화와 지역화",
+    "topic": "glocal",
+    "map": "p15-burger",
+    "item": "햄버거 사진 밑 나라",
+    "tb": "라이스버거 사진이 북한을, 스시버거 사진이 미크로네시아·괌·북마리아나·마셜을 덮음",
+    "web": "북한 = 「0(없음)」(사진 아래로 보이는 미색), 미크로네시아·괌·북마리아나·마셜·키리바시 = 분류 없음(교과서에 없는 수치를 넣지 않음)",
+    "note": "U1-4 countryOverrides"
+   },
+   {
+    "page": "15쪽 세계화와 지역화",
+    "topic": "glocal",
+    "map": "p15-burger",
+    "item": "작은 섬 나라 분류(햄버거)",
+    "tb": "작은 섬 나라·속령 16",
+    "web": "도구의 벡터 채움 표본 값 그대로",
+    "status": "info",
+    "note": "U1-4"
+   },
+   {
+    "page": "15쪽 세계화와 지역화",
+    "topic": "glocal",
+    "map": "p15-burger",
+    "item": "★ 라이스버거 사진 가장자리",
+    "tb": "15쪽 라이스버거(네모 그림 — 둘레에 지도가 그려져 있음)",
+    "web": "빵 둘레만 잘랐으나 좌우 가장자리에 옅은 파란 지도선 조각이 조금 남음",
+    "note": "기본값: 그대로. 더 좁게 다시 자를지 교사 판단(U1-6 리뷰)"
+   },
+   {
+    "page": "15쪽 세계화와 지역화",
+    "topic": "glocal",
+    "map": "p15-korean",
+    "item": "한국어 점 212 · 겹침 허용(Q14)",
+    "tb": "점 3종(세종학당·문화원·교육원) — 그림자 겹친 반투명 점(계획 어림 약 200)",
+    "web": "212(세종학당 145 · 문화원 32 · 교육원 35) 교과서 자리 그대로, 겹침 허용(확대하면 풀림), 점 이름 없음",
+    "status": "info",
+    "note": "교사 Q14 A · U1-4 원호 하프 변환으로 셈(덧붙임 캡처 glocal-korean-*)"
+   },
+   {
+    "page": "15쪽 세계화와 지역화",
+    "topic": "glocal",
+    "item": "커피·녹차라테 사진 겹침",
+    "tb": "커피 전문점 사진 오른쪽 아래·녹차라테 위 끝이 서로 겹침",
+    "web": "교과서 그대로",
+    "status": "info",
+    "note": "U1-6"
+   },
+   {
+    "page": "15쪽 주제도 활동",
+    "topic": "themeActivity",
+    "map": "p15-blank",
+    "item": "세계 색칠하기 도구(Q15)",
+    "tb": "「생활 속의 세계화 지도 만들기」 백지도 · 조사표 · 제작 순서 ①~④",
+    "web": "백지도의 모든 나라를 팔레트 6색으로 칠하기 + 지우개 + 모두 지우기(메모리만), 문항 카드(제작 순서) + 조사표 글 + 원본 쪽 부분",
+    "status": "info",
+    "note": "교사 Q15 A(덧붙임 캡처 theme-*)"
+   },
+   {
+    "page": "15쪽 주제도 활동",
+    "topic": "themeActivity",
+    "map": "p15-blank",
+    "item": "★ 세계 보기 작은 나라 동그라미 수",
+    "tb": "—",
+    "web": "넓이 16px 보다 작은 나라 = 동그라미(세계 보기 1440 에서 73 — 겹치면 하나만, 휴대폰 세계 보기는 지도를 많이 덮고 동그라미가 큰 나라 누르기를 가로채기도 함, 확대하면 풀림). 키리바시 동그라미는 세계 보기에서 마셜·나우루 곁이라 빠짐(확대하면 보임)",
+    "note": "기본값: 그대로. 동그라미를 줄일지(기준 px 낮추기·세계 보기에서는 칠한 나라만 등) 교사 판단(U1-3h·U1-9·U1-10 휴대폰 캡처)"
+   },
+   {
+    "page": "15쪽 주제도 활동",
+    "topic": "themeActivity",
+    "map": "p15-blank",
+    "item": "조사표 = 글",
+    "tb": "조사표(항목·기호·국가 — 운동화/베트남·볼펜/독일 예시 기호 그림)",
+    "web": "글 「항목 · 기호 · 국가 — 운동화 · 베트남 / 볼펜 · 독일」 + 원본 쪽 부분(예시 기호 그림)",
+    "status": "info",
+    "note": "U1-8 고침 6(표 카드로 만들지 않음 — 그래프 수 7 과 공유 표 읽개를 건드리지 않음)"
+   }
+  ]
+ },
+ "notes": {
+  "_doc": "대조표 「알려진 차이」·「참고」 줄의 단원 고유 설명.",
+  "viewProjection": "로빈슨(처음 도법) · 둘째 캡처 이퀄어스",
+  "viewProjectionNote": "웹은 세계 도법 5종 + 지구본 + 북극·남극 중심(원뿔 도법 없음 — 8쪽 유럽 삽입 람베르트 정각 원뿔은 바로가기로 같은 범위만)"
+ }
+}

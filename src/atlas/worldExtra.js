@@ -14,7 +14,7 @@
 import { geoContains, geoCentroid } from 'd3-geo';
 import { PROJECTIONS } from './projections.js';
 import { registerLayerType, combineLayers } from './layerRef.js';
-import { areaLayer } from './layers.js';
+import { areaLayer, symbolLayer } from './layers.js';
 import { legendItems } from './layerStyle.js';
 import { countryLevel } from './countryClass.js';
 import { createLegendState } from './legendState.js';
@@ -155,6 +155,32 @@ export function continentsLayer(id, data, { countryFeatures = null, legend = nul
   return layer;
 }
 
+/**
+ * 주제 핀을 내리는 기호 레이어(U1-10 — 15쪽 「세계를 잇는 한국어」, 앱 type 'symbolHidePins', 자료는 symbol 그대로): 핀은 주제 단위(topic.js)라
+ * 「음식 문화의 세계화」 햄버거 사진 핀 4 가 한국어 묶음에서도 보였음. 이 레이어가 지도에 있는 동안 주제 핀 레이어(id 'markers-…')를 지도에서
+ * 내리고(removeLayer keep — destroy 하지 않아 핀·카드 상태 그대로) 묶음을 떠나면(destroy) 다시 올린다. 주제를 바꿀 때 topic.js 는 묶음을 먼저 풀고
+ * (여기서 다시 올림) 그 뒤 clearLayers 로 핀을 지우므로 남는 레이어가 없다. 핀이 묶음보다 늦게 붙는 경우(처음 묶음)는 마이크로태스크로 한 번 더 본다.
+ */
+export function symbolHidePinsLayer(id, data, ctx = {}) {
+  const layer = symbolLayer(id, data, ctx);
+  const map = ctx.map;
+  let held = [], dead = false;
+  const hide = () => {
+    if (dead || !map || map.destroyed || !Array.isArray(map.layers)) return;
+    for (const p of map.layers.filter((x) => String(x.id).startsWith('markers-'))) if (map.removeLayer(p.id, { keep: true })) held.push(p);
+  };
+  hide();
+  Promise.resolve().then(hide);
+  const destroy = layer.destroy;
+  layer.destroy = () => {
+    dead = true;
+    destroy?.call(layer);
+    if (map && !map.destroyed) for (const p of held) if (!map.layers.includes(p)) map.addLayer(p);
+    held = [];
+  };
+  return layer;
+}
+
 /** 세계화 단원 등록 — installAmericasExtras → installPolarExtras 다음(뒤 등록이 이김) */
 export function installWorldExtras() {
   if (!PROJECTIONS.polarN) throw new Error('installWorldExtras: installAmericasExtras() → installPolarExtras() 를 먼저');
@@ -163,4 +189,5 @@ export function installWorldExtras() {
   installWorldQuiz(continentsLayer);
   installWorldGlobe(continentsLayer); // installWorldQuiz 뒤(continentQuiz 를 대양 단추와 함께 다시 등록)
   installWorldPaint();
+  registerLayerType('symbolHidePins', (id, d, ctx) => symbolHidePinsLayer(id, d, ctx));
 }

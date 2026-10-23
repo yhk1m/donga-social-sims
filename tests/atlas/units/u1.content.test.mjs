@@ -111,13 +111,13 @@ test('묶음: label 이 같으면 한 묶음, topicView 검사 통과, 바로가
 });
 
 test('레이어 종류(설정 layerTypeAs — U1-3e·3f·3h·U1-4): 기지 symbolLabels · 맞히기·지구본 단추 = continents 자료 · 색칠하기 도구 = topicView 자료', () => {
-  assert.deepEqual(CFG.layerTypeAs, { symbolLabels: ['symbol'], continentQuiz: ['continents'], continentGlobes: ['continents'], paintTool: ['topicView'] });
+  assert.deepEqual(CFG.layerTypeAs, { symbolLabels: ['symbol'], continentQuiz: ['continents'], continentGlobes: ['continents'], paintTool: ['topicView'], symbolHidePins: ['symbol'] });
   const type = Object.fromEntries(T.flatMap((t) => t.layers).map((l) => [`${l.ref}:${l.type}`, layerData(l.ref).properties.layerType]));
   assert.deepEqual(type, {
     'layer-p08-view:topicView': 'topicView', 'layer-p08-boundaries:area': 'area', 'layer-p08-stations:symbolLabels': 'symbol', 'layer-p10-continents:continentGlobes': 'continents',
     'layer-p10-continents:continentQuiz': 'continents', 'layer-p12-view:topicView': 'topicView', 'layer-p13-climate:area': 'area', 'layer-p14-covid:countryClass': 'countryClass',
     'layer-p14-routes:routeFan': 'routeFan', 'layer-p14-internet:countryClass': 'countryClass', 'layer-p14-mobile:countryClass': 'countryClass',
-    'layer-p15-burger:countryClass': 'countryClass', 'layer-p15-korean:symbol': 'symbol', 'layer-p15-paint:paintTool': 'topicView',
+    'layer-p15-burger:countryClass': 'countryClass', 'layer-p15-korean:symbolHidePins': 'symbol', 'layer-p15-paint:paintTool': 'topicView',
   });
   // 레이어 13 모두 어느 주제가 씀(layers.js 묶음)
   const used = new Set(T.flatMap(refs));
@@ -249,6 +249,9 @@ test('main.js(U1-9): 등록 셋을 mountAtlas 전에 이 차례로(옵션 8 — 
   assert.ok(!src.includes('installExtraCharts'), '원그래프 없음');
   assert.ok(at('basemap.objects.countries10a = { type: \'GeometryCollection\', geometries: [] }') < mount, '빈 10a 심(U1-3b 결정 ①)');
   assert.ok(at('viewTools(root.atlasMap, root.atlasUi.tools.el)') > mount, 'viewTools 는 mountAtlas 뒤');
+  // U1-10 코디네이터 결정: 처음 도법 로빈슨(교과서 8~15쪽 세계 지도) — mountAtlas 뒤·viewTools 앞, 개발 ?proj= 가 있으면 그것
+  assert.ok(at("root.atlasMap.setProjection('robinson', { animate: false })") > mount && at("root.atlasMap.setProjection('robinson'") < at('viewTools(root.atlasMap'), '처음 도법 로빈슨');
+  assert.match(src, /import\.meta\.env\?\.DEV && new URLSearchParams/);
   assert.ok(!src.includes('globeTools'), 'globeTools 대신 viewTools(U6-3b)');
   assert.match(src, /offView\(\);\s*atlas\.destroy\(\)/);
   assert.match(src, /BASE_COLOR = \{ general: 'tint', relief: 'natural' \}/);

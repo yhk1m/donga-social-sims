@@ -220,3 +220,33 @@ test('실제 대양 면(U1-3d, Q7 A): 다섯, 서로 안 겹침(표본점), 넓�
   assert.ok(data.properties.bounds.pacific[2] > 180, '태평양 상자는 날짜변경선을 넘어 폄');
   assert.ok(data.properties.oceans.every((o) => o.color && !o.center && !o.bbox));
 });
+
+test('symbolHidePins(U1-10 — 15쪽 한국어 묶음): 묶음이 있는 동안 주제 핀 레이어(markers-…)를 내리고(destroy 안 함) 떠나면 다시 올림, 늦게 붙는 핀도 마이크로태스크로', async () => {
+  const destroyed = [];
+  const mk = (id) => ({ id, destroy() { destroyed.push(id); } });
+  const pins = mk('markers-glocal'), other = mk('layer-p15-burger');
+  const layers = [other, pins];
+  const map = { destroyed: false, refreshLayer() { return true; }, on() { return () => {}; },
+    get layers() { return [...layers]; },
+    removeLayer(id, { keep = false } = {}) { const i = layers.findIndex((x) => x.id === id); if (i < 0) return false; const [L] = layers.splice(i, 1); if (!keep) L.destroy(); return true; },
+    addLayer(L) { layers.push(L); } };
+  const d = { type: 'FeatureCollection', properties: { legend: [{ cls: 'a', label: '세종학당', color: '#ed1651' }] },
+    features: [{ type: 'Feature', properties: { type: 'symbol', cls: 'a', kind: 'circle', size: 3, color: '#ed1651' }, geometry: { type: 'Point', coordinates: [127, 37] } }] };
+  const L = layerFromRef({ ref: 'layer-p15-korean', type: 'symbolHidePins' }, { 'layer-p15-korean': d }, { map });
+  assert.deepEqual(map.layers.map((x) => x.id), ['layer-p15-burger'], '핀만 내림');
+  assert.deepEqual(destroyed, [], '핀은 destroy 하지 않음(상태 그대로)');
+  assert.equal(typeof L.drawSvg, 'function', '기호 레이어 그대로');
+  L.destroy();
+  assert.deepEqual(map.layers.map((x) => x.id), ['layer-p15-burger', 'markers-glocal'], '떠나면 같은 핀 레이어를 다시 올림');
+  assert.equal(map.layers[1], pins);
+  // 핀이 묶음보다 늦게 붙음(처음 묶음): 만든 뒤 붙인 핀도 마이크로태스크에서 내림, destroy 뒤에는 안 내림
+  layers.splice(1, 1);
+  const L2 = layerFromRef({ ref: 'layer-p15-korean', type: 'symbolHidePins' }, { 'layer-p15-korean': d }, { map });
+  layers.push(pins);
+  await Promise.resolve();
+  assert.deepEqual(map.layers.map((x) => x.id), ['layer-p15-burger']);
+  L2.destroy();
+  assert.deepEqual(map.layers.map((x) => x.id), ['layer-p15-burger', 'markers-glocal']);
+  // 지도 없이(시험·확대 창)도 멈추지 않음
+  layerFromRef({ ref: 'layer-p15-korean', type: 'symbolHidePins' }, { 'layer-p15-korean': d }, { map: null }).destroy();
+});

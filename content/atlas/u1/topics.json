@@ -1345,7 +1345,7 @@
    },
    {
     "ref": "layer-p15-korean",
-    "type": "symbol",
+    "type": "symbolHidePins",
     "legend": true,
     "group": "map",
     "labelSrc": {

@@ -42,6 +42,16 @@ export default function mount(root) {
     simId: 'atlas-u1-world', basemap, places, topics, charts, layers: layerData,
     centerLonOf: CENTER_LON_OF, baseColor: BASE_COLOR,
   });
+  // 처음 도법 = 로빈슨(U1-10 코디네이터 결정 — 8~15쪽 세계 지도는 모두 로빈슨 도법이고 사이드바 글도 「로빈슨 도법」, 엔진 기본은 밀러).
+  // mountAtlas 개발 매개변수 ?proj= 와 같은 호출. 개발 미리보기에서 ?proj= 를 주면(대조표 캡처의 둘째 도법) 그것을 따른다.
+  const devProj = import.meta.env?.DEV && new URLSearchParams(root.ownerDocument?.defaultView?.location?.search || '').get('proj');
+  if (!devProj) {
+    root.atlasMap.setProjection('robinson', { animate: false });
+    // 첫 주제의 처음 범위는 밀러에서 맞춘 것이라(setProjection 은 가운데·확대만 지킴) 로빈슨에서 다시 맞춤 — 묶음을 다시 올림(?proj= 로 연 것과 같은 화면)
+    const t = root.atlasTopic;
+    if (t?.groups?.length) t.showGroup(t.group ?? 0);
+    else if (t?.topic?.view?.bounds) root.atlasMap.fitBounds(t.topic.view.bounds);
+  }
   // 특별 보기(지구본·북극 중심·남극 중심) ↔ 평면 전환 페이드·「중심 경도」 숨김·「세계 전체 보기」(americasExtra.globeTools 대신 — U6-3b)
   const offView = viewTools(root.atlasMap, root.atlasUi.tools.el);
   const destroy = () => { offView(); atlas.destroy(); };

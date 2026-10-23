@@ -5730,9 +5730,12 @@
    ],
    "paintTool": [
     "topicView"
+   ],
+   "symbolHidePins": [
+    "symbol"
    ]
   },
-  "_layerTypeAs": "U1-8: 주제 레이어 type ↔ 레이어 자료 layerType 이 다른 것(build_content 검사 예외 — u5·u6 와 같은 키). 기지 기호 + 글자(8쪽 p08-stations)는 symbol 자료를 symbolLabels(polarExtra 가 지구본 뒷면 글자를 숨김)로, 대륙·대양 면 자료(p10-continents, layerType continents)는 10~11쪽 continentQuiz(맞히기 + 대양 단추 — U1-3e·3f)와 일반도 continentGlobes(대륙 단추 — U1-3f)로, 15쪽 백지도 보기 자료(p15-paint, layerType topicView)는 paintTool(세계 색칠하기 도구 — U1-3h, 같은 ref 의 topicView 를 따로 두지 않음)로 그린다. 레이어 make 는 ref 의 다른 키를 받지 못해 종류 이름이 동작을 고름."
+  "_layerTypeAs": "U1-8: 주제 레이어 type ↔ 레이어 자료 layerType 이 다른 것(build_content 검사 예외 — u5·u6 와 같은 키). 기지 기호 + 글자(8쪽 p08-stations)는 symbol 자료를 symbolLabels(polarExtra 가 지구본 뒷면 글자를 숨김)로, 대륙·대양 면 자료(p10-continents, layerType continents)는 10~11쪽 continentQuiz(맞히기 + 대양 단추 — U1-3e·3f)와 일반도 continentGlobes(대륙 단추 — U1-3f)로, 15쪽 백지도 보기 자료(p15-paint, layerType topicView)는 paintTool(세계 색칠하기 도구 — U1-3h, 같은 ref 의 topicView 를 따로 두지 않음)로 그린다. U1-10: 15쪽 한국어 점(p15-korean, layerType symbol)은 symbolHidePins(묶음이 지도에 있는 동안 주제 핀 — 햄버거 사진 핀 4 — 을 내림, worldExtra.js)로. 레이어 make 는 ref 의 다른 키를 받지 못해 종류 이름이 동작을 고름."
  },
  "insets": [],
  "_insets": "확대 창 — 필요하면 U1-4·U1-9(9쪽 태평양 섬나라·15쪽 한국어 점 겹침은 U1-9 캡처로 판단, Q14 기본값은 겹침 허용). 8쪽 유럽 삽입은 창을 띄우지 않고 일반도 바로가기(u6 Q3 기본값)."

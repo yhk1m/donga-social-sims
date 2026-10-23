@@ -333,7 +333,7 @@ class MapsU1(unittest.TestCase):
         for k in ('extraCountries', 'isoByLabel', 'regions', 'noCapital', 'joinLabels', 'cutIsos', 'capitalAlias', 'splitLabels'):
             self.assertNotIn(k, col)
         # U1-8: layerTypeAs 는 오세아니아 값이 아니라 이 단원 값(기지 symbolLabels + 대륙 맞히기·지구본 단추·색칠하기 도구)
-        self.assertEqual(c['content']['layerTypeAs'], {'symbolLabels': ['symbol'], 'continentQuiz': ['continents'], 'continentGlobes': ['continents'], 'paintTool': ['topicView']})
+        self.assertEqual(c['content']['layerTypeAs'], {'symbolLabels': ['symbol'], 'continentQuiz': ['continents'], 'continentGlobes': ['continents'], 'paintTool': ['topicView'], 'symbolHidePins': ['symbol']})
         # 공용 절은 u6 와 같은 값(복사): defaults·shapeControls 수치·글자 묶기 수치·기호 분류·사진 후보·그래프 기본값·바탕 지도 50m 층
         with open(os.path.join(HERE, '..', 'config', 'u6.json'), encoding='utf-8') as f: u6 = json.load(f)
         self.assertEqual(c['defaults'], u6['defaults'])
