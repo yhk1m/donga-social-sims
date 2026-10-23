@@ -221,9 +221,9 @@ $ATLAS_WORK/raw/ne-marine/                                                      
 
 **Files:** Create `scripts/atlas/config/u1.json`, `scripts/atlas/maps_u1.json`, `scripts/atlas/tests/test_maps_u1.py`; Modify `scripts/atlas/units.json`
 
-- [ ] **Step 1:** `units.json`에 `"u1": { "sim": "atlas-u1-world", "title": "Ⅰ. 세계화 시대, 지리의 힘", "pages": [8, 15], "config": "config/u1.json" }`(`thumbBounds`는 U1-10). 단원 표 차례는 u1 을 맨 앞에(파이프라인은 열쇠로 찾으므로 차례 무관 — 시험).
-- [ ] **Step 2:** `config/u1.json`은 **지금 u6 설정**(공개본 — places.ignore·styles·kinds·chain·overdraw 키, photos.candidate, charts, basemap 키)을 복사해 값만 바꾼다: `maps: "../maps_u1.json"`, `out: "sims/atlas-u1-world/data"`, `photos.outJson: content/atlas/u1/photos.json`, `photos.assetDir: docs/assets/atlas/u1`, `photos.assetPrefix: "u1/"`, 작업 파일 키 `units/u1/…`, 도장 `@unit/…`. 오세아니아 전용 값(`unitBoxes`·`simplifyByIso` 섬나라·`neBox` 27 상자·`overdraw` 지도·`addLabels`·`dropBoxes`·`extraNames`·`neAlias` 동명·극 지도 양식·색칠하기 `extraCountries`·`isoByLabel`)은 지우고 `_doc`에 까닭(U6-1 꼴). **`basemap`**: 10a 없음(설계 §7 — 세계 단원은 110m·50m, `unitBoxes` 없음 — U1-9 에서 9쪽 섬나라 확인 뒤 필요하면 태평양 상자 둘을 다시 넣는 판단), **`georef.families`**: u6 목록 그대로 — 지도 항목 `families`로 좁힘(8~11·13~15쪽 세계 = `['robinson']` 먼저, 14·15쪽 작은 세계 지도는 밀러·로빈슨·등장방형·메르카토르(어느 도법인지 U1-2 에서 판정), 8쪽 유럽 삽입 = `['conicConformal']`(가족 이름은 fitCore 이름으로)). `places.neBox` = 세계 하나 `[-180, -90, 180, 90]`(동명은 `neAlias` — U1-5).
-- [ ] **Step 3:** `python -I scripts/atlas/find_maps.py 8 15` + 쪽 렌더를 보며 `maps_u1.json`. kind 는 앞 단원 목록 + `general-spread|continents|routes|internet|mobile|covid|burger|korean|blank`.
+- [x] **Step 1:** `units.json`에 `"u1": { "sim": "atlas-u1-world", "title": "Ⅰ. 세계화 시대, 지리의 힘", "pages": [8, 15], "config": "config/u1.json" }`(`thumbBounds`는 U1-10). 단원 표 차례는 u1 을 맨 앞에(파이프라인은 열쇠로 찾으므로 차례 무관 — 시험).
+- [x] **Step 2:** `config/u1.json`은 **지금 u6 설정**(공개본 — places.ignore·styles·kinds·chain·overdraw 키, photos.candidate, charts, basemap 키)을 복사해 값만 바꾼다: `maps: "../maps_u1.json"`, `out: "sims/atlas-u1-world/data"`, `photos.outJson: content/atlas/u1/photos.json`, `photos.assetDir: docs/assets/atlas/u1`, `photos.assetPrefix: "u1/"`, 작업 파일 키 `units/u1/…`, 도장 `@unit/…`. 오세아니아 전용 값(`unitBoxes`·`simplifyByIso` 섬나라·`neBox` 27 상자·`overdraw` 지도·`addLabels`·`dropBoxes`·`extraNames`·`neAlias` 동명·극 지도 양식·색칠하기 `extraCountries`·`isoByLabel`)은 지우고 `_doc`에 까닭(U6-1 꼴). **`basemap`**: 10a 없음(설계 §7 — 세계 단원은 110m·50m, `unitBoxes` 없음 — U1-9 에서 9쪽 섬나라 확인 뒤 필요하면 태평양 상자 둘을 다시 넣는 판단), **`georef.families`**: u6 목록 그대로 — 지도 항목 `families`로 좁힘(8~11·13~15쪽 세계 = `['robinson']` 먼저, 14·15쪽 작은 세계 지도는 밀러·로빈슨·등장방형·메르카토르(어느 도법인지 U1-2 에서 판정), 8쪽 유럽 삽입 = `['conicConformal']`(가족 이름은 fitCore 이름으로)). `places.neBox` = 세계 하나 `[-180, -90, 180, 90]`(동명은 `neAlias` — U1-5).
+- [x] **Step 3:** `python -I scripts/atlas/find_maps.py 8 15` + 쪽 렌더를 보며 `maps_u1.json`. kind 는 앞 단원 목록 + `general-spread|continents|routes|internet|mobile|covid|burger|korean|blank`.
   - 지도 14:
 
     | id | kind | 지면 | 기준점 길 |
@@ -240,9 +240,9 @@ $ATLAS_WORK/raw/ne-marine/                                                      
     | `p15-burger` · `p15-korean` · `p15-blank` | burger · korean · blank | 태평양 중심 세계 셋(2,000km — 같은 바탕인지 확인) | 같음 — 둘은 `projectionFrom` |
 
   - 지도로 넣지 않는 것: 9·11쪽 지구본 그림 10(지구본 단추 그림 — U1-6 사진 파이프라인 `globe` 항목), 14쪽 「작아지는 지구」 지구본 그림(원본 쪽 부분 — Q11), 14쪽 삽화 3(원본 쪽 부분 — Q12), 15쪽 조사표·예시 기호 그림.
-- [ ] **Step 4: 개수 대조** — `python -I -c "import json;print(len(json.load(open('scripts/atlas/maps_u1.json',encoding='utf-8'))))"` = 14(설계 §5.5 어림 14 와 같음 — 다르면 까닭을 「실행 중 결정」에).
-- [ ] **Step 5: 테스트** `scripts/atlas/tests/test_maps_u1.py`(test_maps_u6.py 꼴): id 유일·쪽 8~15·bbox 가 쪽 안·kind 목록·`georef:false` 아닌 지도는 `graticuleLabels` 또는 `shapes`/`controls`·`projectionFrom`/`fitFrom`/`spreadOf`가 목록 안·`families` 이름이 알려진 도법·두 쪽 지도 짝(`p09-world.spreadOf = p08-world`, `p11-continents.spreadOf = p10-continents`)·units.json u1 줄·설정 경로 u1·오세아니아 전용 키 없음.
-- [ ] **Step 6:** 커밋(`scripts/atlas/units.json scripts/atlas/config/u1.json scripts/atlas/maps_u1.json scripts/atlas/tests/test_maps_u1.py`). units.json 은 조각에 안 들어가지만 회귀 관문(`regress.sh u1-1`) — u6 의 U6-1 처럼 흔들림이면 그 단원만 다시.
+- [x] **Step 4: 개수 대조** — `python -I -c "import json;print(len(json.load(open('scripts/atlas/maps_u1.json',encoding='utf-8'))))"` = 14(설계 §5.5 어림 14 와 같음 — 다르면 까닭을 「실행 중 결정」에).
+- [x] **Step 5: 테스트** `scripts/atlas/tests/test_maps_u1.py`(test_maps_u6.py 꼴): id 유일·쪽 8~15·bbox 가 쪽 안·kind 목록·`georef:false` 아닌 지도는 `graticuleLabels` 또는 `shapes`/`controls`·`projectionFrom`/`fitFrom`/`spreadOf`가 목록 안·`families` 이름이 알려진 도법·두 쪽 지도 짝(`p09-world.spreadOf = p08-world`, `p11-continents.spreadOf = p10-continents`)·units.json u1 줄·설정 경로 u1·오세아니아 전용 키 없음.
+- [x] **Step 6:** 커밋(`scripts/atlas/units.json scripts/atlas/config/u1.json scripts/atlas/maps_u1.json scripts/atlas/tests/test_maps_u1.py`). units.json 은 조각에 안 들어가지만 회귀 관문(`regress.sh u1-1`) — u6 의 U6-1 처럼 흔들림이면 그 단원만 다시.
 
 ### Task U1-2: 기준점과 경위도 맞추기
 
@@ -552,3 +552,23 @@ test('주제도 활동(교사 §8 Q4): 문항 카드 + 원본 쪽 + 색칠하기
 - 안정 증명: 고친 뒤 u6 **전체 캡처 3번 연속 73장 모두 화소 같음**(새 user-data-dir, heavy.lock). 옛 기준선과는 두 장면이 늘 같은 값으로 다름 — `antarctic-polar-back` 102화소(최대 ±4)·`antarctic-mount-menzies` 4화소(±3): 옛 기준선이 그 장면을 낡은 경로 상태로 찍었던 것 → `regress_unit --unit u6 --baseline` 으로 다시 찍고 `--check` 회귀 없음.
 - **남은 것**: 공유 `scripts/atlas/compare_shots.mjs` 를 고쳤으므로(키 없으면 같은 동작) u2~u5 재확인 `bash $ATLAS_WORK/units/u1/regress.sh g0d` — 이번 세션의 `regress.sh g0c` 는 u3 캡처 중 시스템 메모리 부족으로 멈춤(결과 없음, 로그 끝 `RERUN-NEEDED`). 코디네이터가 메모리 여유를 보고 돌린다.
 - `npm test`: **Python 441 · Node 824**(820 + captureOpts 4) 통과(`units/u1/npmtest-g0c.log`).
+
+### U1-1 단원 설정 뼈대와 지도 목록 (2026-10-23)
+
+- **지도 14 = 계획 표 그대로**(설계 §5.5 어림 14). id 는 쪽 두 자리(`p08-world` … — u6 시험의 `p{page}-` 대신 `p{page:02d}-`). 새 kind 9(`general-spread|continents|routes|internet|mobile|covid|burger|korean|blank`) — 파이프라인은 kind 를 읽지 않음(조사).
+- **틀·덮개 실측**(쪽 클립 + 글자 상자 + 200dpi 렌더 확인 그림 `scratchpad`): 8쪽 [23.0, 0, 773.9, 722.8](제목 풍선 cartouche, 유럽 원 insetBbox + excludeBoxes 원+2pt), 9쪽 [5.7, 0, 626, 722.8](오른쪽 지구본 열 x ≥ 630 은 틀 끝으로 잘라 뺌, 높이·깊이 범례 legend), 유럽 삽입 = 원 클립 외접 상자(네 모서리 본 지도 — U1-2 에서 교차점 거름 주의), 10쪽 [0, 0, 773.9, 722.8](개관 글 상자), 11쪽 [5.7, 0, 626, 722.8](도법·축척 글자), 12쪽 = 래스터 클립(활동하기 1 — 「1 세계의 지형」 머리 탭은 덮개 키 부족으로 덮지 않음), 13쪽 = 쪽 클립에서 양옆 기후 그래프 열·활동하기 2 를 뺀 타원 둘레 [125, 104, 664, 380](범례 legend), 14쪽 셋 = 클립에서 위 제목·아래 설명 글을 뺌(범례 둘), 코로나 = 작은 클립 [209.9, 567, 378.4, 652.1](범례 견본 색 = 육지 색이라 legend 필수), 15쪽 햄버거 = 덮개 키 넷 모두(범례·라이스버거·스시버거(뉴기니섬 위 186.5 에서 자름)·아라비아 버거 사진).
+- **같은 바탕 그림 되풀이 발견(U1-1 조사 — 계획 표의 「쪽 이동량 확인」 실측)** → 맞추지 않고 빌림:
+  | 지도 | 길 | 근거 |
+  |---|---|---|
+  | `p10-continents` | `fitFrom p08-world (0.90, 1.28)` | 호수 채움 14 크기 같음, 이동 dx 0.855~0.948 · dy 1.236~1.473(중앙 0.897 · 1.278) |
+  | `p11-continents` | `spreadOf p10-continents`(맞추는 길은 U1-3a) | 9쪽 대비 호수 13 이동 (2.558, 1.283) — **10쪽(0.897)과 dx 1.66pt 다름 → 10·11쪽 가름선 겹침 폭이 8·9쪽과 다름, U1-3a Step 1 에서 잼**. fitFrom p09-world 를 적지 않은 까닭: 9쪽이 spreadOf 로 8쪽 fit 을 빌리게 되면 georef-cli 의 「빌린 지도를 또 빌림」 오류 |
+  | `p14-internet`·`p14-mobile` | `fitFrom p14-routes (0, 200.24)`·`(0, 405.94)` | 국경 획 360 중 큰 것 8 크기 비 1.000, 이동 같음 |
+  | `p15-korean` | `fitFrom p15-burger (−0.02, 226.49)` | 육지 채움 합 큰 도형 넷 넓이까지 같음 |
+  | `p15-blank` | `projectionFrom p15-burger` + 자기 shapes | 국경 획 크기 비 0.910(축소본 — 같은 도법·중심) |
+  | `p14-covid` | 자기 shapes(안 되면 projectionFrom p14-routes — 국경 획 362 ≈ 360) | — |
+- **처음 식 씨앗**(벡터 넷 — 항공망·코로나·햄버거·백지도): 육지 채움 합의 큰 도형을 넓이 차례(오스트레일리아 > 뉴기니섬 > 보르네오섬 > 마다가스카르섬 — 실제 넓이 차례와 같음)로 골라 씨앗 4개씩. `land_shapes.py --unit u1` 로 확인 — **16개 모두 육지 도형 안·잘림 아님**(작업 폴더 `vec/p14-routes·p14-covid·p15-burger·p15-blank.shapes.json` 생김, U1-2 가 다시 만듦). 뉴질랜드(0.3pt 닫기로 두 섬이 붙음)·그린란드(틀 위 끝)는 뺌. 12쪽 래스터는 처음 식을 U1-2 로 미룸(`_init` — 계획 그대로 `{fromMap: p08-world, pts: 곶}`).
+- **config/u1.json**: 지금 u6 설정 복사 → 경로·쪽·주제 8(Q1 A)을 u1 로, 오세아니아 전용 값 지움(지도별 양식·무시 규칙 = `maps` 키 있는 ignore 15·styles 10 — 공용 규칙 ignore 14·styles 14 는 그대로, mergePriority·addLabels·dropBoxes·neAlias·relocate·indexExclude·extraNames 비움·layerTypeAs·색칠하기 extraCountries/isoByLabel·photos/charts items·expect 실측값). 정한 것: ① `basemap.unitBoxes: []` + 층 110·50 만(10a 없음, 설계 §7) — **키는 지우지 않음**(build_basemap.mjs 가 `cfg.unitBoxes.map` 을 늘 부름), ② `places.neBox` 세계 하나, `places.overdraw {maps: []}`(키는 두고 지도 없음 — places.py 옛 길), ③ `content.coloring` 절은 뼈대로 남김(page 10 · map p10-continents) — **build_content.mjs 가 coloringOut 을 늘 읽고 regress_unit 이 content.labels 를 요구**하므로, 10·11쪽은 색칠하기 퀴즈가 아니라 대륙·대양 맞히기(Q6 — 레이어)라 U1-3c·U1-8 에서 이 절을 대륙 나라 목록(Q8 names) 원천으로 쓸지·build_content 를 키로 막을지 정함, ④ `places.index.checkPages [8, 9]` — refRe 가 쪽 두 자리라 8·9쪽 찾아보기 꼴(「08A1」/「8A1」)은 U1-5 에서 확인.
+- **units.json**: u1 줄을 맨 앞에. 기본 단원은 그대로 u2(`atlas_common.unit` 열쇠로 찾음 — 시험 `test_unit_resolves_by_key`), 조각에는 안 들어감(u2 조각 2,112,672 B 그대로).
+- 발견(U1-8 몫): 14쪽 인터넷·이동 전화 출처 글은 지면에 「(국가데이터처, 2020)」 — 계획 쪽 목록 조사의 「국제 전기 통신 연합 2020」과 다름(지면 글자 그대로 씀).
+- 시험 `scripts/atlas/tests/test_maps_u1.py` 19개. `npm test` **Python 460 · Node 824** 통과(`units/u1/npmtest-u1-1.log`). 공유 코드 고침 없음(설정·지도 목록·시험만).
+- 회귀 관문(`regress.sh u1-1`): u2·u3·u4 회귀 없음(해시 다른 파일 1 = coloring 도장만 · 캡처 41/31/42 화소 차 0, `units/u1/regress-u1-1.log`). 돌리개가 Claude Code 메모리 부족 정리로 감시가 끊김 — u5·u6 은 남은 bash 가 계속 돌던 중이라 결과는 로그 끝을 코디네이터가 확인(공유 코드 고침이 없어 회귀 가능성 없음, units.json 은 조각에 안 들어감 — u2~u5 조각 크기 G0 와 같음).
