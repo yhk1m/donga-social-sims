@@ -19,6 +19,7 @@ import { legendItems } from './layerStyle.js';
 import { countryLevel } from './countryClass.js';
 import { createLegendState } from './legendState.js';
 import { metaOf, LAYER_Z } from './layerCommon.js';
+import { installWorldRoutes } from './worldRoutes.js';   // 3g 대권 노선 routeFan(따로 된 모듈)
 import { installWorldQuiz } from './worldQuiz.js';     // 3e 대륙·대양 맞히기 continentQuiz(따로 된 모듈)
 
 /** 대륙 면 흐림(고르지 않은 대륙 — 9쪽 지구본 그림의 「그 대륙만 초록」), 대양 강조 색·불투명도 */
@@ -146,5 +147,6 @@ export function continentsLayer(id, data, { countryFeatures = null, legend = nul
 export function installWorldExtras() {
   if (!PROJECTIONS.polarN) throw new Error('installWorldExtras: installAmericasExtras() → installPolarExtras() 를 먼저');
   registerLayerType('continents', (id, d, ctx) => continentsLayer(id, d, ctx));
+  installWorldRoutes();
   installWorldQuiz(continentsLayer);
 }

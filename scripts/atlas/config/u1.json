@@ -28,6 +28,37 @@
   "minArea": 0.15
  },
  "layers": {
+  "p14-routes": {
+   "_doc": "U1-3g 대권 노선(교사 Q10 A) — scripts/atlas/route_fan.py. 14쪽 「우리나라의 항공망」 빨간 도시 점(벡터 원 #ed1c24 지름 약 1.45pt)을 fit 으로 되돌려 인천 → 도시 대권(앱 worldRoutes.routeFanLayer). 교과서 분홍 곡선(#f172ac 0.25pt)은 모양을 쓰지 않고 출발점(선 끝이 모이는 자리)·노선 수 대조에만.",
+   "type": "routeFan",
+   "map": "p14-routes",
+   "title": "우리나라의 항공망",
+   "origin": [
+    126.4407,
+    37.4602
+   ],
+   "_origin": "인천 국제공항 실제 자리(활주로 가운데 어림). 교과서 선이 모이는 지면 점을 fit 으로 되돌리면 (126.47, 37.16) — 위도 0.3° 차는 fit rms 0.4pt(약 0.3°) 안이지만 대권의 출발점은 공항 자리가 맞으므로 손 값.",
+   "dots": {
+    "fill": "#ed1c24",
+    "maxPt": 2.5,
+    "dupPt": 0.3,
+    "originPt": 2.0
+   },
+   "lines": {
+    "stroke": "#f172ac",
+    "tolPt": 1.0
+   },
+   "legend": [
+    {
+     "cls": "route",
+     "label": "인천 국제공항 직항 노선",
+     "color": "#f072ab",
+     "kind": "line"
+    }
+   ],
+   "width": 0.6,
+   "digits": 2
+  },
   "p10-continents": {
    "_doc": "U1-3c·3d 대륙·대양 면(교사 Q5 A·Q7 A) — scripts/atlas/continent_layers.py. 10·11쪽 두 쪽 지도의 대륙별 칠을 나라(Natural Earth 50m 면 하나 = 조각)마다 화소 표본으로 분류, 자홍 점선으로 나라를 쪼갬. domain = 표를 받을 수 있는 대륙을 거르는 거친 지역 상자(겹치는 곳은 색이 정함 — 까닭은 continent_layers.py 머리).",
    "type": "continents",

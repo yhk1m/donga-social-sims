@@ -786,7 +786,7 @@ function main(argv) {
   const cc = todo.filter((l) => l.type === 'countryClass' || l.type === 'regionClass');   // regionClass = 하위 행정 구역판(U5-3d, 설정 units)
   const special = (l) => l.type === 'chartSymbols' || l.source === 'ne-disputed' || l.type === 'unitSymbols' || l.type === 'compareOutline' || l.type === 'pathFlow'
     || l.type === 'topicView' || l.type === 'sectorLines'   // U6-4: 주제 보기·남극 영유권 경계선(polar_layers.mjs)
-    || l.type === 'continents';   // U1-3c·3d: 대륙·대양 면(continent_layers.py — 세계화 설정에만 있음)
+    || l.type === 'continents' || l.type === 'routeFan';   // U1-3c·3d 대륙·대양 면(continent_layers.py)·U1-3g 대권 노선(route_fan.py) — 세계화 설정에만 있음
   const geo = todo.filter((l) => l.type !== 'countryClass' && l.type !== 'regionClass' && !special(l));
   const byId = new Map();
   const units = todo.filter((l) => l.type === 'unitSymbols' || l.type === 'pathFlow');   // 네모 단위 기호(U5-3f)·경로 화살표(U5-4): PDF 에서는 features.py 가 뽑고, 경위도(주 붙이기)는 여기서
@@ -815,6 +815,11 @@ function main(argv) {
       process.stdout.write(run([path.join(here, 'continent_layers.py'), l.id, ...(l.oceans ? ['--oceans'] : [])]));
       const out = JSON.parse(fs.readFileSync(`${WORK}/geo/${l.id}.continents.json`, 'utf8'));
       byId.set(l.id, writeLayer(l, out, { legend: out.properties.legend.length, classes: out.properties.legend.length + (out.properties.oceans || []).length, features: out.features.length }));
+    } else if (l.type === 'routeFan') {   // 14쪽 빨간 도시 점 → 경위도(route_fan.py 가 레이어 자료를 그대로 씀)
+      loadFit(l.map);
+      process.stdout.write(run([path.join(here, 'route_fan.py'), l.id]));
+      const out = JSON.parse(fs.readFileSync(`${WORK}/geo/${l.id}.routes.json`, 'utf8'));
+      byId.set(l.id, writeLayer(l, out, { legend: 1, classes: out.features.length, features: out.features.reduce((n, f) => n + f.geometry.coordinates.length, 0) }));
     } else if (l.type === 'topicView') {
       byId.set(l.id, writeLayer(l, topicViewLayerJson(l, maps[l.map])));
     } else if (l.type === 'sectorLines') {
