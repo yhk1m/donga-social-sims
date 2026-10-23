@@ -14,6 +14,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, statS
 import { join, resolve } from 'node:path';
 import { createServer } from 'vite';
 import { resolveUnit, stripUnitArgs } from './unit.mjs';
+import { captureOptsOf, freshSvgLayoutExpr } from './capture_opts.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..', '..');
 const WORK = process.env.ATLAS_WORK || 'C:/Users/Public/atlas-work';
@@ -23,6 +24,8 @@ const CMP = existsSync(CMP_FILE) ? JSON.parse(readFileSync(CMP_FILE, 'utf8')) : 
 const OUT = UNIT.workFile(CMP.shotsDir || 'shots/compare');
 const PROJ = { default: CMP.projections?.default || 'robinson', extra: { ...CMP.projections?.extra } };
 const EXTRA = CMP.extraScenes || {};
+// 단원 설정 freshSvgLayout(u6 — U1-G0): 찍기 직전 non-scaling-stroke 경로를 Chrome 이 새로 계산하게(이력 의존 몇 화소 — capture_opts.mjs). 없으면 그대로
+const OPTS = captureOptsOf(CMP);
 const CHROME = process.env.CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const PAGES = 'https://yhk1m.github.io/donga-social-sims/assets/';
 const ASSETS = join(ROOT, 'docs', 'assets');
@@ -109,6 +112,7 @@ const scrollTo = (sel, i = 0) => evaluate(`(()=>{const e=[...${R}.querySelectorA
 const manifest = [];
 async function take(name, info) {
   await sleep(300);
+  if (OPTS.freshSvgLayout) await evaluate(freshSvgLayoutExpr(R));
   await shot(name);
   const stats = await evaluate(STATS);
   manifest.push({ name, ...info, stats });

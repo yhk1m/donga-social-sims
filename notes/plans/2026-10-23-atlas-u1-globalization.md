@@ -40,7 +40,22 @@
 - **Q15 15쪽 주제도 활동 「세계 색칠하기 도구」**: 기본값: **백지도의 모든 나라를 팔레트 6색으로 칠하기 + 지우개 + 모두 지우기**(상태는 메모리만 — 저장 없음, 조사표·제작 순서 = 문항 카드 + 원본 쪽 부분). 선택지: A 기본 / B A + 상품 기호 찍기(운동화·볼펜 등 선 아이콘 6, 이모지 아님) / C 문항 카드 + 원본 쪽만(도구 없음 — 설계 §8 Q4 답과 다름).
 
 **교사 답:**
-- (답이 오면 여기에 Q 번호별로 적고, 기본값과 다르면 바뀌는 작업을 함께 적는다.)
+2026-10-23 교사 답 — **Q1~Q15 모두 기본값(A)**. 기본값과 다른 답이 없으므로 다시 할 작업 없음, **U1-D(내려받기)는 건너뜀**(Q7 A). Q16 은 계획에 없음.
+- Q1 A — 주제 8(세계 일반도 · 대륙과 대양 · 지형 · 기후 · 세계의 연결 · 공간적 상호 작용 · 세계화와 지역화 · 주제도 활동).
+- Q2 A — 모든 주제를 태평양 중심(중심 경도 150)으로 연다.
+- Q3 A — 도법 상자 8개(평면 5 + 지구본 + 북극 중심 + 남극 중심).
+- Q4 A — 대륙·대양 지구본 단추 = 지구본으로 바꿔 그곳을 가운데로 돌리고 강조(「평면 지도로」 되돌림).
+- Q5 A — 교과서 칠 그대로(러시아·카자흐스탄은 우랄 점선으로 나눈 조각 면, 그린란드는 대륙 강조 밖).
+- Q6 A — 초성 꼬리표 12 → 보기 4개 중 고르기.
+- Q7 A — 대양 단순 경계(파이프라인이 Natural Earth 50m 육지 밖 면으로 만듦, 내려받기 없음 → U1-D 건너뜀).
+- Q8 A — 대륙을 강조하면 사이드바에 그 대륙 나라 이름 목록(가나다순, 누르면 날아감).
+- Q9 A — 앞 단원과 같은 핀(번호 숨김 + 번호 모두 보기, `pinNumbers: 'hidden'`).
+- Q10 A — 인천 → 교과서 도시 점 대권 곡선(한 색·한 굵기, 화살촉 없음).
+- Q11 A — 원본 쪽 부분(지구본 그림) + 인물 사진 3 카드 + 횡단 시간 표 카드.
+- Q12 A — 원본 쪽 부분 + 설명 글.
+- Q13 A — 햄버거 사진 카드 + 그 나라 자리 핀(번호 보임).
+- Q14 A — 한국어 점 교과서 자리 그대로 세 종류 기호, 겹침 허용.
+- Q15 A — 세계 색칠하기 도구: 팔레트 6색 + 지우개 + 모두 지우기(메모리만).
 
 ---
 
@@ -174,10 +189,10 @@ $ATLAS_WORK/raw/ne-marine/                                                      
 
 까닭: u6 이 공개되었고(802c2cc) U6-11 Step 4 에서 u6 기준선을 찍었다(`units/u6/baseline` — 해시 190 · 캡처 73 · 0/72/211/86 · 1,416,135 B). u2~u5 기준선은 U6-G0 에서 다시 찍은 그대로. 이 단원은 새 기준선을 찍지 않고 **다섯 다 지금 맞는지만** 확인한다.
 
-- [ ] **Step 1: 낡은 시험** — `tests/atlas/hub.test.mjs:52~61` 「공개 전 registry 단원도 준비 중」은 `atlas-u6-oceania-polar`를 공개 전 예로 쓴다(지금 실패 — `docs/versions.json`에 u6 v1). 예를 **`atlas-u1-world`(order 1, page 8, unit 「Ⅰ. 세계화 시대, 지리의 힘」, title 「사회과부도 세계화 시대, 지리의 힘」)**로 바꾼다(검사 뜻 그대로 — `ATLAS_PLAN` u1 [8, 15], `find((u) => u.order === 1)`). `node --test tests/atlas/hub.test.mjs` 통과.
-- [ ] **Step 2: 돌리개** — `$ATLAS_WORK/units/u1/regress.sh <tag>`(조사 때 만들어 둠 — u6 regress.sh 꼴, 단원 목록에 `"u6 atlas-u6-oceania-polar"`, 스스로 `heavy.lock`, 로그 `units/u1/regress-<tag>.log`). `bash -n` 통과 확인.
-- [ ] **Step 3: 다섯 다 확인** — `bash $ATLAS_WORK/units/u1/regress.sh g0`(약 40분 — 이 동안 다른 무거운 일 금지). 기대: 다섯 모두 「다른 파일 0(또는 도장만 — u2~u5 coloring 1)」·화소 차 0·대조표 수 위 표 그대로·조각 ±0.02% 안(u2~u5 는 기준선보다 +313~317 B — U6-3g·U6-9·U6-10t 공유 몫, u6 은 +0). `[경고]`면 그 단원을 다시 찍고 check. **u6 은 처음 `--check`** — 결정성(캡처를 한 번 더 → 같은 결과)도 본다. 흔들림(u4 자원 잠재력·u5 tnc)은 그 단원만 다시.
-- [ ] **Step 4:** `npm test` 수를 적고(heavy.lock) 커밋(`tests/atlas/hub.test.mjs`). 「실행 중 결정」에 다섯의 check 결과 한 줄씩.
+- [x] **Step 1: 낡은 시험** — `tests/atlas/hub.test.mjs:52~61` 「공개 전 registry 단원도 준비 중」은 `atlas-u6-oceania-polar`를 공개 전 예로 쓴다(지금 실패 — `docs/versions.json`에 u6 v1). 예를 **`atlas-u1-world`(order 1, page 8, unit 「Ⅰ. 세계화 시대, 지리의 힘」, title 「사회과부도 세계화 시대, 지리의 힘」)**로 바꾼다(검사 뜻 그대로 — `ATLAS_PLAN` u1 [8, 15], `find((u) => u.order === 1)`). `node --test tests/atlas/hub.test.mjs` 통과.
+- [x] **Step 2: 돌리개** — `$ATLAS_WORK/units/u1/regress.sh <tag>`(조사 때 만들어 둠 — u6 regress.sh 꼴, 단원 목록에 `"u6 atlas-u6-oceania-polar"`, 스스로 `heavy.lock`, 로그 `units/u1/regress-<tag>.log`). `bash -n` 통과 확인.
+- [ ] **Step 3: 다섯 다 확인**(u2~u5 회귀 없음 · u6 흔들림 고침·기준선 다시 찍음 — 남은 것: 공유 `compare_shots.mjs` 를 고친 뒤 u2~u5 재확인 `regress.sh g0d`, 아래 「실행 중 결정」 U1-G0) — `bash $ATLAS_WORK/units/u1/regress.sh g0`(약 40분 — 이 동안 다른 무거운 일 금지). 기대: 다섯 모두 「다른 파일 0(또는 도장만 — u2~u5 coloring 1)」·화소 차 0·대조표 수 위 표 그대로·조각 ±0.02% 안(u2~u5 는 기준선보다 +313~317 B — U6-3g·U6-9·U6-10t 공유 몫, u6 은 +0). `[경고]`면 그 단원을 다시 찍고 check. **u6 은 처음 `--check`** — 결정성(캡처를 한 번 더 → 같은 결과)도 본다. 흔들림(u4 자원 잠재력·u5 tnc)은 그 단원만 다시.
+- [x] **Step 4:** `npm test` 수를 적고(heavy.lock) 커밋(`tests/atlas/hub.test.mjs`). 「실행 중 결정」에 다섯의 check 결과 한 줄씩.
 
 ---
 
@@ -517,3 +532,23 @@ test('주제도 활동(교사 §8 Q4): 문항 카드 + 원본 쪽 + 색칠하기
 - U1-10 승인 대기 동안 3단계(Ⅶ~Ⅻ 대한민국·지역) 설계를 시작해도 된다(파일이 겹치지 않음). 엔진을 바꾸면 u1~u6 의 `regress_unit --check`로 화소 비교 — u1 도 공개 뒤 `--unit u1 --baseline`(U1-11 Step 5).
 
 ## 실행 중 결정
+
+### U1-G0 기준선 확인 (2026-10-23)
+
+**출발 표**(atlas-u1 = 94f3b64 + 이 커밋, 조각은 `npm run embed` 로 다시 만든 것 — u6 은 앱 코드를 고치지 않아 공개 v1 과 같은 바이트):
+
+| 단원 | 조각 sha256 앞 16 | 조각 B | check 결과 | 로그 |
+|---|---|---|---|---|
+| u2 | 6e544ee5cc6772b5 | 2,112,672 | 회귀 없음(해시 다른 파일 1 = coloring 도장만) | `units/u1/regress-g0.log` |
+| u3 | 6dbef72529b93d77 | 1,472,288 | 회귀 없음(도장만 1) | `regress-g0.log` |
+| u4 | 8c087c3f121a4a3d | 1,595,445 | 회귀 없음(도장만 1) | `regress-g0.log` |
+| u5 | 5a8f03165680d7cd | 1,666,975 | 회귀 없음(혼자 다시 — 해시 176 중 도장만 1 · 캡처 58 화소 차 0 · 0/48/150/71 · +0.019%) | `regress-g0b.log` |
+| u6 | f306c378e5e2adc4 | 1,416,135 | 흔들림 → 고침 → **기준선 다시 찍음**, 새 기준선에 회귀 없음(해시 190 다름 0 · 캡처 73 화소 차 0 · 0/72/211/86 · +0.000%) | `regress-g0c-u6.log` |
+
+**u6 캡처 흔들림 — 원인과 고침:**
+- 증상: u6 조각 sha·해시 190 모두 기준선과 같은데 실행마다 다른 장면에서 6~8화소(남극 우리나라 기지 붉은 점 가장자리 — `antarcticResearch-g1`·`-legend-uk` [751,124,755,133], `antarctic-g0`·`-legend-shelf` [416,485,422,488]·[444,482,447,489], `antarctic-mount-menzies` 1~5화소). 값 차는 ±1~3(안티에일리어싱 가장자리). `--only antarctic` 캡처 네 번마다 다른 조합으로 재현, 한 장면만 새로 열어 찍으면(진단 도구) 네 번 모두 기준선과 같음 → 앞 장면 이력에 기댐.
+- 진단(장면마다 캔버스 화소·SVG outerHTML·화면 CTM·계산 style 을 함께 저장): 다른 실행끼리 **캔버스 화소·SVG 마크업·`getScreenCTM`·stroke 계산값·스크롤·visualViewport 가 모두 같은데** 화면만 다름. 캔버스를 숨긴 SVG 만의 화면에서도 같은 화소가 다름 → SVG 쪽. 1.5초 뒤 다시 찍기·`visibility` 로 다시 그리기로는 그대로, `--disable-gpu-rasterization`(소프트웨어 래스터)으로도 그대로 → 래스터 캐시가 아님. **`vector-effect` 를 none 으로 껐다 켜기(또는 SVG `display` 끄고 켜기)로 다시 계산하면 네 번 모두 같은 화면**(두 방법의 결과도 서로 같음). 기호 `.at-sym-shape`(layers.js symbolLayer — `vector-effect: non-scaling-stroke`, `translate() scale(5~6)`)의 non-scaling-stroke 경로를 Chrome(Blink)이 앞 화면(지도 움직임 중간 프레임) 값으로 둔 채 그리는 일이 있다 — 앱 자료가 아닌 브라우저 내부 캐시의 이력 의존.
+- 고침(화소 허용치 없음): 단원 대조표 설정 **`freshSvgLayout: true`**(u6.compare.json 만) → `compare_shots.mjs` 가 장면마다 찍기 직전 `capture_opts.mjs freshSvgLayoutExpr` 로 SVG 의 non-scaling-stroke 요소를 none → 원래 값으로 바꾸고 두 프레임 기다림(새로 연 쪽과 같은 화면). 키가 없으면 옛 길 — u2~u5 는 키 없음(시험 `tests/atlas/captureOpts.test.mjs` 가 지킴). 앱 코드(`src/atlas/*`)·조각은 그대로라 공개 u6 v1 과 다음 판 사이 차이 없음. 처음 시도한 `chromeFlags`(소프트웨어 래스터)는 효과가 없어 버림.
+- 안정 증명: 고친 뒤 u6 **전체 캡처 3번 연속 73장 모두 화소 같음**(새 user-data-dir, heavy.lock). 옛 기준선과는 두 장면이 늘 같은 값으로 다름 — `antarctic-polar-back` 102화소(최대 ±4)·`antarctic-mount-menzies` 4화소(±3): 옛 기준선이 그 장면을 낡은 경로 상태로 찍었던 것 → `regress_unit --unit u6 --baseline` 으로 다시 찍고 `--check` 회귀 없음.
+- **남은 것**: 공유 `scripts/atlas/compare_shots.mjs` 를 고쳤으므로(키 없으면 같은 동작) u2~u5 재확인 `bash $ATLAS_WORK/units/u1/regress.sh g0d` — 이번 세션의 `regress.sh g0c` 는 u3 캡처 중 시스템 메모리 부족으로 멈춤(결과 없음, 로그 끝 `RERUN-NEEDED`). 코디네이터가 메모리 여유를 보고 돌린다.
+- `npm test`: **Python 441 · Node 824**(820 + captureOpts 4) 통과(`units/u1/npmtest-g0c.log`).
