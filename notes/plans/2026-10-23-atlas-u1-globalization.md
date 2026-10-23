@@ -271,7 +271,7 @@ $ATLAS_WORK/raw/ne-marine/                                                      
   - Step 2(맞추기) **— 완료(2026-10-23, 따로 맞추면 중심 경도가 갈려 묶어 맞춤 — georef-cli + projection_from.planSpread·spreadControls·spreadFit·spreadFitStale, build_layers 낡음 검사, u2~u6 fit 90개 바이트 같음)**: U1-2 Step 3 결과가 어긋나면 maps 항목 `spreadOf: <왼쪽 지도>` + `offsetPt: [dx, dy]` → `georef.mjs`가 두 쪽 기준점을 **한 좌표계(오른쪽 쪽 x + dx)로 모아 한 번 맞추고**, 오른쪽 지도 fit = 왼쪽 fit + 쪽 이동량(이미 있는 `fitFrom` 길 — U5-2). 키가 없으면 옛 길(u2~u6 fit 바이트 같음 시험 — U6-3a 꼴 임시 ATLAS_WORK). georef.mjs = 도장 입력 → u2~u6 coloring 도장 줄만(U6-3a 와 같음).
   - Step 3(지명·레이어): 가름선 겹침 띠의 **잘린 글자 사본**(8쪽 「나」 = 9쪽 「나우루」의 앞 토막)을 places 가 하나로 — 새 키 `places.spread {pairs: [[p08-world, p09-world, dx]], bandPt}`(있을 때만): 오른쪽 쪽 글자를 왼쪽 좌표로 옮겨 같은 글꼴·크기·y 0.5pt 안에서 한쪽이 다른 쪽의 앞/뒤 토막이면 긴 쪽만 남김, 쪽 끝에서 잘린 글자(쪽 상자 밖으로 나간 bbox)는 버림. 레이어는 이미 있는 「여러 지도 한 레이어」(레이어 설정 `maps: [p08-world, p09-world]` — U3·U5)로 합치고 띠 안 겹친 선·면은 한쪽만(겹침 띠를 오른쪽 지도에서 `excludeBoxes`). u2~u6 places.json 바이트 같음 시험.
   - 시험: Python(합성 두 쪽 — 토막 글자 둘 → 하나, 띠 밖 같은 이름 둘은 그대로, 키 없으면 옛 출력), Node(`georef.test` — 합성 로빈슨 지도를 두 쪽으로 자른 기준점(겹침 12pt) → 묶어 맞추면 두 쪽 fit 이 같은 매개변수·가름선 어긋남 0.05pt 안, 따로 맞춘 것보다 좋음).
-- [ ] **3b 태평양 중심·특별 보기 재사용 확인** (Q2·Q3 — 확인만):
+- [x] **3b 태평양 중심·특별 보기 재사용 확인** (Q2·Q3 — 확인만) **— 「확인만」(2026-10-23, 엔진 고침 0 — 「실행 중 결정」 U1-3b·3i, 단 10a 없는 바탕은 u1 main 한 줄 필요)**:
   - 임시 틀(u6 자료 + installAmericasExtras·installPolarExtras + 시험 세계 바탕 지도)로: topicView centerLon 150 이 로빈슨·밀러·구드·이퀄어스에서 날짜변경선 이음매 없이 열리고 되돌아가는지, `centerLonOf` 150, 도법 상자 옵션 8, viewTools 지구본 ↔ 평면, 극 → 평면 띠. 10a 없는 바탕 지도에서 9쪽 태평양 섬나라(50m 한 조각씩)가 보이는지. 엔진 고침이 없으면 「확인만」(그림 `units/u1/u1-3b/*.png`).
 - [ ] **3c 대륙 면 — 파이프라인 `continent_layers.py` + 강조 레이어 `registerLayerType('continents')`** (Q4·Q5·Q6·Q8):
   - 파이프라인(u1 전용 새 파일 — 도장 입력 아님): ① 10·11쪽 대륙색 7(+ 회색 = 없음)을 `countryClass` 길로 나라마다 분류(래스터 화소 표본 다수결 — 종이 무늬라 Lab ΔE 문턱을 실측, `countryOverrides` 까닭 필수 — 작은 나라·속령은 2,000dpi 확대) → `{iso: continent}`. ② **쪼갠 나라**(Q5 A): 10쪽 자홍 점선(우랄–우랄강–카스피해–캅카스–보스포루스)을 `stroke_flows`/`line_chains` 로 뽑아 fit 으로 되돌린 선으로 러시아·카자흐스탄(+ 튀르키예 트라키아·이집트 시나이·파나마가 지면에서 갈리면 그것도) 면을 쪼개(shapely `split`) 조각마다 지면 색 표본으로 대륙을 정함 → 조각 면만 자료에(나머지는 iso 표). ③ 그린란드 등 회색 = 분류 없음(Q5 A). Q5 B 면 ②를 건너뛰고 나라 단위 `CONTINENT` 속성 + 손 고침.
@@ -300,7 +300,7 @@ $ATLAS_WORK/raw/ne-marine/                                                      
   - **먼저 확인(레이어 길)**: `quiz.js` 가 내보낸 `coloringLayer(features, {smallPx, smallIsos, smallMetric, markAt})` + `PALETTE` 를 감싼 레이어(`registerLayerType('paintTool')` — 무대 위 팔레트 칸 DOM: 색 6 + 지우개 + 「모두 지우기」, 나라 누르기 = 칠하기/같은 색 다시 = 지움 — coloringQuiz 와 같은 규칙, 이름 맞히기 없음), 칠할 나라 = 바탕 지도 나라 전부(작은 나라 동그라미 `smallPx 16 · 'area'` · `markAt KIR`), 상태는 메모리만(EMBED_RULES — 저장 없음이 기본). 지도 누르기가 레이어 hit 로 오는지(coloringQuiz 는 map 클릭을 직접 구독 — 같은 길을 레이어 안에서 쓸 수 있는지) 먼저 확인, 안 되면 topic.js 퀴즈 등록부(3e 대안과 같은 한 줄 — 둘이 함께 쓰면 공유 바이트 한 번).
   - Q15 B 면 기호 찍기(선 아이콘 6 — `icon()` 에 없는 모양은 worldExtra 안 SVG 경로, 누른 자리에 기호 SVG, 지우개로 지움).
   - 시험: 팔레트 6·지우개·모두 지우기, 나라 누르기 → colorOf, 같은 색 다시 → 지움, 작은 나라 동그라미 누르기, destroy → 칠 없음·DOM 없음.
-- [ ] **3i 재사용 확인 — 확인만(엔진 고침 0 목표)**: `countryClass` 단계구분 4(인터넷·이동 전화 5단계, 코로나 2, 햄버거 5 — 태평양 중심 `fold_window`), 기호 3종 약 200(한국어 — 기호 레이어 `symbols` 3분류, 그림자 겹친 점은 파이프라인이 한 점으로), 13쪽 기후 벡터 6분류 + 고산 빗금(1단계 `pattern 'hatch'`·`hatch.lines`), 8·9쪽 해양 경계 주황 파선·9쪽 날짜 변경선(area 선 `lineStyle`), 다산·세종·장보고 기지 글자(`symbolLabels` — polarExtra 무리 거르기), 핀 사진 카드(번호 숨김). 임시 틀 캡처 1벌, 엔진 고침이 없으면 이 칸은 「확인만」으로 닫음.
+- [x] **3i 재사용 확인 — 확인만(엔진 고침 0 목표)** **— 「확인만」(2026-10-23, 엔진 고침 0 — 파이프라인 설정 몫은 U1-4 로, 「실행 중 결정」 U1-3b·3i)**: `countryClass` 단계구분 4(인터넷·이동 전화 5단계, 코로나 2, 햄버거 5 — 태평양 중심 `fold_window`), 기호 3종 약 200(한국어 — 기호 레이어 `symbols` 3분류, 그림자 겹친 점은 파이프라인이 한 점으로), 13쪽 기후 벡터 6분류 + 고산 빗금(1단계 `pattern 'hatch'`·`hatch.lines`), 8·9쪽 해양 경계 주황 파선·9쪽 날짜 변경선(area 선 `lineStyle`), 다산·세종·장보고 기지 글자(`symbolLabels` — polarExtra 무리 거르기), 핀 사진 카드(번호 숨김). 임시 틀 캡처 1벌, 엔진 고침이 없으면 이 칸은 「확인만」으로 닫음.
 - [ ] 끝나면 **리뷰 관문**(엔진 바뀐 것 코드 리뷰) + u2~u6 회귀(`regress.sh u1-3`): data 해시 같음, 캡처 화소 차 0, 조각 크기 표(하위 기능마다 — 공유 바이트 합 1KB 안).
 
 ### Task U1-4: 주제 레이어
@@ -627,3 +627,33 @@ test('주제도 활동(교사 §8 Q4): 문항 카드 + 원본 쪽 + 색칠하기
 - Step 7 축척 막대(막대 pt — 0 과 끝 눈금 사이): 로빈슨 지도는 막대가 **생성 지구본 축척**(적도 축척 × 0.8487 의 역)으로 그려짐 — 8쪽 1cm = 750km(1:75,000,000 → 26.46km/pt, fit 25.70) 3%, 13쪽 15.30pt = 1,000km 1.7%, 14쪽 20.86pt = 2,000km 1.1%, 코로나 15.02pt = 3,000km 1.2%, 15쪽 햄버거 25.04pt 0.9%, 백지도 22.26pt 3.2% — 모두 맞음. **8쪽 유럽 삽입은 맞지 않음**: 막대 28.15pt = 200km(7.10km/pt)와 「1:20,000,000」(7.06km/pt)은 서로 맞지만 도시 11개 90쌍의 지면 거리 ↔ 실제 거리가 1pt ≈ 9.89~10.22km(중앙 10.06), fit 도 10.1km/pt → 실제 약 1:28,500,000(막대·축척 글자가 1.42배 큼) → `content/atlas/u1/issues.md` 1(새로 만듦, 교사 답 대기). **12쪽 1,000km 막대 16.69pt 는 fit(밀러 적도 54.7km/pt — 지도 너비 700pt ≈ 경도 370°)보다 약 9% 짧음** → issues 2(확신 낮음 — 12쪽 fit 의 4~5pt 어긋남 때문). 9·11쪽 지구본 2,000km 막대(19.48pt)는 지구본 그림이 지도가 아니라(U1-6) 재지 않음.
 - `npm test` **Python 462 · Node 828**(460 + 2 · 824 + 4) 통과(`units/u1/npmtest-u1-2.log`).
 - 회귀 관문(`regress.sh u1-2`, 0f8ecb5): **u2~u6 모두 회귀 없음** — u2~u5 해시 다른 파일 1(coloring 도장 — G0 부터의 그것, 도장 입력 고침 없음) · u6 해시 190 다름 0 · 캡처 41/31/42/58/73 화소 차 0 · 대조표 수·HTML 같음 · 조각 +0.015/+0.022/+0.020/+0.019/+0.000%(G0 와 같음 — 앱 코드 고침 없음), `units/u1/regress-u1-2.log` 끝 DONE.
+
+### U1-3b·3i 재사용 확인 — 엔진 고침 0 (2026-10-23)
+
+**임시 틀**(저장소 밖 `$ATLAS_WORK/units/u1/u1-3b/harness/` — vite 뿌리 = 이 폴더, 엔진·u6 자료는 별칭 `@app` 으로 저장소 것 그대로 읽음, 포트 5181, 개발 이미지 주소 `/docs/…` 는 저장소 docs 를 내주는 작은 미들웨어): 바탕 = **u1 설정 그대로(110m·50m, 10a 없음) 만든 시험 바탕**(`build_basemap.mjs` 를 설정 사본 `u1-3b/u1-basemap-test.json`(out 만 작업 폴더로)으로 — 490,139 B), 지명 = u6 places, `installAmericasExtras()` → `installPolarExtras()` + `viewTools`(u6 main 과 같음), 레이어 = u1 파이프라인을 **임시 설정으로** 돌린 것(`u1-3i/py/*.py` — 저장소 설정·`WORK/geo` 안 건드림) + u6 해양 경계 + 손 자료(날짜 변경선 꺾은 선·기지 셋). 캡처 = `u1-3b/shots.mjs 3b|3i|noshim`(저장소 `scripts/atlas/cdp.mjs` — GPU 끔·새 user-data-dir, heavy.lock), 결과 `u1-3b/result-3b.json`(확인 20 모두 통과)·`u1-3i/result-3i.json`(8 모두 통과), 콘솔 오류 0(favicon 404 만).
+
+**3b 결과**(그림 `units/u1/u1-3b/3b-*.png` 33장):
+
+| 항목 | 결과 |
+|---|---|
+| topicView centerLon 150 — 로빈슨·밀러·구드·이퀄어스 | 넷 다 열면 `centerLon` 150, 주제를 떠나면 앞 값 0 으로 되돌림, 사용자가 바꾼 중심 경도(160)는 그대로. 확대 그림(베링 k4·피지 k6·로스해 k3, 음영 포함)에서 180° 이음매 선 없음(`3b-<도법>-tv150`·`-bering-k4`·`-fiji-k6`·`-ross-k3`·`-back`) |
+| `centerLonOf` 150 | 묶음 첫 레이어 ref 로 150, 떠나면 0(`3b-centerLonOf-grp150`) |
+| 도법 상자 옵션 8 | 밀러·메르카토르·로빈슨·구드·이퀄어스·지구본·북극 중심·남극 중심 |
+| viewTools 지구본 ↔ 평면 | 평면(140°E 35°N k2) → 지구본 원판 가운데 같은 점·「중심 경도」 숨김 → 평면이면 앞 보기 그대로(k2·중심 150)(`3b-globe-from-flat`·`-back-flat`) |
+| 극 → 평면 띠 | 남반구 평면 보기에서 북극 중심 → 평면 = 북반구 띠(가운데 44.5°N k1.04), 앞 보기가 띠 안이면 그 보기(k3 그대로), 남극 → 평면 = 남반구 띠(`3b-polarN*`·`3b-polarS*`) |
+| 10a 없는 바탕에서 9쪽 태평양 섬나라 | **엔진은 됨, 자료가 작음**: 50m(20% 단순화) 섬 넓이 — 피지 17,147 · 솔로몬 20,317 · 바누아투 6,817 · 사모아 2,377km²(k5~6 에서 보임), 통가 139 · 니우에 149 · 미크로네시아 255 · 키리바시 100(키리티마티뿐) · 마셜 38 · 나우루 12 · 투발루 5km² → k10 에서도 1~3px 이거나 안 보임(길버트 제도·타라와는 50m 에 없음). 섬나라 자리는 places 의 수도 기호·이름으로만 보임(`3b-islands-*`·`3b-p9-range`) → **U1-9 판단 몫**(바탕 `_unitBoxes` 설명대로 태평양 상자 + 10a·simplifyByIso 100% 를 다시 넣을지, 수도 기호로 충분한지 — 엔진 고침 아님) |
+
+**찾은 것 — 10a 없는 바탕이면 조립이 멈춤(엔진 고침 없이 피함)**: `src/atlas/mountAtlas.js:50` 이 `feature(basemap, basemap.objects.countries10a)` 를 늘 불러, u1 설정 바탕(10a 층 없음)이면 `TypeError: Cannot read properties of undefined (reading 'type')`(`?noshim=1` — `3b-noshim.png`). 렌더러(`renderer.js` level 은 늦게 만들고 `lod.pickDetail` 은 unitBoxes 가 비면 10a 를 고르지 않음)·countryClass(`countryLevel` — detail '10a' 일 때만)·quiz(`byIso['10a']?.has`)는 빈 10a 로 문제없음을 틀에서 확인. **권고(공유 0 B)**: U1-9 의 `sims/atlas-u1-world/main.js` 에서 mountAtlas 전에 `if (!basemap.objects.countries10a) basemap.objects.countries10a = { type: 'GeometryCollection', geometries: [] };`(이 틀이 쓴 그대로 — countryFeatures['10a'] = []). 대안(엔진 — 코디네이터 판단): mountAtlas.js:48-51 을 `...(basemap.objects.countries10a ? { '10a': feature(…).features } : {})` 로(키가 없으면 10a 칸 없음, u2~u6 은 10a 가 있어 같은 동작, 조각 약 +40 B × 5 — 회귀 관문).
+
+**3i 결과**(그림 `units/u1/u1-3i/3i-*.png` 25장):
+
+| 항목 | 엔진 | 파이프라인(임시 설정 — U1-4 가 설정으로 옮김) |
+|---|---|---|
+| countryClass 4(인터넷 5·이동 전화 5·코로나 2·햄버거 5) | 태평양 중심 150 에서 칠하기·범례 5/5/2/5, 러시아·미국(알래스카)·피지가 180° 에서 이음매 없음(`3i-cc-*`·`-bering-k3.5`·`-fiji-k8`) | `country_class.build` 그대로(`fold_window` — 날짜변경선을 넘는 로빈슨 150 틀에서 멈추지 않음): 나라 199·198·196·224, 범례 자동 견본(legendBbox) 5·5·2·5, 갈림 0·0·0·1. 지도 밖 = 남극·카보베르데·핏케언·폴리네시아(+ 햄버거는 미크로네시아·괌·키리바시·마셜·북마리아나·**북한** — 사진·지시선 덮개 상자 밑으로 보임, U1-4 확인), 작은 나라 「분류 없음」 경고 38~42(countryOverrides 몫) |
+| 기호 3종(한국어) | symbol 레이어 296점 3분류·범례 3, 태평양 중심·유럽 k5·동아시아 k5(`3i-korean*`) | **설정 몫 둘**: ① 범례 자동 견본 색(세종학당 #ed1651·문화원 #0068a6·교육원 #01b49c)이 지도 점 색(#e31b4c·#34355c·#00ac8e)과 달라 자동이면 128점(문화원 대부분 빠짐) → `legendItems` 손 견본(기존 키)으로 296점. ② 「그림자 겹친 점」은 점끼리 겹쳐 잘린 조각(한 점 = 두 빨강 #ed1651·#e31b4c 조각 + 짙은 그림자 #500003·#00868a·#005798 작은 조각 — 그림자는 색이 달라 안 셈)이라 `symbols` 길의 같은 분류 0.8pt 합치기(`symbols.py:8 DUP_PT` 고정)로는 296, 같은 분류 조각을 tol 안끼리 이으면 1.2pt 267 · 1.6pt 235 · 2.0pt 209 — 「약 200」에 맞추려면 U1-4 가 지면 확대로 점 수를 세어 정함(필요하면 symbols 모드에 있을 때만 켜지는 키 `dupPt` — 공유 파이프라인이라 회귀 관문). 엔진 고침은 아님 |
+| 13쪽 기후 벡터 6분류 + 고산 빗금 | area 5분류 + `pattern 'hatch'` 빗금(티베트·안데스·로키·동아프리카 등 14 면), 범례 6(`3i-climate*`) | 빗금은 **획 윤곽도 `hatch.lines` 도 아님** — 갈색 #ba703d 채움 조각 1,602 이 네모 아닌 잘라 그리기 경로 14 안에 있음 → 기존 키 **`hatch.clips`**(U4-4) 상자 14 로 잡힘(1,453pt², 상자 목록 `u1-3i/py/climate_drive.py`). 범례 자동이 빗금 견본을 이름 없는 채움 분류로 잡으면 그 분류가 둘레 면에서 빗금 줄 모양을 깎음(흰 줄무늬 — 첫 판에서 봄) → U1-4 는 `hatch` 설정·`legendItems` 로. vector_zones 105초, 단순화 0.25pt 면 1,056KB(상한 250KB — U1-4 `tol` 필요, 위험 ③) |
+| 해양 경계 주황 파선 · 날짜 변경선 | area 선 `dashed` 둘(u6 해양 경계 · 손 날짜 변경선 꺾은 선)이 태평양 중심·남극 중심·지구본에서 끊김 없이(`3i-general*`·`-bering-k3`·`-polarS`) | U1-4 `line_chains`(8·9쪽 획) — 이번엔 안 돌림 |
+| 다산·세종·장보고 기지 글자 | symbolLabels(polarExtra 등록): 평면·남극 중심에서 점 + 붉은 글자, 지구본 뒷면 글자 안 그림(`3i-general-dasan-k5`·`-jangbogo-k4`·`-sejong-k5`·`-globe-*`) | — |
+| 핀 사진 카드(번호 숨김) | u5·u6 지형 핀 14 를 태평양 중심 세계에 — 모두 빈 핀, 누르면 번호 1 + 사진 카드(사진 불러옴)·「번호 모두 보기」(`3i-pins`·`-pins-card`) | — |
+
+판단: 3b·3i 모두 **엔진(`src/atlas/*`) 고침 0** — 저장소에 넣을 시험 없음(틀은 작업 폴더). 조각 크기 영향 없음. 남은 것은 U1-9(빈 10a 한 줄·섬나라 상세도)와 U1-4(한국어 점 수·기후 빗금 설정·legendItems·tol·햄버거 덮개 밑 나라).
