@@ -250,14 +250,14 @@ $ATLAS_WORK/raw/ne-marine/                                                      
 
 **선행:** U1-3a Step 1(두 쪽 겹침 재기 — 코드 고침이 없으면 재기만)이 먼저.
 
-- [ ] **Step 1:** `python -I scripts/atlas/extract_vectors.py --unit u1 --controls all`. 8·9쪽 경위선 글자(DINPro)와 교차점, 유럽 삽입 틀 안 교차점은 `p08-europe`로(본 지도 `excludeBoxes`). 찾아보기 격자 글자(8쪽 A~K·9쪽 L~R·1~9·삽입 S~U)는 기준점이 아님. 9쪽 「서반구/동반구」·「북반구/남반구」 화살표 글자도 아님.
-- [ ] **Step 2:** 도시 기호 기준점: `python -I scripts/atlas/places.py --unit u1` → `node scripts/atlas/city_controls.mjs --unit u1 --write --holdout`(동명 — 세계 전체라 많음: 퍼스·포틀랜드·해밀턴·빅토리아·산호세·산티아고·코르도바·발렌시아 … `neAlias` 는 U1-5, 여기선 MAD 로 거름).
-- [ ] **Step 3: 두 쪽 지도**(U1-3a): `p08-world`·`p09-world` 를 따로 맞춘 뒤 가름선 띠(8쪽 x ≥ 750 · 9쪽 x ≤ 30)에서 같은 해안·경선이 두 fit 으로 얼마나 어긋나는지(pt) 재고 표에. 0.5pt 넘거나 매개변수(중심 경도·배율)가 다르면 U1-3a Step 3 묶어 맞추기. 10·11쪽도 같은 방법.
-- [ ] **Step 4:** 눈금 없는 지도는 `python -I scripts/atlas/land_shapes.py --unit u1 <id>` → `python -I scripts/atlas/shape_controls.py --unit u1 <id>`. 12쪽 래스터는 곶·섬 처음 식, 14·15쪽 작은 세계는 같은 바탕이면 하나만 맞추고 나머지는 `projectionFrom`. 5번 안에 수렴하지 않으면 **`projectionFrom`**, 처음 식은 `{fromMap, pts}`.
-- [ ] **Step 5:** `node scripts/atlas/georef-cli.mjs --unit u1 --all` → 표(`id family rmsPt rmsMm`). 기대: 8~11·13쪽 로빈슨 중심 약 150°E, 유럽 람베르트 정각 원뿔, 14·15쪽 원통·의원통(중심 약 150°E). 합격: **평균 잔차 ≤ 0.5mm**, 넘으면 기준점 보강 → `projectionFrom` → 그래도 넘으면 `approx: true`.
-- [ ] **Step 6:** `node scripts/atlas/georef-cli.mjs --unit u1 --verify all` → `units/u1/geo/<id>.verify.png` **모두 눈으로**(해안선이 교과서 해안 위 — **가름선 양쪽**, 타원 가장자리, 남극). 「실행 중 결정」에 U6-2 꼴 표(도법(중심)·기준점·rms pt/mm·평균 mm(LOO)·최대 pt·겹 나누기).
-- [ ] **Step 7:** 축척 막대(8쪽 1cm = 750km · 유럽 200km · 12·13쪽 1,000km · 14·15쪽 2,000km · 코로나 3,000km · 9·11쪽 지구본 2,000km)를 fit 축척과 견줘(막대 pt × km/pt) 맞지 않으면 `content/atlas/u1/issues.md` 후보(교과서 원문은 고치지 않음 — u6 200km 꼴).
-- [ ] **Step 8:** 테스트 — `test_controls.py`에 `p08-world`·`p09-world` 기준점 ≥ 12·가름선 양쪽, `georef.test.mjs`에 u1 fit 이 있으면 rmsMm ≤ 0.5(approx 제외)·8~11쪽 `robinson`·중심 경도 140~160·`p08-europe` 원뿔·두 쪽 짝의 매개변수 같음(묶어 맞추기면).
+- [x] **Step 1:** `python -I scripts/atlas/extract_vectors.py --unit u1 --controls all`. 8·9쪽 경위선 글자(DINPro)와 교차점, 유럽 삽입 틀 안 교차점은 `p08-europe`로(본 지도 `excludeBoxes`). 찾아보기 격자 글자(8쪽 A~K·9쪽 L~R·1~9·삽입 S~U)는 기준점이 아님. 9쪽 「서반구/동반구」·「북반구/남반구」 화살표 글자도 아님.
+- [x] **Step 2:** 도시 기호 기준점: `python -I scripts/atlas/places.py --unit u1` → `node scripts/atlas/city_controls.mjs --unit u1 --write --holdout`(동명 — 세계 전체라 많음: 퍼스·포틀랜드·해밀턴·빅토리아·산호세·산티아고·코르도바·발렌시아 … `neAlias` 는 U1-5, 여기선 MAD 로 거름).
+- [x] **Step 3: 두 쪽 지도**(U1-3a): `p08-world`·`p09-world` 를 따로 맞춘 뒤 가름선 띠(8쪽 x ≥ 750 · 9쪽 x ≤ 30)에서 같은 해안·경선이 두 fit 으로 얼마나 어긋나는지(pt) 재고 표에. 0.5pt 넘거나 매개변수(중심 경도·배율)가 다르면 U1-3a Step 3 묶어 맞추기. 10·11쪽도 같은 방법.
+- [x] **Step 4:** 눈금 없는 지도는 `python -I scripts/atlas/land_shapes.py --unit u1 <id>` → `python -I scripts/atlas/shape_controls.py --unit u1 <id>`. 12쪽 래스터는 곶·섬 처음 식, 14·15쪽 작은 세계는 같은 바탕이면 하나만 맞추고 나머지는 `projectionFrom`. 5번 안에 수렴하지 않으면 **`projectionFrom`**, 처음 식은 `{fromMap, pts}`.
+- [x] **Step 5:** `node scripts/atlas/georef-cli.mjs --unit u1 --all` → 표(`id family rmsPt rmsMm`). 기대: 8~11·13쪽 로빈슨 중심 약 150°E, 유럽 람베르트 정각 원뿔, 14·15쪽 원통·의원통(중심 약 150°E). 합격: **평균 잔차 ≤ 0.5mm**, 넘으면 기준점 보강 → `projectionFrom` → 그래도 넘으면 `approx: true`.
+- [x] **Step 6:** `node scripts/atlas/georef-cli.mjs --unit u1 --verify all` → `units/u1/geo/<id>.verify.png` **모두 눈으로**(해안선이 교과서 해안 위 — **가름선 양쪽**, 타원 가장자리, 남극). 「실행 중 결정」에 U6-2 꼴 표(도법(중심)·기준점·rms pt/mm·평균 mm(LOO)·최대 pt·겹 나누기).
+- [x] **Step 7:** 축척 막대(8쪽 1cm = 750km · 유럽 200km · 12·13쪽 1,000km · 14·15쪽 2,000km · 코로나 3,000km · 9·11쪽 지구본 2,000km)를 fit 축척과 견줘(막대 pt × km/pt) 맞지 않으면 `content/atlas/u1/issues.md` 후보(교과서 원문은 고치지 않음 — u6 200km 꼴).
+- [x] **Step 8:** 테스트 — `test_controls.py`에 `p08-world`·`p09-world` 기준점 ≥ 12·가름선 양쪽, `georef.test.mjs`에 u1 fit 이 있으면 rmsMm ≤ 0.5(approx 제외)·8~11쪽 `robinson`·중심 경도 140~160·`p08-europe` 원뿔·두 쪽 짝의 매개변수 같음(묶어 맞추기면).
 - [ ] **Step 9:** 커밋. **u2~u6 회귀**: 공유 스크립트를 고쳤으면 `regress.sh u1-2`.
 
 ### Task U1-3: 엔진·파이프라인 세계화 기능 (설계 §6 — 이 단원에서 처음 쓰는 것)
@@ -267,8 +267,8 @@ $ATLAS_WORK/raw/ne-marine/                                                      
 각 하위 기능 = 실패하는 테스트 → 구현 → 통과 → **u2~u6 회귀(`regress.sh <tag>` — 다섯 다, 캡처 다시, heavy.lock)** → 커밋. 새 동작은 모두 **자료·설정 키(또는 등록)가 있을 때만** 켜진다. 하위 기능마다 u2~u6 조각 크기를 재서 「실행 중 결정」 표에(공유 바이트 합 1KB 안 — 넘으면 멈춤). worldExtra 를 부르는 공개 단원은 없으므로 worldExtra 만 고친 하위 기능은 조각 sha256 같음으로 회귀를 대신하고(U6-3b 꼴), 회귀 돌리개는 공유 파일을 고친 하위 기능 뒤 한 번씩.
 
 - [ ] **3a 두 쪽에 걸친 한 지도** (설계 §6.1-5 — 8~9·10~11쪽):
-  - Step 1(재기 — U1-2 앞): 8쪽 오른쪽 끝·9쪽 왼쪽 끝에 같은 글자·도형이 있는지(조사: 8쪽 x 773 「나」 ↔ 9쪽 x 6.1 「나우루」 같은 y 371.3 · 같은 글꼴 → **9쪽 x = 8쪽 x − 약 767pt**, 쪽 너비 779.5pt 보다 약 12pt 겹침). 경선(180°·170°E)·해안 도형 몇 개로 겹침 폭(`offsetPt`)을 0.1pt 까지 재고, 10·11쪽도 같은지.
-  - Step 2(맞추기): U1-2 Step 3 결과가 어긋나면 maps 항목 `spreadOf: <왼쪽 지도>` + `offsetPt: [dx, dy]` → `georef.mjs`가 두 쪽 기준점을 **한 좌표계(오른쪽 쪽 x + dx)로 모아 한 번 맞추고**, 오른쪽 지도 fit = 왼쪽 fit + 쪽 이동량(이미 있는 `fitFrom` 길 — U5-2). 키가 없으면 옛 길(u2~u6 fit 바이트 같음 시험 — U6-3a 꼴 임시 ATLAS_WORK). georef.mjs = 도장 입력 → u2~u6 coloring 도장 줄만(U6-3a 와 같음).
+  - Step 1(재기 — U1-2 앞) **— 완료(2026-10-23, 「실행 중 결정」 U1-3a: 9쪽 = 8쪽 − 767.055pt · 11쪽 = 10쪽 − (765.354, −0.001)pt)**: 8쪽 오른쪽 끝·9쪽 왼쪽 끝에 같은 글자·도형이 있는지(조사: 8쪽 x 773 「나」 ↔ 9쪽 x 6.1 「나우루」 같은 y 371.3 · 같은 글꼴 → **9쪽 x = 8쪽 x − 약 767pt**, 쪽 너비 779.5pt 보다 약 12pt 겹침). 경선(180°·170°E)·해안 도형 몇 개로 겹침 폭(`offsetPt`)을 0.1pt 까지 재고, 10·11쪽도 같은지.
+  - Step 2(맞추기) **— 완료(2026-10-23, 따로 맞추면 중심 경도가 갈려 묶어 맞춤 — georef-cli + projection_from.planSpread·spreadControls·spreadFit·spreadFitStale, build_layers 낡음 검사, u2~u6 fit 90개 바이트 같음)**: U1-2 Step 3 결과가 어긋나면 maps 항목 `spreadOf: <왼쪽 지도>` + `offsetPt: [dx, dy]` → `georef.mjs`가 두 쪽 기준점을 **한 좌표계(오른쪽 쪽 x + dx)로 모아 한 번 맞추고**, 오른쪽 지도 fit = 왼쪽 fit + 쪽 이동량(이미 있는 `fitFrom` 길 — U5-2). 키가 없으면 옛 길(u2~u6 fit 바이트 같음 시험 — U6-3a 꼴 임시 ATLAS_WORK). georef.mjs = 도장 입력 → u2~u6 coloring 도장 줄만(U6-3a 와 같음).
   - Step 3(지명·레이어): 가름선 겹침 띠의 **잘린 글자 사본**(8쪽 「나」 = 9쪽 「나우루」의 앞 토막)을 places 가 하나로 — 새 키 `places.spread {pairs: [[p08-world, p09-world, dx]], bandPt}`(있을 때만): 오른쪽 쪽 글자를 왼쪽 좌표로 옮겨 같은 글꼴·크기·y 0.5pt 안에서 한쪽이 다른 쪽의 앞/뒤 토막이면 긴 쪽만 남김, 쪽 끝에서 잘린 글자(쪽 상자 밖으로 나간 bbox)는 버림. 레이어는 이미 있는 「여러 지도 한 레이어」(레이어 설정 `maps: [p08-world, p09-world]` — U3·U5)로 합치고 띠 안 겹친 선·면은 한쪽만(겹침 띠를 오른쪽 지도에서 `excludeBoxes`). u2~u6 places.json 바이트 같음 시험.
   - 시험: Python(합성 두 쪽 — 토막 글자 둘 → 하나, 띠 밖 같은 이름 둘은 그대로, 키 없으면 옛 출력), Node(`georef.test` — 합성 로빈슨 지도를 두 쪽으로 자른 기준점(겹침 12pt) → 묶어 맞추면 두 쪽 fit 이 같은 매개변수·가름선 어긋남 0.05pt 안, 따로 맞춘 것보다 좋음).
 - [ ] **3b 태평양 중심·특별 보기 재사용 확인** (Q2·Q3 — 확인만):
@@ -573,3 +573,56 @@ test('주제도 활동(교사 §8 Q4): 문항 카드 + 원본 쪽 + 색칠하기
 - 시험 `scripts/atlas/tests/test_maps_u1.py` 19개. `npm test` **Python 460 · Node 824** 통과(`units/u1/npmtest-u1-1.log`). 공유 코드 고침 없음(설정·지도 목록·시험만).
 - 회귀 관문(`regress.sh u1-1`): u2~u6 모두 회귀 없음(u2~u5 해시 다른 파일 1 = coloring 도장만 · 캡처 41/31/42/58/73 화소 차 0 · u6 조각 해시 같음, `units/u1/regress-u1-1.log` 끝 DONE — 코디네이터 확인).
 - 리뷰(sonnet, 승인) 지적 → U1-3a·U1-2 로 넘김: ① `p11-continents`는 `spreadOf`만 있고 맞출 근거(shapes·fitFrom·projectionFrom·controls)가 없어 `spreadOf` 길이 생기기 전 `georef-cli --all`이 「기준점 0개」로 멈춤 — U1-2 전에 spreadOf 맞추기 길(U1-3a Step 2)을 먼저 넣거나 그동안 건너뜀. ② `spreadOf: p10`인데 p10 이 `fitFrom p08` — 한 단계 빌림 규칙(`georef-cli.mjs:66-70`)과 부딪힘: spreadOf 를 「왼쪽 지도의 풀린 fit + 쪽 이동량」으로 풀어(빌림의 빌림 허용은 spreadOf 만) 하거나 p10/p11 을 함께 맞춤. 시험에 「spreadOf 대상이 fitFrom 이면 어떻게 푸는지」 넣기. ③ (낮음) `test_no_oceania_keys`가 u6.json 과 같음을 단언 — u6 를 고치면 깨짐, 나중에 느슨하게. ④ (낮음) `test_unit_resolves_by_key`의 ATLAS_WORK 하드코딩.
+
+### U1-3a Step 1·2 + U1-2 두 쪽 지도와 경위도 맞추기 (2026-10-23)
+
+**U1-3a Step 1 — 가름선 겹침 실측**(작업 스크립트 `$ATLAS_WORK/units/u1/u1-3a/overlap.py`·`refine.py` — 왼쪽 쪽 오른쪽 띠와 오른쪽 쪽 왼쪽 띠에서 색·꼭짓점 수가 같고 꼭짓점 차가 모두 같은(0.02pt 안) 도형을 짝지음):
+
+| 두 쪽 | 짝 도형 | offsetPt(오른쪽 점의 왼쪽 쪽 좌표 = x + dx, y + dy) | 흔들림 | 가름선 겹침 | 확인 |
+|---|---|---|---|---|---|
+| 8 → 9쪽 | 22(호수·해안 채움 #c9e7f9·#7ac2ec·#62bae9, 경위선 #15a1dc 0.2pt 획, 해양 경계 #f58466 0.6pt·검은 0.2pt 획) | **[767.055, 0]** | dx 767.0551~767.0552 · dy 0.0000 (sd 0.0001) | 779.528 − 767.055 = **12.47pt**(보이는 지도 겹침은 8쪽 틀 끝 773.9 ~ 9쪽 틀 시작 5.7 → 772.8 의 약 1.1pt) | 8쪽 「나」 x 773.169 ↔ 9쪽 「나우루」 첫 글자 6.114 — 차 767.055, 같은 y 371.29 |
+| 10 → 11쪽 | 6(나라 채움 #dcddde·#fcc39b) | **[765.354, −0.001]** | dx 765.3541~765.3545 · dy −0.0008~−0.0011 | **14.17pt**(8·9쪽보다 1.70pt 넓음) | U1-1 호수 이동(10쪽 = 8쪽 + (0.897, 1.278), 11쪽 = 9쪽 + (2.558, 1.283))으로 셈한 765.394 · −0.005 와 0.04pt 안 |
+
+**U1-2 Step 3 — 두 쪽을 따로 맞춘 결과와 가름선 어긋남**(작업 `units/u1/u1-2/seam.mjs`: 8쪽 띠 x 750~773.9 의 지면 점을 8쪽 식으로 되돌린 경위도를 9쪽 식으로 투영 + 767.055 와의 차):
+
+| 맞춤 | 8쪽 식 | 9쪽 식 | 가름선 어긋남 중앙 / 90% / 최대 | 비고 |
+|---|---|---|---|---|
+| 따로(교차점만 36 · 63) | 로빈슨 150.140° · 배율 210.3870 | 로빈슨 150.058° · 210.3923 | 0.026 / 0.062 / 0.093pt | 8쪽 전체(x 300~774) 최대 0.103pt |
+| 묶음(교차점 99, 한 좌표계) | 로빈슨 150.064° · 210.3940 | 같음 − offsetPt | 0 / 0 / 0(구성상) | rms 0.042pt |
+| 묶음 최종(교차점 + 도시 151) | 로빈슨 **150.0715°** | 같음 − offsetPt | 0 | rms 0.11pt · 최대 0.71(마나마) · 9쪽 자체 기준점 79 잔차 rms 0.09 · 최대 0.38pt |
+
+판단: 어긋남은 0.5pt 아래지만 **매개변수(중심 경도 0.08°·배율 0.0025%)가 갈림** → 계획 규칙대로 Step 2 묶어 맞추기. 같은 바탕 지도 한 장의 두 반쪽이므로 식이 하나인 것이 뜻에도 맞고(지명 합치기 U1-3a Step 3·「여러 지도 한 레이어」가 같은 식을 씀), 묶어 맞춘 잔차가 따로 맞춘 것만큼 작다. 10·11쪽은 기준점이 없어(경위선 없음) 따로 재지 않음 — 10쪽 fitFrom 8쪽, 11쪽 spreadOf 10쪽.
+
+**U1-3a Step 2 — 구현(공유 스크립트, 키가 있을 때만)**:
+- 지도 항목 `spreadOf: <왼쪽 지도>` + **`offsetPt: [dx, dy]`**(둘 다 있어야 함). `scripts/atlas/projection_from.mjs`(도장 입력 아님 — georef.mjs·fitCore.js 는 고치지 않음): `planSpread(maps)`(검사 — offsetPt 꼴, 대상 있음·자기 자신 아님·목록에서 앞, spreadOf 와 fitFrom/projectionFrom 함께 금지, 사슬 금지, georef:false 금지 → `{left, right}`), `spreadControls`(오른쪽 기준점 xy + offsetPt, 이름 앞 「<id>:」), `spreadFit`(= shiftFit(−dx, −dy), 표시 `spreadOf {map, offsetPt}`, fitFrom 지우고 왼쪽이 fitFrom 이면 `via {fitFrom}`), `spreadFitStale`(fitFromStale 꼴).
+- `georef-cli.mjs`: 왼쪽 지도를 스스로 맞출 때 오른쪽 기준점을 모아 한 번 맞추고 fit 에 `spread {maps:[{id, offsetPt, n}]}`, 오른쪽 지도 fit = 왼쪽의 **풀린** fit − offsetPt(+ 자기 기준점 잔차 `own`). **spreadOf 대상이 fitFrom 이면**(11쪽 → 10쪽 → 8쪽) 10쪽의 풀린 fit(8쪽 두 쪽 맞춤 + (0.9, 1.28))에서 옮김 — 「빌림의 빌림」은 spreadOf 만 허용(한 장을 두 쪽으로 나눈 것일 뿐), 이때 오른쪽 기준점은 맞춤에 못 쓰고 잔차만(알림 한 줄). fitFrom 이 spreadOf 오른쪽 지도를 빌리는 것은 금지(왼쪽을 빌림). `fitFromMap` 의 own 잔차는 `ownResid` 로 뺐을 뿐 같은 동작.
+- `build_layers.mjs loadFit`: spreadOf 지도면 `spreadFitStale` 검사(fitFrom 낡음 검사와 같은 자리, 키가 있을 때만).
+- **u2~u6 fit 바이트 같음**: vec/*.controls.json 을 복사한 임시 ATLAS_WORK(`units/u1/u1-3a/fitcheck`)에서 `georef-cli --unit u2|u3|u4|u5|u6 --all` → fit **90개 모두 바이트 같음**(기준점 다시 뽑기 없음). 도장 입력(georef.mjs 등) 고침 없음 → 도장 줄도 그대로(회귀로 확인).
+- 시험: `tests/atlas/georef.test.mjs` +4(planSpread — u2~u6 빈 표·u1 짝·틀린 꼴 10가지, 합성 로빈슨 두 쪽(겹침 12pt, ±0.15pt 잡음) 묶음 → 매개변수 같음·가름선 어긋남 < 0.05pt·따로 맞춘 것보다 작음, 11쪽 ← 10쪽 ← 8쪽 풀기 + via + 낡음 4, u1 fit 합격·도법·짝), `test_maps_u1.py` 짝 시험에 offsetPt 실측값·범위·spreadOf ⇔ offsetPt·11쪽 기준점 없음, `test_controls.py ControlsU1` 2(8·9쪽 ≥ 12·가름선 양쪽 교차점·유럽 틀 거름, 유럽 삽입 교차점 넷 + 도시). U1-1 리뷰 지적 ①② 해소 — `georef-cli --unit u1 --all` 14장 모두 깨끗이 끝남.
+
+**U1-2 기준점**(작업 `units/u1/u1-2/` — fitone.mjs·seam.mjs·crop5.py·peaks.py·lakes.py·affine.cjs, 로그 sc*.log·cc1.log·georef1.log):
+- Step 1 교차점(`extract_vectors --unit u1 --controls all`, 13초): 8쪽 36(경선 20°W~160°E · 위선 20°S~40°N — 60°N·80°N 글자 3개는 짝 없음), 9쪽 63(160°W~40°W × 80°S~80°N), 유럽 4(10·20°E × 40·50°N), 13쪽 37(→ 36, 「40,0」 하나 robustFit 이 뺌), 나머지 0.
+- Step 2 도시(`places.py --unit u1` → `city_controls --unit u1 --write --holdout`): 8쪽 이름 짝 107(동명 8) · MAD 5(두샨베 11.5pt·브라자빌·킨샤사·기테가·비엔티안) → 고름 36, 9쪽 41 · MAD 1(세종 과학 기지 8.9pt) → 16, 유럽 24 · MAD 1(케이프타운 — 원 밖) → 11. 겹 나누기 빠진 도시 km 중앙/90%/최대: 8쪽 2.76/5.94/20.0(교차점만 3.23/7.52/21.2), 9쪽 4.75/7.82/10.4(5.15/7.97/10.6), 유럽 4.35/6.59/10.7(3.88/7.22/9.9 — 교차점 4개뿐이라 도시가 도법 모양을 붙잡음).
+- Step 4 눈금 없는 지도(`land_shapes` → `shape_controls --write --holdout`, 단원 수치 그대로): 14쪽 항공망 193(중심 41·끝 152) · 코로나 85 · 15쪽 햄버거 206 · 백지도 228(projectionFrom 햄버거 — 햄버거 fit 뒤), 모두 로빈슨 rms 0.39~0.41pt(항공망·햄버거는 되풀이 10번에 짝 목록이 하나 둘씩 흔들림 — 경고만, rms 같음). 겹 나누기 pt 중앙/90%/최대: 항공망 0.19/0.72/1.46 · 코로나 0.19/0.67/1.40 · 햄버거 0.15/0.71/1.58 · 백지도 0.16/0.71/1.52.
+- **12쪽 래스터 — 밀러 판정(「숫자는 합격, 그림은 틀림」 다시)**: 섬 씨앗 다섯(마다가스카르·보르네오·뉴기니·뉴질랜드 북섬·쿠바 — 200dpi 확대로 자리) + tips → 등장방형 144.3° rms 1.21pt · 평균 0.38mm · 회전 1.15°(합격 숫자)였으나 확인 그림에서 아메리카·서아프리카 해안이 수십 pt 어긋남. 산 삼각형 11개는 편집자가 손으로 찍은 자리(이웃 산끼리 x 잔차가 −3.1~+5.6pt 로 엇갈림)라 판정에 못 씀. **지면 벡터 호수(#0080c4 채움 — 대부분 강 토막, 큰 호수 몇 개)의 가로·세로 비**: 카스피해 세로/가로 배율 1.30(42°N)·슈피리어호 1.29(47.7°N)·빅토리아호 1.0(적도) → 밀러(1.20·1.27), 등장방형(1.0)·메르카토르(1.35·1.49) 아님. 후보를 밀러 하나로 짝을 다시 찾고(198 — 중심 44·끝 154, 잔차로 뺌 26) 후보 넷으로 돌리면 **밀러 1.41 · 메르카토르 10.31 · 등장방형 10.83 · 로빈슨 20.77pt** → 후보 목록은 그대로 둠(재현), `tips: true` 더함, `_families`·`_init` 에 까닭. 확인 그림: 해안 대부분 1~2pt 안, **서아프리카 불룩한 해안·브라질 동쪽 해안·소말리아는 4~5pt 어긋남**(기준점이 성긴 곳 — 회전 0.81° 가 남아 래스터가 정확한 밀러가 아닐 수 있음). 이 지도는 그리는 레이어 없이 topicView + 핀(번호 숨김)만 쓰므로(U1-4·U1-6) 받아들임 — U1-6 핀은 확인 그림으로.
+- Step 5·6 결과(`georef-cli --unit u1 --all`, `--verify all` 14장 모두 눈으로 — 8·9쪽·10·11쪽 가름선 양쪽 해안·섬이 이어짐, 타원 가장자리·남극, 유럽 원 안 해안·국경, 14·15쪽 작은 세계 지도 해안):
+
+  | 지도 | 도법(중심) | 기준점 | rms pt / mm | 평균 mm (LOO) | 최대 pt | 겹 나누기 |
+  |---|---|---|---|---|---|---|
+  | p08-world | 로빈슨 150.07° (8·9쪽 묶음) | 교차 99 + 도시 52(9쪽 79 포함 151) | 0.11 / 0.04 | 0.03 | 0.71 | 도시 2.8/5.9/20.0 km |
+  | p09-world | ← p08-world − [767.055, 0] | (묶음에 들어감) | 0.11 / 0.04 | 0.03 | 자체 79 rms 0.09 · 최대 0.38 | 도시 4.8/7.8/10.4 km |
+  | p08-europe | 람베르트 정각 원뿔 15.04°E, 표준위선 52.23° | 교차 4 + 도시 11 | 0.39 / 0.14 | 0.11 | 0.97(모나코) | 도시 4.4/6.6/10.7 km |
+  | p10-continents | ← p08-world + (0.9, 1.28) | — | 0.11 / 0.04 | 0.03 | — | — |
+  | p11-continents | ← p10-continents − [765.354, −0.001] (via p08) | — | 0.11 / 0.04 | 0.03 | — | — |
+  | p12-relief | 밀러 143.93° (+TPS) | 섬·호수 44 + 꺾인 점 154 | 1.41 / 0.50 | 0.45 (0.57) | 2.91 | 1.08/2.47/4.50 pt · 53/126/192 km |
+  | p13-climate | 로빈슨 150.02° | 교차 36 | 0.02 / 0.01 | 0.00 | 0.04 | — |
+  | p14-routes | 로빈슨 149.90° | 섬 41 + 꺾인 점 152 | 0.40 / 0.14 | 0.10 | 1.43 | 0.19/0.72/1.46 pt |
+  | p14-internet · mobile | ← p14-routes + (0, 200.24)·(0, 405.94) | — | 0.40 / 0.14 | 0.10 | — | — |
+  | p14-covid | 로빈슨 150.06° | 섬 22 + 꺾인 점 63 | 0.39 / 0.14 | 0.10 | 1.33 | 0.19/0.67/1.40 pt |
+  | p15-burger | 로빈슨 149.61° | 섬 64 + 꺾인 점 142 | 0.41 / 0.15 | 0.10 | 1.54 | 0.15/0.71/1.58 pt |
+  | p15-korean | ← p15-burger + (−0.02, 226.49) | — | 0.41 / 0.15 | 0.10 | — | — |
+  | p15-blank | 로빈슨 149.61° 고정(projectionFrom 햄버거) | 섬·꺾인 점 228 | 0.41 / 0.14 | 0.10 | 1.52 | 0.16/0.71/1.52 pt |
+
+  14·15쪽 작은 세계 지도 넷 모두 **로빈슨**(밀러·등장방형·메르카토르 후보를 이김), approx 0, 평균 잔차 모두 ≤ 0.45mm.
+- Step 7 축척 막대(막대 pt — 0 과 끝 눈금 사이): 로빈슨 지도는 막대가 **생성 지구본 축척**(적도 축척 × 0.8487 의 역)으로 그려짐 — 8쪽 1cm = 750km(1:75,000,000 → 26.46km/pt, fit 25.70) 3%, 13쪽 15.30pt = 1,000km 1.7%, 14쪽 20.86pt = 2,000km 1.1%, 코로나 15.02pt = 3,000km 1.2%, 15쪽 햄버거 25.04pt 0.9%, 백지도 22.26pt 3.2% — 모두 맞음. **8쪽 유럽 삽입은 맞지 않음**: 막대 28.15pt = 200km(7.10km/pt)와 「1:20,000,000」(7.06km/pt)은 서로 맞지만 도시 11개 90쌍의 지면 거리 ↔ 실제 거리가 1pt ≈ 9.89~10.22km(중앙 10.06), fit 도 10.1km/pt → 실제 약 1:28,500,000(막대·축척 글자가 1.42배 큼) → `content/atlas/u1/issues.md` 1(새로 만듦, 교사 답 대기). **12쪽 1,000km 막대 16.69pt 는 fit(밀러 적도 54.7km/pt — 지도 너비 700pt ≈ 경도 370°)보다 약 9% 짧음** → issues 2(확신 낮음 — 12쪽 fit 의 4~5pt 어긋남 때문). 9·11쪽 지구본 2,000km 막대(19.48pt)는 지구본 그림이 지도가 아니라(U1-6) 재지 않음.
+- `npm test` **Python 462 · Node 828**(460 + 2 · 824 + 4) 통과(`units/u1/npmtest-u1-2.log`).

@@ -22,6 +22,9 @@ FAMILIES = {'azimuthalEqualArea', 'azimuthalEquidistant', 'conicEqualArea', 'con
 CYL = ['miller', 'equirectangular', 'mercator', 'robinson']
 # 두 쪽에 걸친 한 지도(설계 §6.1-5): 오른쪽 반 → 왼쪽 반
 SPREADS = {'p09-world': 'p08-world', 'p11-continents': 'p10-continents'}
+# U1-3a Step 1 실측(가름선 띠에서 꼭짓점이 모두 같은 도형 — 오른쪽 쪽 점의 왼쪽 쪽 좌표 = (x + dx, y + dy))
+OFFSETS = {'p09-world': [767.055, 0], 'p11-continents': [765.354, -0.001]}
+PAGE_W = 779.528
 TOPICS = ['general', 'continents', 'relief', 'climate', 'connection', 'interaction', 'glocal', 'themeActivity']
 
 
@@ -146,6 +149,16 @@ class MapsU1(unittest.TestCase):
                 self.assertEqual(r['families'], l['families'])
                 self.assertTrue(r.get('_spreadOf'))
                 self.assertLess(IDS.index(left), IDS.index(right))
+                # offsetPt: 실측값, 쪽 너비보다 조금 작음(가름선 겹침 5~20pt), 세로는 거의 0 — georef-cli 가 두 쪽을 묶어 맞추는 키
+                self.assertEqual(r['offsetPt'], OFFSETS[right])
+                self.assertTrue(PAGE_W - 20 <= r['offsetPt'][0] <= PAGE_W - 5 and abs(r['offsetPt'][1]) < 0.05, r['offsetPt'])
+                self.assertNotIn('fitFrom', r); self.assertNotIn('projectionFrom', r)
+        # 오른쪽 지도 offsetPt 없는 spreadOf·spreadOf 없는 offsetPt 없음
+        for m in self.maps:
+            self.assertEqual('spreadOf' in m, 'offsetPt' in m, m['id'])
+        # 11쪽은 기준점 없이 10쪽(fitFrom 8쪽)의 풀린 fit − offsetPt(빌림의 빌림은 spreadOf 만 — projection_from.planSpread)
+        self.assertEqual(self.by['p11-continents']['controls'], [])
+        self.assertIn('fitFrom', self.by['p10-continents'])
 
     def test_map_references_exist(self):
         # projectionFrom·fitFrom.map·spreadOf·init.fromMap 이 가리키는 지도는 목록에 있고 자기 자신이 아니며 먼저 맞춰진다(georef-cli 차례),

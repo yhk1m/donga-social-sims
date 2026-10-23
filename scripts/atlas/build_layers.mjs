@@ -21,7 +21,7 @@ import { mesh as topoMesh } from 'topojson-client';
 import { geoDistance, geoContains, geoCentroid } from 'd3-geo';
 import { makeConverter } from './georef.mjs';
 import { WORK, loadFit as loadFitRaw, fitPath, neIndex, key, km } from './geo_util.mjs';
-import { projectionFromStale, projectionFromOlder, fitFromStale } from './projection_from.mjs';
+import { projectionFromStale, projectionFromOlder, fitFromStale, spreadFitStale } from './projection_from.mjs';
 import { resolveUnit, stripUnitArgs } from './unit.mjs';
 import { polarPolygon } from './polar_geom.mjs';
 import { topicViewLayerJson, sectorLinesLayerJson, latLineFeatures, shelvesRaw, shelfOutlineFeature } from './polar_layers.mjs';
@@ -53,6 +53,11 @@ function loadFit(id) {
   if (ff) {
     const why = fitFromStale(fit, loadFitRaw(ff.map), ff);
     if (why) throw new Error(`fitFrom 낡음(${why}) — node scripts/atlas/georef-cli.mjs --unit ${UNIT.id} --all 먼저`);
+  }
+  const so = maps[id]?.spreadOf;   // 두 쪽 지도 오른쪽(U1-3a, 있을 때만): 왼쪽 지도 fit − offsetPt 와 다르면 멈춤
+  if (so) {
+    const why = spreadFitStale(fit, loadFitRaw(so), { map: so, dx: maps[id].offsetPt?.[0], dy: maps[id].offsetPt?.[1] });
+    if (why) throw new Error(`spreadOf 낡음(${why}) — node scripts/atlas/georef-cli.mjs --unit ${UNIT.id} --all 먼저`);
   }
   return fit;
 }

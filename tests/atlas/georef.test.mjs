@@ -479,3 +479,120 @@ test('u6 fit: rmsMm·meanMm ≤ 0.5(approx 제외), p48 람베르트 정적 방�
     assert.deepEqual(f.params, parent.params, m.id);
   }
 });
+
+// ── U1-3a 두 쪽에 걸친 한 지도(spreadOf + offsetPt): 두 쪽 기준점을 왼쪽 좌표계로 모아 한 번 맞추고, 오른쪽 fit = 왼쪽의 풀린 fit − offsetPt ──
+test('U1-3a planSpread: 키가 없으면 빈 표(u2~u6 지도 목록), u1 은 9쪽 ← 8쪽 · 11쪽 ← 10쪽, 틀린 꼴은 멈춤', async () => {
+  const { planSpread } = await import('../../scripts/atlas/projection_from.mjs');
+  for (const u of ['u2', 'u3', 'u4', 'u5', 'u6']) {
+    const ms = JSON.parse(readFileSync(new URL(`../../scripts/atlas/maps_${u}.json`, import.meta.url), 'utf8'));
+    const p = planSpread(ms);
+    assert.equal(p.left.size + p.right.size, 0, u);
+  }
+  const u1 = JSON.parse(readFileSync(new URL('../../scripts/atlas/maps_u1.json', import.meta.url), 'utf8'));
+  const p = planSpread(u1);
+  assert.deepEqual(Object.fromEntries(p.right), { 'p09-world': { map: 'p08-world', dx: 767.055, dy: 0 }, 'p11-continents': { map: 'p10-continents', dx: 765.354, dy: -0.001 } });
+  assert.deepEqual(Object.fromEntries(p.left), { 'p08-world': [{ id: 'p09-world', dx: 767.055, dy: 0 }], 'p10-continents': [{ id: 'p11-continents', dx: 765.354, dy: -0.001 }] });
+  const L = { id: 'a' }, R = (o) => ({ id: 'b', spreadOf: 'a', offsetPt: [767, 0], ...o });
+  assert.throws(() => planSpread([L, R({ offsetPt: undefined })]), /offsetPt/);
+  assert.throws(() => planSpread([L, R({ offsetPt: [767] })]), /offsetPt/);
+  assert.throws(() => planSpread([L, { id: 'b', offsetPt: [1, 2] }]), /spreadOf/);
+  assert.throws(() => planSpread([L, R({ spreadOf: 'zz' })]), /목록에 없음/);
+  assert.throws(() => planSpread([L, R({ spreadOf: 'b' })]), /자기 자신/);
+  assert.throws(() => planSpread([R(), L]), /뒤/);
+  assert.throws(() => planSpread([L, R({ fitFrom: { map: 'a', dx: 0, dy: 0 } })]), /fitFrom/);
+  assert.throws(() => planSpread([L, R({ projectionFrom: 'a' })]), /projectionFrom/);
+  assert.throws(() => planSpread([L, R(), { id: 'c', spreadOf: 'b', offsetPt: [1, 0] }]), /사슬/);
+  assert.throws(() => planSpread([{ id: 'a', georef: false }, R()]), /georef:false/);
+});
+
+test('U1-3a 합성 로빈슨 두 쪽(겹침 12pt, 잡음): 묶어 맞추면 두 쪽 fit 매개변수 같음·가름선 어긋남 0, 따로 맞춘 것보다 좋음', async () => {
+  const { geoRobinson } = await import('d3-geo-projection');
+  const { spreadControls, spreadFit } = await import('../../scripts/atlas/projection_from.mjs');
+  const truth = geoRobinson().rotate([-150, 0]).scale(210).translate([719, 361]);
+  const OFF = 767.055, W = 779.5;
+  let seed = 7;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed / 2147483647 - 0.5) * 0.3; };   // ±0.15pt 잡음(결정적)
+  const left = [], right = [];
+  for (let lon = -180; lon < 180; lon += 10) for (let lat = -70; lat <= 70; lat += 10) {
+    const [x, y] = truth([lon, lat]);
+    if (x >= 20 && x <= W - 6) left.push({ xy: [x + rnd(), y + rnd()], lon, lat });
+    if (x - OFF >= 6 && x - OFF <= 620) right.push({ xy: [x - OFF + rnd(), y + rnd()], lon, lat });
+  }
+  assert.ok(left.length > 40 && right.length > 40);
+  const fams = { families: ['robinson'] };
+  const all = spreadControls(left, [{ id: 'R', dx: OFF, dy: 0, cps: right }]);
+  assert.equal(all.filter((c) => c.name?.startsWith('R:')).length, right.length);
+  assert.equal(all.length, left.length + right.length);
+  const pooled = fitWithTps(all, fams);
+  const L = { id: 'L', family: pooled.family, params: pooled.params, sim: pooled.sim, ...(pooled.tps ? { tps: pooled.tps } : {}) };
+  const Rf = spreadFit(L, { map: 'L', dx: OFF, dy: 0 }, 'R');
+  assert.deepEqual(Rf.params, L.params);
+  assert.deepEqual(Rf.spreadOf, { map: 'L', offsetPt: [OFF, 0] });
+  assert.equal(Rf.fitFrom, undefined);
+  assert.ok(Math.abs(L.params[0] - 150) < 0.5, `중심 ${L.params[0]}`);
+  const sepL = fitWithTps(left, fams), sepR = fitWithTps(right, fams);
+  const seam = (fl, fr) => {   // 가름선 띠(왼쪽 쪽 x 755~773)에서 같은 경위도의 두 쪽 자리 차(오른쪽 + OFF)
+    let m = 0;
+    for (let y = 80; y <= 640; y += 20) for (let x = 755; x <= 773; x += 3) {
+      const ll = invertFit(fl, [x, y]); if (!ll) continue;
+      const q = applyFit(fr, ll); if (!q) continue;
+      m = Math.max(m, Math.hypot(q[0] + OFF - x, q[1] - y));
+    }
+    return m;
+  };
+  const mPooled = seam(L, Rf), mSep = seam({ ...sepL }, { ...sepR });
+  assert.ok(mPooled < 0.05, `묶어 맞춘 가름선 어긋남 ${mPooled}`);
+  assert.ok(mSep > mPooled, `따로 ${mSep} vs 묶음 ${mPooled}`);
+  assert.notDeepEqual(sepL.params, sepR.params);   // 따로 맞추면 매개변수가 갈림(잡음)
+});
+
+test('U1-3a spreadOf 대상이 fitFrom 지도(11쪽 ← 10쪽 ← 8쪽): 오른쪽 fit = 10쪽의 풀린 fit − offsetPt, via 에 출처 · 낡음 검사', async () => {
+  const { shiftFit, spreadFit, spreadFitStale, fitFromStale } = await import('../../scripts/atlas/projection_from.mjs');
+  const p08 = { id: 'p08-world', family: 'robinson', params: [150.07], sim: { a: 210.39, b: 0, tx: 719.0, ty: 361.6 } };
+  const p10 = shiftFit(p08, { map: 'p08-world', dx: 0.9, dy: 1.28 }, 'p10-continents');
+  const spec = { map: 'p10-continents', dx: 765.354, dy: -0.001 };
+  const p11 = spreadFit(p10, spec, 'p11-continents');
+  assert.equal(p11.fitFrom, undefined);
+  assert.deepEqual(p11.spreadOf, { map: 'p10-continents', offsetPt: [765.354, -0.001] });
+  assert.deepEqual(p11.via, { fitFrom: { map: 'p08-world', dx: 0.9, dy: 1.28 } });
+  for (const ll of [[150, 0], [-100, 40], [-60, -30]]) {
+    const a = applyFit(p08, ll), b = applyFit(p11, ll);
+    assert.ok(Math.abs(b[0] - (a[0] + 0.9 - 765.354)) < 1e-6 && Math.abs(b[1] - (a[1] + 1.28 + 0.001)) < 1e-6, String(ll));
+  }
+  assert.equal(spreadFitStale(p11, p10, spec), null);
+  assert.equal(fitFromStale(p10, p08, { map: 'p08-world', dx: 0.9, dy: 1.28 }), null);
+  assert.match(spreadFitStale(p11, { ...p10, params: [151] }, spec), /매개변수/);
+  assert.match(spreadFitStale(p11, { ...p10, sim: { ...p10.sim, tx: 1 } }, spec), /닮음 변환/);
+  assert.match(spreadFitStale(p11, p10, { ...spec, dx: 767 }), /이동량/);
+  assert.match(spreadFitStale({ ...p11, spreadOf: undefined }, p10, spec), /spreadOf/);
+});
+
+// ── Ⅰ 세계화(u1) fit: 합격 기준 + 8~11·13쪽 로빈슨 중심 140~160, 유럽 삽입 람베르트 정각 원뿔, 두 쪽 짝 = 왼쪽 fit − offsetPt, 12쪽 밀러 ─────
+const U1_MAPS = JSON.parse(readFileSync(new URL('../../scripts/atlas/maps_u1.json', import.meta.url), 'utf8'));
+const u1Fits = U1_MAPS.map((m) => [m.id, `${WORK_DIR}/geo/${m.id}.fit.json`]).filter(([, f]) => existsSync(f));
+test('u1 fit: rmsMm·meanMm ≤ 0.5, 8~11·13쪽 로빈슨 중심 140~160, p08-europe 원뿔, 두 쪽 지도 = 왼쪽 fit − offsetPt, 12쪽 밀러', { skip: u1Fits.length ? false : '작업 폴더에 u1 fit 없음' }, () => {
+  assert.deepEqual(u1Fits.map(([id]) => id), U1_MAPS.map((m) => m.id), 'u1 fit 파일이 지도 목록과 다름');
+  const fits = Object.fromEntries(u1Fits.map(([id, f]) => [id, JSON.parse(readFileSync(f, 'utf8'))]));
+  for (const [id, fit] of Object.entries(fits)) {
+    assert.ok(!fit.approx, `${id} approx`);
+    assert.ok(fit.rmsMm <= 0.5 && fit.meanMm <= 0.5, `${id} rms ${fit.rmsMm} mean ${fit.meanMm}`);
+  }
+  for (const id of ['p08-world', 'p09-world', 'p10-continents', 'p11-continents', 'p13-climate']) {
+    assert.equal(fits[id].family, 'robinson', id);
+    assert.ok(fits[id].params[0] >= 140 && fits[id].params[0] <= 160, `${id} 중심 ${fits[id].params[0]}`);
+  }
+  assert.equal(fits['p08-europe'].family, 'conicConformal');
+  assert.equal(fits['p12-relief'].family, 'miller');
+  assert.deepEqual(fits['p08-world'].spread.maps.map((r) => r.id), ['p09-world']);
+  assert.ok(fits['p08-world'].spread.maps[0].n >= 12, '9쪽 기준점이 묶음 맞춤에 들어감');
+  for (const m of U1_MAPS.filter((x) => x.spreadOf)) {
+    const f = fits[m.id], src = fits[m.spreadOf];
+    assert.deepEqual(f.spreadOf, { map: m.spreadOf, offsetPt: m.offsetPt }, m.id);
+    assert.equal(f.family, src.family, m.id);
+    assert.deepEqual(f.params, src.params, m.id);
+    const ll = [-150, 20];
+    const p = applyFit(src, ll), q = applyFit(f, ll);
+    assert.ok(Math.abs(q[0] - p[0] + m.offsetPt[0]) < 1e-6 && Math.abs(q[1] - p[1] + m.offsetPt[1]) < 1e-6, m.id);
+  }
+  assert.deepEqual(fits['p11-continents'].via, { fitFrom: U1_MAPS.find((m) => m.id === 'p10-continents').fitFrom });
+});
