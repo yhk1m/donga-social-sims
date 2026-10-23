@@ -56,6 +56,28 @@ export function globeTarget(spec, centers = {}) {
   }
   return centers[spec.cls]?.slice() || null;
 }
+/** 좁은 무대(px — 이보다 좁으면 둥근 「지구본」 단추 하나로 접고 누르면 펼침, worldQuiz 휴대폰 문턱과 같음) */
+export const GLOBE_NARROW = 560;
+
+// 그림 있는지 한 번만 확인(U1-6 전에는 그림이 없어 단추마다 404 가 10개씩 났음): 첫 단추 그림 하나를 Image() 로 불러 보고, 실패면 모든 단추가 <img> 없이
+// 선 아이콘. Image 가 없는 곳(Node 시험)은 있다고 봄. resetGlobeImageProbe = 시험용.
+let probe = null;
+export function resetGlobeImageProbe() { probe = null; }
+function imageProbe(cb) {
+  if (typeof globalThis.Image !== 'function') { cb(true); return () => {}; }
+  if (!probe) {
+    probe = { state: 'pending', subs: new Set() };
+    const p0 = probe, im = new globalThis.Image();
+    const settle = (ok) => { if (p0.state !== 'pending') return; p0.state = ok ? 'ok' : 'fail'; for (const f of [...p0.subs]) f(ok); p0.subs.clear(); };
+    im.onload = () => settle(true); im.onerror = () => settle(false);
+    im.src = imageUrl(GLOBE_UI.img(GLOBE_SETS.continents[0].id, 160));
+  }
+  if (probe.state !== 'pending') { cb(probe.state === 'ok'); return () => {}; }
+  const p0 = probe;
+  p0.subs.add(cb);
+  return () => p0.subs.delete(cb);
+}
+
 /** 단추가 고른 값이 layer.selected 에서 보이는 꼴(묶음 = 'group:a+b' — worldExtra.continentsLayer.select) */
 const selKey = (spec) => (Array.isArray(spec.cls) ? `group:${spec.cls.join('+')}` : spec.cls);
 
@@ -123,33 +145,65 @@ export function withGlobeButtons(layer, set, { map = null, idleHidden = false, m
   let pressed = null;  // 눌린 단추 spec
   let lastFlat = null; // 마지막 멈춘 평면 보기 {key, center, k}(이미 지구본에서 눌렀을 때 「평면 지도로」가 갈 곳)
   let mine = 0;        // 이 모듈이 보기를 바꾸는 중(viewchange 를 사용자 것으로 보지 않음)
-  let anim = null, dead = false, stageEl = null, place0 = null;
+  let anim = null, dead = false, stageEl = null, place0 = null, lastPressed = null;
   const isFlat = (v) => v && !specialView(v.key);
   if (isFlat(map?.view)) lastFlat = { key: map.view.key, center: map.view.center, k: map.view.k };
 
   // ── DOM ──
+  const kb = (e) => e?.detail === 0; // 키보드(Enter·Space)로 누른 click
   const flatBtn = h('button', {
     class: 'ds-btn at-wg-flat is-off', type: 'button', title: '앞에 보던 평면 지도로 돌아가기',
-    on: { click: (e) => { e.stopPropagation?.(); flat(); } },
+    on: { click: (e) => { e.stopPropagation?.(); flat({ focus: kb(e) || globalThis.document?.activeElement === flatBtn }); } },
   }, icon('back'), h('span', { class: 'at-wg-flat-text' }, '평면 지도로'));
   flatBtn.disabled = true;
+  const iconPic = (pic) => { pic.replaceChildren(icon('globe')); pic.classList.add('is-icon'); };
   const els = specs.map((spec) => {
     const pic = h('span', { class: 'at-wg-pic' });
-    const img = h('img', {
-      class: 'at-wg-img', alt: '', loading: 'lazy', decoding: 'async', draggable: 'false',
-      src: imageUrl(GLOBE_UI.img(spec.id, 160)), srcset: `${imageUrl(GLOBE_UI.img(spec.id, 320))} 2x`,
-      on: { error: () => { img.remove(); pic.append(icon('globe')); pic.classList.add('is-icon'); } },
-    });
-    pic.append(img);
+    iconPic(pic); // 그림 확인 전·실패면 선 아이콘
     const el = h('button', {
       class: 'at-wg-btn', type: 'button', 'data-id': spec.id, 'aria-pressed': 'false',
       'aria-label': `${spec.label} — 지구본으로 돌려 보기`, title: `${spec.label} — 지구본으로 돌려 보기`,
-      on: { click: (e) => { e.stopPropagation?.(); press(spec.id); } },
+      on: { click: (e) => { e.stopPropagation?.(); press(spec.id, { focus: kb(e) }); } },
     }, pic, h('span', { class: 'at-wg-name' }, spec.label));
-    return { spec, el };
+    return { spec, el, pic };
   });
-  const box = h('section', { class: 'at-wg', 'aria-label': set === 'oceans' ? '대양 지구본 단추' : '대륙 지구본 단추' },
-    flatBtn, h('div', { class: 'at-wg-list', role: 'group' }, ...els.map((x) => x.el)));
+  const offProbe = imageProbe((ok) => {
+    if (!ok || dead) return;
+    for (const { spec, pic } of els) {
+      const img = h('img', {
+        class: 'at-wg-img', alt: '', loading: 'lazy', decoding: 'async', draggable: 'false',
+        src: imageUrl(GLOBE_UI.img(spec.id, 160)), srcset: `${imageUrl(GLOBE_UI.img(spec.id, 320))} 2x`,
+        on: { error: () => iconPic(pic) },
+      });
+      pic.classList.remove('is-icon');
+      pic.replaceChildren(img);
+    }
+  });
+  const toggle = h('button', {
+    class: 'at-wg-toggle', type: 'button', 'aria-expanded': 'false', hidden: '',
+    'aria-label': set === 'oceans' ? '대양 지구본 단추 펴기' : '대륙 지구본 단추 펴기', title: '지구본 단추',
+    on: { click: (e) => { e.stopPropagation?.(); open(!opened, { focus: kb(e) }); } },
+  }, icon('globe'), h('span', { class: 'at-wg-toggle-text' }, '지구본'));
+  toggle.hidden = true;
+  const pop = h('div', { class: 'at-wg-pop' }, flatBtn, h('div', { class: 'at-wg-list', role: 'group' }, ...els.map((x) => x.el)));
+  const box = h('section', { class: 'at-wg', tabindex: '-1', 'aria-label': set === 'oceans' ? '대양 지구본 단추' : '대륙 지구본 단추' }, toggle, pop);
+  let narrow = false, opened = false;
+  /** 좁은 무대: 접힘(둥근 단추만) ↔ 펼침(묶음 칸이 단추 아래로) */
+  function open(on, { focus = false } = {}) {
+    opened = !!on && narrow;
+    box.classList.toggle('is-open', opened);
+    toggle.setAttribute('aria-expanded', String(opened));
+    const t = `${set === 'oceans' ? '대양' : '대륙'} 지구본 단추 ${opened ? '접기' : '펴기'}`;
+    toggle.setAttribute('aria-label', t);
+    if (focus && opened) (els[0]?.el)?.focus?.();
+  }
+  function setNarrow(on) {
+    if (on === narrow) return;
+    narrow = on;
+    box.classList.toggle('is-narrow', narrow);
+    toggle.hidden = !narrow;
+    open(false);
+  }
 
   function paint() {
     for (const { spec, el } of els) {
@@ -175,14 +229,22 @@ export function withGlobeButtons(layer, set, { map = null, idleHidden = false, m
     const zoom = ui.find((o) => o[5].classList.contains('at-tools-zoom')) || ui.find((o) => o[5].classList.contains('at-tools-card'));
     const anchorTop = zoom ? Math.round(zoom[3] + 8) : GAP;
     const tags = (layer.labelObstacles?.() || []).map((b) => [b[0], b[1], b[2], b[3], TAG_WEIGHT]);
+    setNarrow(sr.width < GLOBE_NARROW);
     const sizes = {};
-    for (const m of ['l', 's', 'row']) {
-      box.setAttribute('data-mode', m);
+    if (narrow) { // 접기 단추만 자리를 차지(펼친 칸은 그 아래로 떠 있음)
+      box.setAttribute('data-mode', 's');
       const r = box.getBoundingClientRect();
-      sizes[m] = [r.width, r.height];
+      sizes.l = sizes.s = sizes.row = [r.width, r.height];
+    } else {
+      for (const m of ['l', 's', 'row']) {
+        box.setAttribute('data-mode', m);
+        const r = box.getBoundingClientRect();
+        sizes[m] = [r.width, r.height];
+      }
     }
     if (!(sizes.l[0] > 0)) { box.setAttribute('data-mode', place0?.mode || 'l'); return; }
     const p = placeGlobes(sr.width, sr.height, sizes, [...ui.map((o) => o.slice(0, 5)), ...tags], { anchorTop });
+    if (narrow) p.mode = 's';
     place0 = p;
     box.setAttribute('data-mode', p.mode);
     box.setAttribute('data-place', p.side);
@@ -208,7 +270,7 @@ export function withGlobeButtons(layer, set, { map = null, idleHidden = false, m
     const step = (t) => {
       if (dead || map.destroyed || !anim) return;
       if (Math.abs(wrap(d.rot[0] - last[0])) > 1e-6 || Math.abs(d.rot[1] - last[1]) > 1e-6) { anim = null; d.home = d.rot.slice(); return; } // 사용자가 끌어 돌림
-      const u = Math.min(1, ((t ?? clock()) - t0) / len);
+      const u = Math.max(0, Math.min(1, ((t ?? clock()) - t0) / len)); // rAF 시각이 t0 보다 앞설 수 있음
       if (u >= 1) { finish(); return; }
       const e = ease(u);
       last = [wrap(from[0] + dl * e), from[1] + dp * e];
@@ -220,32 +282,38 @@ export function withGlobeButtons(layer, set, { map = null, idleHidden = false, m
   }
 
   // ── 누르기·되돌리기 ──
-  function press(id) {
+  function press(id, { focus = false } = {}) {
     const spec = specs.find((x) => x.id === id);
     if (!spec || dead || !map?.view || !def()) return;
     const target = globeTarget(spec, layer.centers);
     if (!target) return;
     mine++;
     try {
+      layer.select(spec.cls); lastPressed = spec; // 먼저 — 모르는 cls 로 멈추면 보기·바탕은 그대로(세션 없음)
+      pressed = spec;
       if (!session) {
-        const v = map.view;
-        session = { undoBase: setBase(map, 'natural'), undoView: null };
+        const v = map.view, s1 = { undoBase: null, undoView: null };
+        session = s1;
+        s1.undoBase = setBase(map, 'natural');
         if (v.key !== 'globe') {
           const c = v.center && Number.isFinite(v.center[0]) ? v.center : [v.centerLon ?? 0, 0];
-          session.undoView = globeView(map, { rotate: rotateFor(c) }); // 처음 회전 = 앞 평면 화면 가운데(원판 가운데로 — 거기서 돌아감)
+          s1.undoView = globeView(map, { rotate: rotateFor(c) }); // 처음 회전 = 앞 평면 화면 가운데(원판 가운데로 — 거기서 돌아감)
         }
         refresh();
       }
-      pressed = spec;
-      layer.select(spec.cls);
-      pressed = spec; // onSelect 가 풀었어도 이 단추
     } finally { mine--; }
+    if (narrow && opened) { open(false); if (focus) toggle.focus?.(); } // 좁은 무대: 누르면 다시 접음
     paint();
     spin(target);
   }
   /** 「평면 지도로」: 앞 평면 보기 + 고름 풂 + 바탕 되돌림 */
-  function flat({ restoreView = true } = {}) {
+  function flat({ restoreView = true, focus = false } = {}) {
     if (!session) return;
+    if (focus) { // 끄기 전에 초점을 마지막으로 누른 단추(좁으면 접기 단추)·열로 — 꺼진 단추에 초점이 남지 않게
+      const last = els.find((x) => x.spec === (pressed || lastPressed))?.el;
+      (narrow ? toggle : last || box).focus?.();
+    }
+    if (narrow && opened) open(false);
     stopSpin();
     const s0 = session, back = lastFlat; // 되돌리는 동안 viewchange 가 lastFlat 을 덮으므로 먼저
     session = null; pressed = null;
@@ -285,7 +353,9 @@ export function withGlobeButtons(layer, set, { map = null, idleHidden = false, m
       baseSvg?.call(layer, group, project, view);
     },
     globes: {
-      press, flat: () => flat(),
+      press, flat: () => flat(), open: (on = true) => open(on),
+      get narrow() { return narrow; },
+      get opened() { return opened; },
       get active() { return !!session; },
       get pressed() { return pressed?.id ?? null; },
     },
@@ -294,7 +364,7 @@ export function withGlobeButtons(layer, set, { map = null, idleHidden = false, m
       flat();
       dead = true;
       stopSpin();
-      offView(); offSel();
+      offView(); offSel(); offProbe();
       box.remove();
       baseDestroy?.call(layer);
     },

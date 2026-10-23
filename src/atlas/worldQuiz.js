@@ -244,6 +244,7 @@ export function withContinentQuiz(layer, data, { map = null, countryFeatures = n
     map.fitBounds([w - pad, Math.max(-80, s0 - pad), (e < w ? e + 360 : e) + pad, Math.min(84, n + pad)], { ms: 600 });
   }
   function showNames(cls) {
+    if (typeof cls === 'string' && cls.startsWith('group:')) cls = null; // 묶음 고름(3f 지구본 단추 「아메리카」)은 한 대륙 목록이 아님
     const list = cls && !isOcean(cls) ? (layer.names?.[cls] || []) : [];
     namesTitle.textContent = cls && !isOcean(cls) ? `${labelOf.get(cls)}의 나라 ${list.length}` : '대륙별 나라';
     namesHint.textContent = !cls ? '대륙을 고르면(꼬리표·범례·지도의 나라 누르기) 그 대륙에 있는 나라 이름이 여기에 보입니다.'

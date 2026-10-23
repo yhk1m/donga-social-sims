@@ -334,3 +334,156 @@ test('맞히기 칸(worldQuiz.placePanel)은 단추 열(.at-wg)을 무대 부품
   assert.equal(panel.getAttribute('data-corner'), 'tl');
   Q.destroy();
 });
+
+// ── 리뷰 고침(좁은 무대·초점·그림 확인·보간 끝 갈래·돌리는 중 누르기·맞히기 문제 중 누르기) ──
+/** 3e 휴대폰 캡처(390×464)의 무대 부품·꼬리표 상자 */
+const PHONE_UI = { 'at-tools-card': [105, 10, 275, 110], 'at-tools-zoom': [348, 125, 32, 105], 'at-legend-panel': [130, 235, 248, 220], 'at-scale': [10, 420, 100, 35] };
+const PHONE_TAGS = [[45, 139, 112, 161], [153, 142, 200, 164], [10, 247, 90, 269], [95, 229, 150, 251], [143, 204, 218, 226], [210, 187, 300, 209],
+  [330, 201, 380, 223], [90, 256, 160, 278], [100, 236, 135, 258], [330, 247, 378, 269]];
+function phone(set = 'oceans') {
+  const layer = fakeLayer(); layer.labelObstacles = () => PHONE_TAGS.map((b) => [...b]);
+  const r = make({ set, layer });
+  r.stage._rect = { left: 0, top: 0, width: 390, height: 464 };
+  for (const [c, [x, y, w, hh]] of Object.entries(PHONE_UI)) { const e = h('div', { class: c }); e._rect = { left: x, top: y, width: w, height: hh }; r.stage.append(e); }
+  const wg = one(r.stage, 'at-wg'); wg._rect = { left: 0, top: 0, width: 44, height: 44 };
+  r.L.drawSvg(r.g, (ll) => ll, { k: 1, moving: false });
+  return { ...r, wg, toggle: one(r.stage, 'at-wg-toggle') };
+}
+
+test('좁은 무대(390×464, 10~11쪽 꼬리표): 둥근 「지구본」 단추 하나로 접힘 — 꼬리표·도구·축척·범례를 안 덮음, 누르면 펼침(aria-expanded), 단추를 누르면 다시 접힘', () => {
+  const { stage, g, wg, toggle, L } = phone();
+  assert.ok(wg.classList.contains('is-narrow'));
+  assert.equal(toggle.hidden, false);
+  assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+  const x = parseFloat(wg.style.left), y = parseFloat(wg.style.top), r = [x, y, x + 44, y + 44];
+  const hit = (b) => r[0] < b[2] && b[0] < r[2] && r[1] < b[3] && b[1] < r[3];
+  for (const t of PHONE_TAGS) assert.ok(!hit(t), `꼬리표 ${t} 를 덮음 — 접기 단추 ${r}`);
+  for (const [c, [bx, by, bw, bh]] of Object.entries(PHONE_UI)) assert.ok(!hit([bx, by, bx + bw, by + bh]), `${c} 를 덮음`);
+  click(toggle);
+  assert.equal(toggle.getAttribute('aria-expanded'), 'true'); assert.ok(wg.classList.contains('is-open'));
+  assert.equal(L.globes.opened, true);
+  click(btnOf(stage, 'pacific'));
+  assert.equal(L.selected, 'pacific');
+  assert.equal(toggle.getAttribute('aria-expanded'), 'false', '누르면 다시 접힘');
+  assert.ok(!wg.classList.contains('is-open'));
+  // 넓어지면 펼친 열로
+  stage._rect = { left: 0, top: 0, width: 1120, height: 900 };
+  L.drawSvg(g, (ll) => ll, { k: 1, moving: false });
+  assert.ok(!wg.classList.contains('is-narrow')); assert.equal(toggle.hidden, true);
+  L.destroy();
+});
+
+test('초점: 키보드로 「평면 지도로」를 누르면 끄기 전에 마지막으로 누른 단추로(좁은 무대면 접기 단추로)', () => {
+  const a = make();
+  click(btnOf(a.stage, 'europe'));
+  let focused = null;
+  for (const b of btns(a.stage)) b.focus = () => { focused = b; };
+  const flatB = one(a.stage, 'at-wg-flat');
+  flatB.dispatch('click', { detail: 0, stopPropagation() {} });
+  assert.equal(focused, btnOf(a.stage, 'europe'));
+  assert.equal(flatB.disabled, true);
+  a.L.destroy();
+  const p = phone();
+  click(p.toggle); click(btnOf(p.stage, 'indian'));
+  let tf = 0; p.toggle.focus = () => { tf++; };
+  click(p.toggle);
+  one(p.stage, 'at-wg-flat').dispatch('click', { detail: 0, stopPropagation() {} });
+  assert.equal(tf, 1, '접기 단추로');
+  assert.equal(p.toggle.getAttribute('aria-expanded'), 'false');
+  p.L.destroy();
+});
+
+test('그림 확인: Image() 로 한 장만 불러 보고 실패면 모든 단추가 <img> 없이 선 아이콘(404 10개 대신 1개), 되면 그림', () => {
+  const saved = globalThis.Image;
+  try {
+    let made = 0; const pend = [];
+    globalThis.Image = class { constructor() { made++; pend.push(this); } set src(v) { this._src = v; } get src() { return this._src; } };
+    GB.resetGlobeImageProbe();
+    const a = make(), b = make({ set: 'oceans' });
+    assert.equal(made, 1, '한 번만');
+    assert.match(pend[0].src, /u1\/globe\/asia-160\.webp$/);
+    assert.equal(byClass(a.stage, 'at-wg-img').length, 0, '확인 전엔 아이콘');
+    pend[0].onerror();
+    assert.equal(byClass(a.stage, 'at-wg-img').length + byClass(b.stage, 'at-wg-img').length, 0, '실패면 <img> 없음');
+    assert.equal(byClass(a.stage, 'is-icon').length, 5);
+    const c = make();
+    assert.equal(made, 1); assert.equal(byClass(c.stage, 'at-wg-img').length, 0);
+    a.L.destroy(); b.L.destroy(); c.L.destroy();
+    GB.resetGlobeImageProbe();
+    const d = make();
+    pend[1].onload();
+    assert.equal(byClass(d.stage, 'at-wg-img').length, 5, '되면 그림');
+    d.L.destroy();
+  } finally { globalThis.Image = saved; GB.resetGlobeImageProbe(); }
+});
+
+test('회전 길이: 움직임 줄이기(matchMedia reduce)·ms 0 이면 바로, matchMedia 가 없으면 보간', () => {
+  const saved = globalThis.matchMedia;
+  try {
+    globalThis.matchMedia = (q) => ({ matches: /reduce/.test(q) });
+    const ck = clock();
+    const a = make({ ms: null, ck });
+    click(btnOf(a.stage, 'africa'));
+    assert.equal(ck.pending, 0); assert.ok(near(discCenter(), CENTERS.africa));
+    a.L.destroy();
+    delete globalThis.matchMedia;
+    const ck2 = clock();
+    const b = make({ ms: null, ck: ck2 });
+    click(btnOf(b.stage, 'asia'));
+    assert.ok(ck2.pending > 0, '보간 프레임');
+    ck2.step(40);
+    assert.ok(near(discCenter(), CENTERS.asia)); assert.equal(ck2.pending, 0);
+    b.L.destroy();
+    const ck3 = clock(); const c = make({ ms: 0, ck: ck3 });
+    click(btnOf(c.stage, 'europe'));
+    assert.equal(ck3.pending, 0); assert.ok(near(discCenter(), CENTERS.europe));
+    c.L.destroy();
+  } finally { if (saved) globalThis.matchMedia = saved; else delete globalThis.matchMedia; }
+});
+
+test('돌리는 중 다른 단추 → 지금 회전에서 새 목표로 이어 돎(앞 보간 멈춤, 끝 = 새 목표)', () => {
+  const ck = clock(50);
+  const { stage, L } = make({ set: 'oceans', ms: 600, ck });
+  click(btnOf(stage, 'pacific'));
+  ck.step(4);
+  const mid = discCenter();
+  click(btnOf(stage, 'atlantic'));
+  assert.equal(ck.pending, 1, '앞 보간은 멈춤');
+  assert.ok(near(discCenter(), mid, 0.01), '누른 순간 튀지 않음');
+  ck.step(1);
+  assert.ok(near(discCenter(), mid, 3), '이어서 조금씩');
+  ck.step(30);
+  assert.ok(near(discCenter(), CENTERS.atlantic)); assert.equal(L.selected, 'atlantic');
+  L.destroy();
+});
+
+test('맞히기 문제가 열린 채 대양 단추 → 그 대양 고름 + 보던 문제는 닫힘(맞히기 칸 그대로), 묶음 고름은 나라 목록 비움', async () => {
+  const QZ = await import('../../src/atlas/worldQuiz.js');
+  const sq = (lon, lat, d = 2) => [[[lon, lat], [lon, lat + d], [lon + d, lat + d], [lon + d, lat], [lon, lat]]];
+  const data = { type: 'FeatureCollection', properties: { layerType: 'continents', legend: [{ cls: 'asia', label: '아시아', color: '#f2bc97' }, { cls: 'europe', label: '유럽', color: '#a5d3e6' }],
+    classes: { AAA: 'asia' }, centers: CENTERS, names: { asia: ['가나라'] }, oceans: [{ cls: 'pacific', label: '태평양', color: '#3d8fd1' }],
+    tags: [{ cls: 'asia', text: 'ㅇㅅㅇ 대륙', at: [100, 45] }, { cls: 'pacific', text: 'ㅌㅍㅇ', at: [-150, 0] }] },
+  features: [{ type: 'Feature', properties: { cls: 'pacific', ocean: true }, geometry: { type: 'MultiPolygon', coordinates: [sq(-170, -10, 5)] } }] };
+  const cf = { 50: [{ type: 'Feature', properties: { iso: 'AAA', ko: '가나라' }, geometry: { type: 'MultiPolygon', coordinates: [sq(100, 30)] } }] };
+  const sh = shell(); const map = fakeMap();
+  const L = GB.withGlobeButtons(QZ.withContinentQuiz(WX.continentsLayer('cq', data, { countryFeatures: cf, map }), data, { map, countryFeatures: cf, seed: 3 }), 'oceans', { map, ms: 0 });
+  L.drawSvg(sh.g, (ll) => ll, { k: 1 });
+  L.quiz.open('asia');
+  assert.equal(L.quiz.current, 'asia');
+  click(btnOf(sh.stage, 'pacific'));
+  assert.equal(L.selected, 'pacific');
+  assert.equal(L.quiz.current, null, '문제 닫힘');
+  assert.ok(one(sh.stage, 'at-wq'), '맞히기 칸은 그대로');
+  L.select(['asia', 'europe']);
+  assert.equal(one(sh.stage, 'at-wq-names-title').textContent, '대륙별 나라', '묶음(group:)은 한 대륙 목록이 아님');
+  L.destroy();
+});
+
+test('select 가 멈추면(모르는 cls) 세션 없음 — 보기·바탕 그대로', () => {
+  const layer = fakeLayer(); layer.select = () => { throw new Error('모르는 대륙'); };
+  const { stage, map, L } = make({ layer });
+  assert.throws(() => L.globes.press('asia'), /모르는 대륙/);
+  assert.equal(map.view.key, 'robinson'); assert.equal(map.options.natural, false); assert.equal(L.globes.active, false);
+  assert.equal(one(stage, 'at-wg-flat').disabled, true);
+  L.destroy();
+});

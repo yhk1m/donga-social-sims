@@ -8,6 +8,8 @@
 }
 .ds-sim .at-wg[style*="left"] { right: auto; }
 .ds-sim .at-wg > * { pointer-events: auto; }
+.ds-sim .at-wg:focus { outline: none; }
+.ds-sim .at-wg-pop { display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
 .ds-sim .at-wg-list { display: flex; flex-direction: column; gap: 6px; align-items: center; }
 .ds-sim .at-wg-flat {
   display: inline-flex; align-items: center; justify-content: center; gap: 3px; font-size: 12px; font-weight: 700; padding: 4px 6px; white-space: nowrap;
@@ -43,7 +45,24 @@
 }
 .ds-sim .at-wg[data-mode="s"] .at-wg-flat-text, .ds-sim .at-wg[data-mode="row"] .at-wg-flat-text { font-size: 11px; }
 /* 가로 줄 */
-.ds-sim .at-wg[data-mode="row"] { flex-direction: row; align-items: flex-start; }
+.ds-sim .at-wg[data-mode="row"] .at-wg-pop { flex-direction: row; align-items: flex-start; }
 .ds-sim .at-wg[data-mode="row"] .at-wg-list { flex-direction: row; align-items: flex-start; }
 .ds-sim .at-wg[data-mode="row"] .at-wg-flat { align-self: center; }
+/* 좁은 무대(< 560px): 둥근 「지구본」 단추 하나(44px) — 누르면 묶음 칸이 그 아래로 떠서 펼쳐짐(자리는 접기 단추만 차지) */
+.ds-sim .at-wg-toggle[hidden] { display: none; }
+.ds-sim .at-wg-toggle {
+  width: 44px; height: 44px; border-radius: 50%; border: 2px solid #fff; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 35% 30%, #e3f1fb, #7fb4dc 70%, #3f7fb5); color: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .28); font: inherit;
+}
+.ds-sim .at-wg-toggle .ds-icon { width: 20px; height: 20px; stroke-width: 1.8; }
+.ds-sim .at-wg-toggle-text { font-size: 9px; font-weight: 800; line-height: 1; margin-top: 1px; text-shadow: 0 0 2px rgba(0, 0, 0, .5); }
+.ds-sim .at-wg-toggle:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent); }
+.ds-sim .at-wg-toggle[aria-expanded="true"] { border-color: var(--accent); }
+.ds-sim .at-wg.is-narrow:not(.is-open) .at-wg-pop { display: none; }
+.ds-sim .at-wg.is-narrow .at-wg-flat.is-off { display: none; } /* 펼친 칸에서 꺼진 「평면 지도로」는 빈 줄을 남기지 않음 */
+.ds-sim .at-wg.is-narrow .at-wg-pop {
+  position: absolute; top: 50px; left: 0; padding: 6px; background: rgba(255, 255, 255, .96); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow);
+}
+.ds-sim .at-wg.is-narrow[data-place="right"] .at-wg-pop { left: auto; right: 0; }
+.ds-sim .at-wg.is-narrow[data-place="bottom"] .at-wg-pop { top: auto; bottom: 50px; }
 @media (prefers-reduced-motion: reduce) { .ds-sim .at-wg-pic { transition: none; } .ds-sim .at-wg-btn:hover .at-wg-pic { transform: none; } }
