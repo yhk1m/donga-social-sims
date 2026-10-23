@@ -556,10 +556,11 @@ def choseong(t):
     return ''.join(out)
 
 
-def match_tags(items, labels, oceans=()):
+def match_tags(items, labels, oceans=(), require_all=False):
     """[{map, text, pt}] · [(cls, 이름)] → ([{cls, text, map, pt}], {missing, dup}).
     꼬리표 글자에서 「대륙」을 뺀 초성 = 이름의 초성인 cls 하나(없거나 둘이면 멈춤). oceans(대양 cls 모음)를 주면 「대륙」이 붙은 대양·안 붙은 대륙도 멈춤.
-    같은 cls 가 다른 지도에 또 있으면(두 쪽 가름선 겹침 띠) 처음 것만 — 자리 확인은 경위도로 되돌린 뒤 build 가. 같은 지도에 둘이면 멈춤."""
+    같은 cls 가 다른 지도에 또 있으면(두 쪽 가름선 겹침 띠) 처음 것만 — 자리 확인은 경위도로 되돌린 뒤 build 가. 같은 지도에 둘이면 멈춤.
+    require_all 이면 꼬리표가 없는 cls 가 하나라도 있을 때 멈춤(page_tags — 꼬리표를 잃으면 빌드가 멈추게)."""
     by = {}
     for cls, label in labels: by.setdefault(choseong(label), []).append(cls)
     out, seen, dup = [], {}, []
@@ -577,7 +578,9 @@ def match_tags(items, labels, oceans=()):
         out.append({'cls': cls, 'text': t, 'map': it['map'], 'pt': list(it['pt']), **({'i': it['i']} if 'i' in it else {})})
     order = [c for c, _ in labels]
     out.sort(key=lambda q: order.index(q['cls']))
-    return out, {'missing': [c for c in order if c not in seen], 'dup': dup}
+    missing = [c for c in order if c not in seen]
+    if require_all and missing: raise ValueError(f'초성 꼬리표 없음 {missing} — 지면 꼬리표를 잃었거나 tags 글꼴·크기가 맞지 않음')
+    return out, {'missing': missing, 'dup': dup}
 
 
 def page_tags(cfg, mps, labels, oceans=()):
@@ -597,7 +600,7 @@ def page_tags(cfg, mps, labels, oceans=()):
             b = sp['bbox']; pt = [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]
             if x0 <= pt[0] <= x1 and y0 <= pt[1] <= y1: items.append({'map': mid, 'text': sp['text'], 'pt': pt})
     for i, it in enumerate(items): it['i'] = i
-    tags, rep = match_tags(items, labels, oceans)
+    tags, rep = match_tags(items, labels, oceans, require_all=True)   # 설정 tags 가 있으면 대륙·대양 모두 꼬리표가 있어야 함
     ll = [None] * len(items)
     for mid in cfg['maps']:
         ix = [it['i'] for it in items if it['map'] == mid]

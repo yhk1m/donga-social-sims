@@ -215,6 +215,14 @@ class Tags(unittest.TestCase):
         with self.assertRaises(ValueError):   # 「대륙」이 붙은 대양·안 붙은 대륙
             cl.match_tags([{'map': 'a', 'text': 'ㅌㅍㅇ 대륙', 'pt': [0, 0]}], self.LABELS, oceans={'pacific', 'arctic'})
 
+    def test_match_tags_require_all(self):
+        """page_tags(설정 tags 있음)는 require_all — 꼬리표 하나라도 빠지면 멈춤, 다 있으면 그대로"""
+        items = [{'map': 'a', 'text': 'ㅇㅅㅇ 대륙', 'pt': [0, 0]}, {'map': 'a', 'text': 'ㅌㅍㅇ', 'pt': [9, 9]}]
+        with self.assertRaises(ValueError):
+            cl.match_tags(items, self.LABELS, require_all=True)
+        got, rep = cl.match_tags(items, [('asia', '아시아'), ('pacific', '태평양')], require_all=True)
+        self.assertEqual((len(got), rep['missing']), (2, []))
+
     def test_match_tags_spread_overlap_keeps_first(self):
         """가름선 겹침 띠에서 두 쪽에 같은 꼬리표가 찍히면 처음 것만(자리 확인은 경위도로 되돌린 뒤 build 가)"""
         got, rep = cl.match_tags([{'map': 'a', 'text': 'ㅌㅍㅇ', 'pt': [770, 0]}, {'map': 'b', 'text': 'ㅌㅍㅇ', 'pt': [5, 0]}], self.LABELS)

@@ -175,10 +175,17 @@ test('정답 모두 보기 → 꼬리표 모두 이름(점수 그대로) · 다�
   L.destroy();
 });
 
-test('키보드: 꼬리표에서 Enter·Space → 누르기와 같음(기본 동작 막음), 다른 키는 그대로', () => {
+test('키보드: 꼬리표에서 Enter·Space → 누르기와 같음(기본 동작 막음·전파 막음·첫 보기로 초점, 질문 글 aria-live), 다른 키는 그대로', () => {
   const { g, stage, L } = make();
-  const ev = tagOf(g, 'africa').dispatch('keydown', { key: 'Enter' });
-  assert.ok(ev.defaultPrevented); assert.equal(L.selected, 'africa'); assert.equal(optBtns(stage).length, 4);
+  const proto = Object.getPrototypeOf(h('button')); let focused = null;
+  proto.focus = function () { focused = this; };
+  let stopped = false, prevented = false; // 가짜 DOM dispatch 는 stopPropagation 을 덮어쓰므로 리스너를 바로 부름
+  const kd = tagOf(g, 'africa')._listeners.find((l) => l.type === 'keydown').fn;
+  kd({ key: 'Enter', preventDefault() { prevented = true; }, stopPropagation() { stopped = true; } });
+  delete proto.focus;
+  assert.ok(prevented); assert.ok(stopped); assert.equal(L.selected, 'africa'); assert.equal(optBtns(stage).length, 4);
+  assert.equal(focused, optBtns(stage)[0], '첫 보기로 초점');
+  assert.equal(one(stage, 'at-quiz-q').getAttribute('aria-live'), 'polite');
   const sp = tagOf(g, 'arctic').dispatch('keydown', { key: ' ' });
   assert.ok(sp.defaultPrevented); assert.equal(L.selected, 'arctic');
   const tab = tagOf(g, 'asia').dispatch('keydown', { key: 'Tab' });
@@ -278,3 +285,51 @@ test('실제 10·11쪽 꼬리표: 12(대륙 7 · 대양 5, cls 마다 하나), �
     }
     for (const list of Object.values(p.names)) for (const nm of list) assert.ok(p.nameIso[nm], `${nm} → 나라`);
   });
+
+// ── 보기 칸 자리(리뷰 고침 — 칸이 왼쪽 위 「ㅇㄹ 대륙」 꼬리표를 가렸음) ─────────────────────
+test('placePanel: 왼쪽 아래(축척 위) → 왼쪽 위 → 왼쪽 가운데 중 안 겹치는 첫 자리, 지금 자리가 안 겹치면 그대로, 다 겹치면 겹친 넓이가 가장 작은 곳', () => {
+  assert.deepEqual(QZ.placePanel(800, 600, 250, 200, []), { corner: 'bl', left: 10, top: 356, overlap: 0 });
+  assert.equal(QZ.placePanel(800, 600, 250, 200, [[20, 500, 60, 520]]).corner, 'tl');
+  assert.equal(QZ.placePanel(800, 600, 250, 200, [], { prefer: 'tl' }).corner, 'tl', '지금 자리가 비었으면 그대로');
+  assert.equal(QZ.placePanel(800, 600, 250, 200, [[20, 500, 60, 520], [20, 20, 60, 40]]).corner, 'ml');
+  // 무게: 지도 도구(100)를 덮느니 꼬리표(1)를 덮음 — 휴대폰처럼 빈 모서리가 없을 때
+  assert.equal(QZ.placePanel(800, 600, 250, 200, [[20, 20, 60, 40, 1], [20, 500, 60, 520, 100], [20, 250, 60, 270, 100]]).corner, 'tl');
+  const all = QZ.placePanel(800, 600, 250, 200, [[0, 0, 800, 300], [0, 540, 800, 600]]);
+  assert.equal(all.corner, 'bl', '모두 겹치면 겹친 넓이가 가장 작은 곳');
+  assert.ok(all.overlap > 0);
+});
+
+test('보기 칸 자리: 멈춘 그림마다 꼬리표 상자·무대 부품(범례 칸·지도 도구)을 피함 — 기본 보기에서 칸 사각형이 어느 꼬리표와도 안 겹침', () => {
+  const { g, stage, L } = make();
+  stage._rect = { left: 0, top: 0, width: 800, height: 600 };
+  const panel = one(stage, 'at-wq');
+  panel._rect = { left: 0, top: 0, width: 252, height: 200 };
+  const legendCard = h('section', { class: 'at-legend-panel' }); legendCard._rect = { left: 540, top: 380, width: 250, height: 210 }; stage.append(legendCard);
+  // 가짜 투영(lon+200, 100−lat): 북극해 꼬리표 (260, 20) 가 왼쪽 위 칸 자리에 걸림
+  L.drawSvg(g, project, { k: 1, moving: true });
+  assert.equal(panel.getAttribute('data-corner'), null, '움직이는 동안은 자리를 안 봄');
+  L.drawSvg(g, project, { k: 1, moving: false });
+  assert.equal(panel.getAttribute('data-corner'), 'bl');
+  const r = [parseFloat(panel.style.left), parseFloat(panel.style.top)]; r.push(r[0] + 252, r[1] + 200);
+  for (const t of tagEls(g)) {
+    if (t.getAttribute('display') === 'none') continue;
+    const [x, y] = t.getAttribute('transform').match(/[-\d.]+/g).map(Number);
+    const w = +one(t, 'at-wq-tag-box').getAttribute('width');
+    const hit = x + w / 2 > r[0] && x - w / 2 < r[2] && y + 11 > r[1] && y - 11 < r[3];
+    assert.ok(!hit, `${t.getAttribute('data-cls')} 꼬리표가 칸 밑`);
+  }
+  assert.ok(r[2] <= 540 || r[3] <= 380, '범례 칸과 안 겹침');
+  // 왼쪽 아래에 꼬리표가 오게 보기를 옮기면 다른 모서리로
+  L.drawSvg(g, ([lon, lat]) => [lon + 60, 560 - (lat + 90) * 2], { k: 1, moving: false });
+  assert.notEqual(panel.getAttribute('data-corner'), 'bl');
+  L.destroy();
+});
+
+test('destroy 뒤 늦게 온 drawSvg 는 아무것도 안 함(칸·꼬리표를 다시 붙이지 않음)', () => {
+  const { g, stage, L } = make();
+  L.destroy();
+  const g2 = s('g'); stage.firstChild.firstChild.append(g2);
+  L.drawSvg(g2, project, { k: 1 });
+  assert.equal(one(stage, 'at-wq'), null);
+  assert.equal(tagEls(g2).length, 0);
+});

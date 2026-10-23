@@ -5,7 +5,8 @@
 //   (type 'continents' 로 두면 맞히기 없이 면만 — 일반도 지구본 단추 3f 가 그 길).
 //   자료 properties.tags [{cls, text:'ㅇㅅㅇ 대륙', at:[lon, lat]}](continent_layers.py — 10·11쪽 KCCChassam 12pt 초성 꼬리표 자리),
 //   nameIso {나라 이름: iso}(목록 이름 → 바탕 지도 나라, 누르면 그 나라로 fitBounds).
-//   - 꼬리표 = 레이어 SVG(<g class="at-wq-tag"> 둥근 상자 + 글자, 교과서 자리). 누르기·Enter·Space → layer.select(cls)(강조 3c) + 무대 왼쪽 위 보기 칸
+//   - 꼬리표 = 레이어 SVG(<g class="at-wq-tag"> 둥근 상자 + 글자, 교과서 자리). 누르기·Enter·Space(키보드면 첫 보기로 초점) → layer.select(cls)(강조 3c) + 무대 보기 칸(placePanel — 꼬리표·지도 도구·범례 칸·축척을
+//     피하는 왼쪽 모서리: 아래(축척 위) → 위 → 가운데)
 //     「이 대륙의 이름은?」 보기 4(같은 종류 — 대륙 7 또는 대양 5, uiCore quizOptions·mulberry32). 맞히면 꼬리표 글자가 이름(「대륙」 붙음은 지면 그대로),
 //     틀리면 그 보기만 막고 다시 고름(점수는 꼬리표마다 첫 답만 — 맞힌 수 / 푼 수). 「정답 모두 보기」·「다시 하기」. 상태는 메모리만.
 //   - 대륙을 고르면(꼬리표·범례·지도에서 나라 누르기) 사이드바 주제 칸 끝에 그 대륙 나라 이름 목록(자료 names — 가나다순), 누르면 그 나라로 날아감.
@@ -25,6 +26,36 @@ const textW = (t) => [...t].reduce((a, c) => a + (/[ㄱ-ㆎ가-힣]/.test(c) ? 1
 
 /** 요소 위로 올라가며 클래스 c 를 가진 것(가짜 DOM 에도 되도록 closest 없이) */
 function upTo(el, c) { for (let x = el; x; x = x.parentNode) if (x.classList?.contains(c)) return x; return null; }
+/** 요소 아래에서 클래스가 cs 가운데 하나인 요소 모두(skip 의 속은 건너뜀) */
+function allIn(el, cs, skip, out = []) {
+  for (const x of el?.children || []) {
+    if (x === skip) continue;
+    if (cs.some((c) => x.classList?.contains(c))) out.push(x); else allIn(x, cs, skip, out);
+  }
+  return out;
+}
+/** 보기 칸이 피할 무대 위 부품과 무게(지도 도구·확대 단추·축척은 꼭 피함 — 휴대폰처럼 다 못 피하면 범례 칸·꼬리표를 덮는 쪽을 고름) */
+const STAGE_UI = { 'at-tools-card': 100, 'at-tools-zoom': 100, 'at-scale': 100, 'at-legend-panel': 1, 'at-locator': 1, 'at-inset': 1 };
+const PANEL_GAP = 10, SCALE_GAP = 44;
+const overlapArea = (a, b) => Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0])) * Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
+
+/**
+ * 보기 칸 자리: 무대 W×H 안 w×h 칸을 왼쪽 아래(축척 막대 위) → 왼쪽 위 → 왼쪽 가운데 차례로 대 보고, 장애물(꼬리표 상자·무대 부품 — 무대 좌표
+ * [x0, y0, x1, y1, 무게?(기본 1)], 4px 넓힘)과 겹치지 않는 첫 자리. 지금 자리(prefer)가 안 겹치면 그대로(움직일 때마다 뛰지 않게), 모두 겹치면
+ * 겹친 넓이 × 무게가 가장 작은 곳.
+ * → {corner, left, top, overlap}
+ */
+export function placePanel(W, H, w, h, obstacles = [], { prefer = null } = {}) {
+  const top = (t) => Math.max(PANEL_GAP, Math.round(t));
+  const cands = [['bl', H - SCALE_GAP - h], ['tl', PANEL_GAP], ['ml', (H - h) / 2]].map(([corner, t]) => {
+    const r = [PANEL_GAP, top(t), PANEL_GAP + w, top(t) + h];
+    const overlap = obstacles.reduce((a, o) => a + overlapArea(r, [o[0] - 4, o[1] - 4, o[2] + 4, o[3] + 4]) * (o[4] ?? 1), 0);
+    return { corner, left: PANEL_GAP, top: r[1], overlap };
+  });
+  const keep = cands.find((c) => c.corner === prefer && c.overlap === 0);
+  return keep || cands.find((c) => c.overlap === 0) || cands.reduce((a, c) => (c.overlap < a.overlap ? c : a));
+}
+
 /** 요소 아래에서 클래스 c 를 가진 첫 요소 */
 function downTo(el, c) {
   for (const x of el?.children || []) { if (x.classList?.contains(c)) return x; const y = downTo(x, c); if (y) return y; }
@@ -55,7 +86,7 @@ export function withContinentQuiz(layer, data, { map = null, countryFeatures = n
   let opening = false;     // open() 이 select 하는 동안(onSelect 에서 문제를 닫지 않게)
 
   // ── 무대 보기 칸 ──
-  const qText = h('p', { class: 'at-quiz-q' });
+  const qText = h('p', { class: 'at-quiz-q', 'aria-live': 'polite' });
   const opts = h('div', { class: 'at-quiz-opts' });
   const feedback = h('p', { class: 'at-quiz-feedback', role: 'status' });
   const scoreOut = h('span', { class: 'at-quiz-score' });
@@ -70,7 +101,7 @@ export function withContinentQuiz(layer, data, { map = null, countryFeatures = n
       h('button', { class: 'ds-btn at-wq-reveal', type: 'button', on: { click: () => revealAll() } }, icon('eye'), '정답 모두 보기'),
       h('button', { class: 'ds-btn at-wq-reset', type: 'button', on: { click: () => reset() } }, icon('reset'), '다시 하기')));
   const panel = h('section', { class: 'at-wq', 'aria-label': '대륙·대양 이름 맞히기' },
-    h('div', { class: 'at-wq-head' }, h('h2', { class: 'at-wq-title' }, '대륙·대양 이름 맞히기'), toggle), bodyEl);
+    h('div', { class: 'at-wq-head' }, h('h2', { class: 'at-wq-title' }, h('span', { class: 'at-wq-title-long' }, '대륙·대양 '), '이름 맞히기'), toggle), bodyEl);
   let collapsed = false;
   function collapse(on) {
     collapsed = !!on;
@@ -79,6 +110,7 @@ export function withContinentQuiz(layer, data, { map = null, countryFeatures = n
     toggle.setAttribute('aria-expanded', String(!collapsed));
     const t = collapsed ? '맞히기 칸 펴기' : '맞히기 칸 접기';
     toggle.setAttribute('aria-label', t); toggle.title = t;
+    place();
   }
 
   // ── 사이드바 나라 목록(Q8) ──
@@ -89,11 +121,11 @@ export function withContinentQuiz(layer, data, { map = null, countryFeatures = n
 
   // ── 꼬리표(SVG) ──
   let g = null, els = new Map(), boxes = [];
-  let mounted = false, dead = false;
+  let mounted = false, dead = false, stageEl = null, corner = null;
   function mount(group) {
     if (mounted) return;
     mounted = true;
-    const stage = upTo(group, 'at-stage');
+    const stage = stageEl = upTo(group, 'at-stage');
     if (stage) {
       const w = stage.getBoundingClientRect?.().width || 0;
       if (w > 0 && w < 560) collapse(true); // 휴대폰 폭: 접힌 채로 시작(꼬리표를 누르면 폄)
@@ -104,6 +136,18 @@ export function withContinentQuiz(layer, data, { map = null, countryFeatures = n
     if (side) queueMicrotask(() => { if (!dead) side.append(namesBox); });
     else bodyEl.append(namesBox);
   }
+  /** 보기 칸을 꼬리표·무대 부품과 안 겹치는 모서리로(무대 크기·칸 크기는 지금 값 — 멈출 때·칸 내용이 바뀔 때) */
+  function place() {
+    if (dead || !stageEl || !panel.parentNode) return;
+    const sr = stageEl.getBoundingClientRect?.(), pr = panel.getBoundingClientRect?.();
+    if (!sr || !pr || !(sr.width > 0) || !(pr.width > 0)) return;
+    const ui = allIn(stageEl, Object.keys(STAGE_UI), panel).filter((x) => !x.hidden).map((x) => [x.getBoundingClientRect(), STAGE_UI[Object.keys(STAGE_UI).find((c) => x.classList.contains(c))]])
+      .filter(([r]) => r.width > 0 && r.height > 0).map(([r, wt]) => [r.left - sr.left, r.top - sr.top, r.left - sr.left + r.width, r.top - sr.top + r.height, wt]);
+    const p = placePanel(sr.width, sr.height, pr.width, pr.height, [...boxes, ...ui], { prefer: corner });
+    corner = p.corner;
+    panel.style.left = `${p.left}px`; panel.style.top = `${p.top}px`;
+    panel.setAttribute('data-corner', p.corner);
+  }
   function tagEl(t) {
     const rect = s('rect', { class: 'at-wq-tag-box', rx: TAG.h / 2, ry: TAG.h / 2, height: TAG.h, y: -TAG.h / 2 });
     const text = s('text', { class: 'at-wq-tag-text', 'text-anchor': 'middle', 'dominant-baseline': 'central' });
@@ -111,7 +155,7 @@ export function withContinentQuiz(layer, data, { map = null, countryFeatures = n
       class: 'at-wq-tag', 'data-cls': t.cls, role: 'button', tabindex: '0',
       on: {
         click: (e) => { e.stopPropagation?.(); open(t.cls); },
-        keydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(t.cls); } },
+        keydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation?.(); open(t.cls, { focus: true }); } },
       },
     }, rect, text);
     return { el, rect, text, t };
@@ -136,11 +180,12 @@ export function withContinentQuiz(layer, data, { map = null, countryFeatures = n
     cur = null; answered = false;
     qText.textContent = msg; opts.replaceChildren(); feedback.textContent = '';
     paintAll();
+    place();
   }
   function updateScore() {
     scoreOut.textContent = `맞힌 수 ${score.right} / 푼 수 ${score.total} · 꼬리표 ${tags.length}`;
   }
-  function open(cls) {
+  function open(cls, { focus = false } = {}) {
     const t = tags.find((x) => x.cls === cls);
     if (!t) return;
     if (collapsed) collapse(false);
@@ -160,6 +205,8 @@ export function withContinentQuiz(layer, data, { map = null, countryFeatures = n
       }, c)));
     }
     paintAll();
+    place();
+    if (focus) (opts.children[0] || toggle).focus?.(); // 키보드로 열면 첫 보기로(맞힌 꼬리표면 접기 단추)
   }
   function answer(c, btn = [...opts.children].find((b) => b.getAttribute('data-v') === c)) {
     if (!cur || solved.has(cur) || revealed.all || !btn || btn.disabled) return;
@@ -176,6 +223,7 @@ export function withContinentQuiz(layer, data, { map = null, countryFeatures = n
     }
     updateScore();
     paintAll();
+    place();
   }
   function revealAll() {
     revealed.all = true;
@@ -221,7 +269,8 @@ export function withContinentQuiz(layer, data, { map = null, countryFeatures = n
   const baseObstacles = layer.labelObstacles;
   const baseDestroy = layer.destroy;
   Object.assign(layer, {
-    drawSvg(group, project) {
+    drawSvg(group, project, view) {
+      if (dead) return; // destroy 뒤 늦게 온 다시 그리기가 칸을 다시 붙이지 않게
       if (g !== group) {
         g = group; els = new Map();
         for (const t of tags) els.set(t.cls, tagEl(t));
@@ -237,6 +286,7 @@ export function withContinentQuiz(layer, data, { map = null, countryFeatures = n
         x.el.setAttribute('transform', `translate(${p[0].toFixed(1)},${p[1].toFixed(1)})`);
         boxes.push([p[0] - x.w / 2, p[1] - TAG.h / 2, p[0] + x.w / 2, p[1] + TAG.h / 2]);
       }
+      if (!view?.moving) place(); // 멈췄을 때만 자리 다시 봄(끄는 동안 칸이 뛰지 않게)
     },
     labelObstacles: () => [...(baseObstacles?.() || []), ...boxes.map((b) => [...b])],
     quiz: {
