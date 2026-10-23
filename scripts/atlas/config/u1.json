@@ -69,6 +69,7 @@
       "p09-world"
      ],
      "cutExcluded": true,
+     "closedStrokes": true,
      "excludeBoxes": [
       [
        63.9,

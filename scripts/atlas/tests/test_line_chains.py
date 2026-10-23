@@ -158,6 +158,21 @@ class SpreadAndLoops(unittest.TestCase):
         _, lines2, _ = self.run_with({1: [long, loop]}, lambda: LC.line_chains(self.L, [spec], []))
         self.assertTrue(any(len(l['points']) == 5 and l['points'][0][0] == 10 for l in lines2), '키가 없으면 획 그대로')
 
+    def test_closed_strokes_key_and_old_order(self):
+        loop = _stroke([(70, 10), (80, 10), (80, 20), (70, 20), (70, 10)], '#f58466')
+        other = _stroke([(10, 40), (50, 40)], '#f58466')
+        near = _stroke([(70.5, 10), (60, 5)], '#f58466')      # 고리 끝(70,10)과 gap 안 — 옛 길은 짝이 어긋날 수 있음
+        spec = {'label': '선', 'color': '#f48365', 'strokes': ['#f58466'], 'gapPt': 1}
+        P = lambda lines: [l['points'][0] for l in lines]
+        _, old, _ = self.run_with({1: [loop, other]}, lambda: LC.line_chains(self.L, [spec], []))
+        self.assertEqual(P(old), [[10, 40], [70, 10]], '키가 없으면 옛 차례 [다른 획, 고리]')
+        _, new, _ = self.run_with({1: [loop, other]}, lambda: LC.line_chains(self.L, [{**spec, 'closedStrokes': True}], []))
+        self.assertEqual(P(new), [[70, 10], [10, 40]], '키가 있으면 획 차례 그대로(고리 제자리)')
+        _, n2, _ = self.run_with({1: [other, loop, near]}, lambda: LC.line_chains(self.L, [{**spec, 'closedStrokes': True}], []))
+        self.assertEqual(len(n2), 3)
+        self.assertEqual(n2[1]['points'][0], n2[1]['points'][-1], '고리는 따로 닫힌 채')
+        self.assertEqual(n2[0]['points'][0], [10, 40])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -128,6 +128,8 @@ def coverage(geoms, tol, min_area, clip_land):
 def post_simplify(gs, tol, min_area):
     """설정 postSimplify(°): 분류마다 Douglas–Peucker(위상 유지) → 범례 순서대로 앞 분류가 차지한 곳 빼기(겹침 0) → 격자·작은 조각·시계 방향.
     이웃 분류 경계가 따로 줄어 tol 안의 가는 틈이 생길 수 있음(덮개가 아님 — 13쪽 세계 기후처럼 coverage_simplify 가 듣지 않는 덮개에만)."""
+    # gs 는 {Feature 차례: 면} — 부르는 곳이 cov_idx(= 범례 차례로 쌓인 Feature 차례) 순으로 만들어 넘김. 앞 분류 우선 빼기가 이 차례에 기댐
+    assert list(gs) == sorted(gs), 'post_simplify: gs 는 범례 차례(cov_idx 오름차순)여야 함'
     out, acc = {}, None
     for i, g in gs.items():
         if g is None: out[i] = None; continue
