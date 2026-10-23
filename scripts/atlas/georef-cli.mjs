@@ -8,7 +8,8 @@
 //   (--all 은 controls.json 이 없거나 지도 목록·extract_vectors.py 보다 오래됐으면 먼저 다시 뽑는다)
 // fitFrom {map, dx, dy}(지도 항목, 있을 때만): 같은 바탕 지도를 쪽 안에 되풀이한 지도는 맞추지 않고 그 지도 fit 을 쪽 이동량만큼 옮긴다(shiftFit).
 // spreadOf + offsetPt(지도 항목, 있을 때만 — U1-3a 두 쪽 지도): 왼쪽 지도를 맞출 때 오른쪽 지도 기준점을 offsetPt 만큼 옮겨 함께 맞추고,
-//   오른쪽 지도 fit = 왼쪽의 풀린 fit − offsetPt(왼쪽이 fitFrom 이면 그 풀린 fit — 빌림의 빌림은 spreadOf 만, projection_from.planSpread).
+//   오른쪽 지도 fit = 왼쪽의 풀린 fit − offsetPt(왼쪽이 fitFrom 이면 그 풀린 fit — 빌림의 빌림은 spreadOf 만, projection_from.planSpread —
+//   이때 오른쪽 지도에 기준점이 있으면 쓸 곳이 없어 멈춘다).
 // 도법 후보: 지도 항목 families → 단원 설정 georef.families → 1단계 8개(georef.familiesFor).
 // ATLAS_WORK 기본값 C:/Users/Public/atlas-work. 지도 목록의 "georef": false 지도는 건너뛴다.
 import fs from 'node:fs';
@@ -19,7 +20,7 @@ import { geoPath } from 'd3-geo';
 import { feature } from 'topojson-client';
 import { fitWithTps, robustFit, applyFit, fitProjection, familiesFor, PT_MM } from './georef.mjs';
 import { stale, WORK, fitPath, loadFit } from './geo_util.mjs';
-import { projectionFromStale, projectionFromOlder, shiftFit, planSpread, spreadControls, spreadFit } from './projection_from.mjs';
+import { projectionFromStale, projectionFromOlder, shiftFit, planSpread, spreadControls, spreadFit, assertNoSpreadControlsOnFitFrom } from './projection_from.mjs';
 import { resolveUnit, stripUnitArgs } from './unit.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -114,7 +115,7 @@ function fitAll() {
       continue;
     }
     if (m.fitFrom) {        // 키가 있을 때만(u2·u3·u4 지도 목록에는 없음 — 옛 길 그대로)
-      if (spread.left.has(m.id)) console.log(`${m.id}: fitFrom 지도라 두 쪽 오른쪽(${spread.left.get(m.id).map((r) => r.id).join(', ')}) 기준점은 맞춤에 안 씀(잔차만)`);
+      if (spread.left.has(m.id)) assertNoSpreadControlsOnFitFrom(m.id, spread.left.get(m.id), loadCps);   // 오른쪽 기준점이 있으면 멈춤(버리지 않음)
       const out = fitFromMap(m, done);
       fs.writeFileSync(fitPath(m.id), JSON.stringify(out, null, 1));
       done.set(m.id, out);

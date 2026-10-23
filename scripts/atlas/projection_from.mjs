@@ -52,8 +52,8 @@ export function fitFromStale(fit, parent, spec) {
 //   offsetPt = 오른쪽 쪽 점 (x, y) 가 왼쪽 쪽 좌표계에서 (x + dx, y + dy) 에 있음(쪽 너비 − 가름선 겹침 — 같은 도형을 두 쪽에 찍은 자리로 잼).
 //   왼쪽 지도가 스스로 맞추는 지도면 두 쪽 기준점을 왼쪽 좌표계로 모아 한 번 맞추고(spreadControls), 오른쪽 지도 fit = 왼쪽의 풀린 fit 을
 //   (−dx, −dy) 만큼 옮긴 것(spreadFit — shiftFit 과 같은 식, 표시만 spreadOf). 왼쪽 지도가 fitFrom 이면(10쪽 ← 8쪽) 오른쪽은 그 풀린
-//   fit + 쪽 이동(빌림의 빌림은 spreadOf 만 허용 — 한 쪽 지도를 둘로 나눈 것일 뿐 다른 바탕 지도를 빌리는 것이 아님), 오른쪽 기준점은
-//   맞춤에 못 쓰고 잔차만(own). 키가 없으면 옛 길 그대로(u2~u6 지도 목록에는 없음).
+//   fit + 쪽 이동(빌림의 빌림은 spreadOf 만 허용 — 한 쪽 지도를 둘로 나눈 것일 뿐 다른 바탕 지도를 빌리는 것이 아님), 오른쪽 지도에
+//   기준점이 있으면 맞춤에 쓸 수 없어 멈춘다(assertNoSpreadControlsOnFitFrom). 키가 없으면 옛 길 그대로(u2~u6 지도 목록에는 없음).
 
 const finiteOffset = (o) => Array.isArray(o) && o.length === 2 && o.every(Number.isFinite);
 
@@ -81,6 +81,15 @@ export function planSpread(maps) {
     left.get(L.id).push({ id: m.id, dx, dy });
   }
   return { left, right };
+}
+
+/** 두 쪽 지도의 왼쪽이 fitFrom 지도면 맞춤 없이 빌리므로 오른쪽 지도 기준점을 쓸 곳이 없다 — 오른쪽에 기준점이 하나라도 있으면 멈춘다
+ *  (예전에는 알림 한 줄만 찍고 버림). rights = planSpread().left.get(왼쪽 id), cpsOf(id) → 그 지도 기준점 배열. */
+export function assertNoSpreadControlsOnFitFrom(leftId, rights, cpsOf) {
+  for (const r of rights || []) {
+    const n = cpsOf(r.id).length;
+    if (n) throw new Error(`${r.id}: 두 쪽 왼쪽 ${leftId} 가 fitFrom 지도라 오른쪽 기준점 ${n}개를 맞춤에 쓸 수 없음 — 기준점을 지우거나(controls·경위선 눈금) 왼쪽 지도를 스스로 맞춤`);
+  }
 }
 
 /** 왼쪽 지도 기준점 + 오른쪽 지도들 기준점(쪽 좌표 + offsetPt — 이름 앞에 「<오른쪽 id>:」) → 한 좌표계의 기준점 목록(새 객체). */

@@ -567,6 +567,20 @@ test('U1-3a spreadOf 대상이 fitFrom 지도(11쪽 ← 10쪽 ← 8쪽): 오른�
   assert.match(spreadFitStale({ ...p11, spreadOf: undefined }, p10, spec), /spreadOf/);
 });
 
+test('U1-3a 두 쪽 왼쪽이 fitFrom 지도면 오른쪽 기준점은 쓸 곳이 없다 — 버리지 않고 멈춤(기준점 0개면 지나감)', async () => {
+  const { assertNoSpreadControlsOnFitFrom } = await import('../../scripts/atlas/projection_from.mjs');
+  const cps = { 'p11-continents': [], 'p11b': [{ xy: [10, 10], lon: 160, lat: 0 }, { xy: [20, 10], lon: 170, lat: 0 }] };
+  const cpsOf = (id) => cps[id];
+  assert.doesNotThrow(() => assertNoSpreadControlsOnFitFrom('p10-continents', [{ id: 'p11-continents', dx: 765.354, dy: -0.001 }], cpsOf));
+  assert.doesNotThrow(() => assertNoSpreadControlsOnFitFrom('p10-continents', undefined, cpsOf));
+  assert.throws(() => assertNoSpreadControlsOnFitFrom('p10-continents', [{ id: 'p11-continents', dx: 1, dy: 0 }, { id: 'p11b', dx: 1, dy: 0 }], cpsOf),
+    /p11b: 두 쪽 왼쪽 p10-continents 가 fitFrom 지도라 오른쪽 기준점 2개/);
+  // georef-cli 가 알림 한 줄 대신 이 검사를 부름(옛 「잔차만」 알림이 남아 있지 않음)
+  const cli = readFileSync(new URL('../../scripts/atlas/georef-cli.mjs', import.meta.url), 'utf8');
+  assert.match(cli, /assertNoSpreadControlsOnFitFrom\(m\.id, spread\.left\.get\(m\.id\), loadCps\)/);
+  assert.doesNotMatch(cli, /기준점은 맞춤에 안 씀\(잔차만\)/);
+});
+
 // ── Ⅰ 세계화(u1) fit: 합격 기준 + 8~11·13쪽 로빈슨 중심 140~160, 유럽 삽입 람베르트 정각 원뿔, 두 쪽 짝 = 왼쪽 fit − offsetPt, 12쪽 밀러 ─────
 const U1_MAPS = JSON.parse(readFileSync(new URL('../../scripts/atlas/maps_u1.json', import.meta.url), 'utf8'));
 const u1Fits = U1_MAPS.map((m) => [m.id, `${WORK_DIR}/geo/${m.id}.fit.json`]).filter(([, f]) => existsSync(f));
