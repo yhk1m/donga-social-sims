@@ -886,5 +886,99 @@ class PyramidRasterSynthetic(unittest.TestCase):
         self.assertEqual(sorted(ctx['warnings']), ['syn 남 10~14: 막대 화소 없음', 'syn 여 10~14: 막대 화소 없음'])
         self.assertAlmostEqual(out['check']['sum'], 10.05, places=6)
 
+U1_CONFIG = os.path.join(os.path.dirname(__file__), '..', 'config', 'u1.json')
+
+
+@NEED_PDF
+class ChartsU1(unittest.TestCase):
+    """U1-7 세계화 그래프 7: 13쪽 기후 6(모두 97쪽 표 값 — 보스토크 기온 축 −70~10) · 14쪽 「작아지는 지구」 글 ①②③ 표(sentenceCells)."""
+    CLIM = {'p13-singapore': ('싱가포르', None, '열대 기후(싱가포르)'), 'p13-riyadh': ('리야드', None, '건조 기후(리야드)'),
+            'p13-london': ('런던', '런던(히스로)', '온대 기후(런던)'), 'p13-montreal': ('몬트리올', None, '냉대 기후(몬트리올)'),
+            'p13-vostok': ('보스토크', '보스토크(러)', '한대 기후(보스토크)'), 'p13-bogota': ('보고타', None, '고산 기후(보고타)')}
+
+    @classmethod
+    def setUpClass(cls):
+        import json
+        from unittest import mock
+        import extract_tables as et
+        cls.et = et
+        with open(U1_CONFIG, encoding='utf-8') as f: full = json.load(f)
+        cls.cfg = full['charts']
+        cls.warnings = []
+        et._climate.clear()
+        try:
+            with mock.patch.object(et, 'charts_config', lambda: cls.cfg), mock.patch.object(et, 'unit_config', lambda: full):
+                cls.charts = et.extract_charts(cls.warnings)
+                cls.again = et.extract_charts([])
+                cls.rows = et.climate_table()
+        finally:
+            et._climate.clear()
+
+    def test_count_and_warnings(self):
+        self.assertEqual(len(self.charts), 7)
+        self.assertEqual(set(self.charts), set(self.cfg['items']))
+        self.assertEqual(self.warnings, [])
+        self.assertEqual(self.et.validate(self.charts, self.cfg), [])
+
+    def test_climate_printed(self):
+        for cid, (city, table, title) in self.CLIM.items():
+            with self.subTest(cid):
+                c = self.charts[cid]
+                self.assertEqual((c['city'], c.get('tableName'), c['title']), (city, table, title))   # 제목 = 지면 한 줄 그대로
+                self.assertEqual([len(s['values']) for s in c['series']], [12, 12])
+                for s in c['series']: self.assertEqual(s['method'], 'printed')
+                row = self.rows[table or city]
+                self.assertEqual(c['series'][0]['values'], row['temp']); self.assertEqual(c['series'][1]['values'], row['prec'])
+                # 그림 ↔ 97쪽 표: 여섯 모두 1℃·10mm 안(U6-7 퍼스·크라이스트처치 같은 어긋남 없음)
+                self.assertLess(c['check']['maxTempDiff'], 0.6); self.assertLess(c['check']['maxPrecDiff'], 6.0)
+                self.assertEqual(c['source'], '(『이과연표』, 2023)')
+        self.assertLess(max(self.charts['p13-vostok']['series'][0]['values']), -20)
+        self.assertEqual(self.charts['p13-riyadh']['noBarMonths'], [6, 9])                  # 강수 0.0mm 달은 막대 없음
+
+    def test_vostok_axis(self):
+        t = self.charts['p13-vostok']['axes']['temp']; p = self.charts['p13-vostok']['axes']['prec']
+        self.assertEqual((t['n'], t['step']), (9, 10))
+        y0 = -p['a'] / p['b']                                                                   # 앱 climoRanges 와 같은 식: 강수 0mm 높이의 기온
+        self.assertAlmostEqual(t['a'] + t['b'] * y0, -70, delta=1)
+        lon = self.charts['p13-london']['axes']; y0 = -lon['prec']['a'] / lon['prec']['b']
+        self.assertAlmostEqual(lon['temp']['a'] + lon['temp']['b'] * y0, -40, delta=1)
+
+    def test_shrink_table(self):
+        t = self.charts['p14-shrink']
+        self.assertEqual((t['type'], t['title'], t['source']), ('table', '작아지는 지구', '(Pearson, 『The cultural landscape』, 2020)'))
+        self.assertEqual(t['categories'], ['1492년', '1927년', '1962년'])
+        self.assertEqual(t['series'][0]['values'], ['콜럼버스는 대서양을 횡단하는 데 거의 900시간(약 37일)이 걸렸다.',
+                                                    '찰스 린드버그는 약 34시간 만에 대서양 횡단 비행에 최초로 성공했다.',
+                                                    '미국인 최초로 우주 궤도에 오른 존 글렌은 약 30분 만에 대서양을 횡단했고, 5시간 동안 지구를 세 바퀴나 돌았다.'])
+
+    def test_deterministic(self):
+        import json
+        self.assertEqual(json.dumps(self.again, ensure_ascii=False, sort_keys=True), json.dumps(self.charts, ensure_ascii=False, sort_keys=True))
+
+
+class ReaderU1Synthetic(unittest.TestCase):
+    """U1-7 figure sentenceCells: 키가 있으면 textBox 를 box_text 로(줄바꿈 이음), 값 = 이름 뒤. 키가 없으면 옛 길(줄을 공백으로)."""
+    def _run(self, key):
+        from unittest import mock
+        import charts_read as CR
+        w = lambda t, x, y: {'text': t, 'bbox': [x, y, x + 10, y + 5], 'cx': x + 5, 'cy': y + 2.5, 'size': 6, 'color': '#000000'}
+        ws = [w('1927', 0, 0), w('년', 10, 0), w('대서양', 22, 0), w('횡', 34, 0), w('단', 0, 8), w('성공', 12, 8)]
+        def words(p, box): return [x for x in ws if box[0] <= x['cx'] <= box[2] and box[1] <= x['cy'] <= box[3]]
+        c = {'page': 1, 'type': 'figure', 'bbox': [0, 0, 1, 1], 'seriesName': '내용',
+             'cells': [{'nameBox': [0, 0, 20, 5], 'textBox': [0, 0, 50, 13]}], **({'sentenceCells': True} if key else {})}
+        ctx = {'warnings': []}
+        with mock.patch.object(CR.AX, 'words', words), mock.patch.object(CR, 'text', lambda p, b: '➋1927년 대서양 횡단 성공' if b else None):
+            out = CR.read_figure('syn', c, ctx)
+        return out, ctx['warnings']
+
+    def test_sentence_cells(self):
+        out, W = self._run(True)
+        self.assertEqual((out['categories'], out['series'][0]['values'], W), (['1927년'], ['대서양 횡단 성공'], []))
+
+    def test_old_path_without_key(self):
+        out, _ = self._run(False)
+        self.assertEqual(out['categories'], ['1927년']); self.assertEqual(out['series'][0]['values'], [''])   # 옛 길: nameBox 가 있으면 textBox 무시
+
+
 if __name__ == '__main__':
     unittest.main()

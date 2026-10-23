@@ -262,7 +262,7 @@ class MapsU1(unittest.TestCase):
         self.assertEqual(c['content']['pageDir'], 'docs/assets/atlas/u1/page')
         self.assertEqual(c['content']['photoDir'], 'docs/assets/atlas/u1/photo')
         self.assertEqual(c['charts']['out'], {'climate': 'units/u1/tables/climate-world.json', 'charts': 'units/u1/tables/charts-u1.json', 'sheets': 'units/u1/shots/c4'})
-        self.assertEqual(c['charts']['items'], {})
+        self.assertEqual(len(c['charts']['items']), 7)   # U1-7 그래프 7(기후 6 + 작아지는 지구 표) — 자세한 값은 test_tables.ChartsU1
         self.assertEqual(c['charts']['climateTable']['notInTable'], {})
         self.assertEqual(c['places']['index']['out'], 'units/u1/tables/index.json')
         self.assertNotIn('tint', c); self.assertNotIn('natural', c)

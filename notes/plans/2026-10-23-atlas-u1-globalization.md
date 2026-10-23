@@ -431,9 +431,9 @@ test('rank 1~6, kind 목록 안', () => { for (const p of places) { assert.ok(p.
 | `p13-bogota` | climograph | **97쪽 표**(`보고타`) printed | 「고산 기후(보고타)」 |
 | `p14-shrink` | table | 인쇄 글자 printed | 1492년 콜럼버스 대서양 횡단 약 900시간(약 37일) · 1927년 린드버그 약 34시간 · 1962년 글렌 약 30분(5시간 동안 지구 세 바퀴) — Q11 A(지면 글 ①②③ 에서 — 표 그림이 아니므로 `figure` 대신 글 상자 읽기, 값 글자 그대로) |
 
-- [ ] **Step 1:** 기후 6 — `climateTable` 그대로(u6 꼴: 제목 「열대 기후(싱가포르)」 → 도시 = 괄호 안, climate = 괄호 앞, 97쪽 표 zone 과 다르면 경고). 13쪽 그래프 틀 자리(왼쪽 열 셋·오른쪽 열 셋)를 실측해 상자 재사용. 97쪽 표 u1 사본 = u2 `tables/climate-world.json` 바이트 같아야 함. **그림 ↔ 표 대조**(U6-7 교훈 — 퍼스·크라이스트처치는 그림이 표보다 7~8℃ 높았음): 여섯 모두 잰 값과 표 값 차를 표에, 1℃·10mm 넘으면 issues 후보 + `tempTol`·`precTol` 까닭.
-- [ ] **Step 2:** 표 1 — 글 상자 읽기(`textBox` 칸 — U6-7 새 칸 꼴) 또는 `content` 표 블록(손으로 쓰지 않음 — 출처 상자 `src`).
-- [ ] **Step 3: 테스트** (`test_tables.py` `ChartsU1` — u6 꼴로 u1 설정을 모의)
+- [x] **Step 1:** 기후 6 — `climateTable` 그대로(u6 꼴: 제목 「열대 기후(싱가포르)」 → 도시 = 괄호 안, climate = 괄호 앞, 97쪽 표 zone 과 다르면 경고). 13쪽 그래프 틀 자리(왼쪽 열 셋·오른쪽 열 셋)를 실측해 상자 재사용. 97쪽 표 u1 사본 = u2 `tables/climate-world.json` 바이트 같아야 함. **그림 ↔ 표 대조**(U6-7 교훈 — 퍼스·크라이스트처치는 그림이 표보다 7~8℃ 높았음): 여섯 모두 잰 값과 표 값 차를 표에, 1℃·10mm 넘으면 issues 후보 + `tempTol`·`precTol` 까닭.
+- [x] **Step 2:** 표 1 — 글 상자 읽기(`textBox` 칸 — U6-7 새 칸 꼴) 또는 `content` 표 블록(손으로 쓰지 않음 — 출처 상자 `src`).
+- [x] **Step 3: 테스트** (`test_tables.py` `ChartsU1` — u6 꼴로 u1 설정을 모의)
 ```python
 class ChartsU1(unittest.TestCase):
     def test_count_and_warnings(self):
@@ -447,7 +447,7 @@ class ChartsU1(unittest.TestCase):
         out, _ = run_charts('u1'); t = out['p14-shrink']; self.assertEqual(len(t['rows']), 3)
 ```
   (`run_charts`·출력 키 이름은 지금 `test_tables.py` 도우미에 맞춘다.)
-- [ ] **Step 4:** 경고 0으로 `charts-u1.json` + 도장. 대조표 `units/u1/shots/c4/charts-13~14.png` 눈으로. `charts_read.py`를 고쳤으면 u2~u6 `extract_tables` 다시 → `charts-u2..u6.json` 바이트 같음(도장만) + `regress.sh u1-7`. 커밋.
+- [x] **Step 4:** 경고 0으로 `charts-u1.json` + 도장. 대조표 `units/u1/shots/c4/charts-13~14.png` 눈으로. `charts_read.py`를 고쳤으면 u2~u6 `extract_tables` 다시 → `charts-u2..u6.json` 바이트 같음(도장만) + `regress.sh u1-7`. 커밋.
 
 ### Task U1-8: 주제 내용
 
@@ -874,3 +874,27 @@ test('주제도 활동(교사 §8 Q4): 문항 카드 + 원본 쪽 + 색칠하기
 - 시험: Node 새 `tests/atlas/units/u1.places.test.mjs` **14**(계획 다섯 + 합치기 차례·원 밖 글자·rank, 선 이름 등 아님·한 글자 지명은 빈뿐, 종류 수, 고친 글자, 찾아보기 누락 0·쪽, 격자 칸, neAlias, NE 지도별, snapped·용량). Python `test_maps_u1.py test_no_oceania_keys` 를 U1-5 키에 맞게(지명 키 why·mergePriority·glue 앞부분 = u6, 양식 표는 같지 않음). `npm test`(heavy.lock) **Python 517(실패 1) · Node 923(실패 1)** — 실패 둘 다 같이 돌던 U1-6 사진 작업 몫(`test_maps_u1 test_unit_config_paths` 의 photos 절 비어 있음 단언 · `u1.photos.test.mjs` 모듈 읽기 오류 ERR_UNKNOWN_FILE_EXTENSION), u1.places 14 · test_no_oceania_keys 통과(`units/u1/npmtest-u1-5.log`).
 - 교과서 문제 후보: `issues.md` 8 — 8쪽 지면 「룹압할리 사막」 ↔ 찾아보기·16쪽 「룹알할리 사막」(교사 답 대기).
 - 넘김: **U1-8** — 이어도 종합 해양 과학 기지(8쪽 명조 4.9pt — 지명에도 p08-stations 에도 없음, 넣을지 판단), 바로가기 「유럽」 범위는 삽입 원 안 지명(삽입만 32). **U1-9** — places.json 조립(삽입 원 밖 남아프리카 공화국·케이프타운은 본 지도 자리), 9쪽 태평양 섬나라 수도(야렌·마주로·타라와·푸나푸티·누쿠알로파 …)는 지명 기호로 보임 — 50m 섬 판단 자료. **U1-10** — 대조표: 격자 아는 차이 6, 프랑스 rank 5(본 지도 3), 우리나라 섬·바다(제주도·울릉도·독도·동해·황해·남해)는 8쪽 지면 글자(찾아보기 8쪽 참조 없음), 지명 수 660. city_controls(U1-2 기준점)는 다시 돌리지 않음 — places 원료(symbolFix·양식 표)가 바뀌어 다시 돌리면 도시 짝이 달라질 수 있음(fit 은 지금 controls 그대로).
+
+### U1-7 그래프 숫자 (2026-10-24)
+
+- **설정**: `config/u1.json charts` 절만(작업 스크립트 `$ATLAS_WORK/units/u1/u1-7/cfg.py` — u1-6 의 section.py 로 그 절만 바꿔 끼움, places·photos 절은 병렬 작업자 몫 그대로). 그래프 7 = 계획 표 그대로, `charts-u1.json` 12,079 B · 경고 0 · 도장, 97쪽 표 u1 사본 = u2 `tables/climate-world.json` 바이트 같음(41곳).
+- **13쪽 기후 틀**: 여섯 모두 한 틀(53쪽보다 작음 — 눈금 간격 8.1pt, 수 글자 5pt). 「(℃)」 글자 자리(50.36, 116.71)를 기준으로 오른쪽 열 +625.14pt · 아래 칸 +101.97pt 씩 옮긴 상자(눈금 글자·「(월)」 실측 일치). 출처 「(『이과연표』, 2023)」는 오른쪽 아래 한 줄 — 여섯 공통 sourceBox. `barsByMonth`(리야드 6·9월 = 표 0.0mm, 막대 없음).
+- **제목 꼴이 앞 단원과 반대**(한 줄 「열대 기후(싱가포르)」 — 앞 단원은 두 줄 「도시 / (기후)」) → **climateBox 를 두지 않음**: 13쪽 이름은 큰 기후 구분(열대·건조·온대·냉대·한대·고산)이고 97쪽 표 zone 은 세부(열대 우림·사막·서안 해양성·냉대 습윤·빙설·고산)라 다섯이 「그래프 기후 ≠ 표」 경고가 되며(교과서 오류 아님 — 위계 차), climateBox 가 있으면 읽개가 제목을 「도시 (기후)」로 다시 써서 지면 제목과 달라짐. 그래서 제목 = titleBox 원문 그대로, 도시 = 괄호 안 글자(box_text 가 글자 단위로 자르므로 괄호를 뺀 cityBox), 출력에 `climate` 키 없음(앱은 안 씀 — src/atlas 에 `.climate` 사용 0). 표 이름 짝 `climateTable.aliases` {런던 → 런던(히스로), 보스토크 → 보스토크(러)} → 출력 `tableName`.
+- **그림 ↔ 97쪽 표 대조**(U6-7 교훈 — 여섯 모두 잼, 값은 표 printed):
+
+  | 그래프 | 표 이름 | 기온 최대 차(℃) | 강수 최대 차(mm) | 1℃·10mm 넘음 | tol |
+  |---|---|---|---|---|---|
+  | p13-singapore | 싱가포르 | 0.09 | 0.7 | 아니오 | 0.6 · 6.0(기본) |
+  | p13-riyadh | 리야드 | 0.11 | 0.9 | 아니오 | 기본 |
+  | p13-london | 런던(히스로) | 0.12 | 0.5 | 아니오 | 기본 |
+  | p13-montreal | 몬트리올 | 0.14 | 0.8 | 아니오 | 기본 |
+  | p13-vostok | 보스토크(러) | 0.12 | 0.5 | 아니오 | 기본 |
+  | p13-bogota | 보고타 | 0.11 | 0.8 | 아니오 | 기본 |
+
+  → 퍼스·크라이스트처치 같은 어긋남 없음, issues 후보 0, tempTol·precTol 은 기본값 그대로(까닭 키 없음).
+- **보스토크 축**: 기온 눈금 −70~10(9개, 10 간격 — 다섯은 −40~40). 강수 0mm 줄과 −70 줄이 같은 높이라 앱 `chartCore.climoRanges`(강수 0mm 높이의 기온 → 아래 끝)가 **−70~10 으로 읽음**(node 로 확인: 여섯 모두 값이 범위 안, 다른 다섯 −40~40) → 앱 고침 필요 없음. 시험 `test_vostok_axis` 가 같은 식으로 단언. 발견(앱 아님): 대조표 그림 `chart_sheets.py` 는 기후 기온 축을 −40~40 고정(`set_ylim(-40, 40)`)이라 `shots/c4/charts-13.png` 보스토크 오른쪽 그림은 −40 아래가 잘려 보임 — 눈 확인용 그림 결함일 뿐(공유 파일·도장 입력 아님, u2~u6 그림 바뀔 수 있어 안 고침 — U1-10 판단).
+- **14쪽 「작아지는 지구」 표(Q11 A)**: 글 ①②③ 은 양끝 맞춤 여러 줄이라 「횡|단」·「궤도|에」·「대|서양을」처럼 낱말 가운데서 줄이 바뀜 — 기존 figure 칸(cell_text)은 줄을 공백으로 이어 「대서양 횡 단」이 됨(replace 는 줄마다라 못 고침). → **공유 `charts_read.py` read_figure 에 키 `sentenceCells`**(있을 때만): 칸 textBox 를 `box_text`(줄바꿈 이음 규칙)로 읽고 값 = nameBox 글자(「1492년」) 뒤 나머지(번호 기호 ➊➋➌ 은 이름 앞이라 빠짐). 결과(지면 글자 그대로): 1492년 「콜럼버스는 대서양을 횡단하는 데 거의 900시간(약 37일)이 걸렸다.」 · 1927년 「찰스 린드버그는 약 34시간 만에 대서양 횡단 비행에 최초로 성공했다.」 · 1962년 「미국인 최초로 우주 궤도에 오른 존 글렌은 약 30분 만에 대서양을 횡단했고, 5시간 동안 지구를 세 바퀴나 돌았다.」, 제목 「작아지는 지구」, 출처 「(Pearson, 『The cultural landscape』, 2020)」. 계획 표의 「약 900시간」은 지면 「거의 900시간」. 지구본 그림 안 굽은 글자(「1492년 콜럼버스 37일」 등)는 같은 값의 그림 글자라 읽지 않음(원본 쪽 보기). 앱 표는 머리 없이 th(해)·td(문장).
+- **공유 고침 회귀**: charts_read.py 는 charts 도장 입력 → u2~u6 `extract_tables --climate --charts` 다시 → `charts-u2..u6.json`·`climate-world.json` **다섯 모두 바이트 같음**, 도장 `charts-uN.stamp.json` 만 새 해시(u2 는 test_tables Cli 시험이 이미 새 해시로 씀). 대조표 그림(sheets)은 다시 만들지 않음. `regress.sh u1-7`: u2~u6 모두 회귀 없음(CHECK EXIT 0 다섯 · 해시 다른 파일 u2~u5 1 = coloring 도장만 · u6 0 · 캡처 41/31/42/58/73 화소 차 0 · 대조표 수·HTML 같음 · 조각 ±0.03% 안, `units/u1/regress-u1-7.log` 끝 DONE). 공유 바이트 = 파이프라인만(조각 0 B).
+- **시험**: `test_tables.py` `ChartsU1` 5(수·경고 0·validate / 기후 여섯 제목·도시·tableName·표 값·대조 차·출처·리야드 빈 달 / 보스토크 축 −70 · 런던 −40 / 표 셋 글자 그대로 / 결정적) + `ReaderU1Synthetic` 2(sentenceCells 길 · 키 없으면 옛 길). 계획 초안의 `c['temp']`·`t['rows']` 는 지금 출력 꼴(`series[].values`·`categories`)로. `npm test`(heavy.lock, `units/u1/npmtest-u1-7.log`): **Node 928 통과 · Python 517 중 실패 1** = `test_maps_u1.test_unit_config_paths` 254줄 photos 절(병렬 U1-6 의 작업 트리 photos items — 이 작업 몫 아님). 같은 시험 265줄 charts items `{}` 단언은 이 작업이 `len 7` 로 고침 — HEAD 설정 + 이 charts 절 사본으로 test_maps_u1 19 통과 확인(`u1-7/run_maps.py`), ChartsU1·ReaderU1Synthetic·test_tables 80 통과.
+- 대조표 `units/u1/shots/c4/charts-13.png`·`charts-14.png` 눈으로 봄(13쪽 여섯 막대·점 자리 일치, 보스토크 그림 축 위 항목).
+- **U1-8 넘김**: 기후 주제 블록 `charts: ['p13-singapore', 'p13-riyadh', 'p13-london', 'p13-montreal', 'p13-vostok', 'p13-bogota']`(지면 차례 — 왼쪽 열 위→아래, 오른쪽 열 위→아래), 세계의 연결 주제 「작아지는 지구」 블록 `charts: ['p14-shrink']`(+ 원본 쪽 부분·인물 사진 3 — U1-6), `content.expect.charts` 7. 기후 그래프 마커 번호는 숨김(앞 단원 기본값). 13쪽 「기후」 이름(climate 키)이 필요하면 제목 글자에서(출력에 없음).
