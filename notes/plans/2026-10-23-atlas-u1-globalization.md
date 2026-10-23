@@ -780,3 +780,21 @@ test('주제도 활동(교사 §8 Q4): 문항 카드 + 원본 쪽 + 색칠하기
 - **임시 틀 캡처**(`C:/Users/Public/atlas-work/units/u1/u1-3h/` — 틀 `harness/`(3f 틀 꼴, 주제 themeActivity = paintTool · plain, vite 5185)·`shots.mjs`·`run_shots.sh`(heavy.lock)·`result.json` **확인 22 모두 통과**, 콘솔 오류 0(favicon 404 만)): `3h-start` · `3h-painted`(8 나라 6색) · `3h-erased-brazil`(지우개) · `3h-zoom-pacific`(피지·투발루·사모아·통가 동그라미 칠) · `3h-zoom-caribbean`(자메이카·아이티·도미니카 공화국·트리니다드 토바고·바베이도스) · `3h-zoom-europe`(룩셈부르크·벨기에·스위스·네덜란드·오스트리아) · `3h-world-small-marks` · `3h-globe` · `3h-globe-painted`(지구본에서 인도네시아 칠, 뒷면 동그라미 없음) · `3h-phone-start` · `3h-phone-painted` · `3h-1024-start`.
 - **리뷰 고침(950f70e, 2026-10-24)**: (중간) 두 번 누르기(확대)의 두 번째 click(`detail > 1`)은 칠하기에 안 씀 — 칠 → 지움이 되던 것(임시 틀 실제 두 번 누르기: 확대 1 → 2, 중국 칠 그대로). (중간) 동그라미 겹침 거름을 보이는 쪽 후보 **모두**에 먼저 하고 화면 자르기는 뒤에 — 화면 밖 큰 나라에 가려야 할 작은 나라 동그라미가 끌 때 튀어나왔다 사라지던 것(카리브 확대 4 에서 1.2° 옮긴 한 쌍 `3h-pan-a/b.png`: 안쪽 동그라미 13 이 같음). 휠·끌기 중(멈춰 다시 그리기 전 — drawSvg 의 view.moving)에는 동그라미 hit 끔(그때 click 은 바탕 나라로 — 옵션 5, 값싸서 함). (낮음) destroy 때 marks 비움, 세로 열의 「칠한 나라 n」은 display:none 대신 sr-only(role status 를 화면 읽기 프로그램이 읽음). 시험 worldPaint 10 → **12**. **npm test Python 503 · Node 896**(`units/u1/npmtest-u1-3h2.log` — 다른 작업자의 커밋 안 한 quiz.js·ui.test.mjs 고침 포함). u2~u6 embed sha256 은 다섯 모두 **+38 B·다른 값**(7511e3ef1cbdfbfe · 2c0a14c3b9be7176 · 83421a522dde4b2b · 55099278530b0296 · eec9392729776d7c) — 원인은 작업 트리의 **다른 작업자의 quiz.js 뒷면 동그라미 고침(커밋 전)**이고 이 고침의 파일(worldPaint.*)은 u2~u6 가 import 하지 않음(sims·src 에서 worldExtra·worldPaint 를 부르는 곳 없음 확인) → 이 커밋 기준 공유 0 B 그대로. 캡처 다시 `3h-zoom-europe.png` + `3h-pan-a.png`·`3h-pan-b.png`(`shots_fix.mjs` · `result-fix.json` 확인 3 통과).
 - **U1-10 로 넘김**: 휴대폰 세계 보기(무대 390)는 거의 모든 나라가 16px 미만이라 동그라미가 지도를 많이 덮음(겹침은 거름 — 확대하면 풀림, `3h-phone-painted.png`). 세계 보기 동그라미 73 이 많다고 보면 smallPx 를 낮추거나 확대 1 에서는 칠한 나라만 동그라미로 — 교사 대조 때.
+
+### 공유 quiz.js 뒷면 동그라미 고침 (2026-10-24 — b789932)
+- **결함**: `quiz.js` coloringLayer `drawSmall` 이 raw d3 투영(`path.projection()`)으로 작은 나라 동그라미를 그려 뒷면 확인이 없었다 — `hidden` 이 있는 투영(u5·u6 지구본 `americasExtra.js` globe, u6 북극·남극 중심 `polarExtra.js`)에서 뒷면 나라 동그라미가 원판 안 거울 자리(또는 여백)에 그려지고 `layer.hit` → marks 로 눌리기도 함. 닿는 길 = u5·u6 색칠하기 주제를 연 채 도법 상자에서 지구본/북극·남극 중심(u2~u4 는 못 닿음). U1-3h 「확인 거리(공유)」의 그것.
+- **고침(최소)**: `const p0 = path.projection?.(); if (!p0) return; const proj = p0.hidden ? (ll) => (p0.hidden(ll) ? null : p0(ll)) : p0;` — `areaPx` 는 탐침 셋 중 하나라도 null 이면 null(→ 건너뜀), 상자 기준 모서리 고리는 null 을 `ok = false`, drawMark 도 null 이면 안 그림. 평면 도법은 `hidden` 이 없어 같은 함수 그대로(그림 바이트 같음). renderer.js `project()`·polarExtra `hiddenAwareView`·worldPaint.js 와 같은 규칙.
+- **시험**: `tests/atlas/ui.test.mjs` +1(정사도법 + 시험용 hidden: 뒷면 150°E 섬 동그라미 없음·그 자리 hit null·앞면 섬은 옛 자리·크기 그대로, hidden 없는 투영은 옛 그림과 deepEqual — box·area 둘 다). 고침 전 실패 확인. **npm test Python 503 · Node 896 통과**.
+- **회귀 `regress.sh u1-quizhidden`**(`units/u1/regress-u1-quizhidden.log`, DONE): u2~u6 다섯 모두 **회귀 없음**·화소 다른 장면 0·stats 다른 장면 0(u2~u5 coloring.json 도장만 1 — G0 부터 알려진 것, u6 다른 파일 0). **공유 바이트 +38 B/단원**(1KB 예산 안, ±0.02% 안). 새 조각:
+
+  | 단원 | 크기(B) | sha256 |
+  |---|---|---|
+  | u2 | 2,112,710 | 7511e3ef1cbdfbfeaa0c3315e190fae6d8de6b670a9a8f40c092d87be4f631e1 |
+  | u3 | 1,472,326 | 2c0a14c3b9be7176aff191561aa85db1402cba7300005ad450bfd0a997a45e08 |
+  | u4 | 1,595,483 | 83421a522dde4b2bd18a12a47a18de1b69b00bd07ea43f625e6d9b2c310b401c |
+  | u5 | 1,667,013 | 55099278530b02968e5a75ab73adbabb44ab1270c28e0f1a85b6c5332074c0ab |
+  | u6 | 1,416,173 | eec9392729776d7c7fd044a63b0b71f2ed0055e8e156141f8eb2ddda497226c3 |
+
+  (U1-3h 리뷰 기록의 「+38 B·다른 값」이 바로 이 고침 — 값 같음.)
+- **캡처**(`C:/Users/Public/atlas-work/units/u1/u1-quizhidden/` — 빌드된 u6 조각 고침 전/후 복사본 `u6-before|after.html`, `shots.mjs`, GPU 끔): `qh-before-globe-atlantic.png`(색칠하기 + 지구본을 대서양 중심으로 끌어 태평양 섬나라가 뒷면 — 남대서양·남극에 유령 동그라미 13) ↔ `qh-after-globe-atlantic.png`(없음), `qh-after-globe-front.png`(앞면 오세아니아 동그라미는 그대로), `qh-*-flat.png`(밀러 그대로). 콘솔 오류 0.
+- **공개본**: 공개된 u5 v1·u6 v1(`docs/atlas-u5-americas/1/`·`docs/atlas-u6-oceania-polar/1/`)에는 이 결함이 남아 있음 — 다시 공개(v2)는 사용자 승인 필요. `content/atlas/u5|u6/issues.md` 끝 「앱 결함 — v2 에 반영할 것」에 적음.
