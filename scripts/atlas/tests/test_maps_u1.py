@@ -297,7 +297,7 @@ class MapsU1(unittest.TestCase):
 
     def test_no_oceania_keys(self):
         # 오세아니아 전용 값(계획 U1-1 Step 2)은 지움: unitBoxes 상자·10a·simplifyByIso·neBox 27 상자·overdraw 지도·addLabels·dropBoxes·extraNames·
-        # neAlias·relocate·indexExclude·mergePriority·지도별 양식(maps 키)·색칠하기 extraCountries·isoByLabel·layerTypeAs
+        # relocate·indexExclude·지도별 양식(maps 키)(U1-5 가 지명 키를 다시 채움)·색칠하기 extraCountries·isoByLabel·layerTypeAs
         c = self.cfg; p = c['places']; bm = c['basemap']
         self.assertEqual(bm['out'], 'sims/atlas-u1-world/data/basemap.json')
         self.assertEqual(bm['unitBoxes'], [])                      # 세계 단원은 10a 없이 110m·50m(설계 §7) — 키는 build_basemap 이 읽음
@@ -312,10 +312,16 @@ class MapsU1(unittest.TestCase):
         for k in ('places', 'cityControls'):
             for mid in c[k]['maps']: self.assertIn(mid, self.by)
         self.assertEqual(p['overdraw'], {'maps': [], 'tolPt': 0.1})
-        for k in ('neAlias', 'relocate', 'indexExclude', 'extraNames', 'snapAlways', 'keepTextbookPosition'):
+        # U1-5 가 채운 지명 키(neAlias·extraNames·addLabels·dropBoxes·mergePriority·rankBySizeMaps·symbolFix·spellAs — 까닭은 u1.places 시험)
+        for k in ('relocate', 'indexExclude', 'snapAlways', 'keepTextbookPosition'):
             self.assertEqual(p[k], {}, k)
-        for k in ('addLabels', 'dropBoxes', 'mergePriority', 'mergeKmMaps', 'rankBySizeMaps', 'areaKmByName', 'symbolFix', 'spellAs', 'hidden'):
+        for k in ('mergeKmMaps', 'areaKmByName', 'hidden', 'spread'):
             self.assertNotIn(k, p)
+        self.assertEqual(p['mergePriority'], ['p08-europe', 'p08-world', 'p09-world'])
+        for k in ('addLabels', 'dropBoxes', 'symbolFix'):
+            for mid, v in p[k].items():
+                self.assertIn(mid, p['maps'], k)
+                for e in (v if isinstance(v, list) else v.values()): self.assertTrue(e.get('why'), (k, mid, e))
         for r in p['styles'] + p['ignore']:
             self.assertNotIn('maps', r, r)
         col = c['content']['coloring']
@@ -327,10 +333,10 @@ class MapsU1(unittest.TestCase):
         self.assertEqual(c['defaults'], u6['defaults'])
         self.assertEqual({k: v for k, v in c['shapeControls'].items() if not k.startswith('_') and k != 'note'},
                          {k: v for k, v in u6['shapeControls'].items() if not k.startswith('_') and k != 'note'})
-        for k in ('chain', 'symbols', 'kinds', 'glue', 'exclude', 'rankBySize', 'dedupKm', 'leakRe'):
+        for k in ('chain', 'symbols', 'kinds', 'exclude', 'rankBySize', 'dedupKm', 'leakRe'):
             self.assertEqual(p[k], u6['places'][k], k)
-        self.assertEqual([r for r in u6['places']['ignore'] if 'maps' not in r], p['ignore'])
-        self.assertEqual([r for r in u6['places']['styles'] if 'maps' not in r], p['styles'])
+        self.assertEqual(p['glue'][:len(u6['places']['glue'])], u6['places']['glue'])   # U1-5 가 고드윈오스턴산(K2) 하나 더함
+        # 글자 양식 표(ignore·styles)는 U1-5 가 8·9쪽 글꼴 조사로 고침 — u6 와 같지 않음
         self.assertEqual(c['photos']['candidate']['minAreaEachPt2'], u6['photos']['candidate']['minAreaEachPt2'])
         self.assertEqual(c['charts']['defaults'], u6['charts']['defaults'])
         self.assertEqual(bm['levels'], [lv for lv in u6['basemap']['levels'] if lv['id'] != '10a'])
