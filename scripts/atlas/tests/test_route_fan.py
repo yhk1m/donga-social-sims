@@ -78,5 +78,24 @@ class Layer(unittest.TestCase):
         with self.assertRaises(ValueError): rf.layer_json({**self.CFG, 'legend': []}, {'page': 14}, [126.44, 37.46], [[0, 0]])
 
 
+class LineEnds(unittest.TestCase):
+    def test_skips_non_line_items(self):
+        its = [('re', (0, 0, 5, 5), 1), ('l', (1, 2), (3, 4)), ('c', (3, 4), (4, 5), (5, 6), (7, 8)), ('qu', None)]
+        self.assertEqual(rf.line_ends(its), [(1.0, 2.0), (7.0, 8.0)])
+        self.assertIsNone(rf.line_ends([('re', (0, 0, 5, 5), 1)]))
+        self.assertIsNone(rf.line_ends([]))
+
+
+class RoundMerge(unittest.TestCase):
+    def test_close_dots_reported_not_silent(self):
+        rep = {}
+        out = rf.layer_json(Layer.CFG, {'page': 14}, [126.44, 37.46], [[10.001, 20.002], [10.004, 19.998], [30, 40]], rep)
+        self.assertEqual(len(out['features'][0]['geometry']['coordinates']), 2)        # 0.01° 안 두 점 → 반올림해 하나
+        self.assertEqual(rep['roundMerged'], [[[10.0, 20.0], 2]])                        # 보고에 남음
+        rep2 = {}
+        rf.layer_json(Layer.CFG, {'page': 14}, [126.44, 37.46], [[10, 20], [30, 40]], rep2)
+        self.assertEqual(rep2['roundMerged'], [])
+
+
 if __name__ == '__main__':
     unittest.main()

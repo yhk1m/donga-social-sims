@@ -17,10 +17,15 @@ import { metaOf, setAttr, connect, round1, LAYER_Z } from './layerCommon.js';
 /** 대권 나눔(°)·도시 점 색·반지름(px, 확대 k 2.2 기준)·맞히기 거리(px)·흐림·출발 글 */
 export const ROUTES = Object.freeze({ step: 1, dotColor: '#ed1c24', dotPx: 1.8, hitPx: 6, dimAlpha: 0.2, lineOpacity: 0.85, pick: '인천 → 직항 도시' });
 
-/** a → b 대권을 stepDeg 마다 나눈 경위도 줄(양 끝 그대로, 같은 점이면 [a]) */
+/** 대척점 가드(°): 출발과 도착이 거의 대척점이면 대권이 하나로 정해지지 않아(geoInterpolate 가 아무 방향으로나 감) 자료 오류로 멈춘다.
+ *  실제 14쪽 노선의 가장 먼 것은 인천 → 상파울루 약 164.7° — 179.5° 를 넘는 도착 점은 fit 되돌리기·좌표 실수뿐이다. */
+export const ANTIPODE_DEG = 179.5;
+
+/** a → b 대권을 stepDeg 마다 나눈 경위도 줄(양 끝 그대로, 같은 점이면 [a]). 거의 대척점(> ANTIPODE_DEG)이면 오류. */
 export function greatCircle(a, b, stepDeg = ROUTES.step) {
   const deg = (geoDistance(a, b) * 180) / Math.PI;
   if (deg < 1e-9) return [a];
+  if (deg > ANTIPODE_DEG) throw new Error(`greatCircle: 거의 대척점(${deg.toFixed(2)}°)이라 대권이 정해지지 않음 [${a}] → [${b}]`);
   const n = Math.ceil(deg / stepDeg), f = geoInterpolate(a, b);
   const out = [a];
   for (let i = 1; i < n; i++) out.push(f(i / n));
@@ -46,7 +51,7 @@ export function routeFanLayer(id, data, { legend = null, map = null, layerId = i
     return { cls, color: colorOf.get(cls) || '#f072ab', dests, lines: dests.map((ll) => greatCircle(origin, ll)) };
   }).filter((gr) => gr.dests.length);
   const pick = (cls, ll) => ({ type: 'Feature', properties: { cls, type: 'route', name: '직항 도시', label: ROUTES.pick }, geometry: { type: 'Point', coordinates: ll } });
-  let root = null, originEl = null, shown = []; // shown = [{xy, ll, gr}] 이번 그림에 보인 도시 점
+  let root = null, originEl = null, shown = [], destroyed = false; // shown = [{xy, ll, gr}] 이번 그림에 보인 도시 점
 
   function build(g) {
     root = s('g', { class: 'at-routes', 'pointer-events': 'none' });
@@ -68,6 +73,7 @@ export function routeFanLayer(id, data, { legend = null, map = null, layerId = i
     origin,
     labelObstacles: () => [],
     drawSvg(g, project, view) {
+      if (destroyed) return;   // destroy 뒤 늦게 온 다시 그리기가 <g> 를 다시 만들지 않게(de5a52e 맞히기 레이어와 같음)
       if (!root || root.parentNode !== g) build(g);
       const gp = geoPath(view.projection);
       const w = round1(lineWidthPx(P.width ?? 0.6, view.k));
@@ -99,7 +105,7 @@ export function routeFanLayer(id, data, { legend = null, map = null, layerId = i
       }
       return best ? pick(best.gr.cls, best.ll) : null;
     },
-    destroy() { offs.forEach((off) => off()); offs.length = 0; root?.remove(); root = null; shown = []; },
+    destroy() { destroyed = true; offs.forEach((off) => off()); offs.length = 0; root?.remove(); root = null; shown = []; },
   };
   const offs = connect({ map, legend, layerId });
   return layer;

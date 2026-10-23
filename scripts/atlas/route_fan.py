@@ -43,6 +43,15 @@ def page_dots(drawings, fill, max_pt, bbox, exclude):
     return out
 
 
+def line_ends(items):
+    """PyMuPDF 도형 items → 선의 [처음 점, 끝 점] (선 마디 'l'·곡선 'c' 만 — 사각형 're'·사각형 묶음 'qu' 등은 건너뜀). 선 마디가 없으면 None.
+    점은 .x/.y 가 있는 것(fitz.Point) 또는 (x, y)."""
+    segs = [it for it in items if it and it[0] in ('l', 'c')]
+    if not segs: return None
+    xy = lambda p: (p.x, p.y) if hasattr(p, 'x') else (float(p[0]), float(p[1]))
+    return [xy(segs[0][1]), xy(segs[-1][-1])]
+
+
 def hub_of(lines, snap=0.5):
     """선들([[x, y]…])의 양 끝 중 가장 많이 모이는 자리(snap pt 격자로 센 뒤, 그 칸 ± snap 안 끝점들의 평균)."""
     ends = [p for l in lines for p in (l[0], l[-1])]
@@ -75,12 +84,15 @@ def match_dots(dots, lines, hub, tol=1.0):
             'shared': {i: n for i, n in sorted(cnt.items()) if n > 1}}
 
 
-def layer_json(cfg, m, origin, lonlats):
-    """설정·지도 항목·출발점·도착 경위도(None = 되돌리기 실패) → 레이어 자료(MultiPoint 하나 — 점은 경도 차례, 같은 점·실패는 뺌)."""
+def layer_json(cfg, m, origin, lonlats, rep=None):
+    """설정·지도 항목·출발점·도착 경위도(None = 되돌리기 실패) → 레이어 자료(MultiPoint 하나 — 점은 경도 차례, 실패는 뺌).
+    소수 digits 자리로 반올림해 같아진 점(서로 다른 지면 점이 같은 좌표)은 하나만 남기되 rep['roundMerged'] = [[좌표, 합쳐진 수]…] 로 알린다(조용히 줄이지 않음)."""
     legend = cfg.get('legend') or []
     if len(legend) != 1: raise ValueError(f"{cfg.get('id')}: routeFan 범례는 하나(노선) — {len(legend)}")
     nd = cfg.get('digits', 2)
-    pts = sorted({(round(p[0], nd), round(p[1], nd)) for p in lonlats if p})
+    cnt = Counter((round(p[0], nd), round(p[1], nd)) for p in lonlats if p)
+    if rep is not None: rep['roundMerged'] = [[list(k), n] for k, n in sorted(cnt.items()) if n > 1]
+    pts = sorted(cnt)
     cls = legend[0]['cls']
     return {'type': 'FeatureCollection',
             'properties': {'id': cfg['id'], 'map': cfg['map'], 'page': m.get('page'), 'title': cfg.get('title') or m.get('title'), 'kind': m.get('kind'),
@@ -100,9 +112,9 @@ def page_items(m, cfg):
         if r.x1 < bb[0] or r.x0 > bb[2] or r.y1 < bb[1] or r.y0 > bb[3]: continue
         if d.get('fill') is not None and hexc(d['fill']) == dcol:
             cand.append({'fill': dcol, 'rect': (r.x0, r.y0, r.x1, r.y1)})
-        if d.get('color') is not None and hexc(d['color']) == lcol and d['items']:
-            its = d['items']; a, b = its[0][1], its[-1][-1]
-            lines.append([(a.x, a.y), (b.x, b.y)])
+        if d.get('color') is not None and hexc(d['color']) == lcol:
+            ends = line_ends(d['items'])
+            if ends: lines.append(ends)
     return cand, lines
 
 
@@ -123,13 +135,14 @@ def build(layer_id, log=print):
     hub_ll, dll = ll[0], ll[1:]
     origin = cfg.get('origin') or hub_ll
     if not origin: raise ValueError(f'{layer_id}: 출발점 경위도 없음(설정 origin 도, 되돌린 hub 도)')
-    out = layer_json(cfg, m, origin, dll)
+    mrep = {}
+    out = layer_json(cfg, m, origin, dll, mrep)
     r2 = lambda p: [round(v, 2) for v in p] if p else None
     rep = {'pageDots': len(raw), **crep, 'dots': len(dots), 'lines': len(lines), 'hubPt': [round(v, 2) for v in hub], 'hubLonLat': r2(hub_ll),
            'origin': out['properties']['origin'],
            'hubToOriginKm': round(6371 * _gc(hub_ll, origin), 1) if hub_ll else None,
            'dotsWithLine': len(mt['withLine']), 'linelessDots': [r2(dll[i]) for i in mt['lineless']], 'looseLines': mt['loose'],
-           'sharedDots': {str(i): n for i, n in mt['shared'].items()}, 'invertFailed': sum(1 for p in dll if not p), 'routes': sum(len(f['geometry']['coordinates']) for f in out['features']),
+           'sharedDots': {str(i): n for i, n in mt['shared'].items()}, 'invertFailed': sum(1 for p in dll if not p), 'routes': sum(len(f['geometry']['coordinates']) for f in out['features']), 'roundMerged': mrep['roundMerged'],
            '_page': [list(p) for p in dots]}
     return out, rep
 

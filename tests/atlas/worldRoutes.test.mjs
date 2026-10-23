@@ -4,8 +4,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { geoEquirectangular, geoOrthographic, geoDistance } from 'd3-geo';
+import { geoEquirectangular, geoOrthographic, geoMercator, geoDistance } from 'd3-geo';
 import { geoRobinson } from 'd3-geo-projection';
+import { geoInterruptedHomolosine } from 'd3-geo-polygon';   // 앱 구드와 같은 것(projections.js)
 import { readJson, WORK } from '../../scripts/atlas/geo_util.mjs';
 import { installFakeDom } from './helpers/fakeDom.mjs';
 import { createLegendState } from '../../src/atlas/legendState.js';
@@ -157,9 +158,61 @@ test('지구본: 뒷면 도시 점은 안 그림·안 맞힘, 경로는 원판 �
   assert.ok(runs.length >= 2);
   const R = proj.scale(), [cx, cy] = proj.translate();
   for (const r of runs) for (const q of r) assert.ok(Math.hypot(q[0] - cx, q[1] - cy) <= R + 1, '원판 밖 점 없음');
-  assert.equal(l.hit(project(SYD) || [W / 2, H / 2]), null);
   assert.ok(l.hit(project(LHR)));
   l.destroy();
+  // 화면에서 맞닿은 앞면·뒷면 점(원판 오른쪽 가장자리 89°E 앞 · 91°E 뒤): 맞히기는 앞면 점만, 뒷면 점 자리를 눌러도 뒷면 점은 안 나옴
+  const FRONT = [89, 0], BACK = [91, 0];
+  const l2 = WR.routeFanLayer('r', DATA([BACK, FRONT]));
+  const pg = globe([0, 0]);
+  const d2 = draw(l2, pg);
+  assert.equal(d2.project(BACK), null);
+  const fb = pg(BACK), ff = d2.project(FRONT);
+  assert.ok(Math.hypot(fb[0] - ff[0], fb[1] - ff[1]) < WR.ROUTES.hitPx, '두 점이 화면에서 맞닿음');
+  assert.equal(dotsOf(parts(d2.g).dots[0].getAttribute('d')), 1);
+  for (const at of [ff, fb]) {
+    const f = l2.hit(at);
+    assert.ok(f === null || (f.geometry.coordinates[0] === FRONT[0] && f.geometry.coordinates[1] === FRONT[1]), `뒷면 점이 맞음 ${JSON.stringify(f?.geometry)}`);
+  }
+  assert.deepEqual(l2.hit(ff).geometry.coordinates, FRONT);
+  l2.destroy();
+});
+
+test('메르카토르(clipExtent ±85°·경도 360°)·구드(끊긴 도법): 날짜변경선·끊김 자리에서 지도를 가로지르는 줄 없음, 점은 모두 그림', () => {
+  const dests = [LAX, LHR, SYD, JFK, [-46.47, -23.43]];   // 마지막 = 상파울루(가장 먼 노선 약 164.7°)
+  for (const lon0 of [150, 0]) {
+    const m = geoMercator().rotate([-lon0, 0]).fitSize([W, H], { type: 'Sphere' }).precision(0.4);
+    const [[x0, y0], [x1, y1]] = [m([-180 + lon0 + 1e-6, 85]), m([180 + lon0 - 1e-6, -85])];
+    m.clipExtent([[Math.min(x0, x1), y0], [Math.max(x0, x1), y1]]);
+    const l = WR.routeFanLayer('r', DATA(dests));
+    const p = parts(draw(l, m).g);
+    const runs = runsOf(p.routes[0].getAttribute('d'));
+    assert.ok(runs.length >= dests.length, `메르카토르 ${lon0} 조각 ${runs.length}`);
+    assert.ok(maxStep(runs) < W / 20, `메르카토르 ${lon0} 가장 긴 마디 ${maxStep(runs)}`);
+    const [[ex0, ey0], [ex1, ey1]] = m.clipExtent();
+    for (const r of runs) for (const q of r) assert.ok(q[0] >= ex0 - 0.5 && q[0] <= ex1 + 0.5 && q[1] >= ey0 - 0.5 && q[1] <= ey1 + 0.5, '자르기 상자 밖 점 없음');
+    assert.equal(dotsOf(p.dots[0].getAttribute('d')), dests.length);
+    l.destroy();
+  }
+  const goode = geoInterruptedHomolosine().rotate([-150, 0]).fitSize([W, H], { type: 'Sphere' }).precision(0.4);
+  const l = WR.routeFanLayer('r', DATA(dests));
+  const p = parts(draw(l, goode).g);
+  const runs = runsOf(p.routes[0].getAttribute('d'));
+  assert.ok(runs.length >= dests.length);
+  assert.ok(maxStep(runs) < W / 20, `구드 가장 긴 마디 ${maxStep(runs)}`);
+  l.destroy();
+});
+
+test('destroy 뒤 늦은 drawSvg 는 아무것도 다시 만들지 않음 · 거의 대척점 도착 점은 자료 오류', () => {
+  const l = WR.routeFanLayer('r', DATA([LHR]));
+  const { g, view, project } = draw(l, robinson(150));
+  l.destroy();
+  assert.equal(g.children.length, 0);
+  l.drawSvg(g, project, view);
+  assert.equal(g.children.length, 0);
+  assert.equal(l.hit(project(LHR)), null);
+  assert.ok(WR.greatCircle(ICN, [-46.47, -23.43]).length > 160);                       // 상파울루 약 164.7° — 됨
+  assert.throws(() => WR.greatCircle(ICN, [ICN[0] - 180, -ICN[1] + 0.2]), /대척점/);    // 0.2° 떨어진 대척점 둘레
+  assert.throws(() => WR.routeFanLayer('r', DATA([[ICN[0] - 180, -ICN[1]]])), /대척점/);
 });
 
 test('맞히기: 도시 점 6px 안 → 「인천 → 직항 도시」(이름 없음), 밖 → null, 범례에서 흐린 분류는 안 맞힘', () => {
