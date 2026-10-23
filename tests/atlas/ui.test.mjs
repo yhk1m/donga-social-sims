@@ -776,6 +776,41 @@ test('coloringLayer markAt(U6-9 — 키리바시): 동그라미를 가장 큰 �
   assert.equal(arcs.length, 1);
 });
 
+test('coloringLayer smallPx 뒷면(U1 — 공유 quiz.js): 투영에 hidden 이 있으면(u5·u6 지구본·극 중심) 뒷면 작은 나라 동그라미는 그리지도 맞히지도 않음, hidden 이 없으면 옛 그림 그대로', async () => {
+  const { geoOrthographic, geoPath } = await import('d3-geo');
+  const rect = (x, y, w, hh) => [[[x, y], [x, y + hh], [x + w, y + hh], [x + w, y], [x, y]]];
+  const feat = (iso, coordinates) => ({ type: 'Feature', properties: { iso, ko: iso }, geometry: { type: 'MultiPolygon', coordinates } });
+  // NEA 앞면(10°E) 0.2° 섬, FAR 뒷면(150°E — 거울 자리 ≈ 30°E, NEA 와 떨어짐) 0.2° 섬 — 정사도법 raw 투영은 뒷면 점도 원판 안(거울 자리)에 돌려줌
+  const feats = [feat('NEA', [rect(10, 5, 0.2, 0.2)]), feat('FAR', [rect(150, 5, 0.2, 0.2)])];
+  const isos = ['NEA', 'FAR'];
+  const arcs = [];
+  const ctx = { beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {}, stroke() {}, arc(x, y, r) { arcs.push({ x, y, r }); } };
+  const view = { width: 800, height: 600, geoRect: null };
+  const mk = (withHidden) => {
+    const p = geoOrthographic().rotate([0, 0]).scale(250).translate([400, 300]).clipAngle(90);
+    if (withHidden) p.hidden = (ll) => ll[0] > 90 || ll[0] < -90; // 테스트용: 경도 ±90° 밖 = 뒷면
+    return p;
+  };
+  const drawAt = (layer, p) => { arcs.length = 0; layer.draw(ctx, geoPath(p, ctx), view); return arcs.map((a) => [a.x, a.y, a.r]); };
+  for (const smallMetric of ['box', 'area']) {
+    const plain = mk(false), hid = mk(true);
+    const farXY = plain([150.1, 5.1]);
+    // hidden 없음 — 옛 길(raw 투영) 그대로: 뒷면 FAR 도 거울 자리에 그려지고 맞혀짐
+    const L0 = coloringLayer(feats, { smallPx: 16, smallIsos: isos, smallMetric });
+    const old = drawAt(L0, plain);
+    assert.equal(old.length, 2, `${smallMetric}: hidden 없으면 둘 다(옛 그림)`);
+    assert.equal(L0.hit(farXY)?.properties.iso, 'FAR');
+    // hidden 있음 — 앞면 NEA 만, 그 자리·크기는 옛 그림과 같음, 뒷면 자리는 맞히지 않음
+    const L1 = coloringLayer(feats, { smallPx: 16, smallIsos: isos, smallMetric });
+    const now = drawAt(L1, hid);
+    assert.deepEqual(now, [old[0]], `${smallMetric}: 뒷면 FAR 동그라미 없음 ${JSON.stringify(now)}`);
+    assert.equal(L1.hit(farXY), null, `${smallMetric}: 뒷면 자리를 눌러도 맞히지 않음`);
+    assert.equal(L1.hit(hid([10.1, 5.1]))?.properties.iso, 'NEA');
+    // 같은 레이어를 hidden 없는 투영으로 다시 그리면 옛 그림과 바이트 단위로 같음
+    assert.deepEqual(drawAt(L1, plain), old, `${smallMetric}: hidden 없는 투영은 그대로`);
+  }
+});
+
 test('coloringQuiz 칠한 수(U4-9): 지역(region) 항목이 있으면 「칠한 나라 n / 나라 수 · 지역 n / 지역 수」, 없으면 옛 글 「칠한 나라 n / 전체」', () => {
   const sq = (iso, x) => ({ type: 'Feature', properties: { iso, ko: iso }, geometry: { type: 'Polygon', coordinates: [[[x, 0], [x, 1], [x + 1, 1], [x + 1, 0], [x, 0]]] } });
   const names = [{ name: '가', iso: 'AAA' }, { name: '나', iso: 'BBB' }, { name: '다', iso: 'SAH', region: true }];
