@@ -22,6 +22,7 @@ import { metaOf, LAYER_Z } from './layerCommon.js';
 import { installWorldRoutes } from './worldRoutes.js';   // 3g 대권 노선 routeFan(따로 된 모듈)
 import { installWorldQuiz } from './worldQuiz.js';     // 3e 대륙·대양 맞히기 continentQuiz(따로 된 모듈)
 import { installWorldGlobe } from './worldGlobe.js';   // 3f 지구본 단추 continentGlobes + continentQuiz 대양 단추(따로 된 모듈)
+import { installWorldPaint } from './worldPaint.js';   // 3h 세계 색칠하기 도구 paintTool(따로 된 모듈)
 
 /** 대륙 면 흐림(고르지 않은 대륙 — 9쪽 지구본 그림의 「그 대륙만 초록」), 대양 강조 색·불투명도 */
 export const CONTINENTS = Object.freeze({ dimAlpha: 0.25, oceanColor: '#3d8fd1', oceanOpacity: 0.45 });
@@ -161,4 +162,5 @@ export function installWorldExtras() {
   installWorldRoutes();
   installWorldQuiz(continentsLayer);
   installWorldGlobe(continentsLayer); // installWorldQuiz 뒤(continentQuiz 를 대양 단추와 함께 다시 등록)
+  installWorldPaint();
 }
