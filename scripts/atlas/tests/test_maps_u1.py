@@ -251,7 +251,10 @@ class MapsU1(unittest.TestCase):
         self.assertEqual(c['photos']['pages'], [8, 15])
         self.assertEqual(c['photos']['sheetDir'], 'units/u1/shots/c3')
         self.assertEqual(c['photos']['placesFile'], 'sims/atlas-u1-world/data/places.json')
-        self.assertEqual((c['photos']['items'], c['photos']['exclude'], c['photos']['pins'], c['photos']['expect']), ([], [], {}, {}))
+        # U1-6 에서 채움(사진 29 · 제외 12 · 핀 지도 3 · 지구본 10 — 자세한 검사는 tests/atlas/units/u1.photos.test.mjs)
+        self.assertEqual((len(c['photos']['items']), len(c['photos']['exclude']), sorted(c['photos']['pins']), len(c['photos']['globes'])),
+                         (29, 12, ['p12-relief', 'p13-climate', 'p15-burger'], 10))
+        self.assertEqual(c['photos']['expect'], {'relief': 8, 'climate': 8, 'connection': 3, 'glocal': 10})
         self.assertEqual(c['content']['labels'], 'units/u1/text/p10-labels.json')
         self.assertEqual(c['content']['charts'], 'units/u1/tables/charts-u1.json')
         self.assertEqual(c['content']['pages'], [8, 15])

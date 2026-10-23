@@ -245,6 +245,35 @@ class FindPins(unittest.TestCase):
             self.assertEqual(len(P.find_pins('m', pc)), 2)
             self.assertEqual(P.find_pins('m', {**pc, 'excludeBoxes': [[0, 0, 50, 50]]}), [{'xy': [108.5, 119.5]}])
 
+    def test_text_anchor_bottom_and_points(self):
+        # u1: 번호 글자가 얹힌 물방울 핀 → anchor=bottom 이면 도형 아래 끝(키가 없으면 가운데 그대로), by=points 는 설정 자리 그대로(틀 밖은 뺌)
+        class R:
+            def __init__(s, x0, y0, x1, y1): s.x0, s.y0, s.x1, s.y1, s.width, s.height = x0, y0, x1, y1, x1 - x0, y1 - y0
+            def contains(s, p): return s.x0 <= p[0] <= s.x1 and s.y0 <= p[1] <= s.y1
+        ds = [{'fill': (0x72 / 255, 0x51 / 255, 0xa1 / 255), 'rect': R(10, 10, 19.4, 20.7)}]
+        sp = [{'font': 'DINPro-Bold', 'color': '#ffffff', 'size': 7.5, 'text': '3', 'bbox': [12.7, 11.4, 16.7, 18.9]}]
+        pc = {'by': 'text', 'font': 'DINPro-Bold', 'color': '#ffffff', 'size': 7.5, 're': '^[1-8]$', 'circleMaxPt': 12}
+        with mock.patch.object(P, 'maps', return_value={'m': {'page': 1, 'bbox': [0, 0, 200, 200]}}), mock.patch.object(P, 'drawings', return_value=ds), \
+                mock.patch.object(P.pdfkit, 'page_spans', return_value=sp):
+            self.assertEqual(P.find_pins('m', pc), [{'xy': [14.7, 15.35], 'label': 3}])
+            self.assertEqual(P.find_pins('m', {**pc, 'anchor': 'bottom'}), [{'xy': [14.7, 20.7], 'label': 3}])
+        # circleFill: 더 작은 다른 색 도형(빗금 칸)이 글자를 담아도 핀 색 도형만
+        ds2 = [{'fill': (0xba / 255, 0x70 / 255, 0x3d / 255), 'rect': R(12, 12, 18, 18)}] + ds
+        with mock.patch.object(P, 'maps', return_value={'m': {'page': 1, 'bbox': [0, 0, 200, 200]}}), mock.patch.object(P, 'drawings', return_value=ds2), \
+                mock.patch.object(P.pdfkit, 'page_spans', return_value=sp):
+            self.assertEqual(P.find_pins('m', {**pc, 'anchor': 'bottom'}), [{'xy': [15.0, 18], 'label': 3}])
+            self.assertEqual(P.find_pins('m', {**pc, 'anchor': 'bottom', 'circleFill': '#7251a1'}), [{'xy': [14.7, 20.7], 'label': 3}])
+        with mock.patch.object(P, 'maps', return_value={'m': {'page': 1, 'bbox': [0, 0, 200, 200]}}), mock.patch.object(P, 'drawings', return_value=ds), \
+                mock.patch.object(P.pdfkit, 'page_spans', return_value=sp):
+            pts = {'by': 'points', 'points': [{'xy': [50, 60], 'label': 2}, {'xy': [300, 60], 'label': 4}]}
+            self.assertEqual(P.find_pins('m', pts), [{'xy': [50, 60], 'label': 2}])
+
+    def test_places_only_when_pin_near(self):
+        # 지명 짝(pinNear)이 없으면 places.json 을 열지 않는다(u1 — 번호 핀만)
+        with mock.patch.object(P, 'find_pins', return_value=[{'xy': [1, 1], 'label': 1}]), mock.patch.object(P, 'node_lonlat', return_value={'m': [[10, 20]]}):
+            out, w, r = P.assign_pins([{'id': 'a', 'pin': 1, 'map': 'm'}], {'placesFile': 'no/such/places.json', 'pins': {'m': {}}, 'pinNearMaxKm': 100}, ROOT)
+        self.assertEqual((out, w), ({'a': {'xy': [1, 1], 'lonlat': [10, 20]}}, []))
+
     def test_unknown_method(self):
         with self.assertRaises(ValueError): P.find_pins('p20-relief', {'by': 'magic'})
 

@@ -405,15 +405,15 @@ test('rank 1~6, kind 목록 안', () => { for (const p of places) { assert.ok(p.
 
 **Files:** Modify `scripts/atlas/config/u1.json`(`photos`); Output `content/atlas/u1/photos.json`, `docs/assets/atlas/u1/photo/*`, `docs/assets/atlas/u1/globe/*`, `docs/assets/atlas/u1/page/p008~p015.jpg`
 
-- [ ] **Step 1:** `python -I scripts/atlas/extract_images.py --unit u1 --candidates`(12쪽 작은 그림 9,641개·10·11쪽 종이 무늬 — `candidate.minAreaEachPt2` 로 거름) → 쪽 렌더를 보며 `photos.items`(bbox·topic·mask)·`exclude`:
+- [x] **Step 1:** `python -I scripts/atlas/extract_images.py --unit u1 --candidates`(12쪽 작은 그림 9,641개·10·11쪽 종이 무늬 — `candidate.minAreaEachPt2` 로 거름) → 쪽 렌더를 보며 `photos.items`(bbox·topic·mask)·`exclude`:
   - 12쪽 8(계단식 논·마투그로수·필라투스산 철도·쑤저우·노르딕 스키·알파인 스키·지열 발전·태양광 — 상자 소제목 넷은 블록 `section`), 13쪽 8(몽골 유목·방글라데시 벼농사·합장 가옥·인도네시아 전통 가옥·영국 우산·말리 의복·핀란드 크리스마스·오스트레일리아 크리스마스).
   - 14쪽 3(콜럼버스·린드버그·글렌 — 사진 설명 = 지면 글 ①②③, Q11), 15쪽 10(햄버거 4 — 오려 낸 그림 `imagesOnly`, 커피 2, 한국어 2, 한류 2).
   - **지구본 그림 10**(새 항목 꼴 `{kind:'globe', id, page, bbox, cls}` — 9쪽 대륙 5 · 11쪽 대양 5, 원 둘레까지 정사각 자르기 + 원 밖 투명(WebP 알파) 또는 흰 바탕, 160px·320px 두 크기, `docs/assets/atlas/u1/globe/`) — extract_images 에 이 꼴이 없으면 단원 작업 스크립트로 잘라 넣고 photos.json 에 `globes` 절(공유 스크립트 고치지 않음 — 까닭 기록).
   - 사진 아님(제외): 8쪽 제목 상자 비행기·지구 그림, 14쪽 작아지는 지구 지구본 그림·삽화 3(원본 쪽 부분), 14쪽 비행기 그림 14, 15쪽 조사표 기호 그림, 13쪽 그래프 아이콘.
-- [ ] **Step 2:** 핀(`photos.pins`): 12쪽 번호 핀 8·13쪽 8(지도 쪽 — 보라 물방울, 번호 글자가 핀 위) → `pt2lonlat.mjs`, 사진 ↔ 핀 짝은 **사진 상자 번호(①~⑧ — 지도 핀 번호와 같은 수가 사진 차례로 정해지는지 지면으로 확인: 「사진의 빈칸에 해당 지역의 번호를 써 보자」라 사진에 번호가 없음 → 짝은 사진 설명의 지명(베트남 북부·브라질 마투그로수주·스위스 필라투스산 …)과 가장 가까운 번호 핀)** — 짝 까닭 `_pinNear`. Q9 A 면 `pinNumbers: 'hidden'`. 15쪽 햄버거 핀 4(Q13 A — 지시선이 가리키는 나라 넓이 중심 또는 지시선 끝 자리, 번호 보임).
-- [ ] **Step 3:** `--photos --pages` → JPEG q82·WebP q80, 원본 쪽 110dpi 각 200,000 B 이하(U6-6 리뷰 상한). 사진 + 지구본 합계 ≤ 4MB.
-- [ ] **Step 4: 개수 대조** — `photos.expect`: 지형 8·기후 8·세계의 연결 3·세계화와 지역화 10 = 29, 지구본 10(실측으로 고쳐 기록). 대조표 `units/u1/shots/c3/photos-<쪽>.jpg` 눈으로. 두 줄 제목 `titleOverride`, 설명 `captionOverride`.
-- [ ] **Step 5:** 시험 `tests/atlas/units/u1.photos.test.mjs`(주제별 수, 핀 12쪽 8·13쪽 8·번호 숨김 짝·상한·까닭, 햄버거 핀 4 나라, 대표 핀 위치(필라투스산 1° 안·마투그로수 2° 안·사하라 모로코), 지구본 10 파일·cls, 烋·깨진 글자 0, 파일 크기). 커밋(`content/atlas/u1/photos.json docs/assets/atlas/u1 scripts/atlas/config/u1.json tests/atlas/units/u1.photos.test.mjs`). extract_images 를 고쳤으면 u2~u6 `--photos --pages` 다시 → git 차이 없음 + `regress.sh u1-6`.
+- [x] **Step 2:** 핀(`photos.pins`): 12쪽 번호 핀 8·13쪽 8(지도 쪽 — 보라 물방울, 번호 글자가 핀 위) → `pt2lonlat.mjs`, 사진 ↔ 핀 짝은 **사진 상자 번호(①~⑧ — 지도 핀 번호와 같은 수가 사진 차례로 정해지는지 지면으로 확인: 「사진의 빈칸에 해당 지역의 번호를 써 보자」라 사진에 번호가 없음 → 짝은 사진 설명의 지명(베트남 북부·브라질 마투그로수주·스위스 필라투스산 …)과 가장 가까운 번호 핀)** — 짝 까닭 `_pinNear`. Q9 A 면 `pinNumbers: 'hidden'`. 15쪽 햄버거 핀 4(Q13 A — 지시선이 가리키는 나라 넓이 중심 또는 지시선 끝 자리, 번호 보임).
+- [x] **Step 3:** `--photos --pages` → JPEG q82·WebP q80, 원본 쪽 110dpi 각 200,000 B 이하(U6-6 리뷰 상한). 사진 + 지구본 합계 ≤ 4MB.
+- [x] **Step 4: 개수 대조** — `photos.expect`: 지형 8·기후 8·세계의 연결 3·세계화와 지역화 10 = 29, 지구본 10(실측으로 고쳐 기록). 대조표 `units/u1/shots/c3/photos-<쪽>.jpg` 눈으로. 두 줄 제목 `titleOverride`, 설명 `captionOverride`.
+- [x] **Step 5:** 시험 `tests/atlas/units/u1.photos.test.mjs`(주제별 수, 핀 12쪽 8·13쪽 8·번호 숨김 짝·상한·까닭, 햄버거 핀 4 나라, 대표 핀 위치(필라투스산 1° 안·마투그로수 2° 안·사하라 모로코), 지구본 10 파일·cls, 烋·깨진 글자 0, 파일 크기). 커밋(`content/atlas/u1/photos.json docs/assets/atlas/u1 scripts/atlas/config/u1.json tests/atlas/units/u1.photos.test.mjs`). extract_images 를 고쳤으면 u2~u6 `--photos --pages` 다시 → git 차이 없음 + `regress.sh u1-6`.
 
 ### Task U1-7: 그래프 숫자
 
@@ -898,3 +898,36 @@ test('주제도 활동(교사 §8 Q4): 문항 카드 + 원본 쪽 + 색칠하기
 - **시험**: `test_tables.py` `ChartsU1` 5(수·경고 0·validate / 기후 여섯 제목·도시·tableName·표 값·대조 차·출처·리야드 빈 달 / 보스토크 축 −70 · 런던 −40 / 표 셋 글자 그대로 / 결정적) + `ReaderU1Synthetic` 2(sentenceCells 길 · 키 없으면 옛 길). 계획 초안의 `c['temp']`·`t['rows']` 는 지금 출력 꼴(`series[].values`·`categories`)로. `npm test`(heavy.lock, `units/u1/npmtest-u1-7.log`): **Node 928 통과 · Python 517 중 실패 1** = `test_maps_u1.test_unit_config_paths` 254줄 photos 절(병렬 U1-6 의 작업 트리 photos items — 이 작업 몫 아님). 같은 시험 265줄 charts items `{}` 단언은 이 작업이 `len 7` 로 고침 — HEAD 설정 + 이 charts 절 사본으로 test_maps_u1 19 통과 확인(`u1-7/run_maps.py`), ChartsU1·ReaderU1Synthetic·test_tables 80 통과.
 - 대조표 `units/u1/shots/c4/charts-13.png`·`charts-14.png` 눈으로 봄(13쪽 여섯 막대·점 자리 일치, 보스토크 그림 축 위 항목).
 - **U1-8 넘김**: 기후 주제 블록 `charts: ['p13-singapore', 'p13-riyadh', 'p13-london', 'p13-montreal', 'p13-vostok', 'p13-bogota']`(지면 차례 — 왼쪽 열 위→아래, 오른쪽 열 위→아래), 세계의 연결 주제 「작아지는 지구」 블록 `charts: ['p14-shrink']`(+ 원본 쪽 부분·인물 사진 3 — U1-6), `content.expect.charts` 7. 기후 그래프 마커 번호는 숨김(앞 단원 기본값). 13쪽 「기후」 이름(climate 키)이 필요하면 제목 글자에서(출력에 없음).
+
+### U1-6 사진·지구본 그림·원본 쪽·핀 (2026-10-24)
+
+- **수(실측 = 계획 어림)**: 사진 **29** = 지형 8(12쪽 상자 ②~⑤ × 2) · 기후 8(13쪽 ⑦~⑩ × 2) · 세계의 연결 3(14쪽 「작아지는 지구」 콜럼버스·린드버그·글렌 — Q11) · 세계화와 지역화 10(15쪽 햄버거 4·커피 2·한국어 2·한류 2), 8~11쪽 0. **지구본 그림 10**(9쪽 대륙 5 · 11쪽 대양 5). 핀 **20** = 12쪽 8 · 13쪽 8 · 15쪽 햄버거 4. 원본 쪽 8(p008~p015). 후보(`minAreaEachPt2 10` 그대로, 8쪽 약 4초): 8쪽 34 · 9쪽 5 · 10쪽 33 · 11쪽 29 · 12쪽 10 · 13쪽 9 · 14쪽 10 · 15쪽 14, 안 덮임 0(제외 12 — 8~11쪽 쪽 전체(지구본 5 는 globes)·12쪽 지형 래스터·머리 지구 그림 셋·14쪽 작아지는 지구 지구본 그림·삽화 3(Q11·Q12 원본 쪽 부분)). 작업 스크립트 `$ATLAS_WORK/units/u1/u1-6/`(cfg.py — photos 절만 section.py 로, globes.py, korea_pt.py · dump.py · lines.py · straight.py 조사, run_u1.sh · run_all.sh), 대조표 `units/u1/shots/c3/photos-12~15.jpg`(눈으로 봄).
+- **크기**: 사진 jpg+webp 607,695 B + 지구본 webp 172,310 B = **780,005 B**(≤ 4MB). 원본 쪽 110dpi 각 180,263~199,775 B(≤ 200,000 — 품질 65~80), 합계 1,535,591 B. 사진 모두 150dpi(원본 그림 dpi).
+- **핀 — 공유 pins.py 고침(키 있을 때만, 3)**: 이 단원은 **번호가 지도 핀 위**(물방울 #7251a1 9.4×10.7pt, 번호 DINPro-Bold 7.5 흰색)라 옛 by=text 는 번호를 담은 도형의 **가운데**(핀 끝보다 5.4pt 위 — 세계 지도에서 약 2.7° 북쪽)를 줌, by=shape 는 끝을 주지만 번호가 없어 지명 짝(places.json — U1-5 병렬)이 필요 → ① by=text + `anchor: 'bottom'` = 도형 아래 끝 ② `circleFill`(13쪽 고산 빗금 칸 #ba703d 8.2pt 가 핀 도형보다 작아 「글자를 담는 가장 작은 도형」으로 잡힘) ③ by=`points`(15쪽 햄버거 — 지면에 핀 도형이 없음, 설정 자리 그대로) + assign_pins 는 pinNear 항목이 있을 때만 places.json 을 엶. 12쪽 활동하기 상자 글 안 작은 핀 둘은 excludeBoxes. 확인: u2~u6 `--photos --pages` 다시 → **git 차이 0**(경고 없음 다섯), `regress.sh u1-6` **u2~u6 회귀 없음**(해시 다른 파일 u2~u5 coloring 도장 1 · u6 0, 캡처 41/31/42/58/73 화소 차 0, 대조표 수·HTML 같음, 조각 2,112,710 · 1,472,326 · 1,595,483 · 1,667,013 · 1,416,173 — quiz.js 고침 뒤 값 그대로, 앱 0 B), 로그 `units/u1/regress-u1-6.log` DONE. 시험 test_images +2(anchor·circleFill·points, places 안 엶).
+- **12·13쪽 사진 ↔ 지도 번호 짝**(교과서는 사진 핀이 빈칸 — 「사진의 빈칸에 해당 지역의 번호를 써 보자」, 설명 글 지명에 가장 가까운 번호 핀, 까닭은 항목 `_pinNear`; 교사 Q9 A 번호 숨김은 U1-8 주제 `pinNumbers: 'hidden'`):
+
+  | 사진 | 설명 지명 | 핀 | 맞춘 경위도 | 메모 |
+  |---|---|---|---|---|
+  | p12-1 계단식 논 | 베트남 북부 | ⑤ | 105.85, 21.36 | |
+  | p12-2 기업적 농업 | 브라질 마투그로수주 | ⑧ | −61.50, −11.10 | 주 서쪽 끝(남아메리카 핀 하나) |
+  | p12-3 톱니바퀴 철도 | 스위스 필라투스산 | ② | 10.78, 45.35 | 알프스 핀 둘 중 서쪽(지면 몽블랑산 ▲ 바로 동쪽) — 필라투스산에서 약 266km. 12쪽 밀러 fit 은 이 둘레에서 몽블랑산 ▲ 를 +1.1° 동쪽으로 되돌림 → 계획 시험 초안 「1° 안」은 지면 자리로 못 맞춰 3°·2° 로(시험) |
+  | p12-4 운하 | 중국 쑤저우 | ⑥ | 120.58, 31.53 | 약 25km |
+  | p12-5 노르딕 스키 | 스칸디나비아반도 | ① | 16.29, 63.75 | |
+  | p12-6 알파인 스키 | 알프스 산지 | ③ | 18.51, 45.30 | 알프스 동쪽 끝 핀 — 맞춘 경위도는 실제 알프스보다 동쪽(fit 오차 + 지면 자리, U1-10 교사 확인 몫) |
+  | p12-7 지열 발전 | 뉴질랜드 북섬 | ⑦ | 174.29, −37.46 | |
+  | p12-8 태양광 | 사하라 사막 모로코 | ④ | −3.36, 27.80 | 모로코 남동 국경 바로 바깥으로 되돌아옴(U1-2 서아프리카 4~5pt 어긋남과 같은 결) |
+  | p13-1 유목 | 몽골 | ④ | 104.57, 46.10 | |
+  | p13-2 벼농사 | 방글라데시 | ⑥ | 90.11, 24.43 | |
+  | p13-3 합장 가옥 | 일본 기후현 | ⑤ | 138.06, 35.79 | |
+  | p13-4 전통 가옥 | 인도네시아 | ⑦ | 120.61, −1.95 | 술라웨시 |
+  | p13-5 우산 | 영국 | ① | −3.15, 55.50 | |
+  | p13-6 의복 | 말리 | ③ | −3.07, 15.86 | |
+  | p13-7 크리스마스 | 핀란드 | ② | 27.34, 65.04 | |
+  | p13-8 크리스마스 | 오스트레일리아 | ⑧ | 148.46, −36.52 | |
+
+- **15쪽 햄버거 핀 4(교사 Q13 A, 번호 1~4 보임 = 계획 차례 라이스·스시·소시지·아라비아)**: 지시선 = 가는 채움 #231f20 셋 + 끝 점(지름 1.1pt 원) → 일본 139.27, 35.94 · 독일 10.90, 50.69 · 아랍 에미리트 53.99, 23.16. **라이스버거는 지시선이 없음**(사진이 한반도 위에 얹힘 — 북한을 덮음) → 대한민국 면(#f7941d 가장 큰 조각) 넓이 중심 [328.25, 138.28]pt = 127.83, 36.44(`korea_pt.py`).
+- **글**: 12·13쪽 제목 없음(상자 소제목 = 항목 `_section`, U1-8 블록 section 몫), 설명 = 사진 아래 두 줄 그대로. 14쪽 설명 = 지면 글 ➊➋➌ — box_text 가 「➊1492년」으로 붙이고 딩뱃이 웹 글꼴에 없을 수 있어 **captionOverride 로 번호만 뺌**(글 그대로). 15쪽 「아라비아버거(아랍 에미리트)」는 지면 줄바꿈(「아라비아 / 버거」)을 box_text 가 붙임 — 라이스버거·스시버거와 같은 붙임이라 그대로. 사진 카드 credit 0(14쪽 Pearson 출처는 지구본 그림·글 몫 — 원본 쪽 부분). 깨진 글자 0.
+- **자르기(교과서 그대로인 겹침은 둠)**: 14쪽 인물 3 = 폴라로이드 틀 안 사진만(콜럼버스 오른쪽 x 122.5 까지 — 지구본 가장자리·「산살바도르섬」 글자 뺌, 린드버그 왼쪽·글렌 오른쪽 위는 지구본 그림이 사진 위에 얹혀 조금 보임). 15쪽 imagesOnly 5(햄버거 4·녹차라테 — 지도·글 지움): 라이스버거는 오려 낸 그림이 아니라 둘레 지도를 그린 네모 그림이라 빵 둘레만, 스시·아라비아는 그림 조각에 든 지시선 시작 토막·적도 띠를 피해 좁힘, 소시지버거 오른쪽 위 짧은 토막은 빵을 자르지 않으려 둠. 커피 전문점 사진 오른쪽 아래·녹차라테 위 끝은 서로 겹친 그대로.
+- **지구본 그림(공유 스크립트 안 고침 — 까닭)**: extract_images.py 에 globe 항목 꼴이 없고, 지구본은 u1 에만 있으며 사진과 쓰임·꼴(정사각 + 원 밖 투명 WebP 두 크기, jpg 없음)이 달라서 u1 작업 스크립트 `units/u1/u1-6/globes.py` 가 설정 `photos.globes`(id·쪽·bbox·cls·이름 — 앱 `GLOBE_SETS` 차례 그대로) + `globeRender {sizes [160, 320], webpQuality 80, insetPt 0.4}` 로 렌더. bbox = 원에 외접하는 정사각 [630.8, y, 754.4, y+123.6](9·11쪽 같은 자리 — 200dpi 렌더로 원 둘레 확인), 640px(373dpi)로 렌더 → LANCZOS 로 줄임 → 4배 표본 원 마스크(가장자리 0.4pt 안쪽). 지면 그대로라 초록 대륙·대양 이름과 「동해」·「독도」 글자가 그림 안에 있음(축척 막대는 원 밖이라 빠짐). 기록 = `content/atlas/u1/globes.json`(photos.json 은 extract_images 가 --photos 때마다 통째로 다시 쓰는 배열이고 build_content 가 사진 id 로 찾으므로 섞지 않음 — 계획 「photos.json 에 globes 절」 대신). 파일 `docs/assets/atlas/u1/globe/<id>-160|320.webp` 20장, 장당 4,658~13,238 B.
+- **시험**: Node 새 `tests/atlas/units/u1.photos.test.mjs` 6(주제별 수·차례, 핀 20·번호 짝·까닭, 대표 핀 위치, 글, 지구본 10 = GLOBE_SETS id·cls·이름·VP8X 알파·크기, 파일 크기·원본 쪽 상한), Python test_images +2, test_maps_u1 뼈대 빈 값 검사를 U1-6 수로. **npm test Python 517 · Node 928 통과**(`units/u1/npmtest-u1-6b.log` — 다른 작업자의 커밋 전 파일 포함).
+- **U1-8 넘김**: 주제 지형·기후 `pinNumbers: 'hidden'`, 사진 블록 section = 항목 `_section`(12쪽 ②~⑤ · 13쪽 ⑦~⑩ · 15쪽 ①~④), 세계의 연결 「작아지는 지구」 = 원본 쪽 부분 + p14-1~3 + 표 카드 p14-shrink, 세계화와 지역화 햄버거 사진 마커 p15-1~4(핀 lonlat — 번호 보임). **U1-9**: 지구본 단추 그림은 공개 Pages 주소(ASSET_BASE u1/globe/…) — 공개 전 개발 서버는 저장소 파일. **U1-10**: 12쪽 핀 ③(알파인 스키)·④(모로코) 맞춘 경위도가 실제 자리에서 벗어남(fit + 지면 자리), 교과서 담당자 확인 후보는 없음(issues.md 그대로 1~7).
