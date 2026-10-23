@@ -190,5 +190,38 @@ class Oceans(unittest.TestCase):
             cl.ocean_polygons(self.LAND, self.RULES, {**self.SEEDS, 'indian': [[30, 0]]})
 
 
+class Tags(unittest.TestCase):
+    """U1-3e 초성 꼬리표(10·11쪽 KCCChassam 12pt 「ㅇㅅㅇ 대륙」·「ㅌㅍㅇ」) → 대륙·대양 cls"""
+    LABELS = [('asia', '아시아'), ('europe', '유럽'), ('oceania', '오세아니아'), ('northAmerica', '북아메리카'), ('pacific', '태평양'), ('arctic', '북극해')]
+
+    def test_choseong(self):
+        self.assertEqual(cl.choseong('아프리카'), 'ㅇㅍㄹㅋ')
+        self.assertEqual(cl.choseong('북아메리카'), 'ㅂㅇㅁㄹㅋ')
+        self.assertEqual(cl.choseong('남극해'), 'ㄴㄱㅎ')
+        self.assertEqual(cl.choseong('ㅇㅅㅇ'), 'ㅇㅅㅇ', '이미 초성이면 그대로')
+
+    def test_match_tags_by_initials(self):
+        items = [{'map': 'a', 'text': 'ㅇㅅㅇ 대륙', 'pt': [10, 10]}, {'map': 'a', 'text': 'ㅇㅅㅇㄴㅇ 대륙', 'pt': [20, 20]},
+                 {'map': 'b', 'text': 'ㅌㅍㅇ', 'pt': [30, 30]}, {'map': 'a', 'text': 'ㅂㄱㅎ', 'pt': [40, 40]}]
+        got, rep = cl.match_tags(items, self.LABELS)
+        self.assertEqual([(t['cls'], t['text']) for t in got], [('asia', 'ㅇㅅㅇ 대륙'), ('oceania', 'ㅇㅅㅇㄴㅇ 대륙'), ('pacific', 'ㅌㅍㅇ'), ('arctic', 'ㅂㄱㅎ')])
+        self.assertEqual(rep['missing'], ['europe', 'northAmerica'])
+
+    def test_match_tags_errors(self):
+        with self.assertRaises(ValueError):   # 모르는 초성
+            cl.match_tags([{'map': 'a', 'text': 'ㅋㅋ 대륙', 'pt': [0, 0]}], self.LABELS)
+        with self.assertRaises(ValueError):   # 같은 지도에 같은 꼬리표 둘
+            cl.match_tags([{'map': 'a', 'text': 'ㅌㅍㅇ', 'pt': [0, 0]}, {'map': 'a', 'text': 'ㅌㅍㅇ', 'pt': [50, 0]}], self.LABELS)
+        with self.assertRaises(ValueError):   # 「대륙」이 붙은 대양·안 붙은 대륙
+            cl.match_tags([{'map': 'a', 'text': 'ㅌㅍㅇ 대륙', 'pt': [0, 0]}], self.LABELS, oceans={'pacific', 'arctic'})
+
+    def test_match_tags_spread_overlap_keeps_first(self):
+        """가름선 겹침 띠에서 두 쪽에 같은 꼬리표가 찍히면 처음 것만(자리 확인은 경위도로 되돌린 뒤 build 가)"""
+        got, rep = cl.match_tags([{'map': 'a', 'text': 'ㅌㅍㅇ', 'pt': [770, 0]}, {'map': 'b', 'text': 'ㅌㅍㅇ', 'pt': [5, 0]}], self.LABELS)
+        self.assertEqual(len(got), 1)
+        self.assertEqual(got[0]['map'], 'a')
+        self.assertEqual(rep['dup'], [{'cls': 'pacific', 'map': 'b'}])
+
+
 if __name__ == '__main__':
     unittest.main()

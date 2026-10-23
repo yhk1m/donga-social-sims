@@ -30,14 +30,18 @@
   경도 −180~180 경계가 날짜변경선에 놓이고(앱은 d3 구면 — 극 꼭짓점 두 개는 polar_geom.polarPolygon 과 같은 뜻으로 ±180 을 잇는 변), 태평양은
   날짜변경선 양쪽 면을 +360 으로 이어 한 면.
 
+맞히기 꼬리표(3e, 교사 Q6 A·Q8 A — 설정 tags 가 있을 때만): 10·11쪽 초성 꼬리표 글자(KCCChassam 12pt 「ㅇㅅㅇ 대륙」·「ㅌㅍㅇ」)의 상자 가운데를 그 지도
+  fit 으로 되돌려 properties.tags [{cls, text, at:[lon, lat]}](「대륙」을 뺀 초성 = 범례·대양 이름의 초성인 cls 하나 — match_tags), 목록 이름 → 나라
+  properties.nameIso {이름: iso}(앱이 목록 이름을 누르면 그 나라로 날아감).
+
 출력 $ATLAS_WORK/geo/<id>.continents.json = 레이어 자료 그대로(build_layers.mjs 가 <config.out>/layer-<id>.json 으로 옮김):
   {type:'FeatureCollection', properties:{id, map, maps, page, title, kind, layerType:'continents', legend:[{cls, label, color}], classes:{iso: cls},
-   centers:{cls:[lon, lat]}, names:{cls:[…]}, oceans?:[{cls, label}], report:{…}}, features:[{properties:{cls, iso}|{cls, ocean:true}, geometry}]}
+   centers:{cls:[lon, lat]}, names:{cls:[…]}, oceans?:[{cls, label}], tags?, nameIso?}, features:[{properties:{cls, iso}|{cls, ocean:true}, geometry}]}
   면은 d3 감김(바깥 고리 시계 방향 — 경도 x · 위도 y 평면에서), 좌표 소수 셋째 자리.
 
 설정(단원 설정 layers[id]): {"type": "continents", "map": 왼쪽 지도, "maps": [왼쪽, 오른쪽], "classes": [{cls, label, color?, domain: [[w, s, e, n], …]}],
   "splitLines": {"fill", "gapPt", "extendDeg", "minDots"}, "sample": {dpi, erodePt, minPx, zoomDpi, zoomErodePt, de, minVotes, minShare,
-  protoMinPx, protoShare, protoMergeDE}, "simplifyDeg", "countryOverrides", "names", "oceans"?}
+  protoMinPx, protoShare, protoMergeDE}, "simplifyDeg", "countryOverrides", "names", "oceans"?, "tags"?: {fonts, sizes, dupDeg?}}
 
 CLI
   python -I scripts/atlas/continent_layers.py --unit u1 <레이어 id> [--oceans] [--verify <폴더>]
@@ -538,6 +542,82 @@ def page_names(cfg, mps, ko_iso):
     return out, rep
 
 
+# ── 초성 꼬리표(U1-3e 맞히기 — 10·11쪽 KCCChassam 12pt 「ㅇㅅㅇ 대륙」·「ㅌㅍㅇ」) ─────────────────────
+CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'
+
+
+def choseong(t):
+    """한글 음절 → 초성(이미 자모면 그대로, 그 밖의 글자는 뺌): 「아프리카」 → 「ㅇㅍㄹㅋ」."""
+    out = []
+    for ch in t:
+        o = ord(ch)
+        if 0xAC00 <= o <= 0xD7A3: out.append(CHO[(o - 0xAC00) // 588])
+        elif 'ㄱ' <= ch <= 'ㅎ': out.append(ch)
+    return ''.join(out)
+
+
+def match_tags(items, labels, oceans=()):
+    """[{map, text, pt}] · [(cls, 이름)] → ([{cls, text, map, pt}], {missing, dup}).
+    꼬리표 글자에서 「대륙」을 뺀 초성 = 이름의 초성인 cls 하나(없거나 둘이면 멈춤). oceans(대양 cls 모음)를 주면 「대륙」이 붙은 대양·안 붙은 대륙도 멈춤.
+    같은 cls 가 다른 지도에 또 있으면(두 쪽 가름선 겹침 띠) 처음 것만 — 자리 확인은 경위도로 되돌린 뒤 build 가. 같은 지도에 둘이면 멈춤."""
+    by = {}
+    for cls, label in labels: by.setdefault(choseong(label), []).append(cls)
+    out, seen, dup = [], {}, []
+    for it in items:
+        t = it['text'].strip()
+        key = choseong(t.replace('대륙', ''))
+        ks = by.get(key, [])
+        if len(ks) != 1: raise ValueError(f'초성 꼬리표 {t!r}: 맞는 대륙·대양이 {len(ks)}개 {ks}')
+        cls = ks[0]
+        if oceans and (cls in oceans) == t.endswith('대륙'): raise ValueError(f'초성 꼬리표 {t!r}: 「대륙」 붙음이 {cls} 와 맞지 않음')
+        if cls in seen:
+            if seen[cls] == it['map']: raise ValueError(f'초성 꼬리표 {t!r}: 같은 지도 {it["map"]} 에 둘')
+            dup.append({'cls': cls, 'map': it['map'], **({'i': it['i']} if 'i' in it else {})}); continue
+        seen[cls] = it['map']
+        out.append({'cls': cls, 'text': t, 'map': it['map'], 'pt': list(it['pt']), **({'i': it['i']} if 'i' in it else {})})
+    order = [c for c, _ in labels]
+    out.sort(key=lambda q: order.index(q['cls']))
+    return out, {'missing': [c for c in order if c not in seen], 'dup': dup}
+
+
+def page_tags(cfg, mps, labels, oceans=()):
+    """설정 tags {fonts, sizes:[lo, hi], dupDeg?} → ([{cls, text, at:[lon, lat]}], 보고). 꼬리표 글자 상자 가운데를 그 지도 fit 으로 되돌림.
+    겹침 띠에서 두 번 찍힌 꼬리표는 경위도가 dupDeg(기본 2°) 안이어야 함(아니면 멈춤)."""
+    import pdfkit
+    tc = cfg.get('tags') or {}
+    if not tc: return [], {}
+    lo, hi = tc.get('sizes', [11.5, 12.5])
+    fonts = tc.get('fonts', ['KCCChassam'])
+    items = []
+    for mid in cfg['maps']:
+        x0, y0, x1, y1 = mps[mid]['bbox']
+        for sp in pdfkit.page_spans(mps[mid]['page']):
+            if not any(f in sp['font'] for f in fonts) or not (lo <= sp['size'] <= hi): continue
+            if not any('ㄱ' <= ch <= 'ㅎ' for ch in sp['text']): continue
+            b = sp['bbox']; pt = [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]
+            if x0 <= pt[0] <= x1 and y0 <= pt[1] <= y1: items.append({'map': mid, 'text': sp['text'], 'pt': pt})
+    for i, it in enumerate(items): it['i'] = i
+    tags, rep = match_tags(items, labels, oceans)
+    ll = [None] * len(items)
+    for mid in cfg['maps']:
+        ix = [it['i'] for it in items if it['map'] == mid]
+        if ix:
+            for i, q in zip(ix, invert_points(load_fit(mid), [items[i]['pt'] for i in ix])): ll[i] = q
+    out = []
+    for t in tags:
+        q = ll[t['i']]
+        if not q: raise ValueError(f'초성 꼬리표 {t["text"]!r}: 경위도로 되돌릴 수 없음')
+        out.append({'cls': t['cls'], 'text': t['text'], 'at': [round(q[0], 2), round(q[1], 2)]})
+    dup_deg = tc.get('dupDeg', 2.0)
+    for d in rep['dup']:   # 겹침 띠에서 두 번 찍힌 꼬리표 — 처음 것과 같은 자리여야 함
+        a, q = next(o['at'] for o in out if o['cls'] == d['cls']), ll[d['i']]
+        if not q or abs(((a[0] - q[0] + 180) % 360) - 180) > dup_deg or abs(a[1] - q[1]) > dup_deg:
+            raise ValueError(f'초성 꼬리표 {d["cls"]}: 두 쪽 자리가 다름 {a} · {q}')
+        del d['i']
+    rep['count'] = len(out)
+    return out, rep
+
+
 # ── 지도 하나 ────────────────────────────────────────────────────────────
 NE_COUNTRIES = 'raw/ne/ne_50m_admin_0_countries.geojson'
 SAMPLE_DEFAULTS = {'dpi': 200, 'erodePt': 1.0, 'minPx': 40, 'zoomDpi': 1200, 'zoomErodePt': 0.25, 'de': 6.0, 'minVotes': 12,
@@ -735,6 +815,10 @@ def build(layer_id, oceans=False, log=print):
         for o in oc:
             if o.get('center'): centers[o['cls']] = o.pop('center')
             if o.get('bbox'): bounds[o['cls']] = o.pop('bbox')
+    if cfg.get('tags'):   # U1-3e 맞히기 꼬리표(설정 tags 가 있을 때만) + 목록 이름 → 나라(Q8 — 누르면 그 나라로)
+        labels = [(e['cls'], e['label']) for e in legend] + [(o['cls'], o['label']) for o in props.get('oceans', [])]
+        props['tags'], rep['tags'] = page_tags(cfg, mps, labels, {o['cls'] for o in props.get('oceans', [])})
+        props['nameIso'] = dict(sorted({h['name']: h['iso'] for h in hits}.items()))
     return {'type': 'FeatureCollection', 'properties': props, 'features': feats}, rep
 
 
