@@ -307,7 +307,7 @@ $ATLAS_WORK/raw/ne-marine/                                                      
 
 **Files:** Modify `scripts/atlas/config/u1.json`(`layers`); Output `sims/atlas-u1-world/data/layer-*.json`; Test `tests/atlas/units/u1.layers.test.mjs`
 
-- [ ] **Step 1:** `python -I scripts/atlas/extract_vectors.py --unit u1 --features all`, 래스터는 `--unit u1` 래스터 분류. 설정은 작업 스크립트(`$ATLAS_WORK/units/u1/u1-4/cfg.py` — U6-4 꼴, 절 하나만 바꿔 씀)가 다시 쓴다. 레이어와 기대 범례 수(`expectLegend`):
+- [x] **Step 1:** **— 완료(2026-10-24, 「실행 중 결정」 U1-4 — 레이어 13, 계획 표와 다른 꼴 ①~⑤)** `python -I scripts/atlas/extract_vectors.py --unit u1 --features all`, 래스터는 `--unit u1` 래스터 분류. 설정은 작업 스크립트(`$ATLAS_WORK/units/u1/u1-4/cfg.py` — U6-4 꼴, 절 하나만 바꿔 씀)가 다시 쓴다. 레이어와 기대 범례 수(`expectLegend`):
 
   | 레이어 id | 지도 | 종류 | 기대 범례 | 메모 |
   |---|---|---|---|---|
@@ -327,9 +327,9 @@ $ATLAS_WORK/raw/ne-marine/                                                      
   | `p15-korean` | p15-korean | `symbols` 3분류(세종학당·문화원·교육원) | 3 | 그림자 겹친 점 하나로 — 점 수 실측(약 200), Q14 |
   | `p15-paint` | p15-blank | `paintTool`(3h, Q15) + `topicView` 150 | — | 예시 기호(베트남·독일)는 넣지 않음 — 조사표 카드 |
 
-- [ ] **Step 2: 나라 분류 확인(U4-4·U6-4 방식)** — countryClass 다섯(대륙·인터넷·이동 전화·코로나·햄버거) 보고서 `levels`·작은 나라 경고를 1,000~3,000dpi 확대로 보고 `countryOverrides`(같은 값이어도 까닭 — 싱가포르·홍콩·마카오·바레인·몰타·카리브 작은 나라, 그린란드·서사하라·프랑스령 기아나·팔레스타인·대만 같은 단위가 다른 곳). **u6 ★7 교훈**: 「교과서가 칠을 잘못했다」고 보기 전에 우리 색 표본을 먼저 의심하고 고해상도로 다시 봄.
-- [ ] **Step 3:** `node scripts/atlas/build_layers.mjs --unit u1` → `layer-*.json`. 용량 예산: 레이어 합계 **≤ 600KB**(기후 벡터 ≤ 250KB · 대양·대륙 조각 ≤ 100KB · 노선 ≤ 15KB · 한국어 ≤ 20KB · 해양 경계 ≤ 40KB — 넘으면 `tol`).
-- [ ] **Step 4: 실패하는 테스트 → 통과** (`tests/atlas/units/u1.layers.test.mjs`)
+- [x] **Step 2: 나라 분류 확인(U4-4·U6-4 방식)** **— 완료(고침 표·코로나/햄버거 판단)** — countryClass 다섯(대륙·인터넷·이동 전화·코로나·햄버거) 보고서 `levels`·작은 나라 경고를 1,000~3,000dpi 확대로 보고 `countryOverrides`(같은 값이어도 까닭 — 싱가포르·홍콩·마카오·바레인·몰타·카리브 작은 나라, 그린란드·서사하라·프랑스령 기아나·팔레스타인·대만 같은 단위가 다른 곳). **u6 ★7 교훈**: 「교과서가 칠을 잘못했다」고 보기 전에 우리 색 표본을 먼저 의심하고 고해상도로 다시 봄.
+- [x] **Step 3:** **— 완료(445KB — 해양 경계 43KB·한국어 41KB·대륙 125KB 는 예산 넘음, 까닭 기록)** `node scripts/atlas/build_layers.mjs --unit u1` → `layer-*.json`. 용량 예산: 레이어 합계 **≤ 600KB**(기후 벡터 ≤ 250KB · 대양·대륙 조각 ≤ 100KB · 노선 ≤ 15KB · 한국어 ≤ 20KB · 해양 경계 ≤ 40KB — 넘으면 `tol`).
+- [x] **Step 4: 실패하는 테스트 → 통과** **— 완료(12, 실제 꼴로 고침)** (`tests/atlas/units/u1.layers.test.mjs`)
 ```js
 import test from 'node:test'; import assert from 'node:assert/strict'; import { readFileSync } from 'node:fs';
 import { geoArea, geoContains, geoDistance } from 'd3-geo';
@@ -372,7 +372,7 @@ test('한국어 기호 3종, 점 ≥ 150', () => {
 test('태평양 중심 보기 레이어(Q2)', () => { for (const id of ['p08-view', 'p12-view']) assert.equal(read(id).properties.view.centerLon, 150, id); });
 ```
   (분류 이름·출력 키 이름은 U1-3 실제 꼴에 맞춘다. 점·노선 수는 실측으로 고치고 까닭을 「실행 중 결정」에.)
-- [ ] **Step 5:** 지도마다 「교과서 범례 수 ↔ 뽑은 분류 수」 표를 「실행 중 결정」에(U6-4 표 꼴, KB 칸), 화면용 색 보정 결정도. 커밋. 공유 파이프라인을 고쳤으면 u2~u6 회귀(`build_layers --unit u2..u6 all --extract` 임시 out → 바이트 같음, `regress.sh u1-4`).
+- [x] **Step 5:** **— 완료(6999983, u2~u6 레이어 86 바이트 같음 · regress u1-4 회귀 없음)** 지도마다 「교과서 범례 수 ↔ 뽑은 분류 수」 표를 「실행 중 결정」에(U6-4 표 꼴, KB 칸), 화면용 색 보정 결정도. 커밋. 공유 파이프라인을 고쳤으면 u2~u6 회귀(`build_layers --unit u2..u6 all --extract` 임시 out → 바이트 같음, `regress.sh u1-4`).
 
 ### Task U1-5: 지명
 
@@ -798,3 +798,55 @@ test('주제도 활동(교사 §8 Q4): 문항 카드 + 원본 쪽 + 색칠하기
   (U1-3h 리뷰 기록의 「+38 B·다른 값」이 바로 이 고침 — 값 같음.)
 - **캡처**(`C:/Users/Public/atlas-work/units/u1/u1-quizhidden/` — 빌드된 u6 조각 고침 전/후 복사본 `u6-before|after.html`, `shots.mjs`, GPU 끔): `qh-before-globe-atlantic.png`(색칠하기 + 지구본을 대서양 중심으로 끌어 태평양 섬나라가 뒷면 — 남대서양·남극에 유령 동그라미 13) ↔ `qh-after-globe-atlantic.png`(없음), `qh-after-globe-front.png`(앞면 오세아니아 동그라미는 그대로), `qh-*-flat.png`(밀러 그대로). 콘솔 오류 0.
 - **공개본**: 공개된 u5 v1·u6 v1(`docs/atlas-u5-americas/1/`·`docs/atlas-u6-oceania-polar/1/`)에는 이 결함이 남아 있음 — 다시 공개(v2)는 사용자 승인 필요. `content/atlas/u5|u6/issues.md` 끝 「앱 결함 — v2 에 반영할 것」에 적음.
+
+### U1-4 주제 레이어 (2026-10-24, 6999983)
+
+- **설정**: `config/u1.json layers` 13 = 작업 스크립트 `$ATLAS_WORK/units/u1/u1-4/cfg.py`(U6-4 꼴 — layers 절만 바꿈, 앞 작업의 p10-continents·p14-routes 는 지금 값 그대로) + 묶음 `cfg_a.py`(8·9·12쪽)·`cfg_b.py`(13쪽)·`cfg_c.py`(14쪽 나라 셋)·`cfg_d.py`(15쪽), 나라 고침 `ov_<id>.json`(까닭 필수), 한국어 점 `kor-dots-final.json`. 생성물 `sims/atlas-u1-world/data/layer-*.json` 13(커밋함 — U1-9 가 조립).
+- **계획 초안과 다른 꼴(실제 자료)**: ① 맞히기·지구본 단추 레이어 없음 — 앱 type `continentQuiz`(10~11쪽 맞히기 + 대양 단추 5)·`continentGlobes`(일반도 대륙 단추 5)가 **`p10-continents` 자료를 그대로**(레이어 make 는 ref 의 다른 키를 못 받아 종류 이름이 동작을 고름 — U1-3e·3f) → 계획 표의 `p10-quiz`·`p09-globes`·`p11-globes` 는 만들지 않음, 시험은 `properties.tags` 12 로. ② `p15-paint` = `topicView`(앱 type `paintTool` — U1-3h), 같은 ref 의 topicView 를 따로 두지 않음. ③ 계획 표의 `p09-dateline` 은 `p08-boundaries` 의 범례 밖 선(legend false — u6 51쪽 꼴)으로 합침(레이어 하나·범례 블록 하나). ④ 항공망은 분류마다 MultiPoint 하나(U1-3g) — 시험 `R.features[0].geometry.coordinates`. ⑤ 기지 셋은 「여러 지도 한 레이어」 대신 9쪽 세종 자리를 8쪽 좌표(+767.055pt)로 — 두 쪽 한 fit.
+
+**교과서 범례 수 ↔ 뽑은 분류 수(U6-4 표 꼴)**:
+
+| 레이어 | 지도 | 종류 | 교과서 범례 | 뽑은 분류 | B | 메모 |
+|---|---|---|---|---|---|---|
+| p08-view | p08-world | topicView 150 | — | — | 260 | 일반도 처음 보기(Q2) |
+| p08-boundaries | p08 + p09(spreadMaps) | area 선(lineChains) | 0(범례 없음 → 손 견본 1) | 1 + 범례 밖 날짜 변경선 1 | 43,417 | 해양 경계 185 선 · 날짜 변경선 1(9쪽 [2 1] 획). **예산 40KB 를 +2.4KB 넘음**(속성 줄 185 개가 반 — 아래) |
+| p08-stations | p08-world | symbol + labelPoints | 0(지도 글자 — 손 견본 1) | 1 | 2,398 | 다산·장보고·세종 3 + 글자 6(앱 symbolLabels) |
+| p10-continents | p10 + p11 | continents(+ continentQuiz·continentGlobes) | 0(대륙 손 견본 7) | 대륙 7 + 대양 5 | 125,284 | U1-3c·3d·3e 그대로(continent_layers.py 다시 돌림 — 작업 파일 126,556 B 로 3e 와 같은 크기, 레이어 = 그 JSON 그대로). **예산 100KB 를 넘음(126KB — nameIso·tags 포함, 3e 에서 이미 알림)** |
+| p12-view | p12-relief | topicView 150 | — | — | 206 | 지형 |
+| p13-climate | p13-climate | area 벡터 + 고산 빗금 | 6 | 6 | 221,969 | tol 0.3 · minArea 0.3 · **postSimplify 0.2**(아래), 빗금 hatch.clips 14 |
+| p14-routes | p14-routes | routeFan | 0(손 견본 1) | 1(노선 188) | 3,157 | U1-3g 그대로 |
+| p14-internet | p14-internet | countryClass | 5 | 5 | 4,250 | 고침 7(묻힌 작은 나라) |
+| p14-mobile | p14-mobile | countryClass | 5 | 5 | 4,245 | 고침 7 |
+| p14-covid | p14-covid | countryClass | 2 | 2 | 3,868 | 고침 6, 1월 20일 = 8개국(+ 속령 4) |
+| p15-burger | p15-burger | countryClass | 5 | 5 | 5,157 | 고침 11(북한 + 사진 덮개 5 + 묻힌 작은 나라 5) |
+| p15-korean | p15-korean | symbol(manualPoints) | 3 | 3(점 212) | 41,450 | **예산 20KB 를 넘음**(점 Feature 하나 약 190B — symbol 레이어 꼴, 아래) |
+| p15-paint | p15-blank | topicView 150(앱 paintTool) | — | — | 240 | U1-3h |
+| **합계** | | | | | **455,901 B(445KB) ≤ 600KB** | |
+
+- **8·9쪽 해양 경계(공유 line_chains.py·clip_land.py — 키 있을 때만)**: 실측해 보니 8·9쪽은 **국경선과 해양 경계가 같은 기호**(주황 실선 #f58466 0.6pt 위 검은 0.2pt [2 .6] 파선 — 500dpi 확대 `u1-4/bd-sea.png`·`bd-land.png`: 아프리카 내륙 국경도 같은 획). 같은 색 [2 .6] 파선 획 28 은 카슈미르·서사하라·아비에이 등 미확정 국경(strokeDashes 로 뺌). 획을 다 쓰면 육지 국경이 바탕 국경과 겹치므로 **바다 위 몫만**: 새 키 ① `lineChains[].spreadMaps:['p09-world']`(line_chains — 오른쪽 쪽 지도 조각을 그 지도 offsetPt 만큼 옮겨 보탬, spreadOf 확인, boxes·excludeBoxes 는 본 지도에만) ② `cutExcluded`(덮개 상자 안 꼭짓점에서 획을 끊음 — 유럽 삽입 원 밑으로 지나는 획) ③ **닫힌 획 고침**(`_join_strokes` — 8쪽 해양 경계 섬 둘레 고리 19 가 끝점 사슬을 어긋나게 해 StopIteration; 닫힌 획은 그대로 따로, 길이 0 획은 버림 — u2~u6 lineChains 엔 닫힌 획이 없어 그 길을 안 탐) ④ `seaOnly {cls, insetDeg 0.15, minLenDeg 0.6}`(clip_land — ne_10m_land 를 0.15° 안으로 줄인 면을 빼고 0.6° 아래 해안 토막 버림). 유럽 삽입 원 오른쪽 끝(x 278~290)까지 뻗은 삽입 국경 획 때문에 excludeBoxes 를 x 292 까지(그 띠 본 지도는 남아프리카 내륙 — seaOnly 가 어차피 뺌). 확인 그림 `shots/c1/p08-boundaries.png`·`u1-4/v-p08-boundaries-p09-world.png`(9쪽 — 날짜 변경선·폴리네시아 경계, 육지 국경 없음), 틀 `4-general*.png`. 크기 43.4KB(예산 40KB) — 선 185 개 속성 줄이 약 20KB, 단순화(tol 0.2 → 0.4)는 1.5KB 만 줄임 → 넘친 채 둠(코디네이터 판단: 합치면 선 Feature 를 MultiLineString 하나로 — build_layers 공유 고침).
+- **13쪽 기후(공유 clip_land.py — 키 있을 때만)**: tol 0.12 에서 1,094KB, **tol 을 0.35·0.5·1.0·2.0 으로 올려도 874~568KB** — 원인: 조각 21,723 이 만든 분류 덮개가 유효한 coverage 가 아니라(coverage_is_valid False, set_precision 0.001·0.01 로도) `shapely.coverage_simplify` 가 경계를 거의 안 줄임(출력 변 중앙값 0.08°). → 새 키 `postSimplify`(°): 덮개 뒤 분류마다 Douglas–Peucker(위상 유지) → 범례 순서대로 앞 분류 빼기(겹침 0) → 격자·작은 조각·시계 방향(이웃 경계가 따로 줄어 0.2° 안 가는 틈이 생길 수 있음 — 틀 캡처 `4-climate-tibet.png`·`-japan`·`-europe` 에서 해안·경계에 흰 틈이 조금, 세계 보기에선 안 보임). postSimplify 0.15 → 258KB · 0.2 → **222KB** · 0.25 → 189KB → 0.2. minArea 0.3°² 라 싱가포르섬(기후 그래프 도시)·작은 섬은 칠 없음(바탕 육지색 — 시험은 쿠알라룸푸르로). 빗금 = `hatch {stroke #ba703d, swatch [512.7, 331.8, 519.0, 338.2](견본 테두리 획), clips 14, angle 45}` — 범례 6번째 「고산 기후」, 자동 범례가 빗금 견본을 채움 분류로 잡지 않게 채움 5 는 `legendItems`(자동 읽기 색·이름 그대로). 확인: 티베트·안데스 알티플라노 빗금(시험), 싱가포르 대신 쿠알라룸푸르 열대·리야드 건조·몬트리올 냉대.
+- **한국어 점 수(교사 Q14 A — 결정 212)**: 지면 점(지름 2.83pt)은 **반투명 곱하기**라 바탕마다 색이 갈림(세종학당 육지 #e31b4c · 바다 #ed1651 · 해안선 위 #34355c · 국경 위 #500003/#540004, 문화원 #006592·#0068a6·#005798·선 위 #001b36…, 교육원 #00ac8e·#01b49c·#00868a·선 위 #003c2e…) — U1-3i 의 「문화원 = #34355c」는 **해안선 위 세종학당 조각**이었음(그래서 자동 범례 128점·손 견본 296 조각). 조각 중심 거리로 잇는 수(0.8 296 · 1.2 267 · 1.6 235 · 2.0 209)는 어느 거리도 근거가 없어 쓰지 않음. → 작업 스크립트 `py/kor_hough.py`: 분류마다 조각 합집합의 바깥 테두리에서 **볼록한 원호만** 반지름 1.415pt 고정 하프 변환으로 중심에 표(둘레의 ≥ 18% — 보이는 원호 약 65° 이상), 같은 분류 0.45pt 안 봉우리 하나, 범례 견본 셋 뺌 → **212(세종학당 145 · 문화원 32 · 교육원 35)**, 문턱 0.10~0.25 · 합침 0.3~0.9pt 에서 208~216(안정). 1000~3000dpi 확인 그림(`kh-eu.png`·`kh-jp.png`·`kh-jp2.png` — 겹친 점마다 하나, 일본 남쪽 교육원 줄은 2~3pt 안에 6~8개가 겹침)으로 봄. 앞 시도(원호 세 점 외심 묶기)는 위 점에 깎인 조각 테두리가 이웃 점 원을 따라가 거짓 중심이 많아(354 묶음) 버림(`py/kor_circles.py`·`kor_validate.py` 남김). 레이어는 **symbols.py 를 고치지 않고 `manualPoints` 212**(점마다 분류·자리 — 설정에 약 15KB, u6 기지 25 꼴), 범례 = 지면 범례 견본 색(#ed1651·#0068a6·#01b49c — 웹 바탕 위에 그리므로 바다 위 색). 계획의 「약 200」·「세 종류」와 맞음, 대조표 교사 확인 항목(점 212). **크기 41.5KB(예산 20KB)** — symbol 레이어 Feature 꼴(속성 type·cls·kind·label·color·size)이라 줄이려면 build_layers 공유 고침(분류마다 MultiPoint — routeFan 꼴, 앱 symbol 레이어가 MultiPoint 를 받는지 확인 필요) — 코디네이터 판단.
+- **나라 분류 확인(Step 2 — u6 ★7 교훈: 색 표본 먼저 의심)**: 작업 스크립트 `py/cc_check.py`(50m 면을 지면에 옮겨 1500dpi 화소 → 범례 견본 ΔE ≤ 8 화소 수, 그림 모음 `cc-<id>.png`) + 600~3000dpi 확대. 지도 폭이 168~417pt 라 작은 섬은 섬 안이 해안선 획으로 덮여 화소로 못 가름 → **둘레 나라에 묻힌 작은 나라·특별 행정구만 고침**(같은 값 + 까닭), 작은 섬 나라·속령 경고(인터넷·이동 전화 56 · 코로나 59 · 햄버거 16)는 도구의 벡터 채움 표본 값 그대로(대조표 교사 확인 몫). 고침 목록은 아래 표.
+- **코로나 1월 20일 = 8개국**: 짙은 색 = 중국·대한민국·일본·미국·독일·에스파냐·핀란드·**미얀마**(+ 홍콩·마카오·올란드·푸에르토리코 — 그 나라 색). 범례 「8개국」과 수는 맞음. 칠하지 않은 큰 나라(북한·예멘·타지키스탄·니제르·남수단·보츠와나·말라위·부룬디·시에라리온·기니·소말릴란드·서사하라)는 지면도 바탕 미색 — 분류 없음 그대로.
+- **햄버거 덮개(사진) 아래 나라**: 북한 = 라이스버거 사진(cartoucheBbox 아래 끝 136.3pt) 아래로 남쪽이 보이고 바탕이 「0(없음)」 미색(2000dpi `bur-prk.png`) → `0(없음)` 고침. 미크로네시아·괌·북마리아나·마셜 = 스시버거 사진(insetBbox) 밑 → **분류 없음**(교과서에 없는 수치 금지 — 실제 매장 유무를 넣지 않음), 키리바시 = 사진 아래 길버트 제도가 보이나 섬 윤곽선만 → 분류 없음.
+
+**countryOverrides(까닭 — 설정에 그대로)**:
+
+| 레이어 | 나라 | 값 | 까닭 |
+|---|---|---|---|
+| p14-internet | AND · LIE · MCO | 80 ~ 100 | 둘레 에스파냐·프랑스 / 스위스·오스트리아 / 프랑스 면에 묻힘(화소 c1) |
+| p14-internet | SMR · VAT · HKG · MAC | 60 ~ 80 | 둘레 이탈리아 / 중국 면에 묻힘(화소 c2) |
+| p14-mobile | AND · MCO | 100 ~ 120 | 둘레 면(화소 c2) |
+| p14-mobile | LIE · SMR · VAT · HKG · MAC | 120 초과 | 둘레 면(화소 c1) |
+| p14-covid | HKG · MAC · ALD · PRI | 1월 20일 | 중국·핀란드 면에 묻힘 / 푸에르토리코 3000dpi 짙은 분홍 |
+| p14-covid | GUM · ASM | 없음 | 3000dpi 섬 윤곽선만 — 도구 c1 은 둘레 면 번짐 |
+| p15-burger | PRK | 0(없음) | 사진 아래 보임(미색) |
+| p15-burger | FSM · GUM · MNP · MHL · KIR | 없음 | 스시버거 사진 밑 / 윤곽선만 |
+| p15-burger | LIE · VAT | 100-999 | 둘레 면(화소 c2 — LIE 표본 반 갈림은 국경 띠) |
+| p15-burger | MCO · HKG · MAC | 1,000 이상 | 둘레 면(화소 c1) |
+
+- **교과서 담당자 확인 필요 후보**(issues.md 는 U1-8 몫 — 여기엔 후보만): ① **14쪽 코로나 「2020년 1월 20일(8개국)」**: 지면 짙은 색 8 = 중국·대한민국·일본·미국·독일·에스파냐·핀란드·미얀마. 세계 보건 기구 상황 보고 1(2020-01-21)의 1월 20일 확진국은 중국·일본·대한민국·타이 4 — **타이는 연한 색, 미얀마가 짙은 색**(이웃 나라를 바꿔 칠했을 수 있음 — 미얀마 첫 확진은 3월 23일로 3월 20일 분류에도 들 수 없음), 독일(1월 27일)·핀란드(1월 29일)·에스파냐(1월 31일)·미국(1월 21일 보고)도 1월 20일 뒤 — 날짜(「1월 30일」 무렵?)나 칠을 교과서 담당자가 확인. 앱은 지면 그대로. ② 15쪽 한국어 점 212 ↔ 계획 조사 어림 「약 200」(지면 범례·글에 수 없음 — 문제 아님, 대조표 참고). ③ 14쪽 항공망 점 188 · 선 167 ↔ 글 「175개 도시」(U1-3g 에서 넘김 — 대조표 교사 확인).
+- **시험**: Node 새 `tests/atlas/units/u1.layers.test.mjs` 12(레이어 13·예산·보기 150·해양 경계/날짜 변경선·기지 3·대륙 7/러시아/그린란드/꼬리표 12·대양 5·기후 6/빗금/도시·항공망 188·인터넷/이동 전화·코로나 8·햄버거 북한/덮개·한국어 212), Python `test_line_chains.py` +2(spreadMaps·cutExcluded·닫힌 획)·새 `test_clip_land_u1.py` 2(seaOnly·postSimplify).
+- 캡처(임시 틀 `u1-4/harness/` — 3h 틀 꼴, 레이어 13 저장소 생성물 그대로, vite 5186, `shots.mjs`·`run_shots.sh`(heavy.lock)): `u1-4/4-general.png`·`-pacific`·`-sejong`·`-seasia` · `4-climate.png`·`-tibet`·`-andes`·`-japan`·`-europe` · `4-covid` · `4-routes`·`4-internet`·`4-mobile` · `4-burger`·`-eastasia` · `4-korean`·`-europe`·`-japan` · `4-continents`, `result.json`. 틀 주제엔 centerLonOf 가 없어 기후 등은 대서양 중심으로 열림(U1-8 몫).
+- **회귀**: 공유 line_chains.py·clip_land.py(도장 입력 아님) — u2~u6 설정 사본(out = 임시 _bt/uN)으로 `build_layers all --extract` → 레이어 **86(11·11·11·20·33) 모두 저장소와 바이트 같음**(`u1-4/bt.sh`·`bt.log`), `regress.sh u1-4` u2~u6 회귀 없음(해시 다른 파일 u2~u5 1 = coloring 도장 · u6 0, 캡처 41/31/42/58/73 화소 차 0, `units/u1/regress-u1-4.log` DONE). 조각 크기는 앞 커밋(b789932 quiz.js +38 B)과 같음 — 이 작업 앱 코드 0 B.
+- `npm test` **Python 507 · Node 908** 통과(`units/u1/npmtest-u1-4.log`).
