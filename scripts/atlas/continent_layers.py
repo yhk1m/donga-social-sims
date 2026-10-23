@@ -166,7 +166,9 @@ def d3_wind(g):
 
 
 def round_geom(g, nd=3):
-    """d3 감김 + 소수 nd 자리 GeoJSON geometry(MultiPolygon). 반올림으로 퇴화한 고리는 뺌."""
+    """d3 감김 + 소수 nd 자리 GeoJSON geometry(MultiPolygon). 격자에 맞춘 뒤(set_precision — 반올림이 고리를 꼬지 않게) 퇴화한 고리는 뺌."""
+    import shapely
+    g = shapely.set_precision(g, 10 ** -nd)
     out = []
     for p in polys(d3_wind(g)):
         ext = [[round(x, nd), round(y, nd)] for x, y in p.exterior.coords]
@@ -324,6 +326,10 @@ def project_parts(fit, geoms):
     from atlas_common import polygonal
     halves = cut_halves(fit)
     rings, idx = [], []
+    def wrap(g):   # 날짜변경선에서 이어 붙인 면(경도 > 180 — 태평양·러시아 아시아 조각)을 −180~180 으로 되접음
+        if g.bounds[2] <= 180: return g
+        return unary_union([g.intersection(box(-180, -90, 180, 90)), translate(g.intersection(box(180, -90, 540, 90)), -360)])
+    geoms = [wrap(g) for g in geoms]
     for i, g in enumerate(geoms):
         for h, hb in enumerate(halves):
             for k, p in enumerate(polys(g.intersection(hb))):
@@ -756,7 +762,8 @@ def verify(layer_id, out_dir, dpi=110):
     cfg = layer_config(layer_id); mps = maps()
     with open(os.path.join(WORK, 'geo', f'{layer_id}.continents.json'), encoding='utf-8') as f: lay = json.load(f)
     color = {e['cls']: e['color'] for e in lay['properties']['legend']}
-    for o in lay['properties'].get('oceans') or []: color[o['cls']] = o.get('color', '#2b6cb0')
+    pal = ['#2b6cb0', '#38a169', '#d69e2e', '#805ad5', '#e53e3e']   # 검증 그림만 — 대양마다 다른 색으로 경계를 봄
+    for k, o in enumerate(lay['properties'].get('oceans') or []): color[o['cls']] = pal[k % len(pal)]
     geo = {iso: g for iso, ko, g in ne_countries()}
     items = [(c, geo[iso]) for iso, c in lay['properties']['classes'].items() if iso in geo]
     items += [(f['properties']['cls'], shape(f['geometry'])) for f in lay['features']]

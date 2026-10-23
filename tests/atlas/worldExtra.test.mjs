@@ -149,9 +149,11 @@ test('날짜변경선: 경도 190 까지 이은 러시아 아시아 조각은 �
 // ── 실제 자료(작업 폴더 — 있을 때만) ─────────────────────────────────────
 const REAL = `${WORK}/geo/p10-continents.continents.json`;
 const BASE = path.join(REPO, 'sims/atlas-u6-oceania-polar/data/basemap.json');
-test('실제 10·11쪽 대륙 자료: 대륙 7 모두 나라가 있음, 러시아 = 조각 면 둘, 하와이 = 오세아니아, 그린란드 없음, 자료 ≤ 100KB', { skip: fs.existsSync(REAL) && fs.existsSync(BASE) ? false : '작업 폴더 자료 없음' }, () => {
+test('실제 10·11쪽 대륙 자료: 대륙 7 모두 나라가 있음, 러시아 = 조각 면 둘, 하와이 = 오세아니아, 그린란드 없음, 대륙 ≤ 100KB · 대양 ≤ 80KB', { skip: fs.existsSync(REAL) && fs.existsSync(BASE) ? false : '작업 폴더 자료 없음' }, () => {
   const data = readJson(REAL);
-  assert.ok(fs.statSync(REAL).size <= 100 * 1024, `${fs.statSync(REAL).size} B`);
+  const ocBytes = JSON.stringify(data.features.filter((f) => f.properties.ocean)).length;
+  assert.ok(fs.statSync(REAL).size - ocBytes <= 100 * 1024, `대륙 ${fs.statSync(REAL).size - ocBytes} B`);
+  assert.ok(ocBytes <= 80 * 1024, `대양 ${ocBytes} B`);
   const bm = readJson(BASE);
   const cs = feature(bm, bm.objects.countries50).features;
   const fs_ = WX.continentFeatures(data, cs);
@@ -165,4 +167,21 @@ test('실제 10·11쪽 대륙 자료: 대륙 7 모두 나라가 있음, 러시�
   assert.ok(fs_.some((f) => f.properties.iso === 'USA' && f.properties.cls === 'oceania'));
   assert.ok(!fs_.some((f) => f.properties.iso === 'GRL'));
   for (const k of Object.keys(by)) assert.ok(data.properties.centers[k], k);
+});
+
+test('실제 대양 면(U1-3d, Q7 A): 다섯, 서로 안 겹침(표본점), 넓이 합 ≈ 바다(지구의 약 71%) ±3%, 대표 바다 점 판정, 극 면 넓이 < 반구', { skip: fs.existsSync(REAL) && readJson(REAL).properties.oceans ? false : '대양 자료 없음' }, async () => {
+  const { geoArea } = await import('d3-geo');
+  const data = readJson(REAL);
+  const oc = WX.oceanFeatures(data);
+  assert.deepEqual(oc.map((f) => f.properties.cls), ['pacific', 'atlantic', 'indian', 'arctic', 'southern']);
+  assert.deepEqual(oc.map((f) => f.properties.label), ['태평양', '대서양', '인도양', '북극해', '남극해']);
+  const share = oc.reduce((a, f) => a + geoArea(f), 0) / (4 * Math.PI);
+  assert.ok(Math.abs(share - 0.711) <= 0.03, `바다 몫 ${share}`);
+  for (const f of oc) assert.ok(geoArea(f) < 2 * Math.PI, `${f.properties.cls} 감김(지구 − 면 아님)`);
+  const at = (ll) => oc.filter((f) => geoContains(f, ll)).map((f) => f.properties.cls);
+  for (const [ll, want] of [[[-150, 30], 'pacific'], [[170, 0], 'pacific'], [[-30, 0], 'atlantic'], [[80, -20], 'indian'], [[0, 85], 'arctic'], [[0, -65], 'southern'], [[-170, -65], 'southern'], [[18, 36], 'atlantic'], [[34, 43], 'atlantic'], [[19, 57], 'atlantic'], [[38, 20], 'indian'], [[51, 27], 'indian']])
+    assert.deepEqual(at(ll), [want], `${ll}`);
+  assert.deepEqual(at([100, 40]), [], '육지(몽골)는 어느 대양도 아님');
+  for (let lon = -180; lon < 180; lon += 7) for (let lat = -80; lat <= 85; lat += 7) assert.ok(at([lon, lat]).length <= 1, `겹침 ${lon},${lat}`);
+  for (const k of ['pacific', 'atlantic', 'indian', 'arctic', 'southern']) assert.ok(data.properties.centers[k], k);
 });
