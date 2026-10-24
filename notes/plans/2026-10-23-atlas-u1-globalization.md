@@ -990,3 +990,31 @@ test('주제도 활동(교사 §8 Q4): 문항 카드 + 원본 쪽 + 색칠하기
 - **넘김에서 정한 것**: 대조표 그림 `chart_sheets.py` 보스토크 축 −40~40 잘림(U1-7) = 고치지 않음(눈 확인용 c4 그림만 — 대조표 HTML·조각과 무관, 공유 파일이라 u2~u6 그림이 바뀜, 앱은 −70~10). 모음 썸네일: `units.json thumbBounds` 필요 없음(로빈슨 첫 화면에 빈 바탕 없음), `hub_thumbs.mjs` 숨김 목록에 `.at-wg`(지구본 단추 열 — u1 에만 있는 칸, 다른 단원 썸네일 같음) → `docs/assets/atlas/hub/atlas-u1-world.webp` 다시(로빈슨 · 31 KB). 고른 대륙이 있을 때 지도 누르기·작은 섬 분류·한국어 점 212·이어도 글자·바로가기 8·9쪽 없음·조사표 글·격자 차이 6·프랑스 등급 5 는 교사 확인 줄(참고/알려진 차이)로.
 - `npm test`(heavy.lock, `units/u1/npmtest-u1-10.log`): Node **956 통과**, Python 524 중 1 실패 = `test_maps_u1.test_no_oceania_keys` 의 layerTypeAs 단언(symbolHidePins 더함) → 고친 뒤 test_maps_u1 19 통과 → 다시 전체 `npm test`(`units/u1/npmtest-u1-10b.log`) **Python 524 OK · Node 956 통과(skip 0)**.
 - 회귀(`regress.sh u1-10` — compare.mjs): **u2~u6 다섯 모두 「회귀 없음」**(CHECK EXIT 0 ×5, `units/u1/regress-u1-10.log` 끝 DONE) — 해시 다른 파일 u2~u5 1(coloring 도장 — G0 부터) · u6 0, 캡처 41/31/42/58/73 화소 차 0, **대조표 수·HTML 같음**(0/9/134/24 · 0/26/118/42 · 0/34/104/41 · 0/48/150/71 · 0/72/211/86), 조각 2,112,866 · 1,472,482 · 1,595,639 · 1,667,169 · 1,416,329 B(U1-9 와 같음 — 공유 앱 0 B, worldExtra·main.js 는 u1 전용).
+
+### U1-10t 교사 답 14 반영 (2026-10-24)
+
+- **결과: 대조표 다름 0 · 알려진 차이 37 · 같음 102 · 참고 81**(행 20 · 캡처 72, 처음 0/44/102/74 — 답한 ★ 항목이 알려진 차이 → 참고로), 교사 확인 63(★ 0), **「교과서 담당자 확인 필요」 7**(issues.md 1·3·4·5·6·7·9). 작업 스크립트 `$ATLAS_WORK/units/u1/u1-10t/`(patch_teacher.py — u1-10/teacher_items.py·gen_compare.py 를 `.u1-10` 사본에서 다시 씀, run1.sh, phone_legend.mjs, 그림 `t/`), 로그 `u1-10t/run1.log`.
+
+  | 교사 질문 | 처리 | 근거 |
+  |---|---|---|
+  | 1 룹압할리(issues 8) | 표시 안 함 — 앱 그대로(찾아보기 「룹알할리」) | issues.md 8 「교사 답: 표시 안 함」, teacher 참고 |
+  | 2 유럽 삽입 축척(issues 1) | **담당자 확인 필요** | issues.md 1 · teacher flag |
+  | 3 휴대폰 칸 겹침 | **휴대폰(폭 560px 이하) 범례 칸 접힌 채 시작** — 공용 `src/atlas/ui.js` legendPanel 한 줄(`matchMedia('(max-width: 560px)')` — worldQuiz 맞히기 칸과 같은 560 기준, matchMedia 없으면 옛 길) | 시험 ui.test +1 · 데스크톱 그대로(대조표 1440 캡처 72 — 화소 확인은 regress 몫) |
+  | 4 시나이(issues 3) · 5 트라키아(issues 4) · 6 팔라우·미크로네시아(issues 5) | **담당자 확인 필요** 셋 | issues.md · flag |
+  | 7 12쪽 핀 ②③④ | 교과서 핀 자리 그대로 + **담당자 확인 필요**(issues.md **9 새 항목** — ② 필라투스산 266km · ③ 18.51°E(필라투스산 812km, 알프스 동쪽 끝 밖) · ④ 모로코 남동 국경 바로 밖, 맞춤 오차 1~2° 단서) | photos.json 핀 경위도 |
+  | 8 12쪽 축척 막대(issues 2) | 표시 안 함(확신 낮음) | issues.md 2 |
+  | 9 12·13쪽 사진 보라 빈 핀 | **지움** — 핀은 사진 위 벡터 도형이라 16장 모두 `imagesOnly`(래스터만 렌더 — 사진은 핀 밑까지 온전, 크기·모서리 그대로). 상자를 줄이면 위·왼쪽 약 12pt 를 잃음 | U1-6 cfg.py(`_imagesOnly` 까닭) → `extract_images --unit u1 --photos --sheets`, 전후 `u1-10t/t/before-1213.png`·`after-1213.png` |
+  | 10 보스토크 마커 | **교과서 점 자리로**: 13쪽 흰 점 가운데 [371.799, 367.373]pt(u1-8/py/dots13.py) → p13-climate fit(pt2ll.mjs) = **124.3957°E, 77.5210°S**, source = 13쪽 원본 쪽 그림 주소 | u1-8/py/gen_topics.py VOSTOK_TB → extract_text --fill → build_content |
+  | 11 코로나 1월 20일(issues 6) | **담당자 확인 필요** | flag |
+  | 12 노선 188/167/175(issues 7) | 앱 그대로(188) + **담당자 확인 필요** | flag |
+  | 13 라이스버거 p15-1 | 상자만 좁히면(600dpi 시험 [302.8, 85.4, 358.4, 125.8]) 상추 끝이 잘리고 위 선이 남음 → 공유 `extract_images.py` 새 `mask: 'subject'`(키 있을 때만 — 채도 높고 파랑 아닌 화소의 볼록 껍질 밖 흰색, 다른 햄버거처럼 오려 낸 꼴). 아래 빵에 비친 선은 그림 일부라 남음 | 전후 `t/p15-1-before-x4.png`·`p15-1-after-x4.png`, test_images +1 |
+  | 14 색칠하기 동그라미 73 | 그대로 | teacher 참고 |
+
+- 사진 합계 607,695 → **598,630 B**(jpg+webp, 4MB 안). 조각 u1 **1,482,797 B**(+178 — 보스토크·사진 기록·ui.js 한 줄), check:embed 통과. 대조표 장면 `climate-photo-pin-baked` → `climate-photo-pin-removed`. 휴대폰 묶음 `units/u1/remote/compare-u1.html` **8,600,506 B** 다시 만듦(390·1440 헤드리스 확인은 아직).
+- 시험(가벼운 것만 따로 돌림): Node u1.content·u1.photos·ui **56 통과**(보스토크 출처·거리 1km 안, imagesOnly 16 + 햄버거, mask subject, legendPanel 휴대폰), Python test_images 51 · test_maps_u1 19 · test_text_u1 7 OK.
+- **회귀 `regress.sh u1-10t`**(ui.js·extract_images.py 공유 고침, 로그 `units/u1/regress-u1-10t.log` DONE): u2~u6 **다섯 모두 「회귀 없음」**(CHECK EXIT 0 ×5) — 해시 다른 파일 u2~u5 1(coloring 도장 — G0 부터) · u6 0, **캡처 41/31/42/58/73 화소 차 0**(대조표 캡처는 모두 1440×900 — 휴대폰 폭 캡처 없음, 다시 찍을 기준선 없음), 대조표 수·HTML 같음. **조각(범례 한 줄 — 공유 바이트)**: u2 2,112,866 → 2,112,960(+94) · u3 1,472,482 → 1,472,578(+96) · u4 1,595,639 → 1,595,731(+92) · u5 1,667,169 → 1,667,263(+94) · u6 1,416,329 → 1,416,425(+96), 모두 예산 200 B 안·±1% 안.
+- **휴대폰 범례 확인** `u1-10t/phone_legend.mjs`(조각 6, `u1-10t/t/<폭>-<조각>.png` · phone_legend.json): **390×844 = u1~u6 모두 접힘**(is-collapsed · aria-expanded false · 몸통 숨김 · 칸 높이 36px), **1440×900 = 모두 펼침**(높이 375~483px — 옛 그대로), 가로 넘침 0, 콘솔 오류 0.
+- 휴대폰 묶음 확인 `remote/check.mjs`: 390·1440 그림 73 중 안 뜬 것 1 = 누르기 전 빈 확대 창 `#lbi`(U1-10 과 같음), 쪽 그림 12칸 모두 배경, 가로 넘침 0, 콘솔 0.
+- `npm test`(heavy.lock, `units/u1/npmtest-u1-10t.log`): **Python 525 OK · Node 957 통과(실패 0 · skip 0)**.
+- u2~u6 **공개본은 이 범례 고침을 다시 공개해야 반영**(사용자 판단 — 다음 공개 때).
+

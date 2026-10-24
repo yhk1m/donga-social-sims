@@ -18,7 +18,7 @@
  {"id": "p14-1", "page": 14, "bbox": [39.3, 106.3, 122.5, 219.6], "topic": "connection", "caption": "1492년 콜럼버스는 대서양을 횡단하는 데 거의 900시간(약 37일)이 걸렸다.", "dpi": 150, "width": 175, "height": 237},
  {"id": "p14-2", "page": 14, "bbox": [254.7, 138.5, 368.0, 228.4], "topic": "connection", "caption": "1927년 찰스 린드버그는 약 34시간 만에 대서양 횡단 비행에 최초로 성공했다.", "dpi": 150, "width": 237, "height": 188},
  {"id": "p14-3", "page": 14, "bbox": [60.3, 236.1, 150.9, 344.2], "topic": "connection", "caption": "1962년 미국인 최초로 우주 궤도에 오른 존 글렌은 약 30분 만에 대서양을 횡단했고, 5시간 동안 지구를 세 바퀴나 돌았다.", "dpi": 150, "width": 190, "height": 227},
- {"id": "p15-1", "page": 15, "bbox": [301.5, 82.9, 359.5, 126.0], "topic": "glocal", "caption": "비빔밥을 활용한 라이스버거(대한민국)", "pin": 1, "map": "p15-burger", "lonlat": [127.83385, 36.44118], "dpi": 150, "width": 121, "height": 91},
+ {"id": "p15-1", "page": 15, "bbox": [301.5, 82.9, 359.5, 126.0], "topic": "glocal", "mask": "subject", "caption": "비빔밥을 활용한 라이스버거(대한민국)", "pin": 1, "map": "p15-burger", "lonlat": [127.83385, 36.44118], "dpi": 150, "width": 121, "height": 91},
  {"id": "p15-2", "page": 15, "bbox": [349.5, 143.1, 404.8, 185.0], "topic": "glocal", "caption": "초밥과 회를 활용한 스시버거(일본)", "pin": 2, "map": "p15-burger", "lonlat": [139.26943, 35.94296], "dpi": 150, "width": 116, "height": 88},
  {"id": "p15-3", "page": 15, "bbox": [89.1, 126.9, 147.0, 171.7], "topic": "glocal", "caption": "고기 대신 소시지를 넣은 소시지버거(독일)", "pin": 3, "map": "p15-burger", "lonlat": [10.89663, 50.68744], "dpi": 150, "width": 122, "height": 94},
  {"id": "p15-4", "page": 15, "bbox": [119.3, 208.5, 177.5, 249.4], "topic": "glocal", "caption": "난을 활용한 아라비아버거(아랍 에미리트)", "pin": 4, "map": "p15-burger", "lonlat": [53.98656, 23.1648], "dpi": 150, "width": 122, "height": 86},

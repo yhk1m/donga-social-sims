@@ -734,14 +734,13 @@
      "page": 13,
      "bbox": [683, 207, 734, 215]
     },
-    "lonlat": [106.800034, -78.466284],
+    "lonlat": [124.3957, -77.521],
     "source": {
-     "name": "Natural Earth 10m populated places",
-     "id": 1159146107,
-     "url": "https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-populated-places/",
-     "title": "Vostok Station"
+     "name": "교과서 13쪽 지도 보스토크 점(p13-climate 맞춘 식으로 되돌린 자리)",
+     "url": "https://yhk1m.github.io/donga-social-sims/assets/atlas/u1/page/p013.jpg",
+     "title": "지면 흰 점 가운데 [371.799, 367.373]pt"
     },
-    "why": "기후 그래프 도시 위치(u4~u6 와 같이 그래프 도시는 실제 자리 — 이 단원은 그래프 마커에 사진이 없고(13쪽 사진 핀 8은 따로), places 에 「싱가포르」가 나라·수도 둘이고 몬트리올·보스토크가 없어 lonlatFrom.place 를 못 씀 → Natural Earth 10m 인구 지점). 13쪽 지도 흰 도시 점(지름 2.92pt)을 fit 으로 되돌린 자리와 견줌: 싱가포르·리야드·런던·몬트리올·보고타 15~140km, 보스토크는 로빈슨 극 둘레 늘어남으로 약 410km(교과서 점은 124.4°E — 실제 기지 106.8°E)",
+    "why": "교사 답 10(U1-10t, 2026-10-24): 보스토크 그래프 마커는 교과서 지도 점 자리로 — 13쪽 지도 흰 도시 점(지름 2.92pt) 가운데 [371.799, 367.373]pt 를 p13-climate 맞춘 식(로빈슨)으로 되돌린 124.3957°E, 77.5210°S(units/u1/u1-8/py/dots13.py · pt2ll.mjs). 실제 기지(Natural Earth 10m 「Vostok Station」 106.80°E, 78.47°S)와 약 410km — 로빈슨 극 둘레 늘어남 + 교과서 점 자리. 나머지 다섯 도시는 실제 자리(Natural Earth)",
     "_title": "카드 제목 = 13쪽 지도의 도시 글자, 글 = 그래프 제목(지면 「열대 기후(싱가포르)」 꼴)",
     "title": "보스토크",
     "text": "한대 기후(보스토크)"

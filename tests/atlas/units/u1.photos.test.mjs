@@ -88,9 +88,15 @@ test('글: 설명이 비지 않고 깨진 글자(�·烋·?한글)·겹 공백 
   for (const [id, s] of Object.entries(has)) assert.ok(by[id].caption.includes(s), `${id}: ${by[id].caption}`);
   for (const it of cfg.items) {
     if (it.captionOverride) { assert.equal(by[it.id].caption, it.captionOverride); assert.ok(it._why, it.id); }
-    if (it.imagesOnly) assert.ok(it._bbox, `${it.id}: imagesOnly 까닭`);
+    if (it.imagesOnly) assert.ok(it._bbox || it._imagesOnly, `${it.id}: imagesOnly 까닭`);
   }
-  assert.deepEqual(cfg.items.filter((it) => it.imagesOnly).map((it) => it.id), ['p15-1', 'p15-2', 'p15-3', 'p15-4', 'p15-6']);
+  // U1-10t 교사 답 9: 12·13쪽 사진 16 은 왼쪽 위 보라 빈 핀(벡터)을 지우려고 imagesOnly(래스터만) · 답 13: 라이스버거 mask subject(둘레 지도선 지움)
+  const pins1213 = [12, 13].flatMap((pg) => [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `p${pg}-${i}`));
+  assert.deepEqual(cfg.items.filter((it) => it.imagesOnly).map((it) => it.id), [...pins1213, 'p15-1', 'p15-2', 'p15-3', 'p15-4', 'p15-6']);
+  for (const id of pins1213) assert.match(cfg.items.find((it) => it.id === id)._imagesOnly, /교사 답 9/);
+  assert.deepEqual(cfg.items.filter((it) => it.mask).map((it) => [it.id, it.mask]), [['p15-1', 'subject']]);
+  assert.ok(cfg.items.find((it) => it.id === 'p15-1')._mask);
+  assert.equal(by['p15-1'].mask, 'subject');
 });
 
 test('지구본 단추 그림 10: 앱 GLOBE_SETS 의 id·차례·cls 그대로, 160·320px WebP(알파), 설정 globes 와 같음', () => {

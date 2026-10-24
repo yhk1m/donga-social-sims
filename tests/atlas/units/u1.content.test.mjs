@@ -57,12 +57,13 @@ test('기후 그래프 마커 6(U1-7 넘김 — 지면 차례): 그래프 도시
   assert.deepEqual(cm.map((m) => [m.title, m.text]), [['싱가포르', '열대 기후(싱가포르)'], ['리야드', '건조 기후(리야드)'], ['런던', '온대 기후(런던)'],
     ['몬트리올', '냉대 기후(몬트리올)'], ['보스토크', '한대 기후(보스토크)'], ['보고타', '고산 기후(보고타)']]);
   for (const m of cm) {
-    assert.equal(m.lonlatFrom, 'source', m.id); assert.match(m.source.url, /naturalearthdata\.com/); assert.equal(m.photo, undefined, m.id);
+    // 보스토크는 교과서 점 자리(교사 답 10, U1-10t — 출처 = 13쪽 원본 쪽 그림), 나머지 다섯은 Natural Earth 실제 자리
+    assert.equal(m.lonlatFrom, 'source', m.id); assert.match(m.source.url, m.id === 'c-vostok' ? /u1\/page\/p013\.jpg$/ : /naturalearthdata\.com/); assert.equal(m.photo, undefined, m.id);
     assert.equal(C[m.chart].title, m.text, `${m.id} 글 = 그래프 제목`);
   }
-  // 13쪽 지도 흰 도시 점(fit 되돌림 — U1-8 조사)과의 거리: 다섯은 150km 안, 보스토크는 로빈슨 극 둘레라 약 410km
+  // 13쪽 지도 흰 도시 점(fit 되돌림 — U1-8 조사)과의 거리: 다섯은 150km 안, 보스토크는 그 점 자리 그대로(U1-10t — 전에는 실제 기지라 약 410km)
   const dots = { 'c-singapore': [104.41, 1.34], 'c-riyadh': [45.91, 24.78], 'c-london': [-0.62, 52.13], 'c-montreal': [-74.61, 45.82], 'c-vostok': [124.4, -77.52], 'c-bogota': [-75.32, 4.67] };
-  for (const m of cm) assert.ok(km(m.lonlat, dots[m.id]) < (m.id === 'c-vostok' ? 450 : 150), `${m.id} ${km(m.lonlat, dots[m.id]).toFixed(0)}km`);
+  for (const m of cm) assert.ok(km(m.lonlat, dots[m.id]) < (m.id === 'c-vostok' ? 1 : 150), `${m.id} ${km(m.lonlat, dots[m.id]).toFixed(0)}km`);
 });
 
 test('지구본 단추(교사 §8 Q2·Q4 A): 일반도 대륙 5 = p10-continents 를 continentGlobes(legend false — 범례 블록 없음), 대륙과 대양 대양 5 = continentQuiz', () => {

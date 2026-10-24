@@ -4,7 +4,7 @@ import json, os, subprocess, sys, tempfile, unittest
 from unittest import mock
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 import pdfkit
 import extract_images as X
 import pins as P
@@ -48,6 +48,21 @@ class PureFunctions(unittest.TestCase):
         self.assertEqual(im.getpixel((0, 0)), (255, 255, 255))
         self.assertEqual(im.getpixel((20, 20)), (255, 0, 0))
         self.assertIs(X.apply_mask(im, None), im)
+
+    def test_subject_mask(self):
+        # U1-10t: 미색 바탕 + 파란 지도선 + 가운데 주황 대상 → 대상 볼록 껍질 밖(선·바탕)은 흰색, 대상은 그대로
+        im = Image.new('RGB', (60, 40), (233, 229, 220))
+        d = ImageDraw.Draw(im)
+        d.line([(0, 3), (59, 3)], fill=(0, 120, 200), width=2)  # 지도선(위 끝)
+        d.ellipse([15, 10, 45, 32], fill=(230, 120, 60))         # 대상
+        out = X.apply_mask(im, 'subject')
+        self.assertEqual(out.getpixel((30, 3)), (255, 255, 255))
+        self.assertEqual(out.getpixel((2, 38)), (255, 255, 255))
+        self.assertEqual(out.getpixel((30, 21)), (230, 120, 60))
+        # 대상이 없으면(채도 낮은 그림) 그대로
+        flat = Image.new('RGB', (10, 10), (200, 200, 200))
+        self.assertIs(X.apply_mask(flat, 'subject'), flat)
+        with self.assertRaises(ValueError): X.apply_mask(im, 'square')
 
     def test_unwrap_lon(self):
         # 날짜변경선을 넘는 지도: 중심 경도 기준으로 펴서 범위가 뒤집히지 않게
