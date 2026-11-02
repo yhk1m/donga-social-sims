@@ -31,8 +31,8 @@
 .ds-sim .ah-lead { font-size: 13px; color: var(--ink-2); margin: 4px 0 0; }
 .ds-sim .ah-count { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-/* 카드 격자: PC 3~4열, 태블릿 2~3열 */
-.ds-sim .ah-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+/* 카드 격자: 단원 6개를 고르게 — PC 3열(3·3), 태블릿 2열(2·2·2), 좁으면 1열 */
+.ds-sim .ah-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
 .ds-sim .ah-cell { margin: 0; min-width: 0; display: flex; }
 .ds-sim .ah-card {
   flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
@@ -62,9 +62,15 @@
 .ds-sim .ah-card.is-planned { background: #faf9f6; border-style: dashed; box-shadow: none; opacity: .8; }
 .ds-sim .ah-card.is-planned .ah-name, .ds-sim .ah-card.is-planned .ah-numeral { color: #8b9198; }
 
+@media (max-width: 900px) {
+  .ds-sim .ah-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (max-width: 720px) {
   .ds-sim .ah-wrap { padding: 20px 16px 28px; }
-  .ds-sim .ah-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .ds-sim .ah-grid { gap: 12px; }
+}
+@media (max-width: 520px) {
+  .ds-sim .ah-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
   .ds-sim .ah-card { transition: none; }
