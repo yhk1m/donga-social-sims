@@ -20,7 +20,7 @@ from collections import Counter
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 import pdfkit
 from atlas_common import WORK, FONT_PATH, unit_config
 from pins import assign_pins
@@ -122,9 +122,43 @@ def check_candidates(warnings):
 
 
 # ── 사진 ──────────────────────────────────────────────────────────────────
+def _convex_hull(pts):
+    """점 목록 → 볼록 껍질 꼭짓점(단조 사슬)."""
+    pts = sorted(set(pts))
+    if len(pts) < 3: return pts
+    def cross(o, a, b): return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+    lo, up = [], []
+    for p in pts:
+        while len(lo) >= 2 and cross(lo[-2], lo[-1], p) <= 0: lo.pop()
+        lo.append(p)
+    for p in reversed(pts):
+        while len(up) >= 2 and cross(up[-2], up[-1], p) <= 0: up.pop()
+        up.append(p)
+    return lo[:-1] + up[:-1]
+
+
+def subject_mask(im, sat_min=0.35, grow_px=1.5):
+    """mask=subject(U1-10t — 15쪽 라이스버거): 둘레 지도를 함께 그린 네모 그림에서 대상(채도 높고 파랑이 아닌 화소 — 빵·채소·고기)의
+    볼록 껍질 밖을 흰색으로(지도선·바다·땅 바탕 지움). 낱 화소는 3×3 상자 평균으로 거름, 껍질은 grow_px 만큼 넓혀 가장자리를 남김(4배 표본)."""
+    a = np.asarray(im).astype(float)
+    mx, mn = a.max(2), a.min(2)
+    sat = (mx - mn) / np.maximum(mx, 1)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    m = (sat >= sat_min) & (mx > 60) & ~((b >= r) & (b >= g * 0.95))
+    m = np.asarray(Image.fromarray((m * 255).astype(np.uint8)).filter(ImageFilter.BoxBlur(1))) >= 170
+    ys, xs = np.nonzero(m)
+    if len(xs) < 3: return im
+    k, (W, H) = 4, im.size
+    hm = Image.new('L', (W * k, H * k), 0)
+    ImageDraw.Draw(hm).polygon([(x * k + k / 2, y * k + k / 2) for x, y in _convex_hull(list(zip(xs.tolist(), ys.tolist())))], fill=255)
+    hm = hm.filter(ImageFilter.MaxFilter(int(grow_px * k) * 2 + 1)).resize(im.size, Image.LANCZOS)
+    return Image.composite(im, Image.new('RGB', im.size, 'white'), hm)
+
+
 def apply_mask(im, mask):
-    """mask=circle: 상자에 내접하는 원 바깥을 흰색으로(가장자리 2배 표본으로 부드럽게)."""
+    """mask=circle: 상자에 내접하는 원 바깥을 흰색으로(가장자리 2배 표본으로 부드럽게). mask=subject: subject_mask(대상 볼록 껍질 밖 흰색)."""
     if not mask: return im
+    if mask == 'subject': return subject_mask(im)
     if mask != 'circle': raise ValueError(f'모르는 mask: {mask}')
     W, H = im.size
     m = Image.new('L', (W * 2, H * 2), 0)

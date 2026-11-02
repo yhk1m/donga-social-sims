@@ -469,6 +469,27 @@ test('legendPanel: 무대 오른쪽 아래 떠 있는 범례 칸 — 머리 「�
   assert.ok(!stage.childNodes.includes(P.el));
 });
 
+test('legendPanel 휴대폰(U1-10t): 폭 560px 이하(matchMedia)면 접힌 채 시작, 넓으면·matchMedia 가 없으면 펼친 채(옛 길)', () => {
+  const had = Object.prototype.hasOwnProperty.call(globalThis, 'matchMedia'), old = globalThis.matchMedia;
+  const asked = [];
+  try {
+    for (const [narrow, want] of [[true, true], [false, false]]) {
+      globalThis.matchMedia = (q) => { asked.push(q); return { matches: narrow }; };
+      const P = legendPanel(div());
+      const btn = find(P.el, byClass('at-legend-panel-toggle'));
+      assert.equal(P.collapsed, want);
+      assert.equal(!!P.body.hidden, want);
+      assert.equal(btn.getAttribute('aria-expanded'), String(!want));
+      if (want) { btn.dispatch('click'); assert.equal(P.body.hidden, false, '펼치기 단추로 펼침'); }
+    }
+    assert.deepEqual(asked, ['(max-width: 560px)', '(max-width: 560px)']);
+    delete globalThis.matchMedia;
+    assert.equal(legendPanel(div()).collapsed, false);
+  } finally {
+    if (had) globalThis.matchMedia = old; else delete globalThis.matchMedia;
+  }
+});
+
 test('legendPanel 끌기: 머리를 끌면 무대 안에서만 옮김(pointer capture, 지도 끌기로 번지지 않음), 접기 단추에서는 시작 안 함, 무대 크기가 바뀌면 다시 맞춤, 두 번 누르면 제자리', () => {
   const stage = div();
   stage._rect = { left: 100, top: 50, width: 800, height: 600 };

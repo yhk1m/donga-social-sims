@@ -1,0 +1,1638 @@
+[
+ {
+  "id": "general",
+  "title": "세계 일반도",
+  "pages": [8, 9],
+  "view": {
+   "map": "p08-world",
+   "bounds": [-30, -60, 330, 84],
+   "_bounds": "U1-8: 8·9쪽 두 쪽 한 지도(태평양 중심 — 8쪽 왼쪽 끝 약 30°W ~ 9쪽 오른쪽 끝 약 30°W). build_content frameView 는 8쪽 틀만 보고 서쪽을 −180 으로 자르므로(U6-8) 경도 한 바퀴를 +360 꼴로 편 손 값(동쪽 330 = 30°W) — 보기 레이어 p08-view 의 중심 경도 150 과 함께 씀"
+  },
+  "views": [
+   {
+    "id": "world",
+    "labelSrc": {
+     "page": 8,
+     "bbox": [50, 69, 157, 88]
+    },
+    "map": "p08-world",
+    "bounds": [-30, -60, 330, 84],
+    "_bounds": "주제 view 와 같은 두 쪽 범위(세계 전체)",
+    "label": "세계의 여러 나라"
+   },
+   {
+    "id": "europe",
+    "labelSrc": {
+     "page": 9,
+     "bbox": [688, 224, 704, 234]
+    },
+    "map": "p08-europe",
+    "_label": "8쪽 삽입 「유럽」(람베르트 정각 원뿔 1:20,000,000)에는 틀 제목 글자가 없음 → 같은 단원 9쪽 대륙 지구본 이름 「유럽」(InterGTOTFB 7.1 #00a650 — pdfkit 으로 바르게 읽힘)을 바로가기 이름 출처로. 범위 = map p08-europe 틀(build_content frameView)",
+    "label": "유럽"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p08-view",
+    "type": "topicView",
+    "legend": false,
+    "group": "map",
+    "labelSrc": {
+     "page": 8,
+     "bbox": [50, 69, 157, 88]
+    },
+    "label": "세계의 여러 나라"
+   },
+   {
+    "ref": "layer-p08-boundaries",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 8,
+     "bbox": [50, 69, 157, 88]
+    },
+    "label": "세계의 여러 나라"
+   },
+   {
+    "ref": "layer-p08-stations",
+    "type": "symbolLabels",
+    "legend": true,
+    "group": "map",
+    "legendHead": false,
+    "labelSrc": {
+     "page": 8,
+     "bbox": [50, 69, 157, 88]
+    },
+    "label": "세계의 여러 나라"
+   },
+   {
+    "ref": "layer-p10-continents",
+    "type": "continentGlobes",
+    "legend": false,
+    "group": "map",
+    "labelSrc": {
+     "page": 8,
+     "bbox": [50, 69, 157, 88]
+    },
+    "label": "세계의 여러 나라"
+   }
+  ],
+  "_layers": "U1-4 → U1-8: 일반도 묶음 하나 = 보기 레이어(태평양 중심 150 — 교사 Q2) + 해양 경계·날짜 변경선(p08-boundaries — 날짜 변경선은 범례 밖 선) + 우리나라 과학 기지 셋·이어도 종합 해양 과학 기지 글자(p08-stations symbolLabels — 범례 제목은 앞 블록과 같아 legendHead false) + 대륙 지구본 단추 5(p10-continents 자료를 continentGlobes 로 — 교사 Q4 A, 누르기 전에는 면을 그리지 않고 legend false = 범례 블록 없음, worldGlobe.js). label 은 넷 모두 지면 제목 「세계의 여러 나라」(같은 label = 한 묶음). 레이어가 있어 「바로가기」 줄은 그리지 않으므로 세계·유럽 바로가기는 글 블록의 「지도에서 보기」 단추로. 계획의 「8쪽 범위」·「9쪽 범위」 바로가기는 두지 않음(U1-8 결정 — topic.js 는 text·activity 블록에만 바로가기 단추를 달고 원본 쪽 블록에는 달지 않아, 9쪽에 매달 지면 글이 없음 → 손 글 블록을 만들지 않으려고 뺌; 두 쪽은 「세계의 여러 나라」 범위가 이미 다 담음).",
+  "markers": [],
+  "blocks": [
+   {
+    "id": "map-text",
+    "type": "text",
+    "view": "world",
+    "titleSrc": {
+     "page": 8,
+     "bbox": [50, 69, 157, 88]
+    },
+    "src": {
+     "page": 8,
+     "bbox": [50, 88, 125, 98]
+    },
+    "title": "세계의 여러 나라",
+    "text": "로빈슨 도법 1:75,000,000"
+   },
+   {
+    "id": "europe-text",
+    "type": "text",
+    "view": "europe",
+    "src": {
+     "page": 8,
+     "bbox": [215, 686, 330, 698]
+    },
+    "text": "람베르트 정각 원뿔 도법 1:20,000,000"
+   },
+   {
+    "id": "page-8",
+    "type": "page",
+    "page": 8
+   },
+   {
+    "id": "page-9",
+    "type": "page",
+    "page": 9
+   },
+   {
+    "id": "page-9-globes",
+    "type": "page",
+    "page": 9,
+    "bbox": [626, 25, 760, 700]
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "continents",
+  "title": "대륙과 대양",
+  "pages": [10, 11],
+  "view": {
+   "map": "p10-continents",
+   "bounds": [-30, -60, 330, 84],
+   "_bounds": "10·11쪽 두 쪽 한 지도(태평양 중심) — 일반도와 같은 손 값"
+  },
+  "layers": [
+   {
+    "ref": "layer-p10-continents",
+    "type": "continentQuiz",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 10,
+     "bbox": [108, 555, 188, 571]
+    },
+    "label": "세계의 여러 나라"
+   }
+  ],
+  "_layers": "U1-3c~3f → U1-8: 대륙 면 7 + 대양 면 5 + 초성 꼬리표 12 맞히기(교사 Q6 A) + 대륙 나라 목록(Q8 A — 사이드바 끝) + 대양 지구본 단추 5(Q4 A). 앱 type continentQuiz = 자료 layerType continents(설정 layerTypeAs). label = 10쪽 개관 글 제목 「세계의 여러 나라」. 태평양 중심 150 은 main.js centerLonOf(U1-9 — 키 layer-p10-continents).",
+  "markers": [],
+  "blocks": [
+   {
+    "id": "text-1",
+    "type": "text",
+    "titleSrc": {
+     "page": 10,
+     "bbox": [108, 555, 188, 571]
+    },
+    "src": {
+     "page": 10,
+     "bbox": [66, 580, 292, 631]
+    },
+    "title": "세계의 여러 나라",
+    "text": "지구 전체 면적의 71.1%는 바다가, 28.9%는 육지가 차지하고 있다. 육지는 크게 7개의 대륙으로 구분하며, 바다는 5개의 대양으로 구분한다. 대륙은 아시아, 유럽, 아프리카, 북아메리카, 남아메리카, 오세아니아, 남극 대륙으로, 대양은 태평양, 대서양, 인도양, 북극해, 남극해로 구성된다."
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "src": {
+     "page": 10,
+     "bbox": [70, 634, 292, 660],
+     "skip": "●"
+    },
+    "text": "초성으로 쓰인 대륙과 대양의 이름을 적고, 각 대륙에는 어떤 나라들이 있는지 이야기해 보자."
+   },
+   {
+    "id": "map-text",
+    "type": "text",
+    "src": {
+     "page": 11,
+     "bbox": [378, 681, 450, 691]
+    },
+    "text": "로빈슨 도법 1:75,000,000"
+   },
+   {
+    "id": "page-10",
+    "type": "page",
+    "page": 10
+   },
+   {
+    "id": "page-11",
+    "type": "page",
+    "page": 11
+   },
+   {
+    "id": "page-11-globes",
+    "type": "page",
+    "page": 11,
+    "bbox": [626, 25, 760, 700]
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "relief",
+  "title": "지형",
+  "pages": [12],
+  "view": {
+   "map": "p12-relief"
+  },
+  "layers": [
+   {
+    "ref": "layer-p12-view",
+    "type": "topicView",
+    "legend": false,
+    "group": "map"
+   }
+  ],
+  "_layers": "U1-4: 태평양 중심 보기 레이어(중심 경도 150 — 교사 Q2), 바탕 자연색은 main.js baseColor(U1-9).",
+  "pinNumbers": "hidden",
+  "_pinNumbers": "교사 Q9 A — 앞 단원과 같은 「핀 번호 숨김 + 번호 모두 보기」(교과서는 지도 핀에 번호·사진 핀이 빈칸 — 방향 반대, 대조표 알려진 차이)",
+  "markers": [
+   {
+    "id": "r-1",
+    "photo": "p12-1",
+    "titleSrc": {
+     "page": 12,
+     "bbox": [52, 427, 141, 440]
+    },
+    "src": {
+     "page": 12,
+     "bbox": [33, 542.5, 202, 563]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "산지와 평야의 농업",
+    "text": "산지가 많은 베트남 북부 지역에서는 계단 모양의 논을 만들어 벼를 재배한다."
+   },
+   {
+    "id": "r-2",
+    "photo": "p12-2",
+    "titleSrc": {
+     "page": 12,
+     "bbox": [52, 427, 141, 440]
+    },
+    "src": {
+     "page": 12,
+     "bbox": [33, 670, 202, 691]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "산지와 평야의 농업",
+    "text": "넓은 평원이 펼쳐진 브라질 마투그로수주에서는 대규모의 기업적 농업이 이루어진다."
+   },
+   {
+    "id": "r-3",
+    "photo": "p12-3",
+    "titleSrc": {
+     "page": 12,
+     "bbox": [230, 427, 330, 440]
+    },
+    "src": {
+     "page": 12,
+     "bbox": [211, 542.5, 380, 563]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "산지와 하천의 교통",
+    "text": "스위스는 필라투스산의 가파른 경사지에 톱니바퀴 철도를 만들어 관광 열차를 운행한다."
+   },
+   {
+    "id": "r-4",
+    "photo": "p12-4",
+    "titleSrc": {
+     "page": 12,
+     "bbox": [230, 427, 330, 440]
+    },
+    "src": {
+     "page": 12,
+     "bbox": [211, 670, 380, 691]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "산지와 하천의 교통",
+    "text": "창장강 하류에 위치한 중국의 쑤저우에는 운하를 이용한 교통이 발달하였다."
+   },
+   {
+    "id": "r-5",
+    "photo": "p12-5",
+    "titleSrc": {
+     "page": 12,
+     "bbox": [409, 427, 560, 440]
+    },
+    "src": {
+     "page": 12,
+     "bbox": [390, 542.5, 557, 563]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "구릉과 산지의 겨울 스포츠",
+    "text": "스칸디나비아반도 구릉 지대에는 평지와 언덕을 달리는 노르딕 스키를 즐기는 사람들이 많다."
+   },
+   {
+    "id": "r-6",
+    "photo": "p12-6",
+    "titleSrc": {
+     "page": 12,
+     "bbox": [409, 427, 560, 440]
+    },
+    "src": {
+     "page": 12,
+     "bbox": [390, 670, 557, 691]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "구릉과 산지의 겨울 스포츠",
+    "text": "경사가 급한 내리막을 빠르게 내려오는 알파인 스키는 알프스 산지에서 시작되었다."
+   },
+   {
+    "id": "r-7",
+    "photo": "p12-7",
+    "titleSrc": {
+     "page": 12,
+     "bbox": [588, 427, 725, 440]
+    },
+    "src": {
+     "page": 12,
+     "bbox": [568, 542.5, 736, 563]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "화산 지대와 사막의 에너지 개발",
+    "text": "화산 활동이 활발한 뉴질랜드 북섬에서는 지열 발전이 많이 이루어진다."
+   },
+   {
+    "id": "r-8",
+    "photo": "p12-8",
+    "titleSrc": {
+     "page": 12,
+     "bbox": [588, 427, 725, 440]
+    },
+    "src": {
+     "page": 12,
+     "bbox": [568, 670, 736, 691]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "화산 지대와 사막의 에너지 개발",
+    "text": "사하라 사막에 위치한 모로코에서는 풍부한 일사량을 활용한 대규모 태양광 발전이 이루어진다."
+   }
+  ],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 12,
+     "bbox": [56, 33, 425, 50]
+    },
+    "text": "세계의 다양한 자연환경은 인간 생활에 어떤 영향을 미쳤을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 13,
+     "bbox": [503, 32, 707, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "세계 각 지역의 지역성을 해당 지역의 위치와 자연 · 인문환경을 연결 지어 설명할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 12,
+     "bbox": [52, 78, 108, 92]
+    },
+    "creditSrc": {
+     "page": 12,
+     "bbox": [548, 400, 622, 407.5]
+    },
+    "text": "세계의 지형",
+    "credit": "(naturalearthdata.com, 2023)"
+   },
+   {
+    "id": "activity-1",
+    "type": "activity",
+    "titleSrc": {
+     "page": 12,
+     "bbox": [35, 380, 70, 389]
+    },
+    "src": {
+     "page": 12,
+     "bbox": [37, 391, 292, 399.5]
+    },
+    "title": "활동하기 1",
+    "text": "아래 사진은 1 ~ 8 지역에서 볼 수 있는 모습이다. 사진의 빈칸에 해당 지역의 번호를 써 보자."
+   },
+   {
+    "id": "section-2",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 12,
+     "bbox": [52, 427, 141, 440]
+    },
+    "text": "산지와 평야의 농업"
+   },
+   {
+    "id": "p12-1",
+    "type": "photo",
+    "ref": "p12-1"
+   },
+   {
+    "id": "p12-2",
+    "type": "photo",
+    "ref": "p12-2"
+   },
+   {
+    "id": "section-3",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 12,
+     "bbox": [230, 427, 330, 440]
+    },
+    "text": "산지와 하천의 교통"
+   },
+   {
+    "id": "p12-3",
+    "type": "photo",
+    "ref": "p12-3"
+   },
+   {
+    "id": "p12-4",
+    "type": "photo",
+    "ref": "p12-4"
+   },
+   {
+    "id": "section-4",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 12,
+     "bbox": [409, 427, 560, 440]
+    },
+    "text": "구릉과 산지의 겨울 스포츠"
+   },
+   {
+    "id": "p12-5",
+    "type": "photo",
+    "ref": "p12-5"
+   },
+   {
+    "id": "p12-6",
+    "type": "photo",
+    "ref": "p12-6"
+   },
+   {
+    "id": "section-5",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 12,
+     "bbox": [588, 427, 725, 440]
+    },
+    "text": "화산 지대와 사막의 에너지 개발"
+   },
+   {
+    "id": "p12-7",
+    "type": "photo",
+    "ref": "p12-7"
+   },
+   {
+    "id": "p12-8",
+    "type": "photo",
+    "ref": "p12-8"
+   },
+   {
+    "id": "page-12",
+    "type": "page",
+    "page": 12
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "climate",
+  "title": "기후",
+  "pages": [13],
+  "view": {
+   "map": "p13-climate"
+  },
+  "layers": [
+   {
+    "ref": "layer-p13-climate",
+    "type": "area",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 13,
+     "bbox": [63, 78, 119, 92]
+    },
+    "creditSrc": {
+     "page": 13,
+     "bbox": [422, 384, 523, 392]
+    },
+    "label": "세계의 기후",
+    "credit": "(www.gloh2o.org, 1991~2020 평균, 2023)"
+   }
+  ],
+  "_layers": "U1-4: 기후 6분류 벡터 + 고산 빗금. 범례 제목 글자는 지면에 없음(범례 칸 = 견본 6 뿐) → 범례 블록 제목 = label(13쪽 상자 제목 「세계의 기후」). 태평양 중심 150 = main.js centerLonOf(키 layer-p13-climate — U1-9).",
+  "pinNumbers": "hidden",
+  "_pinNumbers": "교사 Q9 A(12쪽과 같음). 그래프 마커 6도 번호 숨김(앞 단원 기본값)",
+  "markers": [
+   {
+    "id": "k-1",
+    "photo": "p13-1",
+    "titleSrc": {
+     "page": 13,
+     "bbox": [64, 427, 170, 440]
+    },
+    "src": {
+     "page": 13,
+     "bbox": [44, 542.5, 214, 563]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "유목과 정착 농경",
+    "text": "몽골의 고비 사막 주변 초원 지역에서는 풀밭을 찾아다니면서 가축을 기른다."
+   },
+   {
+    "id": "k-2",
+    "photo": "p13-2",
+    "titleSrc": {
+     "page": 13,
+     "bbox": [64, 427, 170, 440]
+    },
+    "src": {
+     "page": 13,
+     "bbox": [44, 670, 214, 691]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "유목과 정착 농경",
+    "text": "비가 많이 내리고 땅이 비옥한 방글라데시에서는 벼농사 중심의 농경 문화가 발달하였다."
+   },
+   {
+    "id": "k-3",
+    "photo": "p13-3",
+    "titleSrc": {
+     "page": 13,
+     "bbox": [242, 427, 400, 440]
+    },
+    "src": {
+     "page": 13,
+     "bbox": [222, 542.5, 390, 563]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "눈과 비가 많은 지역의 전통 가옥",
+    "text": "눈이 많이 오는 일본의 기후현에서는 지붕 경사를 가파르게 만든 전통 가옥을 볼 수 있다."
+   },
+   {
+    "id": "k-4",
+    "photo": "p13-4",
+    "titleSrc": {
+     "page": 13,
+     "bbox": [242, 427, 400, 440]
+    },
+    "src": {
+     "page": 13,
+     "bbox": [222, 670, 390, 691]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "눈과 비가 많은 지역의 전통 가옥",
+    "text": "덥고 비가 많은 인도네시아에서는 전통 가옥의 마루를 지면에서 띄우고 지붕을 가파르게 만들었다."
+   },
+   {
+    "id": "k-5",
+    "photo": "p13-5",
+    "titleSrc": {
+     "page": 13,
+     "bbox": [420, 427, 560, 440]
+    },
+    "src": {
+     "page": 13,
+     "bbox": [401, 542.5, 570, 563]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "온대와 사막 지역의 의생활",
+    "text": "흐리고 비 내리는 날이 많은 영국에서는 비옷을 입고 우산을 들고 다니는 경우가 많다."
+   },
+   {
+    "id": "k-6",
+    "photo": "p13-6",
+    "titleSrc": {
+     "page": 13,
+     "bbox": [420, 427, 560, 440]
+    },
+    "src": {
+     "page": 13,
+     "bbox": [401, 670, 570, 691]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "온대와 사막 지역의 의생활",
+    "text": "사하라 사막에 위치한 말리에서는 강한 햇빛과 모래바람을 막기 위해 온몸을 감싸는 옷을 입는다."
+   },
+   {
+    "id": "k-7",
+    "photo": "p13-7",
+    "titleSrc": {
+     "page": 13,
+     "bbox": [598, 427, 740, 440]
+    },
+    "src": {
+     "page": 13,
+     "bbox": [580, 542.5, 749, 563]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "계절이 반대인 북반구와 남반구",
+    "text": "북반구에 위치한 핀란드에서는 두꺼운 겨울옷을 입고 크리스마스를 맞이한다."
+   },
+   {
+    "id": "k-8",
+    "photo": "p13-8",
+    "titleSrc": {
+     "page": 13,
+     "bbox": [598, 427, 740, 440]
+    },
+    "src": {
+     "page": 13,
+     "bbox": [580, 670, 749, 691]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "계절이 반대인 북반구와 남반구",
+    "text": "남반구의 오스트레일리아에서는 반팔 옷을 입고 한여름의 크리스마스를 즐긴다."
+   },
+   {
+    "id": "c-singapore",
+    "chart": "p13-singapore",
+    "titleSrc": {
+     "page": 13,
+     "bbox": [318.4, 233.9, 339.9, 240.6]
+    },
+    "src": {
+     "page": 13,
+     "bbox": [58, 105, 109, 113.5]
+    },
+    "lonlat": [103.853875, 1.294979],
+    "source": {
+     "name": "Natural Earth 10m populated places",
+     "id": 1159151627,
+     "url": "https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-populated-places/",
+     "title": "Singapore"
+    },
+    "why": "기후 그래프 도시 위치(u4~u6 와 같이 그래프 도시는 실제 자리 — 이 단원은 그래프 마커에 사진이 없고(13쪽 사진 핀 8은 따로), places 에 「싱가포르」가 나라·수도 둘이고 몬트리올·보스토크가 없어 lonlatFrom.place 를 못 씀 → Natural Earth 10m 인구 지점). 13쪽 지도 흰 도시 점(지름 2.92pt)을 fit 으로 되돌린 자리와 견줌: 싱가포르·리야드·런던·몬트리올·보고타 15~140km, 보스토크는 로빈슨 극 둘레 늘어남으로 약 410km(교과서 점은 124.4°E — 실제 기지 106.8°E)",
+    "_title": "카드 제목 = 13쪽 지도의 도시 글자, 글 = 그래프 제목(지면 「열대 기후(싱가포르)」 꼴)",
+    "title": "싱가포르",
+    "text": "열대 기후(싱가포르)"
+   },
+   {
+    "id": "c-riyadh",
+    "chart": "p13-riyadh",
+    "titleSrc": {
+     "page": 13,
+     "bbox": [239.1, 195.0, 255.5, 201.7]
+    },
+    "src": {
+     "page": 13,
+     "bbox": [60, 207, 106, 215]
+    },
+    "lonlat": [46.720487, 24.634497],
+    "source": {
+     "name": "Natural Earth 10m populated places",
+     "id": 1159151581,
+     "url": "https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-populated-places/",
+     "title": "Riyadh"
+    },
+    "why": "기후 그래프 도시 위치(u4~u6 와 같이 그래프 도시는 실제 자리 — 이 단원은 그래프 마커에 사진이 없고(13쪽 사진 핀 8은 따로), places 에 「싱가포르」가 나라·수도 둘이고 몬트리올·보스토크가 없어 lonlatFrom.place 를 못 씀 → Natural Earth 10m 인구 지점). 13쪽 지도 흰 도시 점(지름 2.92pt)을 fit 으로 되돌린 자리와 견줌: 싱가포르·리야드·런던·몬트리올·보고타 15~140km, 보스토크는 로빈슨 극 둘레 늘어남으로 약 410km(교과서 점은 124.4°E — 실제 기지 106.8°E)",
+    "_title": "카드 제목 = 13쪽 지도의 도시 글자, 글 = 그래프 제목(지면 「열대 기후(싱가포르)」 꼴)",
+    "title": "리야드",
+    "text": "건조 기후(리야드)"
+   },
+   {
+    "id": "c-london",
+    "chart": "p13-london",
+    "titleSrc": {
+     "page": 13,
+     "bbox": [201.3, 159.9, 212.6, 166.6]
+    },
+    "src": {
+     "page": 13,
+     "bbox": [63, 309, 104, 317]
+    },
+    "lonlat": [-0.118668, 51.501941],
+    "source": {
+     "name": "Natural Earth 10m populated places",
+     "id": 1159151577,
+     "url": "https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-populated-places/",
+     "title": "London"
+    },
+    "why": "기후 그래프 도시 위치(u4~u6 와 같이 그래프 도시는 실제 자리 — 이 단원은 그래프 마커에 사진이 없고(13쪽 사진 핀 8은 따로), places 에 「싱가포르」가 나라·수도 둘이고 몬트리올·보스토크가 없어 lonlatFrom.place 를 못 씀 → Natural Earth 10m 인구 지점). 13쪽 지도 흰 도시 점(지름 2.92pt)을 fit 으로 되돌린 자리와 견줌: 싱가포르·리야드·런던·몬트리올·보고타 15~140km, 보스토크는 로빈슨 극 둘레 늘어남으로 약 410km(교과서 점은 124.4°E — 실제 기지 106.8°E)",
+    "_title": "카드 제목 = 13쪽 지도의 도시 글자, 글 = 그래프 제목(지면 「열대 기후(싱가포르)」 꼴)",
+    "title": "런던",
+    "text": "온대 기후(런던)"
+   },
+   {
+    "id": "c-montreal",
+    "chart": "p13-montreal",
+    "titleSrc": {
+     "page": 13,
+     "bbox": [575.5, 165.2, 596.9, 171.9]
+    },
+    "src": {
+     "page": 13,
+     "bbox": [683, 105, 734, 113.5]
+    },
+    "lonlat": [-73.585243, 45.501945],
+    "source": {
+     "name": "Natural Earth 10m populated places",
+     "id": 1159151457,
+     "url": "https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-populated-places/",
+     "title": "Montréal"
+    },
+    "why": "기후 그래프 도시 위치(u4~u6 와 같이 그래프 도시는 실제 자리 — 이 단원은 그래프 마커에 사진이 없고(13쪽 사진 핀 8은 따로), places 에 「싱가포르」가 나라·수도 둘이고 몬트리올·보스토크가 없어 lonlatFrom.place 를 못 씀 → Natural Earth 10m 인구 지점). 13쪽 지도 흰 도시 점(지름 2.92pt)을 fit 으로 되돌린 자리와 견줌: 싱가포르·리야드·런던·몬트리올·보고타 15~140km, 보스토크는 로빈슨 극 둘레 늘어남으로 약 410km(교과서 점은 124.4°E — 실제 기지 106.8°E)",
+    "_title": "카드 제목 = 13쪽 지도의 도시 글자, 글 = 그래프 제목(지면 「열대 기후(싱가포르)」 꼴)",
+    "title": "몬트리올",
+    "text": "냉대 기후(몬트리올)"
+   },
+   {
+    "id": "c-vostok",
+    "chart": "p13-vostok",
+    "titleSrc": {
+     "page": 13,
+     "bbox": [361.0, 359.7, 382.4, 366.4]
+    },
+    "src": {
+     "page": 13,
+     "bbox": [683, 207, 734, 215]
+    },
+    "lonlat": [124.3957, -77.521],
+    "source": {
+     "name": "교과서 13쪽 지도 보스토크 점(p13-climate 맞춘 식으로 되돌린 자리)",
+     "url": "https://yhk1m.github.io/donga-social-sims/assets/atlas/u1/page/p013.jpg",
+     "title": "지면 흰 점 가운데 [371.799, 367.373]pt"
+    },
+    "why": "교사 답 10(U1-10t, 2026-10-24): 보스토크 그래프 마커는 교과서 지도 점 자리로 — 13쪽 지도 흰 도시 점(지름 2.92pt) 가운데 [371.799, 367.373]pt 를 p13-climate 맞춘 식(로빈슨)으로 되돌린 124.3957°E, 77.5210°S(units/u1/u1-8/py/dots13.py · pt2ll.mjs). 실제 기지(Natural Earth 10m 「Vostok Station」 106.80°E, 78.47°S)와 약 410km — 로빈슨 극 둘레 늘어남 + 교과서 점 자리. 나머지 다섯 도시는 실제 자리(Natural Earth)",
+    "_title": "카드 제목 = 13쪽 지도의 도시 글자, 글 = 그래프 제목(지면 「열대 기후(싱가포르)」 꼴)",
+    "title": "보스토크",
+    "text": "한대 기후(보스토크)"
+   },
+   {
+    "id": "c-bogota",
+    "chart": "p13-bogota",
+    "titleSrc": {
+     "page": 13,
+     "bbox": [595.1, 233.7, 611.5, 240.4]
+    },
+    "src": {
+     "page": 13,
+     "bbox": [685, 309, 732, 317]
+    },
+    "lonlat": [-74.08529, 4.598369],
+    "source": {
+     "name": "Natural Earth 10m populated places",
+     "id": 1159151601,
+     "url": "https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-populated-places/",
+     "title": "Bogota"
+    },
+    "why": "기후 그래프 도시 위치(u4~u6 와 같이 그래프 도시는 실제 자리 — 이 단원은 그래프 마커에 사진이 없고(13쪽 사진 핀 8은 따로), places 에 「싱가포르」가 나라·수도 둘이고 몬트리올·보스토크가 없어 lonlatFrom.place 를 못 씀 → Natural Earth 10m 인구 지점). 13쪽 지도 흰 도시 점(지름 2.92pt)을 fit 으로 되돌린 자리와 견줌: 싱가포르·리야드·런던·몬트리올·보고타 15~140km, 보스토크는 로빈슨 극 둘레 늘어남으로 약 410km(교과서 점은 124.4°E — 실제 기지 106.8°E)",
+    "_title": "카드 제목 = 13쪽 지도의 도시 글자, 글 = 그래프 제목(지면 「열대 기후(싱가포르)」 꼴)",
+    "title": "보고타",
+    "text": "고산 기후(보고타)"
+   }
+  ],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 12,
+     "bbox": [56, 33, 425, 50]
+    },
+    "text": "세계의 다양한 자연환경은 인간 생활에 어떤 영향을 미쳤을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 13,
+     "bbox": [503, 32, 707, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "세계 각 지역의 지역성을 해당 지역의 위치와 자연 · 인문환경을 연결 지어 설명할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 13,
+     "bbox": [63, 78, 119, 92]
+    },
+    "text": "세계의 기후"
+   },
+   {
+    "id": "activity-2",
+    "type": "activity",
+    "titleSrc": {
+     "page": 13,
+     "bbox": [135, 380, 171, 389]
+    },
+    "src": {
+     "page": 13,
+     "bbox": [137, 391, 392, 399.5]
+    },
+    "title": "활동하기 2",
+    "text": "아래 사진은 1 ~ 8 지역에서 볼 수 있는 모습이다. 사진의 빈칸에 해당 지역의 번호를 써 보자."
+   },
+   {
+    "id": "section-2",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 13,
+     "bbox": [64, 427, 170, 440]
+    },
+    "text": "유목과 정착 농경"
+   },
+   {
+    "id": "p13-1",
+    "type": "photo",
+    "ref": "p13-1"
+   },
+   {
+    "id": "p13-2",
+    "type": "photo",
+    "ref": "p13-2"
+   },
+   {
+    "id": "section-3",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 13,
+     "bbox": [242, 427, 400, 440]
+    },
+    "text": "눈과 비가 많은 지역의 전통 가옥"
+   },
+   {
+    "id": "p13-3",
+    "type": "photo",
+    "ref": "p13-3"
+   },
+   {
+    "id": "p13-4",
+    "type": "photo",
+    "ref": "p13-4"
+   },
+   {
+    "id": "section-4",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 13,
+     "bbox": [420, 427, 560, 440]
+    },
+    "text": "온대와 사막 지역의 의생활"
+   },
+   {
+    "id": "p13-5",
+    "type": "photo",
+    "ref": "p13-5"
+   },
+   {
+    "id": "p13-6",
+    "type": "photo",
+    "ref": "p13-6"
+   },
+   {
+    "id": "section-5",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 13,
+     "bbox": [598, 427, 740, 440]
+    },
+    "text": "계절이 반대인 북반구와 남반구"
+   },
+   {
+    "id": "p13-7",
+    "type": "photo",
+    "ref": "p13-7"
+   },
+   {
+    "id": "p13-8",
+    "type": "photo",
+    "ref": "p13-8"
+   },
+   {
+    "id": "page-13",
+    "type": "page",
+    "page": 13
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "connection",
+  "title": "세계의 연결",
+  "pages": [14],
+  "view": {
+   "map": "p14-covid"
+  },
+  "views": [
+   {
+    "id": "covid",
+    "labelSrc": {
+     "page": 14,
+     "bbox": [230, 541, 400, 554]
+    },
+    "map": "p14-covid",
+    "label": "급속한 질병의 확산"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p14-covid",
+    "type": "countryClass",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 14,
+     "bbox": [230, 541, 400, 554]
+    },
+    "legendTitleSrc": {
+     "page": 14,
+     "bbox": [217, 635, 290, 643]
+    },
+    "creditSrc": {
+     "page": 14,
+     "bbox": [324, 655, 378, 662]
+    },
+    "label": "급속한 질병의 확산",
+    "legendTitle": "코로나 19 확진자 발생국",
+    "credit": "(세계 보건 기구, 2020)"
+   }
+  ],
+  "_layers": "U1-4: 코로나 19 확진자 발생국 2분류(⑥ 급속한 질병의 확산). 태평양 중심 150 = main.js centerLonOf(키 layer-p14-covid — U1-9).",
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 14,
+     "bbox": [60, 33, 360, 50]
+    },
+    "text": "세계의 여러 지역은 서로 어떻게 연결되어 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 14,
+     "bbox": [494, 32, 702, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 지역이 서로 연계되어 있음을 공간적 상호 작용의 사례를 통해 파악할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 14,
+     "bbox": [52, 78, 130, 92]
+    },
+    "text": "작아지는 지구"
+   },
+   {
+    "id": "p14-1",
+    "type": "photo",
+    "ref": "p14-1"
+   },
+   {
+    "id": "p14-2",
+    "type": "photo",
+    "ref": "p14-2"
+   },
+   {
+    "id": "p14-3",
+    "type": "photo",
+    "ref": "p14-3"
+   },
+   {
+    "id": "p14-shrink",
+    "type": "chart",
+    "ref": "p14-shrink"
+   },
+   {
+    "id": "page-14-shrink",
+    "type": "page",
+    "page": 14,
+    "bbox": [30, 96, 382, 355]
+   },
+   {
+    "id": "section-3",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 14,
+     "bbox": [52, 375, 200, 388]
+    },
+    "text": "국제적 분업"
+   },
+   {
+    "id": "text-3",
+    "type": "text",
+    "src": {
+     "page": 14,
+     "bbox": [33, 494, 200, 525]
+    },
+    "text": "미국에 본사를 둔 다국적 기업 B사는 세계 여러 국가의 협력 업체로부터 부품을 공급받아 항공기를 생산한다."
+   },
+   {
+    "id": "page-14-division",
+    "type": "page",
+    "page": 14,
+    "bbox": [32, 389, 200, 493]
+   },
+   {
+    "id": "section-4",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 14,
+     "bbox": [230, 375, 400, 388]
+    },
+    "text": "정보 통신 기술의 발달"
+   },
+   {
+    "id": "text-4",
+    "type": "text",
+    "src": {
+     "page": 14,
+     "bbox": [211, 494, 378, 525]
+    },
+    "text": "미국의 실리콘 밸리와 인도는 밤낮이 반대이다. 이러한 지리적 특성과 정보 통신 기술의 발달로 두 지역은 업무 협력이 활발하다."
+   },
+   {
+    "id": "page-14-ict",
+    "type": "page",
+    "page": 14,
+    "bbox": [211, 389, 379, 493]
+   },
+   {
+    "id": "section-5",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 14,
+     "bbox": [52, 541, 200, 554]
+    },
+    "text": "활발한 인적 교류"
+   },
+   {
+    "id": "text-5",
+    "type": "text",
+    "src": {
+     "page": 14,
+     "bbox": [33, 660, 200, 690]
+    },
+    "text": "교통과 통신의 발달로 세계 각국 간 인적·물적 교류가 활발해졌다. 영국의 프로 축구 팀은 다양한 국적의 선수들로 구성되어 있다."
+   },
+   {
+    "id": "page-14-exchange",
+    "type": "page",
+    "page": 14,
+    "bbox": [32, 554, 200, 658]
+   },
+   {
+    "id": "section-6",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 14,
+     "bbox": [230, 541, 400, 554]
+    },
+    "text": "급속한 질병의 확산"
+   },
+   {
+    "id": "covid-text",
+    "type": "text",
+    "view": "covid",
+    "src": {
+     "page": 14,
+     "bbox": [211, 670, 378, 690]
+    },
+    "text": "코로나 바이러스 감염증이 전 세계로 급속히 확산되면서 각 나라들이 사회적·경제적으로 큰 혼란을 겪었다."
+   },
+   {
+    "id": "page-14",
+    "type": "page",
+    "page": 14
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "interaction",
+  "title": "공간적 상호 작용",
+  "pages": [14],
+  "view": {
+   "map": "p14-routes"
+  },
+  "views": [
+   {
+    "id": "routes",
+    "labelSrc": {
+     "page": 14,
+     "bbox": [399, 96, 470, 107]
+    },
+    "map": "p14-routes",
+    "label": "우리나라의 항공망"
+   },
+   {
+    "id": "internet",
+    "labelSrc": {
+     "page": 14,
+     "bbox": [398, 298, 455, 308]
+    },
+    "map": "p14-internet",
+    "label": "인터넷 이용률"
+   },
+   {
+    "id": "mobile",
+    "labelSrc": {
+     "page": 14,
+     "bbox": [398, 503, 462, 514]
+    },
+    "map": "p14-mobile",
+    "label": "이동 전화 가입자"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p14-routes",
+    "type": "routeFan",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 14,
+     "bbox": [399, 96, 470, 107]
+    },
+    "creditSrc": {
+     "page": 14,
+     "bbox": [584, 246, 668, 254]
+    },
+    "label": "우리나라의 항공망",
+    "credit": "(「대한민국 국가 지도집 1권」, 2019)"
+   },
+   {
+    "ref": "layer-p14-internet",
+    "type": "countryClass",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 14,
+     "bbox": [398, 298, 455, 308]
+    },
+    "legendTitleSrc": {
+     "page": 14,
+     "bbox": [624, 409, 667, 417]
+    },
+    "creditSrc": {
+     "page": 14,
+     "bbox": [570, 449, 622, 456]
+    },
+    "label": "인터넷 이용률",
+    "legendTitle": "인터넷 이용률(%)",
+    "credit": "(국가데이터처, 2020)"
+   },
+   {
+    "ref": "layer-p14-mobile",
+    "type": "countryClass",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 14,
+     "bbox": [398, 503, 462, 514]
+    },
+    "legendTitleSrc": {
+     "page": 14,
+     "bbox": [621, 608, 670, 623]
+    },
+    "creditSrc": {
+     "page": 14,
+     "bbox": [568, 652, 620, 659]
+    },
+    "label": "이동 전화 가입자",
+    "legendTitle": "이동 전화 가입자 수(인구 100명당)",
+    "credit": "(국가데이터처, 2020)"
+   }
+  ],
+  "_layers": "U1-3g·U1-4: 묶음 셋(지도마다 하나 — label = 지면 지도 제목, 바로가기 id = ref 끝(topic.js groupView)). 항공망 = 인천 → 교과서 도시 점 188 대권 노선(교사 Q10 A). 태평양 중심 150 = main.js centerLonOf(키 셋 — U1-9).",
+  "markers": [],
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 14,
+     "bbox": [60, 33, 360, 50]
+    },
+    "text": "세계의 여러 지역은 서로 어떻게 연결되어 있을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 14,
+     "bbox": [494, 32, 702, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "다양한 지역이 서로 연계되어 있음을 공간적 상호 작용의 사례를 통해 파악할 수 있다."
+   },
+   {
+    "id": "section-2",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 14,
+     "bbox": [409, 78, 560, 92]
+    },
+    "text": "세계의 공간적 상호 작용"
+   },
+   {
+    "id": "routes-text",
+    "type": "text",
+    "view": "routes",
+    "titleSrc": {
+     "page": 14,
+     "bbox": [399, 96, 470, 107]
+    },
+    "src": {
+     "page": 14,
+     "bbox": [390, 256, 670, 277]
+    },
+    "title": "우리나라의 항공망",
+    "text": "2019년 기준으로 인천 국제공항은 83개 항공사를 통해 전 세계 175개 도시와 직항으로 연결되어 동아시아를 대표하는 허브 공항으로 발전하였다."
+   },
+   {
+    "id": "internet-text",
+    "type": "text",
+    "view": "internet",
+    "titleSrc": {
+     "page": 14,
+     "bbox": [398, 298, 455, 308]
+    },
+    "src": {
+     "page": 14,
+     "bbox": [390, 462, 665, 482]
+    },
+    "title": "인터넷 이용률",
+    "text": "인터넷 이용은 세계적으로 빠르게 증가하여 2020년 기준, 전 세계 인구의 4분의 3 이상이 인터넷을 사용하여 정보를 교환하고 있다."
+   },
+   {
+    "id": "mobile-text",
+    "type": "text",
+    "view": "mobile",
+    "titleSrc": {
+     "page": 14,
+     "bbox": [398, 503, 462, 514]
+    },
+    "src": {
+     "page": 14,
+     "bbox": [390, 670, 665, 690]
+    },
+    "title": "이동 전화 가입자",
+    "text": "이동 전화는 21세기 들어 전 세계적으로 빠르게 확산되었으며, 특히 스마트폰의 보급이 빠르게 확산되고 있다."
+   },
+   {
+    "id": "page-14",
+    "type": "page",
+    "page": 14
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "glocal",
+  "title": "세계화와 지역화",
+  "pages": [15],
+  "view": {
+   "map": "p15-burger"
+  },
+  "views": [
+   {
+    "id": "burger",
+    "labelSrc": {
+     "page": 15,
+     "bbox": [63, 78, 170, 92]
+    },
+    "map": "p15-burger",
+    "label": "음식 문화의 세계화"
+   },
+   {
+    "id": "korean",
+    "labelSrc": {
+     "page": 15,
+     "bbox": [61, 271, 160, 285]
+    },
+    "map": "p15-korean",
+    "label": "세계를 잇는 한국어"
+   }
+  ],
+  "layers": [
+   {
+    "ref": "layer-p15-burger",
+    "type": "countryClass",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 15,
+     "bbox": [63, 78, 170, 92]
+    },
+    "legendTitleSrc": {
+     "page": 15,
+     "bbox": [427, 191, 493, 200]
+    },
+    "creditSrc": {
+     "page": 15,
+     "bbox": [442, 249, 488, 256.5]
+    },
+    "label": "음식 문화의 세계화",
+    "legendTitle": "M햄버거 매장 수(개소)",
+    "credit": "(M사 누리집, 2022)"
+   },
+   {
+    "ref": "layer-p15-korean",
+    "type": "symbolHidePins",
+    "legend": true,
+    "group": "map",
+    "labelSrc": {
+     "page": 15,
+     "bbox": [61, 271, 160, 285]
+    },
+    "legendTitleSrc": {
+     "page": 15,
+     "bbox": [432, 438, 489, 446]
+    },
+    "creditSrc": {
+     "page": 15,
+     "bbox": [429, 475, 488, 483]
+    },
+    "label": "세계를 잇는 한국어",
+    "legendTitle": "한국 문화 보급 기관",
+    "credit": "(문화 체육 관광부, 2020)"
+   }
+  ],
+  "_layers": "U1-4: 햄버거 매장 수 5단계(countryClass) · 한국 문화 보급 기관 점 212(symbol 3종 — 교사 Q14 A 겹침 허용). label = 지면 상자 제목(① 음식 문화의 세계화 · ③ 세계를 잇는 한국어). 태평양 중심 150 = main.js centerLonOf(키 둘 — U1-9).",
+  "markers": [
+   {
+    "id": "b-1",
+    "photo": "p15-1",
+    "titleSrc": {
+     "page": 15,
+     "bbox": [63, 78, 170, 92]
+    },
+    "src": {
+     "page": 15,
+     "bbox": [354, 116.5, 423, 136]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "음식 문화의 세계화",
+    "text": "비빔밥을 활용한 라이스버거(대한민국)"
+   },
+   {
+    "id": "b-2",
+    "photo": "p15-2",
+    "titleSrc": {
+     "page": 15,
+     "bbox": [63, 78, 170, 92]
+    },
+    "src": {
+     "page": 15,
+     "bbox": [397.5, 161, 471, 180.5]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "음식 문화의 세계화",
+    "text": "초밥과 회를 활용한 스시버거(일본)"
+   },
+   {
+    "id": "b-3",
+    "photo": "p15-3",
+    "titleSrc": {
+     "page": 15,
+     "bbox": [63, 78, 170, 92]
+    },
+    "src": {
+     "page": 15,
+     "bbox": [86, 170.8, 147.5, 200]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "음식 문화의 세계화",
+    "text": "고기 대신 소시지를 넣은 소시지버거(독일)"
+   },
+   {
+    "id": "b-4",
+    "photo": "p15-4",
+    "titleSrc": {
+     "page": 15,
+     "bbox": [63, 78, 170, 92]
+    },
+    "src": {
+     "page": 15,
+     "bbox": [54, 230, 129, 249.5]
+    },
+    "_title": "카드 제목 = 사진이 든 지면 상자 소제목(사진에 제목 글이 없음 — 설명은 사진 아래 글), 사진 설정 _section",
+    "title": "음식 문화의 세계화",
+    "text": "난을 활용한 아라비아버거(아랍 에미리트)"
+   }
+  ],
+  "_markers": "교사 Q13 A — 햄버거 사진 카드 + 그 나라 자리 핀(번호 1~4 보임 — 활동이 아님). 핀 자리 = 지시선 끝 점(라이스버거는 대한민국 넓이 중심 — U1-6)",
+  "blocks": [
+   {
+    "id": "question",
+    "type": "text",
+    "role": "question",
+    "src": {
+     "page": 15,
+     "bbox": [70, 33, 350, 50]
+    },
+    "text": "세계화와 지역화는 어떻게 영향을 주고받을까?"
+   },
+   {
+    "id": "goal",
+    "type": "text",
+    "role": "goal",
+    "title": "학습 목표",
+    "src": {
+     "page": 15,
+     "bbox": [503, 32, 710, 52],
+     "skip": "학습 목표 |"
+    },
+    "text": "세계의 변화가 지역에 영향을 미치고, 지역의 변화가 세계에 영향을 미치는 사례를 조사할 수 있다."
+   },
+   {
+    "id": "section-1",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 15,
+     "bbox": [63, 78, 170, 92]
+    },
+    "text": "음식 문화의 세계화"
+   },
+   {
+    "id": "burger-text",
+    "type": "text",
+    "view": "burger",
+    "src": {
+     "page": 15,
+     "bbox": [44, 96, 150, 137]
+    },
+    "text": "패스트푸드인 햄버거는 오늘날 전 세계 어디서나 볼 수 있는데, 지역마다 햄버거 모양과 들어가는 재료들이 다르다."
+   },
+   {
+    "id": "p15-1",
+    "type": "photo",
+    "ref": "p15-1"
+   },
+   {
+    "id": "p15-2",
+    "type": "photo",
+    "ref": "p15-2"
+   },
+   {
+    "id": "p15-3",
+    "type": "photo",
+    "ref": "p15-3"
+   },
+   {
+    "id": "p15-4",
+    "type": "photo",
+    "ref": "p15-4"
+   },
+   {
+    "id": "section-2",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 15,
+     "bbox": [597, 78, 700, 92]
+    },
+    "text": "커피 문화의 지역화"
+   },
+   {
+    "id": "p15-5",
+    "type": "photo",
+    "ref": "p15-5"
+   },
+   {
+    "id": "p15-6",
+    "type": "photo",
+    "ref": "p15-6"
+   },
+   {
+    "id": "section-3",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 15,
+     "bbox": [61, 271, 160, 285]
+    },
+    "text": "세계를 잇는 한국어"
+   },
+   {
+    "id": "korean-text",
+    "type": "text",
+    "view": "korean",
+    "src": {
+     "page": 15,
+     "bbox": [44, 290, 472, 301]
+    },
+    "text": "세계화에 따른 한류의 유행으로 우리나라의 국제적 위상이 높아지면서, 한국 문화와 한국어에 대한 전 세계인의 관심이 급속히 증가하고 있다."
+   },
+   {
+    "id": "p15-7",
+    "type": "photo",
+    "ref": "p15-7"
+   },
+   {
+    "id": "p15-8",
+    "type": "photo",
+    "ref": "p15-8"
+   },
+   {
+    "id": "section-4",
+    "type": "text",
+    "role": "section",
+    "src": {
+     "page": 15,
+     "bbox": [597, 271, 700, 285]
+    },
+    "text": "한류의 확산"
+   },
+   {
+    "id": "p15-9",
+    "type": "photo",
+    "ref": "p15-9"
+   },
+   {
+    "id": "p15-10",
+    "type": "photo",
+    "ref": "p15-10"
+   },
+   {
+    "id": "page-15",
+    "type": "page",
+    "page": 15
+   }
+  ],
+  "quiz": null
+ },
+ {
+  "id": "themeActivity",
+  "title": "주제도 활동",
+  "pages": [15],
+  "view": {
+   "map": "p15-blank"
+  },
+  "layers": [
+   {
+    "ref": "layer-p15-paint",
+    "type": "paintTool",
+    "legend": false,
+    "group": "map",
+    "labelSrc": {
+     "page": 15,
+     "bbox": [130, 506, 235, 517]
+    },
+    "label": "생활 속의 세계화 지도 만들기"
+   }
+  ],
+  "_layers": "U1-3h: 세계 색칠하기 도구(교사 Q15 A — 팔레트 6색 + 지우개 + 모두 지우기, 메모리만). 자료 = 백지도 보기 레이어(layerType topicView, 중심 경도 150) — 앱 type paintTool 이 보기도 엶(같은 ref 의 topicView 를 따로 두지 않음, 설정 layerTypeAs).",
+  "markers": [],
+  "blocks": [
+   {
+    "id": "theme-1",
+    "type": "activity",
+    "role": "theme",
+    "titleSrc": {
+     "page": 15,
+     "bbox": [130, 506, 235, 517]
+    },
+    "src": {
+     "page": 15,
+     "bbox": [55, 558, 200, 670]
+    },
+    "title": "생활 속의 세계화 지도 만들기",
+    "text": "1 다음 항목을 조사하여 조사표에 기록한다. ?우리가 일상생활에서 자주 사용하는 상품?가족 식탁에 오르는 농축산물 ?내가 좋아하는 음악, 게임, 영화, 드라마 등 2 조사표에 기록한 각 항목의 기호를 만든다.3 각 항목의 생산 국가를 조사하여 조사표에 기록한다. 4 백지도에 각 항목의 생산 국가를 색칠하고, 상품 기호를 표시한다."
+   },
+   {
+    "id": "survey",
+    "type": "text",
+    "titleSrc": {
+     "page": 15,
+     "bbox": [270, 534, 296, 544]
+    },
+    "src": {
+     "page": 15,
+     "bbox": [225, 555, 340, 606]
+    },
+    "title": "조사표",
+    "text": "항목기호국가운동화베트남 볼펜독일"
+   },
+   {
+    "id": "page-15-theme",
+    "type": "page",
+    "page": 15,
+    "bbox": [30, 495, 760, 700]
+   },
+   {
+    "id": "page-15",
+    "type": "page",
+    "page": 15
+   }
+  ],
+  "quiz": null
+ }
+]

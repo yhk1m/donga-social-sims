@@ -49,7 +49,8 @@ try {
     if (tb) await c.evaluate(`${R}.atlasMap.fitBounds(${JSON.stringify(tb)}, { ms: 0 })`);
     // 지도가 멈출 때까지(3번 연속 움직임 없음) + 여유
     await c.evaluate(`(async()=>{const m=${R}.atlasMap;let n=0;for(let i=0;i<200&&n<3;i++){await new Promise(r=>setTimeout(r,50));n=m.view.moving?0:n+1;}await new Promise(r=>setTimeout(r,600));})()`);
-    await c.evaluate(`(()=>{const s=document.createElement('style');s.textContent='.at-tools,.at-scale,.at-legend-panel{visibility:hidden}';${R}.append(s);})()`);
+    // 무대 위 칸(지도 도구·축척·범례 칸·u1 지구본 단추 열 .at-wg — U1-10)은 숨기고 지도만
+    await c.evaluate(`(()=>{const s=document.createElement('style');s.textContent='.at-tools,.at-scale,.at-legend-panel,.at-wg{visibility:hidden}';${R}.append(s);})()`);
     await sleep(300);
     const rect = await c.evaluate(`(()=>{const b=${R}.querySelector('.ds-stage').getBoundingClientRect();return {x:b.x,y:b.y,width:b.width,height:b.height};})()`);
     const clip = { x: rect.x, y: rect.y, width: rect.width, height: rect.width * 400 / 640, scale: 640 / rect.width };

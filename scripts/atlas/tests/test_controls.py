@@ -234,4 +234,40 @@ class ControlsU6(unittest.TestCase):
                 if c['name'] == 'pole': continue
                 self.assertEqual(c['lon'] % 30, 0, c); self.assertEqual(c['lat'] % 10, 0, c)
 
+
+@NEED_PDF
+class ControlsU1(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.maps = {mid: controls_u3(mid, 'u1') for mid in ('p08-world', 'p09-world', 'p08-europe')}
+
+    def test_spread_controls(self):
+        # 8·9쪽 두 쪽 일반도(U1-2 · U1-3a): 쪽마다 경위선 교차점 + 도시 기호 ≥ 12, 가름선(180°) 양쪽에 기준점 —
+        # 8쪽 오른쪽 띠(160°E 경선, x ≥ 700)·9쪽 왼쪽 띠(160°W 경선, x ≤ 80), 8쪽은 유럽 삽입 틀(excludeBoxes) 안 교차점 없음
+        for mid in ('p08-world', 'p09-world'):
+            cps = self.maps[mid]
+            self.assertGreaterEqual(len(cps), 12, mid)
+            self.assertEqual({c['src'] for c in cps}, {'grid', 'city'}, mid)
+            grid = [c for c in cps if c['src'] == 'grid']
+            self.assertGreaterEqual(len(grid), 30, mid)
+            for c in grid:
+                self.assertEqual(c['lon'] % 20, 0); self.assertEqual(c['lat'] % 20, 0)
+        p8, p9 = self.maps['p08-world'], self.maps['p09-world']
+        self.assertTrue(any(c['src'] == 'grid' and c['lon'] == 160 and c['xy'][0] >= 700 for c in p8), '8쪽 가름선 쪽 교차점 없음')
+        self.assertTrue(any(c['src'] == 'grid' and c['lon'] == -160 and c['xy'][0] <= 80 for c in p9), '9쪽 가름선 쪽 교차점 없음')
+        for c in p8:
+            self.assertTrue(-30 <= c['lon'] <= 180 and -90 <= c['lat'] <= 90, c)
+            if c['src'] == 'grid':
+                self.assertFalse(63.9 <= c['xy'][0] <= 279.5 and 482.7 <= c['xy'][1] <= 698.3, c)   # 유럽 삽입(excludeBoxes)
+        for c in p9:
+            self.assertTrue((160 <= c['lon'] <= 180 or -180 <= c['lon'] <= -25) and -90 <= c['lat'] <= 90, c)   # 9쪽 왼쪽 끝은 약 170°E(포트빌라 168°E)
+
+    def test_europe_inset_controls(self):
+        # 8쪽 유럽 삽입: 자체 경위선 교차점 넷(10·20°E × 40·50°N) + 도시 기호, 모두 원 틀 상자 안
+        cps = self.maps['p08-europe']
+        self.assertEqual(sorted((c['lon'], c['lat']) for c in cps if c['src'] == 'grid'), [(10, 40), (10, 50), (20, 40), (20, 50)])
+        self.assertGreaterEqual(len([c for c in cps if c['src'] == 'city']), 8)
+        for c in cps:
+            self.assertTrue(65.9 <= c['xy'][0] <= 277.5 and 484.7 <= c['xy'][1] <= 696.3, c)
+
 if __name__ == '__main__': unittest.main()

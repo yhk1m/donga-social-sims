@@ -1,0 +1,41 @@
+/* © 2026 김용현 */
+/* src/atlas/worldQuiz.css — U1-3e 대륙·대양 맞히기(worldQuiz.js — 세계화 조각에만 들어감). 보기·점수 글자는 ui.css 의 .at-quiz-* 그대로. */
+/* 지도 위 초성 꼬리표(교과서 10·11쪽 둥근 상자 — 손글씨풍 글자 대신 굵은 본문 글꼴) */
+.ds-sim .at-wq-tag { cursor: pointer; outline: none; }
+.ds-sim .at-wq-tag-box { fill: rgba(255, 255, 255, .94); stroke: #231f20; stroke-width: 1.2; }
+.ds-sim .at-wq-tag-text { font-family: var(--font); font-size: 12px; font-weight: 800; fill: #231f20; pointer-events: none; }
+.ds-sim .at-wq-tag:hover .at-wq-tag-box { stroke-width: 2; }
+.ds-sim .at-wq-tag:focus-visible .at-wq-tag-box { stroke: var(--accent); stroke-width: 2.5; }
+.ds-sim .at-wq-tag.is-current .at-wq-tag-box { stroke: var(--accent); stroke-width: 2.2; fill: #fff; }
+.ds-sim .at-wq-tag.is-solved .at-wq-tag-box { fill: #e6f6ea; stroke: #2f9e44; }
+.ds-sim .at-wq-tag.is-solved .at-wq-tag-text { fill: #1b6e2e; }
+.ds-sim .at-wq-tag.is-revealed .at-wq-tag-box { fill: #f1f3f5; stroke-dasharray: 3 2; }
+/* 무대 보기 칸 — 처음 자리는 왼쪽 위, 그린 뒤 worldQuiz.placePanel 이 꼬리표·지도 도구·범례 칸·축척을 피하는 왼쪽 모서리(아래 → 위 → 가운데)로 옮김(인라인 left·top) */
+.ds-sim .at-wq {
+  position: absolute; top: 10px; left: 10px; z-index: 15; width: 252px; max-width: calc(100% - 140px); max-height: calc(100% - 60px);
+  display: flex; flex-direction: column; background: rgba(255, 255, 255, .96); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow);
+  font-size: 13px; overflow: hidden;
+}
+.ds-sim .at-wq-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 4px 4px 12px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.ds-sim .at-wq.is-collapsed .at-wq-head { border-bottom: 0; }
+.ds-sim .at-wq.is-collapsed { width: auto; } /* 접으면 머리 글자만큼(휴대폰에서 지도 도구 칸을 비킴) */
+.ds-sim .at-wq-title { margin: 0; font-size: 13.5px; font-weight: 800; }
+.ds-sim .at-wq-toggle { padding: 3px; }
+.ds-sim .at-wq-toggle .ds-icon { width: 18px; height: 18px; transition: transform .15s ease-out; }
+.ds-sim .at-wq.is-collapsed .at-wq-toggle .ds-icon { transform: rotate(180deg); }
+.ds-sim .at-wq-body { overflow-y: auto; overscroll-behavior: contain; padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.ds-sim .at-wq-body[hidden] { display: none; }
+.ds-sim .at-wq-body .at-quiz-q { font-size: 13.5px; }
+.ds-sim .at-wq-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.ds-sim .at-wq-actions .ds-btn { font-size: 12.5px; padding: 5px 8px; display: inline-flex; align-items: center; gap: 4px; }
+.ds-sim .at-wq-actions .ds-icon { width: 14px; height: 14px; }
+/* 대륙 나라 목록(사이드바 — 주제 칸 끝) */
+.ds-sim .at-wq-name-list { display: flex; flex-wrap: wrap; gap: 4px; }
+.ds-sim .at-wq-name { font-size: 12.5px; padding: 3px 8px; }
+@media (max-width: 560px) {
+  .ds-sim .at-wq { width: 220px; max-width: calc(100% - 20px); }
+  .ds-sim .at-wq.is-collapsed { width: auto; }
+  .ds-sim .at-wq.is-collapsed .at-wq-title-long { display: none; } /* 접힌 휴대폰 칸은 「이름 맞히기」만 — 범례 칸 왼쪽 틈에 들어가게 */
+  .ds-sim .at-wq.is-collapsed .at-wq-head { padding-left: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .ds-sim .at-wq-toggle .ds-icon { transition: none; } }

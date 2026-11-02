@@ -342,6 +342,8 @@ export function legendPanel(stage, { title = '범례' } = {}) {
     reclamp();
   }
   sync();
+  // 휴대폰(폭 560px 이하 — worldQuiz 맞히기 칸과 같은 기준)은 접힌 채 시작: 펼친 칸이 지도를 많이 가림(교사 답 2026-10-24, U1-10t)
+  if (globalThis.matchMedia?.('(max-width: 560px)').matches) collapse(true);
   return {
     el, body, sync, collapse, reclamp, resetPosition,
     get collapsed() { return collapsed; },

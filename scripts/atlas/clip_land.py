@@ -125,6 +125,22 @@ def coverage(geoms, tol, min_area, clip_land):
     return res
 
 
+def post_simplify(gs, tol, min_area):
+    """설정 postSimplify(°): 분류마다 Douglas–Peucker(위상 유지) → 범례 순서대로 앞 분류가 차지한 곳 빼기(겹침 0) → 격자·작은 조각·시계 방향.
+    이웃 분류 경계가 따로 줄어 tol 안의 가는 틈이 생길 수 있음(덮개가 아님 — 13쪽 세계 기후처럼 coverage_simplify 가 듣지 않는 덮개에만)."""
+    # gs 는 {Feature 차례: 면} — 부르는 곳이 cov_idx(= 범례 차례로 쌓인 Feature 차례) 순으로 만들어 넘김. 앞 분류 우선 빼기가 이 차례에 기댐
+    assert list(gs) == sorted(gs), 'post_simplify: gs 는 범례 차례(cov_idx 오름차순)여야 함'
+    out, acc = {}, None
+    for i, g in gs.items():
+        if g is None: out[i] = None; continue
+        g = snap(polygonal(g.simplify(tol, preserve_topology=True)))
+        if g is not None and acc is not None and g.intersects(acc): g = snap(polygonal(g.difference(acc)))
+        g = keep_large(g, min_area) if g is not None else None
+        if g is not None: acc = g if acc is None else acc.union(g)
+        out[i] = orient_cw(g) if g is not None else None
+    return out
+
+
 def single(g, tol, min_area, clip_land):
     g = fold(g)
     if clip_land: g = clip_to_land(g)
@@ -164,6 +180,27 @@ def split_antimeridian(coords):
     return [p for p in parts if len(p) >= 2]
 
 
+_inland = {}
+
+
+def sea_only(lines, sc):
+    """설정 seaOnly {insetDeg, minLenDeg}(U1-4 — 8·9쪽 국경·해양 경계가 같은 획이라 바다 위 몫만 「해양 경계」로, 있을 때만):
+    선을 [-180,180] 로 접어 나눈 뒤 육지(ne_10m_land)를 insetDeg 만큼 안으로 줄인 면을 빼고, minLenDeg 보다 짧은 토막(해안에 닿는 국경 끝)은 버림."""
+    d = sc['insetDeg']
+    parts, tree = land()
+    out = []
+    for L in lines:
+        for q in split_antimeridian(L):
+            if len(q) < 2: continue
+            g = LineString(q)
+            for i in tree.query(g):
+                if i not in _inland: _inland[i] = parts[i].buffer(-d)
+                if not _inland[i].is_empty and g.intersects(_inland[i]): g = g.difference(_inland[i])
+            for seg in (getattr(g, 'geoms', None) or [g]):
+                if seg.geom_type == 'LineString' and seg.length >= sc['minLenDeg']: out.append([list(c) for c in seg.coords])
+    return out
+
+
 def line_geom(lines, tol):
     out = []
     for L in lines:
@@ -188,6 +225,8 @@ def process(lid):
     covered = apply_covers(feats, gj['properties'].get('covers'))   # 여러 지도 한 레이어: 본 지도 면에서 삽입 틀 자리 빼기(없으면 그대로)
     for i, g in zip(cov_idx, coverage([covered[i] for i in cov_idx], cov_tol, min_area, clip)):
         geoms[i] = g
+    if cfg.get('postSimplify'):   # 덮개 다시 단순화(U1-4 — 13쪽 세계 기후: 조각 21,723 이 만든 덮개가 coverage_simplify 로 안 줄어 1MB, 있을 때만)
+        geoms.update(post_simplify({i: geoms[i] for i in cov_idx}, cfg['postSimplify'], min_area))
     for i in area_idx:
         if i not in geoms: geoms[i] = single(covered[i], tol, min_area, clip)
     out, dropped, invalid = [], [], []
@@ -201,6 +240,7 @@ def process(lid):
             ft = dict(ft, geometry=mapping(mp), properties=dict(ft['properties'], centroid=centroid(g)))
         elif t in ('LineString', 'MultiLineString'):
             lines = [ft['geometry']['coordinates']] if t == 'LineString' else ft['geometry']['coordinates']
+            if cfg.get('seaOnly') and ft['properties'].get('cls') in cfg['seaOnly'].get('cls', [ft['properties'].get('cls')]): lines = sea_only(lines, cfg['seaOnly'])
             geom = line_geom(lines, tol)
             if geom is None: dropped.append(ft['properties'].get('label')); continue
             ft = dict(ft, geometry=geom)

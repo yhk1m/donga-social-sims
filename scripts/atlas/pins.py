@@ -3,6 +3,8 @@
 #   find_pins(map_id, pc)          지도 핀 → [{xy, label?}]. pc = 설정 photos.pins[map_id]
 #                                  by=shape: 채움색·크기가 맞는 도형(anchor=bottom 이면 아래 가운데 = 물방울 핀 끝)
 #                                  by=text : 글꼴·색·크기·정규식이 맞는 번호 글자, 그 글자를 담는 가장 작은 원의 가운데
+#                                  (by=text 에 anchor=bottom 이면 글자를 담은 도형의 아래 가운데 = 번호 얹힌 물방울 핀 끝, circleFill 이면 그 채움색 도형만 — u1)
+#                                  by=points: 설정 points [{xy, label}] 그대로(핀 도형이 없는 지도 — u1 15쪽 햄버거 지시선 끝)
 #                                  excludeBoxes(선택): 이 상자 안의 핀은 뺀다(지도 틀 안에 든 삽입 지도의 핀 — 29쪽 아이슬란드)
 #   node_lonlat(pts)               {지도 id: [[x,y]...]} → {지도 id: [[lon,lat]|None ...]} (node 하위 프로세스)
 #   match_pins(items, pins, places, default_km)
@@ -51,12 +53,18 @@ def find_pins(map_id, pc):
             b = s['bbox']; cx, cy = (b[0] + b[2]) / 2, (b[1] + b[3]) / 2
             if not inside(cx, cy): continue
             circ = [d['rect'] for d in drawings(pno) if d.get('fill') is not None and d['rect'].contains((cx, cy))
-                    and d['rect'].width <= pc['circleMaxPt'] and d['rect'].height <= pc['circleMaxPt']]
+                    and d['rect'].width <= pc['circleMaxPt'] and d['rect'].height <= pc['circleMaxPt']
+                    and ('circleFill' not in pc or pdfkit.hex_color(d['fill']) == pc['circleFill'])]   # u1 13쪽: 고산 빗금 칸(8.2pt)이 핀보다 작아서
             if circ:
                 r = min(circ, key=lambda r: r.width * r.height); cx, cy = (r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2
+                if pc.get('anchor') == 'bottom': cy = r.y1   # 번호 글자가 얹힌 물방울 핀 → 아래 끝(u1 12·13쪽)
             pins.append({'xy': [round(cx, 2), round(cy, 2)], 'label': int(s['text'])})
+    elif pc['by'] == 'points':
+        # 지면에 핀 도형이 없는 지도(u1 15쪽 햄버거 — 지시선 끝 점·나라 넓이 중심): 설정 points [{xy, label, _why}] 그대로
+        for p in pc['points']:
+            if inside(*p['xy']): pins.append({'xy': [round(v, 2) for v in p['xy']], 'label': int(p['label'])})
     else:
-        raise ValueError(f'{map_id}: 모르는 핀 찾기 방식 by={pc["by"]!r} (shape|text)')
+        raise ValueError(f'{map_id}: 모르는 핀 찾기 방식 by={pc["by"]!r} (shape|text|points)')
     out = []
     for p in pins:
         if not any(abs(p['xy'][0] - q['xy'][0]) < 1 and abs(p['xy'][1] - q['xy'][1]) < 1 and p.get('label') == q.get('label') for q in out):
@@ -163,7 +171,9 @@ def _pair_near(named, targets, places, default_km, what, out, warnings, report):
 
 def assign_pins(items, c, root=ROOT):
     """설정 photos(c)의 핀 있는 사진들 → ({id: {xy, lonlat, km?}}, 경고, 보고)."""
-    with open(os.path.join(root, c['placesFile']), encoding='utf-8') as f: places = json.load(f)
+    places = []
+    if any(it.get('pinNear') for it in items):   # 지명 짝이 없으면(번호 핀만 — u1) places.json 없이도 돈다
+        with open(os.path.join(root, c['placesFile']), encoding='utf-8') as f: places = json.load(f)
     by_map = {}
     for it in items:
         if 'pin' in it: by_map.setdefault(it['map'], []).append(it)

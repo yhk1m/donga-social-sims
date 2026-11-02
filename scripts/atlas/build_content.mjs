@@ -276,6 +276,7 @@ function resolveQuiz(ctx, t, markers, at) {
   const quiz = t.quiz ?? null;
   if (quiz?.type === 'coloring') {
     const c = ctx.inp.coloring;
+    if (!c) { ctx.W.push(`${at}.quiz: 색칠하기인데 설정 content.coloringOut 이 없음`); return quiz; }
     return { type: 'coloring', page: c.page, map: c.map, countries: c.countries };
   }
   if (quiz?.type === 'heritage') {
@@ -292,7 +293,7 @@ function checkTotals(ctx, out) {
   for (let p = cfg.pages[0]; p <= cfg.pages[1]; p++) if (!pages.has(p)) W.push(`${p}쪽을 덮는 주제 없음`);
   for (const [id, n] of Object.entries(ex.markers)) if (by[id]?.markers.length !== n) W.push(`${id} 마커 ${by[id]?.markers.length} ≠ ${n}`);
   for (const [id, n] of Object.entries(ex.chartMarkers)) { const k = by[id]?.markers.filter((m) => m.chart).length; if (k !== n) W.push(`${id} 그래프 마커 ${k} ≠ ${n}`); }
-  if (inp.coloring.countries.length !== ex.coloringCountries) W.push(`색칠하기 나라 ${inp.coloring.countries.length} ≠ ${ex.coloringCountries}`);
+  if (inp.coloring && inp.coloring.countries.length !== ex.coloringCountries) W.push(`색칠하기 나라 ${inp.coloring.countries.length} ≠ ${ex.coloringCountries}`);
   if (Object.keys(inp.charts).length !== ex.charts) W.push(`그래프 ${Object.keys(inp.charts).length} ≠ ${ex.charts}`);
   for (const id of Object.keys(inp.charts)) if (!ctx.usedCharts.has(id)) W.push(`그래프 ${id}: 어느 주제도 참조하지 않음`);
   return W;
@@ -356,8 +357,9 @@ export function loadInputs() {
   const st = cfg.stamps, stampOf = (s) => (fs.existsSync(stampPath(s.stamp)) ? readJson(stampPath(s.stamp)).inputsHash : null);
   checkStamp(unit, 'topics', stampOf(st.topics), 'python -I scripts/atlas/extract_text.py --check(또는 --fill)');
   checkStamp(unit, 'charts', stampOf(st.charts), 'python -I scripts/atlas/extract_tables.py --charts');
-  const coloring = readJson(path.join(REPO, cfg.coloringOut));
-  checkStamp(unit, 'coloring', coloring.inputsHash, 'node scripts/atlas/coloring_quiz.mjs --write');
+  // coloringOut 이 없는 단원(u1 — 색칠하기 퀴즈 없음)은 색칠하기 산출물·도장·나라 수 검사를 건너뜀. 키가 있으면 옛 길
+  const coloring = cfg.coloringOut ? readJson(path.join(REPO, cfg.coloringOut)) : null;
+  if (coloring) checkStamp(unit, 'coloring', coloring.inputsHash, 'node scripts/atlas/coloring_quiz.mjs --write');
   const outDir = path.join(REPO, cfg.out);
   const maps = readJson(UNIT.mapsPath);   // 설정 maps(없으면 maps_<id>.json)
   const fitCache = new Map(), layerCache = new Map();

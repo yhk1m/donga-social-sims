@@ -213,6 +213,38 @@ function mapChecks(mapId, refs, shot, topicId) {
       }
       if (v.base) out.push(check(`${tag}처음 바탕`, '—', v.base, INFO));
     }
+    if (!isOverlay && L.properties?.layerType === 'continents' && r.type !== 'continentGlobes') { // 대륙·대양 면(u1 10·11쪽 — 나라 분류 + 점선으로 쪼갠 나라 + 대양 단순 경계 + 초성 꼬리표)
+      const P = L.properties, rep = tryJson(join(WORK, 'geo', `${P.id || r.ref.replace(/^layer-/, '')}.continents-report.json`)) || {};
+      const oceans = P.oceans || [], name = (k) => legend.find((e) => e.cls === k)?.label || oceans.find((e) => e.cls === k)?.label || k;
+      const per = {};
+      for (const v of Object.values(P.classes || {})) per[v] = (per[v] || 0) + 1;
+      out.push(check(`${tag}대륙 면(나라 분류)`, '지면 대륙색 표본(50m 나라 조각마다)', `대륙 ${legend.length} — ${legend.map((e) => `${e.label} ${per[e.cls] || 0}`).join(', ')}${rep.unclassified?.length ? ` · 분류 없음 ${rep.unclassified.join(', ')}` : ''}`, INFO, '나라 수 = 한 대륙 나라(classes) — 여러 대륙으로 나눈 나라는 아래 줄'));
+      const split = Object.entries(rep.split || {});
+      const geom = [...new Set((L.features || []).filter((f) => f.properties.mode === 'geom').map((f) => f.properties.iso))];
+      if (split.length) out.push(check(`${tag}여러 대륙으로 나눈 나라`, '교과서 자홍 점선 · 섬마다 다른 대륙색', split.map(([iso, cs]) => `${iso} ${cs.map(name).join('+')}`).join(' · '), INFO, `점선으로 쪼갠 조각 면: ${geom.join(', ') || '없음'} · 나머지는 섬 단위`));
+      const pages = [...new Set((P.maps || [P.map]).map((id) => mapById[id]?.page).filter(Boolean))];
+      const tags = P.tags || [], want = legend.length + oceans.length, tagCls = new Set(tags.map((x) => x.cls));
+      const onPage = tags.filter((x) => pages.some((pg) => coverage(x.text, pg) >= 0.99));
+      out.push(check(`${tag}초성 꼬리표 ↔ 지면 초성`, `지면 초성 글자 ${onPage.length}(${pages.join('·')}쪽)`, `꼬리표 ${tags.length} — 대륙·대양 ${want} 중 ${tagCls.size}`, onPage.length === tags.length && tags.length === want && tagCls.size === want ? OK : DIFF));
+      const oc = new Set((L.features || []).filter((f) => f.properties.ocean).map((f) => f.properties.cls));
+      const ocTags = tags.filter((x) => oceans.some((o) => o.cls === x.cls)).length;
+      out.push(check(`${tag}대양 면`, `지면 대양 이름 ${ocTags}(초성 꼬리표)`, `${oc.size} — ${oceans.map((o) => o.label).join('·')}`, oc.size === ocTags ? OK : DIFF));
+    }
+    if (!isOverlay && (r.type === 'continentGlobes' || r.type === 'continentQuiz')) { // 지구본 단추(u1 9·11쪽 지구본 그림 — 누르면 지구본으로 돌려 강조)
+      const gl = tryJson(join(ROOT, cfg.content.photos.replace(/photos\.json$/, 'globes.json'))) || [];
+      const tpages = topics.find((x) => x.id === topicId)?.pages || [];
+      const mine = gl.filter((g) => tpages.includes(g.page));
+      const missing = mine.filter((g) => Object.values(g.files || {}).some((f) => !existsSync(join(ROOT, 'docs/assets/atlas', f.url))));
+      out.push(check(`${tag}지구본 단추 ↔ 지구본 그림`, `${mine[0]?.page ?? '—'}쪽 지구본 그림 ${mine.length}(${mine.map((g) => g.label).join('·')})`, `단추 ${mine.length} · 그림 파일 ${missing.length ? `없음: ${missing.map((g) => g.id).join(', ')}` : '모두 있음(160·320px)'}`,
+        mine.length && !missing.length ? OK : DIFF, '누르면 지구본(자연색)으로 바꿔 그곳을 가운데로 돌리고 강조 — 덧붙임 캡처'));
+    }
+    if (!isOverlay && L.properties?.layerType === 'routeFan') { // 대권 노선(u1 14쪽 항공망 — 인천 → 교과서 도시 점)
+      const rep = tryJson(join(WORK, 'geo', `${L.properties.id || r.ref.replace(/^layer-/, '')}.routes-report.json`)) || {};
+      const n = (L.features || []).reduce((a, f) => a + (f.geometry.type === 'MultiPoint' ? f.geometry.coordinates.length : 1), 0);
+      out.push(eq(`${tag}노선 수 ↔ 교과서 도시 점`, rep.pageDots ?? '추출 없음', n, '인천 → 지면 빨간 도시 점마다 대권 곡선 하나'));
+      out.push(check(`${tag}교과서 노선 선`, `분홍 선 ${rep.lines ?? '—'}`, `선 있는 점 ${rep.dotsWithLine ?? '—'} · 선 없는 점 ${(rep.linelessDots || []).length}(웹은 이 점도 노선으로)`, INFO, '교과서 곡선은 대권이 아님 — 웹은 대권(지구본·극 중심에서도 실제 길), 화살촉 없음'));
+    }
+    if (!isOverlay && r.type === 'paintTool') out.push(check(`${tag}세계 색칠하기 도구`, '백지도(나라 회색 채움)', '바탕 지도 나라 모두 칠하기 — 팔레트 6색 · 지우개 · 모두 지우기(메모리만) · 작은 나라 동그라미', INFO, '덧붙임 캡처'));
     if (!isOverlay && L.properties?.layerType === 'sectorLines') { // 영유권 경계선(u6 55쪽 — 교과서 경계선만, 면 없음)
       const tbN = CHECKS.sectorCountries?.[r.ref] || [];
       const miss = tbN.filter((n) => !legend.some((e) => e.label === n)), extra = legend.filter((e) => !tbN.includes(e.label)).map((e) => e.label);
@@ -387,9 +419,12 @@ for (const t of topics) {
       // 주제 보기 레이어(topicView, u6)가 든 묶음은 일반도처럼 지면 지명도 견줌(u2~u5 에는 이 레이어 종류가 없어 그대로)
       const tv = g.refs.map((r) => layerFile(r.ref)?.properties).filter((P) => P?.layerType === 'topicView');
       if (tv.length) checks.push(...placeChecks(mapId, main));
+      // 두 쪽에 걸친 한 지도(u1 8·9쪽 — 지도 목록 spreadOf): 오른쪽 반 지면 지명도 견줌(u2~u6 에는 spreadOf 가 없어 그대로)
+      if (tv.length) for (const sm of maps.filter((x) => x.spreadOf === mapId)) checks.push(...placeChecks(sm.id, main).map((c) => ({ ...c, item: `[${sm.page}쪽] ${c.item}` })));
       checks.push(...mapChecks(mapId, g.refs, main, t.id));
       const polar = tv.find((P) => /^polar[NS]$/.test(P.view?.projection || ''));
       if (polar && mapById[mapId].projection) checks.push(check('도법', mapById[mapId].projection, `${polar.view.projection === 'polarN' ? '북극' : '남극'} 중심(정거 방위 — 극 중심 보기, 도구에서 평면·지구본으로 바꿈)`, OK));
+      else if (/로빈슨/.test(mapById[mapId].projection || '')) checks.push(check('도법', mapById[mapId].projection, '로빈슨(처음 도법) · 도구에서 바꿈', OK)); // 교과서도 로빈슨(u1 — u2~u6 지도 목록엔 없음)
       else if (mapById[mapId].projection) checks.push(check('도법', mapById[mapId].projection, '로빈슨(기본) · 도구에서 바꿈', KNOWN, '웹은 세계 도법 5종만'));
       for (const c of CHECKS.centerChecks) if (g.refs.some((r) => r.ref === c.ref)) checks.push(check('도법·중심', c.tb, c.web, OK));
       rows.push({ kind: 'map', topic: t, title: g.label, mapId, shots, checks });

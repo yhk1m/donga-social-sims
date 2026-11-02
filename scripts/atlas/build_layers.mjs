@@ -21,7 +21,7 @@ import { mesh as topoMesh } from 'topojson-client';
 import { geoDistance, geoContains, geoCentroid } from 'd3-geo';
 import { makeConverter } from './georef.mjs';
 import { WORK, loadFit as loadFitRaw, fitPath, neIndex, key, km } from './geo_util.mjs';
-import { projectionFromStale, projectionFromOlder, fitFromStale } from './projection_from.mjs';
+import { projectionFromStale, projectionFromOlder, fitFromStale, spreadFitStale } from './projection_from.mjs';
 import { resolveUnit, stripUnitArgs } from './unit.mjs';
 import { polarPolygon } from './polar_geom.mjs';
 import { topicViewLayerJson, sectorLinesLayerJson, latLineFeatures, shelvesRaw, shelfOutlineFeature } from './polar_layers.mjs';
@@ -53,6 +53,11 @@ function loadFit(id) {
   if (ff) {
     const why = fitFromStale(fit, loadFitRaw(ff.map), ff);
     if (why) throw new Error(`fitFrom 낡음(${why}) — node scripts/atlas/georef-cli.mjs --unit ${UNIT.id} --all 먼저`);
+  }
+  const so = maps[id]?.spreadOf;   // 두 쪽 지도 오른쪽(U1-3a, 있을 때만): 왼쪽 지도 fit − offsetPt 와 다르면 멈춤
+  if (so) {
+    const why = spreadFitStale(fit, loadFitRaw(so), { map: so, dx: maps[id].offsetPt?.[0], dy: maps[id].offsetPt?.[1] });
+    if (why) throw new Error(`spreadOf 낡음(${why}) — node scripts/atlas/georef-cli.mjs --unit ${UNIT.id} --all 먼저`);
   }
   return fit;
 }
@@ -780,7 +785,8 @@ function main(argv) {
   // 나라 단위 단계구분도는 도형을 옮기지 않는다(country_class.py → 나라별 분류만). 고리 기호·미확정 국경도 PDF 도형을 뽑지 않음(U4-3c·f)
   const cc = todo.filter((l) => l.type === 'countryClass' || l.type === 'regionClass');   // regionClass = 하위 행정 구역판(U5-3d, 설정 units)
   const special = (l) => l.type === 'chartSymbols' || l.source === 'ne-disputed' || l.type === 'unitSymbols' || l.type === 'compareOutline' || l.type === 'pathFlow'
-    || l.type === 'topicView' || l.type === 'sectorLines';   // U6-4: 주제 보기·남극 영유권 경계선(polar_layers.mjs)
+    || l.type === 'topicView' || l.type === 'sectorLines'   // U6-4: 주제 보기·남극 영유권 경계선(polar_layers.mjs)
+    || l.type === 'continents' || l.type === 'routeFan';   // U1-3c·3d 대륙·대양 면(continent_layers.py)·U1-3g 대권 노선(route_fan.py) — 세계화 설정에만 있음
   const geo = todo.filter((l) => l.type !== 'countryClass' && l.type !== 'regionClass' && !special(l));
   const byId = new Map();
   const units = todo.filter((l) => l.type === 'unitSymbols' || l.type === 'pathFlow');   // 네모 단위 기호(U5-3f)·경로 화살표(U5-4): PDF 에서는 features.py 가 뽑고, 경위도(주 붙이기)는 여기서
@@ -804,6 +810,16 @@ function main(argv) {
       const fit = loadFit(l.map);
       const res = koreaOutlineLayerJson(l, JSON.parse(fs.readFileSync(out, 'utf8')), converter(l, fit), maps[l.map], fit);
       byId.set(l.id, writeLayer(l, res, { features: 1 }));
+    } else if (l.type === 'continents') {   // 두 쪽 지도 fit 낡음 검사 뒤 continent_layers.py 가 레이어 자료를 그대로 씀
+      for (const mid of l.maps || [l.map]) loadFit(mid);
+      process.stdout.write(run([path.join(here, 'continent_layers.py'), l.id, ...(l.oceans ? ['--oceans'] : [])]));
+      const out = JSON.parse(fs.readFileSync(`${WORK}/geo/${l.id}.continents.json`, 'utf8'));
+      byId.set(l.id, writeLayer(l, out, { legend: out.properties.legend.length, classes: out.properties.legend.length + (out.properties.oceans || []).length, features: out.features.length }));
+    } else if (l.type === 'routeFan') {   // 14쪽 빨간 도시 점 → 경위도(route_fan.py 가 레이어 자료를 그대로 씀)
+      loadFit(l.map);
+      process.stdout.write(run([path.join(here, 'route_fan.py'), l.id]));
+      const out = JSON.parse(fs.readFileSync(`${WORK}/geo/${l.id}.routes.json`, 'utf8'));
+      byId.set(l.id, writeLayer(l, out, { legend: 1, classes: out.features.length, features: out.features.reduce((n, f) => n + f.geometry.coordinates.length, 0) }));
     } else if (l.type === 'topicView') {
       byId.set(l.id, writeLayer(l, topicViewLayerJson(l, maps[l.map])));
     } else if (l.type === 'sectorLines') {

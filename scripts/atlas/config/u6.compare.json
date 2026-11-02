@@ -2,6 +2,8 @@
  "_doc": "교과서 대조표(compare_shots.mjs · compare.mjs --unit u6) 단원 설정 — u5.compare.json 과 같은 꼴. 출력은 단원 작업 폴더 기본값($ATLAS_WORK/units/u6/shots/compare · compare.html). 경로는 작업 폴더 기준. 만든 스크립트: $ATLAS_WORK/units/u6/u6-10/gen_compare.py(+ teacher_items.py)",
  "fixedNow": 1760918400000,
  "_fixedNow": "캡처 쪽의 Date.now 고정값(ms, u2~u5 와 같음) — 색칠하기 퀴즈 seed 기본값이 시각이라 캡처마다 문제가 달라지지 않게.",
+ "freshSvgLayout": true,
+ "_freshSvgLayout": "찍기 직전 지도 SVG 의 non-scaling-stroke 경로를 Chrome 이 새로 계산하게(compare_shots → capture_opts.mjs, U1-G0). Chrome 이 그 경로를 앞 화면(지도 움직임 중간 프레임) 값으로 두는 일이 있어 DOM·CSS·캔버스가 같아도 남극 우리나라 기지 붉은 점 가장자리 6~8화소가 실행마다 ±1~3 달랐음. 기준선은 이 옵션으로 다시 찍음.",
  "projections": {
   "default": "robinson",
   "extra": {

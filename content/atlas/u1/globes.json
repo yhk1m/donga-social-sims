@@ -1,0 +1,12 @@
+[
+ {"id": "asia", "label": "아시아", "page": 9, "bbox": [630.8, 36.6, 754.4, 160.2], "cls": "asia", "renderDpi": 373, "files": {"160": {"url": "u1/globe/asia-160.webp", "bytes": 5394}, "320": {"url": "u1/globe/asia-320.webp", "bytes": 13238}}},
+ {"id": "europe", "label": "유럽", "page": 9, "bbox": [630.8, 171.0, 754.4, 294.6], "cls": "europe", "renderDpi": 373, "files": {"160": {"url": "u1/globe/europe-160.webp", "bytes": 5172}, "320": {"url": "u1/globe/europe-320.webp", "bytes": 12676}}},
+ {"id": "africa", "label": "아프리카", "page": 9, "bbox": [630.8, 305.4, 754.4, 429.0], "cls": "africa", "renderDpi": 373, "files": {"160": {"url": "u1/globe/africa-160.webp", "bytes": 4996}, "320": {"url": "u1/globe/africa-320.webp", "bytes": 11950}}},
+ {"id": "america", "label": "아메리카", "page": 9, "bbox": [630.8, 439.8, 754.4, 563.4], "cls": ["northAmerica", "southAmerica"], "renderDpi": 373, "files": {"160": {"url": "u1/globe/america-160.webp", "bytes": 4892}, "320": {"url": "u1/globe/america-320.webp", "bytes": 11724}}},
+ {"id": "oceania", "label": "오세아니아", "page": 9, "bbox": [630.8, 574.2, 754.4, 697.8], "cls": "oceania", "renderDpi": 373, "files": {"160": {"url": "u1/globe/oceania-160.webp", "bytes": 4956}, "320": {"url": "u1/globe/oceania-320.webp", "bytes": 12120}}},
+ {"id": "pacific", "label": "태평양", "page": 11, "bbox": [630.8, 36.6, 754.4, 160.2], "cls": "pacific", "renderDpi": 373, "files": {"160": {"url": "u1/globe/pacific-160.webp", "bytes": 4882}, "320": {"url": "u1/globe/pacific-320.webp", "bytes": 12202}}},
+ {"id": "indian", "label": "인도양", "page": 11, "bbox": [630.8, 171.0, 754.4, 294.6], "cls": "indian", "renderDpi": 373, "files": {"160": {"url": "u1/globe/indian-160.webp", "bytes": 5102}, "320": {"url": "u1/globe/indian-320.webp", "bytes": 12164}}},
+ {"id": "atlantic", "label": "대서양", "page": 11, "bbox": [630.8, 305.4, 754.4, 429.0], "cls": "atlantic", "renderDpi": 373, "files": {"160": {"url": "u1/globe/atlantic-160.webp", "bytes": 4910}, "320": {"url": "u1/globe/atlantic-320.webp", "bytes": 11624}}},
+ {"id": "arctic", "label": "북극해", "page": 11, "bbox": [630.8, 439.8, 754.4, 563.4], "cls": "arctic", "renderDpi": 373, "files": {"160": {"url": "u1/globe/arctic-160.webp", "bytes": 5368}, "320": {"url": "u1/globe/arctic-320.webp", "bytes": 13188}}},
+ {"id": "southern", "label": "남극해", "page": 11, "bbox": [630.8, 574.2, 754.4, 697.8], "cls": "southern", "renderDpi": 373, "files": {"160": {"url": "u1/globe/southern-160.webp", "bytes": 4658}, "320": {"url": "u1/globe/southern-320.webp", "bytes": 11094}}}
+]

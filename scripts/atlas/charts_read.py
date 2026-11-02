@@ -15,6 +15,7 @@
 #   pyramidRaster(막대가 인라인 그림 — 렌더 화소), bubbleRow(원 크기 줄), climograph barsByMonth(막대 없는 달 = 0), figure 칸 groupBox.
 # 2단계 아메리카(U5-7, 모두 설정 키가 있을 때만): donut + wedges(부채꼴 + 흰 구멍 쐐기, 띠 안 인쇄 % — sliceNames 로 색 ↔ 이름, valueGapEm 으로
 #   붙은 한 자리 수 나눔), stackedLegend(여러 막대 100% 띠 — 칸 이름은 범례 견본에만, 칸에는 수만).
+# 2단계 세계화(U1-7, 키가 있을 때만): figure sentenceCells(칸 textBox 여러 줄 글을 box_text 로 — 이름 nameBox 뒤 나머지가 값).
 import functools, math, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -468,6 +469,15 @@ def read_figure(cid, c, ctx):
         # textBox = 문장 한 줄(이름 = 글 전체, 값 빔). replace 는 줄마다(「22,000 15,000km」 → 그림 화살표 ▸▸ 자리에 →)
         if cell.get('nameBox') or cell.get('textBox'):
             rep = lambda L: [functools.reduce(lambda t, ab: t.replace(*ab), c.get('replace', {}).items(), x) for x in L]
+            # U1-7(키 sentenceCells 가 있을 때만): 양끝 맞춤 여러 줄 글(14쪽 「작아지는 지구」 글 ①②③ — 「횡|단」처럼 낱말 가운데서 줄이 바뀜)은
+            # 줄을 공백으로 잇지 않고 box_text(줄바꿈 이음 규칙)로 textBox 전체를 읽어, 값 = 이름(nameBox 글자 — 「1492년」) 뒤 나머지
+            if c.get('sentenceCells') and cell.get('nameBox') and cell.get('textBox'):
+                name = ' '.join(rep(cell_text(p, cell['nameBox'], ign, dd)))
+                full = rep([text(p, cell['textBox'])])[0]
+                k = full.find(name) if name else -1
+                val = full[k + len(name):].strip() if k >= 0 else ''
+                if k < 0 or not val: W.append(f'{cid}: 칸 {cell} 글 「{full}」에서 이름 「{name}」 뒤 값을 못 찾음')
+                cats.append(name); vals.append(val); continue
             name = ' '.join(rep(cell_text(p, cell.get('nameBox') or cell['textBox'], ign, dd)))
             vb = cell.get('valueBox') or []
             val = ' '.join(L for box in (vb if vb and isinstance(vb[0], list) else [vb] if vb else []) for L in rep(cell_text(p, box, ign, dd)))

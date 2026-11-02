@@ -1,0 +1,34 @@
+/* © 2026 김용현 */
+/* src/atlas/worldPaint.css — U1-3h 세계 색칠하기 도구 팔레트 칸(worldPaint.js — 세계화 조각에만 들어감).
+   data-mode: row = 가로 줄(제목·색 6·지우개·모두 지우기·칠한 나라 수), col = 세로 열(휴대폰 — 제목·모두 지우기 글자와 수는 숨김, 아이콘만).
+   자리(left·top)는 worldPaint.placePalette 가 인라인으로. */
+.ds-sim .at-wp {
+  position: absolute; left: 10px; bottom: 10px; z-index: 14; display: flex; align-items: center; gap: 8px; width: max-content; white-space: nowrap;
+  padding: 6px 10px; background: rgba(255, 255, 255, .96); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); font-size: 13px;
+}
+.ds-sim .at-wp[style*="top"] { bottom: auto; }
+.ds-sim .at-wp-title { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; font-size: 13.5px; }
+.ds-sim .at-wp-title .ds-icon { width: 18px; height: 18px; }
+.ds-sim .at-wp-palette { display: flex; align-items: center; gap: 5px; }
+.ds-sim .at-wp-color, .ds-sim .at-wp-erase {
+  width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .28); cursor: pointer; padding: 0; margin: 0;
+  flex-shrink: 0; transition: box-shadow .12s ease-out;
+}
+.ds-sim .at-wp-erase { display: grid; place-items: center; background: #fff; color: var(--ink); }
+.ds-sim .at-wp-erase .ds-icon { width: 17px; height: 17px; }
+.ds-sim .at-wp-color[aria-pressed=true], .ds-sim .at-wp-erase[aria-pressed=true] { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--accent); }
+.ds-sim .at-wp-color:focus-visible, .ds-sim .at-wp-erase:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.ds-sim .at-wp-clear { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; padding: 5px 8px; }
+.ds-sim .at-wp-clear .ds-icon { width: 15px; height: 15px; }
+.ds-sim .at-wp-count { font-size: 12px; color: var(--muted, #666); min-width: 5.5em; }
+/* 세로 열(휴대폰) */
+.ds-sim .at-wp[data-mode="col"] { flex-direction: column; gap: 6px; padding: 8px 6px; }
+.ds-sim .at-wp[data-mode="col"] .at-wp-palette { flex-direction: column; }
+.ds-sim .at-wp[data-mode="col"] .at-wp-title-text,
+.ds-sim .at-wp[data-mode="col"] .at-wp-clear-text { display: none; }
+/* 세로 열: 칠한 나라 수는 화면에서만 숨김(role status — 화면 읽기 프로그램은 「칠한 나라 n」을 그대로 읽음) */
+.ds-sim .at-wp[data-mode="col"] .at-wp-count {
+  position: absolute; width: 1px; height: 1px; min-width: 0; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+.ds-sim .at-wp[data-mode="col"] .at-wp-clear { padding: 5px; }
+@media (prefers-reduced-motion: reduce) { .ds-sim .at-wp-color, .ds-sim .at-wp-erase { transition: none; } }
