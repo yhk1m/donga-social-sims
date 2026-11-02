@@ -11,6 +11,8 @@ import { renderHubPage, readTopics, HUB_PAGE } from '../../scripts/atlas/hub_pag
 const ROOT = resolve(import.meta.dirname, '..', '..');
 const versions = JSON.parse(readFileSync(join(ROOT, 'docs', 'versions.json'), 'utf8'));
 const atlasUnits = SIMS.filter((s) => s.book === 'atlas' && parseUnit(s.unit));
+// 「준비 중」 갈래 시험용: Ⅰ 세계화 공개 기록을 뺀 버전 표(2026-11-02 부터 여섯 단원 모두 공개)
+const { 'atlas-u1-world': _u1, ...versionsNoU1 } = versions;
 
 test('parseUnit·pageRange·pagesText', () => {
   assert.deepEqual(parseUnit('Ⅱ. 아시아'), { order: 2, numeral: 'Ⅱ', name: '아시아' });
@@ -49,9 +51,11 @@ test('hubUnits: 준비 중 카드로 Ⅰ~Ⅵ 빈자리를 채우고 겹치지 �
   const units = hubUnits({ sims: SIMS, versions, topicsOf: readTopics });
   assert.deepEqual(units.map((u) => u.order), [1, 2, 3, 4, 5, 6]);
   for (const u of units.filter((x) => x.status === 'planned')) assert.equal(u.url, null);
-  const sims = [...SIMS, { id: 'atlas-u1-world', book: 'atlas', unit: 'Ⅰ. 세계화 시대, 지리의 힘', page: 8, title: '사회과부도 세계화 시대, 지리의 힘' }];
-  assert.equal(hubUnits({ sims, versions }).find((u) => u.order === 1).status, 'planned');
-  const v2 = { ...versions, 'atlas-u1-world': [{ v: 1, date: '2026-11-01' }] };
+  const sims = SIMS.filter((s) => s.id !== 'atlas-u1-world').concat({ id: 'atlas-u1-world', book: 'atlas', unit: 'Ⅰ. 세계화 시대, 지리의 힘', page: 8, title: '사회과부도 세계화 시대, 지리의 힘' });
+  const pend = hubUnits({ sims, versions: versionsNoU1 }).find((u) => u.order === 1);
+  assert.equal(pend.status, 'planned');
+  assert.equal(pend.url, null);
+  const v2 = { ...versionsNoU1, 'atlas-u1-world': [{ v: 1, date: '2026-11-01' }] };
   const am = hubUnits({ sims, versions: v2 }).find((u) => u.order === 1);
   assert.equal(am.status, 'published');
   assert.deepEqual(am.pages, ATLAS_PLAN.find((p) => p.id === 'atlas-u1-world').pages, 'topics 없으면 계획 쪽수');
@@ -73,7 +77,7 @@ test('cardTree: 공개 카드는 새 창 링크, 준비 중은 링크 없음', (
   assert.equal(pub[0], 'a');
   assert.equal(pub[1].target, '_blank');
   assert.equal(pub[1].rel, 'noopener');
-  const plan = cardTree(units.find((u) => u.status === 'planned'));
+  const plan = cardTree(hubUnits({ sims: SIMS, versions: versionsNoU1 }).find((u) => u.status === 'planned'));
   assert.equal(plan[0], 'div');
   assert.equal(plan[1].href, undefined);
 });

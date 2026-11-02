@@ -99,3 +99,12 @@ test('worldTree hrefOf: Pages 보기 페이지는 #<id>', () => {
   const tree = worldTree(units, committed, { hrefOf: (u) => `#${u.id}` });
   walk(tree, (n) => { if (n[0] === '@sa') { assert.equal(n[1].href, `#${n[1].dataset.unit}`); assert.equal(n[1].target, undefined); } });
 });
+
+test('worldTree: 공개 전 단원은 누를 수 없는 흐린 g(Ⅰ 공개 기록을 빼고 시험)', () => {
+  const { 'atlas-u1-world': _u1, ...v } = versions;
+  const tree = worldTree(hubUnits({ sims: SIMS, versions: v }), committed);
+  const u1 = [];
+  walk(tree, (n) => { if (n[1]?.dataset?.unit === 'atlas-u1-world') u1.push(n); });
+  assert.ok(u1.length >= 1);
+  for (const n of u1) { assert.equal(n[0], 'g'); assert.match(n[1].class, /is-planned/); assert.equal(n[1].href, undefined); }
+});
