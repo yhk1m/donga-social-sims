@@ -514,8 +514,8 @@ test('주제도 활동(교사 §8 Q4): 문항 카드 + 원본 쪽 + 색칠하기
 
 ### Task U1-11: 성능·이미지 경로·교과서 문제 정리·공개 ⓣ
 
-- [ ] **Step 1:** 1024×768 swiftshader 성능(`units/u1/perf/perf_u1.mjs` — perf_u6 꼴: 도법 8 × 전환·settle 9번 중 뒤 7번 중앙값/최대, heavy.lock). 장면: 일반도 고도 색 켬(태평양 중심), 지형 자연색, 기후 벡터, 대륙 강조·맞히기 누르기, **지구본 단추 전환**(평면 → 지구본 + 자연색 첫 프레임 — u6 약 215ms 와 견줌), **항공망 노선 평면·지구본 끌기 30프레임**(프레임 중앙값/최대), 한국어 점, 색칠하기 도구 누르기. 기준 **200ms 안**(지구본 프레임 50ms 안 목표). 구드가 넘으면 앞 단원처럼 까닭(프로파일)만. 결과를 「실행 중 결정」에.
-- [ ] **Step 2: 교과서 문제 정리** — `content/atlas/u1/issues.md`의 항목(교사가 정한 「교과서 담당자 확인 필요」 표시 포함)을 `C:\Users\Public\atlas-work\textbook-issues\work\items.py`에 옮김: `UNITS` 맨 앞에 `{'key': 'u1', 'name': 'Ⅰ 세계화 시대, 지리의 힘(8~15쪽)', 'short': 'Ⅰ 세계화'}`, `_items` 에 unit 'u1' 항목(kind need/ask, pages, line, title, problem, evidence, app, images — 지면 자르기 clip·dpi·marks·cap), `python -I work/build.py` → `textbook-issues.html` 다시(이미지 바이트·항목 수 출력 기록), 헤드리스로 열어 u1 칸 확인. issues.md 가 비었으면 이 단계는 「항목 없음」 기록만.
+- [x] **Step 1:** 1024×768 swiftshader 성능(`units/u1/perf/perf_u1.mjs` — perf_u6 꼴: 도법 8 × 전환·settle 9번 중 뒤 7번 중앙값/최대, heavy.lock). 장면: 일반도 고도 색 켬(태평양 중심), 지형 자연색, 기후 벡터, 대륙 강조·맞히기 누르기, **지구본 단추 전환**(평면 → 지구본 + 자연색 첫 프레임 — u6 약 215ms 와 견줌), **항공망 노선 평면·지구본 끌기 30프레임**(프레임 중앙값/최대), 한국어 점, 색칠하기 도구 누르기. 기준 **200ms 안**(지구본 프레임 50ms 안 목표). 구드가 넘으면 앞 단원처럼 까닭(프로파일)만. 결과를 「실행 중 결정」에.
+- [x] **Step 2: 교과서 문제 정리** — `content/atlas/u1/issues.md`의 항목(교사가 정한 「교과서 담당자 확인 필요」 표시 포함)을 `C:\Users\Public\atlas-work\textbook-issues\work\items.py`에 옮김: `UNITS` 맨 앞에 `{'key': 'u1', 'name': 'Ⅰ 세계화 시대, 지리의 힘(8~15쪽)', 'short': 'Ⅰ 세계화'}`, `_items` 에 unit 'u1' 항목(kind need/ask, pages, line, title, problem, evidence, app, images — 지면 자르기 clip·dpi·marks·cap), `python -I work/build.py` → `textbook-issues.html` 다시(이미지 바이트·항목 수 출력 기록), 헤드리스로 열어 u1 칸 확인. issues.md 가 비었으면 이 단계는 「항목 없음」 기록만.
 - [ ] **Step 3:** 이미지 먼저 공개: `git add docs/assets/atlas/u1 && git commit && git push`(push 는 코디네이터·사용자 승인 뒤) → 모든 사진·지구본 그림·쪽 주소 200(`curl -sI`).
 - [ ] **Step 4:** 교사 승인 + 사용자 명시 승인 뒤 `npm run release -- atlas-u1-world --note "사회과부도 세계화 시대, 지리의 힘 첫 공개"` + 모음 `release atlas-hub`(Ⅰ 카드 — 「공개 6개 단원 / 6개」) → 커밋·푸시 → `https://yhk1m.github.io/donga-social-sims/atlas-u1-world/1/` 200, 공개 페이지에서 음영·고도 색·자연색 화상이 그려지는지(교차 출처 — 지구본 단추 지구본에서도), 지구본 단추 그림 주소 200, 모음 페이지 `/atlas/` 카드.
 - [ ] **Step 5:** 마지막 회귀 — `regress.sh u1-11`(u2~u6). 그리고 **`--unit u1 --baseline`**(compare_shots → compare → baseline — 3단계 단원이 엔진을 바꾸기 전에). 공개본 docs 새로 생김 때문에 앞 단원 check 가 「새로 생김」만 다르면 그 단원 기준선을 다시 찍고 까닭 기록(U6-11 은 해당 없었음).
@@ -1018,3 +1018,8 @@ test('주제도 활동(교사 §8 Q4): 문항 카드 + 원본 쪽 + 색칠하기
 - `npm test`(heavy.lock, `units/u1/npmtest-u1-10t.log`): **Python 525 OK · Node 957 통과(실패 0 · skip 0)**.
 - u2~u6 **공개본은 이 범례 고침을 다시 공개해야 반영**(사용자 판단 — 다음 공개 때).
 
+
+### U1-11 성능·교과서 문제 정리 (2026-11-02)
+
+- **성능**(`$ATLAS_WORK/units/u1/perf/` perf_u1.mjs · sum-embed.txt, 조각 1,482,797 B 다시 빌드, heavy.lock): 도법 8 × 장면 11 전환·settle 모두 200ms 안 — 구드 최대 120.8ms(대륙과 대양), 구드 밖 최대 80.8ms(북극 중심). 지구본 단추 첫 화면 127~177ms(u6 약 215ms 보다 빠름). 끌기 30프레임 중앙값 38~45ms, 최대 52.6ms(항공망 — 50 목표 근처). 일반도 단추 지구본 놓은 뒤 관성 settle 229~248ms(u6 150~198 — 프레임 아닌 관성 끝까지, 기록만). 맞히기·한국어 점·색칠하기 누르기 18~64ms, 8곳 칠함, 콘솔·404 0. 오세아니아 꼬리표는 보기 단추 없음(확인 거리).
+- **교과서 문제**: `textbook-issues/work/items.py` UNITS·ORDER 맨 앞 u1, 항목 7(issues 1·3·4·5·6·7·9 → 보고서 1~7, 모두 need · teacher), 2·8 은 교사 「표시 안 함」이라 뺌. build.py 머리글 범위 「Ⅰ~Ⅵ단원(8~55쪽)」. 37건(need 22 · ask 15), HTML 2,496,756 B, 확인 그림 `work/u1/shot_u1_section.png`.
