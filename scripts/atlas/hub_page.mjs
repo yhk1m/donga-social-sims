@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { SIMS } from '../../src/registry.js';
-import { hubUnits, cardTree, topicTitles, resolveHubHash, HUB_THUMB_DIR } from '../../src/atlas/hubData.js';
+import { hubUnits, cardTree, worldTree, topicTitles, resolveHubHash, HUB_THUMB_DIR } from '../../src/atlas/hubData.js';
 import { ICONS } from '../../src/shared/dom.js';
 
 const ROOT = resolve(import.meta.dirname, '..', '..');
@@ -28,6 +28,7 @@ function html(node) {
   const [tag, attrs, ...kids] = node;
   if (tag === '@icon') return iconSvg(attrs);
   if (tag === '@img') return `<img${attrText(attrs)}>`;
+  if (tag === '@sa') return `<a${attrText(attrs)}>${kids.map(html).join('')}</a>`; // SVG 안 링크(HTML 파서가 SVG a 로)
   return `<${tag}${attrText(attrs)}>${kids.map(html).join('')}</${tag}>`;
 }
 
@@ -46,6 +47,8 @@ export function renderHubPage({ sims = SIMS, versions, topicsOf = readTopics } =
     .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\.ds-sim(?![\w-])/g, '.av').replace(/\n{2,}/g, '\n').trim();
   const cards = units.map((u) => `<li class="ah-cell">${html(cardTree(u, { href: `#${u.id}`, thumb: thumbOf(u), openText: '이 페이지에서 열기' }))}</li>`).join('\n');
   const tabs = pub.map((u) => `<a class="av-tab" href="#${esc(u.id)}" data-unit="${esc(u.id)}"><img class="av-tab-img" src="${esc(thumbOf(u))}" alt="" width="64" height="40"><span class="av-tab-text"><b class="av-tab-name"><span class="ah-numeral">${esc(u.numeral)}.</span> ${esc(u.name)}</b><span class="av-tab-meta">${esc(u.pages ? `${u.pages[0]}~${u.pages[1]}쪽` : '')} · v${u.latest.v}</span></span></a>`).join('');
+  const world = JSON.parse(readFileSync(join(ROOT, 'src', 'atlas', 'hubWorld.json'), 'utf8'));
+  const map = html(worldTree(units, world, { hrefOf: (u) => `#${u.id}` }));
   const data = Object.fromEntries(pub.map((u) => [u.id, { label: u.label, v: u.latest.v }]));
   return `<!doctype html>
 <!-- 만든 파일: scripts/atlas/hub_page.mjs (release.mjs 가 목록을 갱신할 때 함께 다시 씀) — 손으로 고치지 마세요 -->
@@ -84,9 +87,10 @@ ${cardCss}
 <div class="ah-wrap">
 <a class="av-back" href="../">${iconSvg('back')}사회과 인터랙티브 자료 전체 목록</a>
 <header class="ah-top">
-<div><h1 class="ah-h1">사회과부도 모음</h1><p class="ah-lead">중학 사회과 부도 단원별 인터랙티브 지도 · 카드를 누르면 이 페이지 안에서 열리고, 위 띠에서 다른 단원으로 바로 바꿀 수 있습니다.</p></div>
+<div><h1 class="ah-h1">사회과부도 모음</h1><p class="ah-lead">중학 사회과 부도 단원별 인터랙티브 지도 · 지도의 대륙·바다나 카드를 누르면 이 페이지 안에서 열리고, 위 띠에서 다른 단원으로 바로 바꿀 수 있습니다.</p></div>
 <span class="ah-count">공개 ${pub.length}개 단원 / ${units.length}개</span>
 </header>
+<div class="ah-map">${map}</div>
 <ul class="ah-grid">
 ${cards}
 </ul>
@@ -127,6 +131,17 @@ ${cards}
     var cur = view.querySelector('.av-tab[aria-current]'); if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     document.title = u.label + ' · 사회과부도 모음';
   }
+  // 지도 영역과 카드를 같은 단원끼리 함께 강조(sims/atlas-hub/main.js linkHover 와 같음)
+  var hot = null;
+  function setHot(id) {
+    if (id === hot) return; hot = id;
+    grid.querySelectorAll('[data-unit]').forEach(function (el) { el.classList.toggle('is-hot', id != null && el.getAttribute('data-unit') === id); });
+  }
+  function unitOf(e) { var el = e.target.closest ? e.target.closest('[data-unit]') : null; return el ? el.getAttribute('data-unit') : null; }
+  grid.addEventListener('pointerover', function (e) { setHot(unitOf(e)); });
+  grid.addEventListener('pointerleave', function () { setHot(null); });
+  grid.addEventListener('focusin', function (e) { setHot(unitOf(e)); });
+  grid.addEventListener('focusout', function () { setHot(null); });
   window.addEventListener('hashchange', route);
   route();
 })();

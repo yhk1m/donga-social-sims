@@ -3,9 +3,10 @@
 // 자료는 모두 빌드 때 정적으로 들어간다(규칙: fetch·import() 없음): registry + docs/versions.json + 단원별 topics.json 제목(?titles 플러그인으로 제목·쪽만).
 // 새 단원은 registry 한 줄 + 공개(release) 뒤 이 조각을 다시 빌드·공개하면 나타난다(이 파일은 고칠 필요 없음 — glob 이 sims/atlas-u*/ 를 모두 줍는다).
 // 규칙(EMBED_RULES.md): DOM 은 h()/icon() 으로만, 래퍼 밖 접근 없음, 썸네일은 공개 Pages 절대 주소 <img>(아틀라스 사진과 같은 예외).
-import { h, icon } from '../../src/shared/dom.js';
+import { h, s, icon } from '../../src/shared/dom.js';
 import { SIMS } from '../../src/registry.js';
-import { hubUnits, cardTree, PAGES_BASE } from '../../src/atlas/hubData.js';
+import { hubUnits, cardTree, worldTree, PAGES_BASE } from '../../src/atlas/hubData.js';
+import world from '../../src/atlas/hubWorld.json';
 import versions from '../../docs/versions.json';
 import './style.css';
 
@@ -22,6 +23,7 @@ function render(node) {
   if (typeof node === 'string' || typeof node === 'number') return String(node);
   const [tag, attrs, ...kids] = node;
   if (tag === '@icon') return icon(attrs);
+  if (tag === '@sa') return s('a', attrs, ...kids.map(render)); // SVG 안 링크(통합 세계 지도)
   if (tag === '@img') {
     const img = h('img', { ...attrs, src: devAsset(attrs.src) });
     // 썸네일을 못 불러오면 자리 표시로(빈 상자 대신)
@@ -29,6 +31,21 @@ function render(node) {
     return img;
   }
   return h(tag, attrs, ...kids.map(render));
+}
+
+/** 지도 영역과 카드를 같은 단원(data-unit)끼리 함께 강조(올리기·키보드 초점) */
+export function linkHover(scope) {
+  let hot = null;
+  const set = (id) => {
+    if (id === hot) return;
+    hot = id;
+    scope.querySelectorAll('[data-unit]').forEach((el) => el.classList.toggle('is-hot', id != null && el.dataset.unit === id));
+  };
+  const unitOf = (e) => e.target.closest?.('[data-unit]')?.dataset.unit ?? null;
+  scope.addEventListener('pointerover', (e) => set(unitOf(e)));
+  scope.addEventListener('pointerleave', () => set(null));
+  scope.addEventListener('focusin', (e) => set(unitOf(e)));
+  scope.addEventListener('focusout', () => set(null));
 }
 
 export default function mount(root) {
@@ -39,13 +56,15 @@ export default function mount(root) {
     h('header', { class: 'ah-top' },
       h('div', {},
         h('h1', { class: 'ah-h1' }, '사회과부도 모음'),
-        h('p', { class: 'ah-lead' }, '중학 사회과 부도 단원별 인터랙티브 지도 · 카드를 누르면 그 단원의 최신 버전이 새 창에서 열립니다.'),
+        h('p', { class: 'ah-lead' }, '중학 사회과 부도 단원별 인터랙티브 지도 · 지도의 대륙·바다나 카드를 누르면 그 단원의 최신 버전이 새 창에서 열립니다.'),
       ),
       h('span', { class: 'ah-count' }, `공개 ${published.length}개 단원 / ${units.length}개`),
     ),
+    h('div', { class: 'ah-map' }, render(worldTree(units, world, { newTab: true }))),
     h('ul', { class: 'ah-grid' }, units.map((u) => h('li', { class: 'ah-cell' }, render(cardTree(u, { newTab: true, openText: '새 창에서 열기' }))))),
   );
   root.append(wrap);
+  linkHover(wrap);
   root.atlasHubUnits = units; // 확인용(헤드리스 캡처)
   return { units };
 }

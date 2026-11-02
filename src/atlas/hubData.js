@@ -111,6 +111,37 @@ export function cardTree(u, { href = u.url, thumb = u.thumb, newTab = false, ope
 }
 
 /**
+ * 통합 세계 지도(모음 맨 위)의 모양 — cardTree 와 같은 마디 나무. 설계 notes/specs/2026-11-02-atlas-world-index-design.md
+ * 새 마디 ['@sa', attrs, ...] = SVG 안 링크(조각은 dom.js s('a'), 페이지는 <a> — HTML 파서가 SVG 안에서 SVG a 로 만든다).
+ * 단원 영역: 바다 = Ⅰ(구 둘레) → 북극해 원(Ⅵ, 탭 밖) → 육지 Ⅱ~Ⅵ 순서로 겹쳐 그림. 공개 단원은 링크(카드와 같은 href·target), 준비 중은 흐린 g.
+ * @param units  hubUnits() 카드 목록
+ * @param world  src/atlas/hubWorld.json
+ * @param o.hrefOf  카드 → 링크(기본 u.url)   @param o.newTab  새 창
+ */
+export function worldTree(units, world, { hrefOf = (u) => u.url, newTab = false } = {}) {
+  const byKey = Object.fromEntries(units.map((u) => [`u${u.order}`, u]));
+  const area = (key, shapes, labelAt, extra = {}) => {
+    const u = byKey[key];
+    if (!u) return null;
+    const label = labelAt ? ['text', { class: 'ah-wlabel', x: labelAt[0], y: labelAt[1], 'text-anchor': 'middle', 'aria-hidden': 'true' },
+      ['tspan', { class: 'ah-wnum' }, `${u.numeral}. `], u.name] : null;
+    const kids = [...shapes.map((d) => ['path', { class: 'ah-wshape', d }]), label];
+    const cls = `ah-warea ah-w-${key}${extra.cls ? ` ${extra.cls}` : ''}`;
+    if (u.status !== 'published') return ['g', { class: `${cls} is-planned`, dataset: { unit: u.id } }, ['title', {}, `${u.label} (준비 중)`], ...kids];
+    return ['@sa', { class: cls, href: hrefOf(u), ...(newTab ? { target: '_blank', rel: 'noopener' } : {}), 'aria-label': `${u.label} ${pagesText(u.pages)} 열기`, dataset: { unit: u.id }, ...extra.attrs }, ...kids];
+  };
+  const W = world.units;
+  return ['svg', { class: 'ah-world', viewBox: `0 0 ${world.w} ${world.h}`, role: 'group', 'aria-label': '세계 지도 — 대륙이나 바다를 누르면 그 단원이 열립니다' },
+    area('u1', [world.sphere], world.labelU1),
+    // 북극해(Ⅵ)는 육지 밑에 깔아야 해서 앞에 그리고, 탭 순서는 아래 Ⅵ 육지 하나만(Ⅰ→Ⅱ→…→Ⅵ)
+    area('u6', [world.arctic], null, { cls: 'is-arctic', attrs: { tabindex: '-1', 'aria-hidden': 'true' } }),
+    ...['u2', 'u3', 'u4', 'u5', 'u6'].map((k) => area(k, [W[k].d], W[k].label)),
+    ['path', { class: 'ah-wborders', d: world.borders, 'aria-hidden': 'true' }],
+    ['path', { class: 'ah-wedge', d: world.sphere, 'aria-hidden': 'true' }],
+  ];
+}
+
+/**
  * 보기 페이지 주소 #<id> → 열 단원 id | null(모음 격자). ids = 공개 단원 id 배열.
  * 깨진 %-부호(#%E0%A4%A)·constructor·__proto__ 같은 객체 키는 모두 null. hub_page.mjs 가 이 함수 원문을 페이지 스크립트에 그대로 넣는다
  * (그래서 ES5 문법·바깥 이름 없이 씀).

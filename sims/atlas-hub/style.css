@@ -70,3 +70,30 @@
   .ds-sim .ah-card { transition: none; }
   .ds-sim .ah-card.is-link:hover { transform: none; }
 }
+
+/* 통합 세계 지도(모음 맨 위) — 설계 notes/specs/2026-11-02-atlas-world-index-design.md */
+.ds-sim .ah-map { margin: 0 0 22px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
+.ds-sim .ah-world { display: block; width: 100%; height: auto; }
+.ds-sim .ah-warea { cursor: pointer; outline: none; }
+.ds-sim .ah-wshape { fill: var(--wc); transition: fill .15s; }
+.ds-sim .ah-w-u1 { --wc: #dcecf6; --wh: #b5d6ec; }
+.ds-sim .ah-w-u2 { --wc: #f3dcae; --wh: #e9bf6b; }
+.ds-sim .ah-w-u3 { --wc: #d3e4bb; --wh: #a9cb7c; }
+.ds-sim .ah-w-u4 { --wc: #f1cbb3; --wh: #e39d72; }
+.ds-sim .ah-w-u5 { --wc: #dccfe9; --wh: #b39bd2; }
+.ds-sim .ah-w-u6 { --wc: #bfe1d7; --wh: #7fc2ae; }
+.ds-sim .ah-warea.is-hot .ah-wshape { fill: var(--wh); }
+.ds-sim .ah-warea.is-planned { cursor: default; }
+.ds-sim .ah-warea.is-planned .ah-wshape { fill: #ecebe6; }
+.ds-sim .ah-wborders { fill: none; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: round; pointer-events: none; }
+.ds-sim .ah-wedge { fill: none; stroke: #9fb8c8; stroke-width: 1; pointer-events: none; }
+.ds-sim .ah-wlabel { font-size: 15px; font-weight: 800; fill: var(--ink); paint-order: stroke; stroke: rgba(255,255,255,.85); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+.ds-sim .ah-wnum { fill: var(--accent); }
+.ds-sim .ah-warea.is-planned .ah-wlabel { fill: #9aa1a8; }
+.ds-sim .ah-warea:focus-visible .ah-wshape { stroke: var(--ink); stroke-width: 2; }
+.ds-sim .ah-card.is-hot { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+@media (max-width: 720px) {
+  .ds-sim .ah-map { padding: 6px; margin-bottom: 14px; }
+  .ds-sim .ah-wlabel { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) { .ds-sim .ah-wshape { transition: none; } }
