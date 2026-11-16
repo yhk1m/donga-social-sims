@@ -12,6 +12,7 @@
 // 규칙(EMBED_RULES.md): DOM 은 h()/s() 로만, 검색은 root 안에서만, 자료는 정적 import.
 import { createShell, addBlock } from '../../src/shared/shell.js';
 import { h, s, icon, clear } from '../../src/shared/dom.js';
+import { dongaLogo } from '../../src/shared/dongaLogo.js';
 import { renderPyramidGraph, createDefaultGraphOptions, installRoundRectPolyfill } from 'csat-chart.js';
 import {
   decodeInts, yearSlice, valuesFor, diffBands, niceMax, tickStep, fmtDelta, fmtCount, structure, collapseTop, ageLabels, total, NA,
@@ -84,6 +85,13 @@ export default function mount(root) {
   const chartBox = h('div', { class: 'pyr-chart' }, svg, tip);
   const trioBox = h('div', { class: 'pyr-trio', hidden: true });
   stage.append(head, chartBox, trioBox);
+
+  // 처음 열 때 한 번: 그래프 자리 가운데서 동아출판 CI 가 열리고 사라진다(약 1.8초).
+  // 누르기를 막지 않고(pointer-events: none) 사이드바는 처음부터 쓸 수 있다. 되풀이하지 않는다.
+  const intro = h('div', { class: 'pyr-intro', 'aria-hidden': 'true' }, dongaLogo(true));
+  chartBox.append(intro);
+  const endIntro = () => { if (!intro.isConnected) return; intro.classList.add('is-done'); setTimeout(() => intro.remove(), 350); };
+  setTimeout(endIntro, 1700);
 
   // 빗금 무늬(줄어듦)
   const hatchId = `${pid}-hatch`;
