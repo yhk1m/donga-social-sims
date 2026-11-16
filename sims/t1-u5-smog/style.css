@@ -1,0 +1,41 @@
+/* 스모그 뚜껑: 이 자료만의 꾸밈. 모든 선택자는 .ds-sim 아래 (빌드 때 .ds-t1-u5-smog 로 바뀜) */
+.ds-sim .sm-stage { background: #1d2a4c; }
+.ds-sim .sm-chip { position: absolute; left: 12px; top: 12px; display: flex; flex-direction: column; gap: 2px; pointer-events: none;
+  background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; box-shadow: var(--shadow); }
+.ds-sim .sm-chip-time { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ds-sim .sm-chip-conds { font-size: 12px; color: var(--ink-2); }
+.ds-sim .sm-death { position: absolute; left: 50%; top: 12px; transform: translateX(-60%); display: none; align-items: baseline; gap: 8px; pointer-events: none;
+  background: rgba(255,255,255,.94); border: 1px solid var(--line); border-left: 4px solid #868e96; border-radius: 0 8px 8px 0; padding: 6px 12px; box-shadow: var(--shadow); }
+.ds-sim .sm-death.sm-on { display: flex; }
+.ds-sim .sm-death.sm-hot { border-left-color: #d9480f; }
+.ds-sim .sm-death-k { font-size: 12px; color: var(--ink-2); }
+.ds-sim .sm-death-num { font-size: 18px; font-variant-numeric: tabular-nums; }
+.ds-sim .sm-death.sm-hot .sm-death-num { color: #c92a2a; }
+.ds-sim .sm-death-sub { font-size: 11px; color: var(--ink-2); }
+.ds-sim .sm-vis { position: absolute; left: 12px; top: 74px; width: 250px; pointer-events: none;
+  background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; box-shadow: var(--shadow); }
+.ds-sim .sm-vis-head { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); }
+.ds-sim .sm-vis-row { display: flex; align-items: baseline; gap: 8px; margin: 2px 0 6px; }
+.ds-sim .sm-vis-val { font-size: 17px; font-variant-numeric: tabular-nums; }
+.ds-sim .sm-vis-word { font-size: 12px; color: var(--ink); }
+.ds-sim .sm-vis-bar { height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; }
+.ds-sim .sm-vis-fill { display: block; height: 100%; width: 0; background: #2b8a3e; transition: width .2s linear; }
+.ds-sim .sm-vis-ticks { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-2); margin-top: 2px; padding-right: 22%; }
+.ds-sim .sm-model { font-size: 11px; font-weight: 600; color: #5b636d; background: #f1f3f5; border-radius: 4px; padding: 0 5px; }
+
+.ds-sim .sm-conds { display: flex; flex-direction: column; gap: 12px; }
+.ds-sim .sm-lock { display: none; margin: 0; font-size: 12px; color: var(--ink-2); }
+.ds-sim .sm-conds.sm-locked .sm-lock { display: block; }
+.ds-sim .sm-conds.sm-locked .ds-seg { opacity: .45; }
+.ds-sim .sm-conds .ds-seg-btn:disabled { cursor: not-allowed; }
+.ds-sim .sm-conds.sm-locked .ds-seg-btn[aria-pressed=true] { background: var(--panel); color: var(--ink-2); font-weight: 400; }
+.ds-sim .sm-h2 { margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.ds-sim .ds-stat-v.sm-bad { color: #d9480f; }
+.ds-sim .sm-chart-wrap { border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 4px; }
+.ds-sim .sm-chart { display: block; width: 100%; height: auto; }
+.ds-sim .sm-cap { font-size: 12px; color: var(--ink-2); margin: 6px 2px 0; }
+.ds-sim .sm-day-note { color: var(--ink); font-weight: 600; }
+.ds-sim .sm-em { color: var(--ink); font-weight: 700; }
+.ds-sim .sm-list { margin: 6px 0 0; padding-left: 18px; }
+.ds-sim .sm-li + .sm-li { margin-top: 3px; }
+.ds-sim .sm-src-note { word-break: keep-all; overflow-wrap: anywhere; }
