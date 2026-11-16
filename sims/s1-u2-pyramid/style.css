@@ -263,8 +263,9 @@
   80%, 100% { transform: translate(0, 0); opacity: 1; }
 }
 @keyframes pyr-logo-word {
-  0%, 45% { opacity: 0; clip-path: inset(0 50% 0 50%); }
-  100% { opacity: 1; clip-path: inset(0 0 0 0); }
+  /* 글자는 ㄷ의 오른쪽 끝과 ㅇ의 왼쪽 끝 사이만 보인다: 둘과 같은 시간, 같은 곡선으로 틈을 따라 열려 하얀 빈칸이 생기지 않는다 */
+  0%, 35% { clip-path: inset(-10px 116.87px -10px 159.22px); }
+  80%, 100% { clip-path: inset(-10px -66.63px -10px -24.28px); }
 }
 /* 움직임 줄이기: 벌어지지 않고 제자리에서 나타나기만 */
 @keyframes pyr-logo-fade { from { opacity: 0; } to { opacity: 1; } }

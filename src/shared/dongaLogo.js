@@ -12,7 +12,8 @@ const WORD = 'M303.34 169.25 303.93 168.50 303.61 166.75 300.61 162.75 299.75 16
 /** 열림 로고 SVG 요소. open=true 면 처음부터 is-open(애니메이션 재생) */
 export function dongaLogo(open = true) {
   return s('svg', { class: `dc-logo${open ? ' is-open' : ''}`, viewBox: '42 38 475.5 220', role: 'img', 'aria-label': '동아출판' },
-    s('g', { class: 'dc-logo-d' }, s('path', { d: D })),
+    // 글자를 먼저 그려 ㄷ과 ㅇ이 그 위에 오게 한다(벌어질 때 글자가 ㄷ, ㅇ 뒤에서 드러남)
     s('g', { class: 'dc-logo-word' }, s('path', { 'fill-rule': 'evenodd', d: WORD })),
+    s('g', { class: 'dc-logo-d' }, s('path', { d: D })),
     s('g', { class: 'dc-logo-o' }, s('path', { d: O })));
 }
