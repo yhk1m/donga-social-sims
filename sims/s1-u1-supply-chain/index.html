@@ -1,0 +1,19 @@
+<!-- © 2026 김용현 -->
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>공급망 끊기</title>
+</head>
+<!-- 개발 서버(npm run dev)용 미리보기 틀. 배포물은 npm run embed 가 만드는 embed/<id>.html 조각이다. -->
+<body style="margin:0">
+  <div class="ds-sim" id="root"></div>
+  <script type="module">
+    // ?scene=normal|chip|compare 로 확인용 장면 고정 가능
+    import mount from './main.js';
+    const q = new URLSearchParams(location.search);
+    mount(document.getElementById('root'), { scene: q.get('scene') });
+  </script>
+</body>
+</html>

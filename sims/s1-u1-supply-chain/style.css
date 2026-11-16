@@ -1,0 +1,186 @@
+/* © 2026 김용현 */
+/* 공급망 끊기 — 이 자료만의 스타일. 모든 선택자는 .ds-sim 으로 시작(빌드 때 .ds-s1-u1-supply-chain), 태그 선택자 없음 */
+.ds-sim {
+  --sc-flow: #2f6fb3;
+  --sc-stop: #e03131;
+  --sc-backup: #7048e8;
+  --sc-run: #2b8a3e;
+  --sc-slow: #d97706;
+}
+.ds-sim .sc-stage { display: flex; flex-direction: column; background: #f3f1ea; }
+
+/* 지도 */
+.ds-sim .sc-map { position: relative; flex: none; width: 100%; min-height: 240px; max-height: calc(100% - 330px); overflow: hidden; }
+.ds-sim .sc-svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+.ds-sim .sc-ocean { fill: #d9e8f0; }
+.ds-sim .sc-grat { fill: none; stroke: rgba(40, 80, 110, .12); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.ds-sim .sc-country { fill: #f1ece0; stroke: #c9bfa8; stroke-width: .6; vector-effect: non-scaling-stroke; transition: fill .15s; }
+.ds-sim .sc-country.sc-inv { fill: #e8dfc8; }
+.ds-sim .sc-country.sc-home { fill: #dfe9f7; }
+.ds-sim .sc-country.sc-hover { fill: #ffd8a8; stroke: #e8590c; stroke-width: 1.6; }
+.ds-sim .sc-flow { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ds-sim .sc-flow.sc-f-main { stroke: var(--sc-flow); opacity: .55; }
+.ds-sim .sc-flow.sc-f-backup { stroke: var(--sc-backup); opacity: .7; stroke-dasharray: 5 4; }
+.ds-sim .sc-flow.sc-f-stop { stroke: var(--sc-stop); opacity: .9; stroke-dasharray: 3 5; }
+.ds-sim .sc-dot { fill: var(--sc-flow); stroke: #fff; stroke-width: .8; vector-effect: non-scaling-stroke; }
+.ds-sim .sc-dot.sc-f-backup { fill: var(--sc-backup); }
+.ds-sim .sc-dot.sc-f-stop { fill: #adb5bd; }
+
+.ds-sim .sc-ov { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+.ds-sim .sc-mk { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 2; }
+.ds-sim .sc-mk[hidden] { display: none; }
+.ds-sim .sc-pt { position: absolute; left: -6px; top: -6px; width: 12px; height: 12px; box-sizing: border-box; border-radius: 50%; background: #fff; border: 3px solid var(--sc-flow); box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
+.ds-sim .sc-mk-backup .sc-pt { border-color: var(--sc-backup); left: -5px; top: -5px; width: 10px; height: 10px; }
+.ds-sim .sc-ring { position: absolute; left: -16px; top: -16px; width: 32px; height: 32px; box-sizing: border-box; border-radius: 50%; border: 2.5px solid var(--sc-stop); opacity: 0; }
+.ds-sim .sc-stopped .sc-pt { border-color: var(--sc-stop); background: #ffe3e3; }
+.ds-sim .sc-stopped .sc-ring { animation: sc-ring 1.4s ease-out infinite; }
+.ds-sim .sc-burst .sc-ring { animation: sc-ring 0.7s ease-out 3; }
+@keyframes sc-ring { from { transform: scale(.4); opacity: .9; } to { transform: scale(1.6); opacity: 0; } }
+
+.ds-sim .sc-lab { position: absolute; width: max-content; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 4px; white-space: nowrap; font-size: 12px; line-height: 1.3; background: rgba(255, 255, 255, .93); border: 1px solid var(--line); border-left: 3px solid var(--sc-flow); border-radius: 0 6px 6px 0; padding: 2px 7px; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+.ds-sim .sc-lab-n { font-weight: 700; color: var(--ink); }
+.ds-sim .sc-lab-c, .ds-sim .sc-lab-left { color: var(--ink-2); font-size: 11.5px; }
+.ds-sim .sc-lab-left { flex-basis: 100%; color: var(--sc-stop); font-weight: 700; }
+.ds-sim .sc-lab-left[hidden] { display: none; }
+.ds-sim .sc-stopped .sc-lab { border-left-color: var(--sc-stop); background: #fff5f5; }
+.ds-sim .sc-mk-backup .sc-lab { border-left-color: var(--sc-backup); }
+.ds-sim .sc-lab-r { left: 11px; top: 0; transform: translateY(-50%); }
+.ds-sim .sc-lab-l { right: 11px; top: 0; transform: translateY(-50%); }
+.ds-sim .sc-lab-t { left: 0; bottom: 11px; transform: translateX(-50%); }
+.ds-sim .sc-lab-b { left: 0; top: 11px; transform: translateX(-50%); }
+
+/* 조립 공장 */
+.ds-sim .sc-mk-factory { z-index: 4; }
+.ds-sim .sc-fac { position: absolute; left: -15px; top: -15px; width: 30px; height: 30px; box-sizing: border-box; border-radius: 8px; background: #fff; border: 2.5px solid var(--sc-run); color: var(--sc-run); display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0, 0, 0, .3); }
+.ds-sim .sc-fac-ico { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linejoin: round; }
+.ds-sim .sc-mk-factory.sc-slow .sc-fac { border-color: var(--sc-slow); color: var(--sc-slow); }
+.ds-sim .sc-mk-factory.sc-stop .sc-fac { border-color: var(--sc-stop); color: var(--sc-stop); background: #fff5f5; }
+
+/* 계기판(왼쪽 위) */
+.ds-sim .sc-hud { flex: none; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: #faf9f5; }
+.ds-sim .sc-hud-week { font-size: 20px; font-weight: 800; min-width: 4.2em; font-variant-numeric: tabular-nums; }
+.ds-sim .sc-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 14px; font-weight: 700; color: #fff; border-radius: 999px; padding: 4px 12px; font-variant-numeric: tabular-nums; }
+.ds-sim .sc-pill.sc-run { background: var(--sc-run); }
+.ds-sim .sc-pill.sc-slow { background: var(--sc-slow); }
+.ds-sim .sc-pill.sc-stop { background: var(--sc-stop); }
+.ds-sim .sc-mini { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.ds-sim .sc-hud-wait { font-size: 14px; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; font-variant-numeric: tabular-nums; }
+.ds-sim .sc-hud-wait.sc-bad { border-color: var(--sc-stop); color: var(--sc-stop); }
+.ds-sim .sc-hud-mode { margin-left: auto; font-size: 13px; color: var(--ink-2); background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; }
+.ds-sim .sc-hud-mode.sc-hud-replay { color: var(--sc-backup); font-weight: 700; background: #f3f0ff; }
+
+/* 범례(왼쪽 아래) */
+.ds-sim .sc-legend { position: absolute; left: 12px; bottom: 10px; margin: 0; padding: 6px 10px; list-style: none; display: flex; gap: 14px; font-size: 12px; color: var(--ink-2); background: rgba(255, 255, 255, .9); border: 1px solid var(--line); border-radius: 8px; pointer-events: none; }
+.ds-sim .sc-leg { display: flex; align-items: center; gap: 6px; }
+.ds-sim .sc-leg[hidden] { display: none; }
+.ds-sim .sc-leg-line { width: 30px; height: 10px; }
+.ds-sim .sc-ll { stroke-width: 2.4; }
+.ds-sim .sc-l-on { stroke: var(--sc-flow); fill: var(--sc-flow); }
+.ds-sim .sc-l-stop { stroke: var(--sc-stop); fill: #adb5bd; stroke-dasharray: 3 3; }
+.ds-sim .sc-l-backup { stroke: var(--sc-backup); fill: var(--sc-backup); stroke-dasharray: 4 3; }
+.ds-sim .sc-lc.sc-l-stop { stroke: none; }
+
+.ds-sim .sc-toast { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); z-index: 8; max-width: 70%; font-size: 14px; font-weight: 600; background: #212529; color: #fff; border-radius: 8px; padding: 8px 14px; box-shadow: 0 4px 14px rgba(0, 0, 0, .25); pointer-events: none; }
+.ds-sim .sc-toast[hidden] { display: none; }
+
+/* 아래: 사건 카드와 그래프 */
+.ds-sim .sc-bottom { flex: 1 1 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 10px; padding: 10px 12px 12px; box-sizing: border-box; border-top: 1px solid var(--line); background: #faf9f5; }
+.ds-sim .sc-cards { flex: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 10px; }
+.ds-sim .sc-cards-head { grid-column: 1 / -1; }
+.ds-sim .sc-cards-head { display: flex; align-items: baseline; gap: 10px; font-size: 13px; }
+.ds-sim .sc-cards-tip { color: var(--ink-2); font-size: 12px; }
+.ds-sim .sc-card { flex: 0 0 auto; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; padding: 6px 10px 6px 8px; background: #fff; border: 1px solid var(--line); border-left: 4px solid #e8590c; border-radius: 0 8px 8px 0; cursor: grab; touch-action: none; user-select: none; box-shadow: 0 1px 2px rgba(0, 0, 0, .05); }
+.ds-sim .sc-card:hover { background: #fff8f1; }
+.ds-sim .sc-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ds-sim .sc-card.sc-dragging { opacity: .55; }
+.ds-sim .sc-card.sc-used { cursor: default; background: #f8f9fa; border-left-color: #ced4da; }
+.ds-sim .sc-card.sc-on { border-left-color: var(--sc-stop); background: #fff5f5; }
+.ds-sim .sc-card.sc-plan { border-left-color: var(--sc-backup); background: #f8f6ff; }
+.ds-sim .sc-card-top { display: flex; align-items: center; gap: 6px; }
+.ds-sim .sc-grip { width: 14px; height: 14px; stroke: #adb5bd; fill: #adb5bd; stroke-width: 1.5; flex-shrink: 0; }
+.ds-sim .sc-used .sc-grip { visibility: hidden; }
+.ds-sim .sc-card-where { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 700; color: #c2410c; }
+.ds-sim .sc-card-title { font-size: 14px; }
+.ds-sim .sc-card-text { margin: 0; font-size: 12px; line-height: 1.4; color: var(--ink-2); }
+.ds-sim .sc-card-foot { display: flex; justify-content: space-between; gap: 6px; font-size: 12px; margin-top: auto; }
+.ds-sim .sc-card-eff { font-weight: 700; color: var(--ink); }
+.ds-sim .sc-mod { font-weight: 400; color: var(--ink-2); font-size: 11px; }
+.ds-sim .sc-card-state { color: var(--sc-stop); font-weight: 700; }
+.ds-sim .sc-plan .sc-card-state { color: var(--sc-backup); }
+.ds-sim .sc-ghost { position: absolute; left: 0; top: 0; z-index: 50; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; background: #fff; border: 2px solid #e8590c; color: #c2410c; border-radius: 8px; padding: 4px 10px; box-shadow: 0 6px 16px rgba(0, 0, 0, .2); pointer-events: none; white-space: nowrap; }
+
+.ds-sim .sc-chartbox { position: relative; flex: 1 1 0; min-width: 0; min-height: 150px; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+.ds-sim .sc-chart { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+.ds-sim .sc-ch-title { font-size: 12.5px; font-weight: 700; fill: var(--ink); }
+.ds-sim .sc-ch-note { font-size: 11px; fill: var(--ink-2); }
+.ds-sim .sc-ch-ax { font-size: 11px; fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+.ds-sim .sc-ch-grid { stroke: #eceae4; stroke-width: 1; }
+.ds-sim .sc-ch-ref { stroke: #868e96; stroke-width: 1; stroke-dasharray: 4 3; }
+.ds-sim .sc-ch-reflab { font-size: 11px; fill: var(--ink-2); }
+.ds-sim .sc-ch-bar { stroke: none; }
+.ds-sim .sc-cb-run { fill: var(--sc-flow); }
+.ds-sim .sc-cb-slow { fill: var(--sc-slow); }
+.ds-sim .sc-cb-stop { fill: var(--sc-stop); }
+.ds-sim .sc-ch-zero { font-size: 10px; font-weight: 700; fill: var(--sc-stop); }
+.ds-sim .sc-ch-area { fill: rgba(224, 49, 49, .12); stroke: none; }
+.ds-sim .sc-ch-line { fill: none; stroke: var(--sc-stop); stroke-width: 2; stroke-linejoin: round; }
+.ds-sim .sc-ch-base { fill: none; stroke: #adb5bd; stroke-width: 1.6; stroke-dasharray: 4 3; }
+.ds-sim .sc-ch-baselab { font-size: 11px; fill: #868e96; }
+.ds-sim .sc-ch-now { stroke: var(--ink-2); stroke-width: 1; opacity: .4; }
+
+/* 사이드바 */
+.ds-sim .sc-play { flex: 1.4; }
+.ds-sim .ds-btn:disabled { opacity: .45; cursor: default; }
+.ds-sim .sc-prog { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.ds-sim .sc-prog-bar { flex: 1; height: 6px; border-radius: 3px; background: #e9ecef; overflow: hidden; }
+.ds-sim .sc-prog-fill { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+.ds-sim .sc-sec-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.ds-sim .sc-model { margin-left: auto; font-size: 11px; color: var(--ink-2); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
+.ds-sim .sc-help { margin: 0 0 8px; font-size: 12px; color: var(--ink-2); line-height: 1.45; }
+.ds-sim .sc-stock { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.ds-sim .sc-stock-row { display: grid; grid-template-columns: 116px 1fr 44px; align-items: center; gap: 8px; font-size: 13px; }
+.ds-sim .sc-stock-name { white-space: nowrap; line-height: 1.3; }
+.ds-sim .sc-sn { font-weight: 700; font-size: 13px; }
+.ds-sim .sc-sc { font-size: 11px; color: var(--ink-2); }
+.ds-sim .sc-bar { position: relative; height: 12px; border-radius: 3px; background: #edf0f3; overflow: hidden; }
+.ds-sim .sc-bar-fill { display: block; height: 100%; background: var(--sc-flow); transition: width .35s; }
+/* 1주치(100대분)마다 눈금 */
+.ds-sim .sc-bar-ticks { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: repeating-linear-gradient(90deg, transparent 0, transparent calc(20% - 1px), rgba(255, 255, 255, .9) calc(20% - 1px), rgba(255, 255, 255, .9) 20%); }
+.ds-sim .sc-stock-v { font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.ds-sim .sc-low .sc-bar-fill { background: var(--sc-slow); }
+.ds-sim .sc-low .sc-stock-v { color: var(--sc-slow); font-weight: 700; }
+.ds-sim .sc-empty .sc-stock-v { color: var(--sc-stop); }
+.ds-sim .sc-empty .sc-bar { background: #ffe3e3; }
+.ds-sim .sc-cut .sc-sn { color: var(--sc-stop); }
+.ds-sim .sc-stock-target { display: block; margin-top: 6px; font-size: 12px; color: var(--ink-2); }
+
+.ds-sim .sc-stepno { font-size: 11px; font-weight: 700; color: #fff; background: var(--sc-backup); border-radius: 4px; padding: 1px 6px; }
+.ds-sim .sc-strat { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--line); border-radius: 10px; padding: 10px; transition: opacity .2s; }
+.ds-sim .sc-strat .sc-sec-head { margin-bottom: 0; }
+.ds-sim .sc-strat.sc-off .sc-choices { opacity: .55; }
+.ds-sim .sc-strat.sc-flash { animation: sc-flash 1.2s ease-out 2; }
+@keyframes sc-flash { 0% { box-shadow: 0 0 0 0 rgba(112, 72, 232, .5); } 100% { box-shadow: 0 0 0 10px rgba(112, 72, 232, 0); } }
+.ds-sim .sc-choices { display: flex; flex-direction: column; gap: 6px; }
+.ds-sim .sc-choice { font: inherit; text-align: left; display: flex; flex-direction: column; gap: 1px; padding: 7px 10px; border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 0 8px 8px 0; background: #fff; cursor: pointer; color: var(--ink); }
+.ds-sim .sc-choice-n { font-size: 14px; }
+.ds-sim .sc-choice-d { font-size: 12px; color: var(--ink-2); line-height: 1.4; }
+.ds-sim .sc-choice:hover { background: #f8f6ff; }
+.ds-sim .sc-choice[aria-checked=true] { border-color: #d0bfff; border-left-color: var(--sc-backup); background: #f3f0ff; }
+.ds-sim .sc-choice[aria-checked=true] .sc-choice-n { color: var(--sc-backup); }
+.ds-sim .sc-rec { margin: 0; font-size: 12px; color: var(--ink-2); line-height: 1.45; }
+.ds-sim .sc-replay { background: var(--sc-backup); border-color: var(--sc-backup); }
+
+.ds-sim .sc-cmp[hidden] { display: none; }
+.ds-sim .sc-table { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.ds-sim .sc-th, .ds-sim .sc-td { padding: 5px 4px; border-bottom: 1px solid var(--line); text-align: right; font-weight: 400; }
+.ds-sim .sc-th { font-size: 11.5px; color: var(--ink-2); vertical-align: bottom; line-height: 1.25; }
+.ds-sim .sc-td-k { text-align: left; font-weight: 700; }
+.ds-sim .sc-th-k { text-align: left; }
+.ds-sim .sc-table .sc-tr-cur { background: #f3f0ff; }
+.ds-sim .sc-tr-cur .sc-td-k { color: var(--sc-backup); }
+.ds-sim .sc-cmp .sc-help { margin: 6px 0 0; }
+.ds-sim .sc-note-b { color: var(--ink); }
+
+.ds-sim .sc-fac.sc-fac-sm { position: static; width: 20px; height: 20px; border-width: 2px; border-radius: 5px; box-shadow: none; }
+.ds-sim .sc-fac-sm .sc-fac-ico { width: 13px; height: 13px; }
+.ds-sim .sc-cmp.sc-flash { animation: sc-flash 1.2s ease-out 2; border-radius: 8px; }
