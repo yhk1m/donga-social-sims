@@ -1,0 +1,68 @@
+/* © 2026 김용현 */
+/* 줄어드는 지도. 모든 선택자는 .ds-sim 으로 시작, 태그 선택자 금지 */
+.ds-sim .tm-stage { background: #eef3f6; }
+.ds-sim .tm-map { display: block; width: 100%; height: 100%; --u: 1; }
+.ds-sim .tm-sea { fill: #eef3f6; }
+.ds-sim .tm-land { fill: #fbfaf6; stroke: none; }
+.ds-sim .tm-border { fill: none; stroke: #c9c5b9; stroke-width: calc(0.8px * var(--u)); stroke-linejoin: round; }
+.ds-sim .tm-coast { fill: none; stroke: #7d8a94; stroke-width: calc(1px * var(--u)); stroke-linejoin: round; }
+.ds-sim .tm-ghost { fill: none; stroke: #9aa7b1; stroke-width: calc(1px * var(--u)); stroke-dasharray: calc(3px * var(--u)) calc(3px * var(--u)); opacity: 0.8; transition: opacity 0.2s; }
+.ds-sim .tm-ghost.is-hidden { opacity: 0; }
+.ds-sim .tm-rings { transition: opacity 0.3s; }
+.ds-sim .tm-rings.is-hidden { opacity: 0; transition: none; }
+.ds-sim .tm-ring { fill: none; stroke: #1f6feb; stroke-opacity: 0.22; stroke-width: calc(1px * var(--u)); }
+.ds-sim .tm-ring.is-major { stroke-opacity: 0.45; }
+.ds-sim .tm-ring-label { fill: #1f6feb; font-weight: 700; paint-order: stroke; stroke: #eef3f6; stroke-width: calc(3px * var(--u)); }
+
+.ds-sim .tm-city { cursor: pointer; }
+.ds-sim .tm-cin { transform: scale(var(--u)); }
+.ds-sim .tm-dot { fill: #d9480f; stroke: #fff; stroke-width: 1.5px; transition: fill 0.2s; }
+.ds-sim .tm-seoul { fill: #1d2126; stroke: #fff; stroke-width: 1.5px; }
+.ds-sim .tm-label { font-size: 13px; font-weight: 600; fill: #1d2126; paint-order: stroke; stroke: #fbfaf6; stroke-width: 3px; stroke-linejoin: round; }
+.ds-sim .tm-city.is-seoul .tm-label { font-weight: 800; font-size: 15px; }
+.ds-sim .tm-city.is-off .tm-dot { fill: #fff; stroke: #a9aeb4; }
+.ds-sim .tm-city.is-off .tm-label { fill: #a9aeb4; }
+.ds-sim .tm-city.is-hover .tm-dot { fill: #1f6feb; }
+.ds-sim .tm-city.is-hover.is-off .tm-dot { fill: #fff; stroke: #1f6feb; }
+
+.ds-sim .tm-cap { position: absolute; left: 16px; top: 14px; background: rgba(255,255,255,0.92); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; max-width: 360px; pointer-events: none; }
+.ds-sim .tm-cap-title { font-size: 18px; font-weight: 800; }
+.ds-sim .tm-cap-sub { font-size: 13px; color: var(--ink-2); }
+
+.ds-sim .tm-tip { position: absolute; z-index: 20; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 10px 12px; min-width: 210px; pointer-events: none; font-size: 13px; }
+.ds-sim .tm-tip-name { font-size: 16px; font-weight: 800; }
+.ds-sim .tm-tip-km { color: var(--ink-2); margin-bottom: 6px; }
+.ds-sim .tm-tip-table { border-collapse: collapse; width: 100%; }
+.ds-sim .tm-tip-k { text-align: left; font-weight: 500; color: var(--ink-2); padding: 3px 12px 3px 0; }
+.ds-sim .tm-tip-v { text-align: right; font-weight: 700; padding: 3px 0; font-variant-numeric: tabular-nums; }
+.ds-sim .tm-tip-v.is-none { color: #a9aeb4; font-weight: 500; }
+.ds-sim .tm-tip-row.is-cur .tm-tip-k, .ds-sim .tm-tip-row.is-cur .tm-tip-v { color: var(--accent); }
+.ds-sim .tm-tip-note { margin-top: 6px; color: var(--ink-2); font-size: 12px; }
+
+.ds-sim .tm-sec { display: flex; flex-direction: column; gap: 8px; }
+.ds-sim .tm-hint { margin: 0; font-size: 12.5px; color: var(--ink-2); }
+.ds-sim .tm-modes { display: flex; flex-direction: column; gap: 4px; }
+.ds-sim .tm-mode { font: inherit; display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); cursor: pointer; text-align: left; box-shadow: none; }
+.ds-sim .tm-mode:hover { background: #f4f3ee; }
+.ds-sim .tm-mode[aria-pressed=true] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); border-radius: 0 8px 8px 0; }
+.ds-sim .tm-mode-name { font-weight: 700; font-size: 15px; }
+.ds-sim .tm-mode-time { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.ds-sim .tm-mode[aria-pressed=true] .tm-mode-time { color: var(--accent); }
+
+.ds-sim .tm-bars { display: flex; flex-direction: column; gap: 6px; }
+.ds-sim .tm-bar-row { display: grid; grid-template-columns: 46px 1fr 92px; align-items: center; gap: 8px; font-size: 13px; }
+.ds-sim .tm-bar-k { color: var(--ink-2); }
+.ds-sim .tm-bar-track { height: 10px; background: #f1f0eb; display: block; }
+.ds-sim .tm-bar { display: block; height: 100%; background: var(--accent); }
+.ds-sim .tm-bar-walk { background: #8a6d3b; }
+.ds-sim .tm-bar-v { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.ds-sim .tm-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; font-size: 13px; }
+.ds-sim .tm-lg-seoul, .ds-sim .tm-lg-dot, .ds-sim .tm-lg-off, .ds-sim .tm-lg-ring { display: inline-block; width: 12px; height: 12px; margin-right: 8px; vertical-align: -1px; box-sizing: border-box; }
+.ds-sim .tm-lg-seoul { background: #1d2126; }
+.ds-sim .tm-lg-dot { background: #d9480f; border-radius: 50%; }
+.ds-sim .tm-lg-off { background: #fff; border: 2px solid #a9aeb4; border-radius: 50%; }
+.ds-sim .tm-lg-ring { border: 1.5px solid rgba(31,111,235,0.6); border-radius: 50%; }
+
+.ds-sim .tm-src { font-size: 12px; color: var(--ink-2); }
+.ds-sim .tm-src-list { margin: 6px 0 0; padding-left: 16px; display: flex; flex-direction: column; gap: 4px; }

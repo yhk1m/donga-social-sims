@@ -1,0 +1,5 @@
+// © 2026 김용현
+// 자동 생성: scripts/s1-u1-time-map/build_map.mjs (손으로 고치지 말 것)
+// 서울시청 → 각 도시 자동차 경로(OSRM 공개 시험 서버, OpenStreetMap 도로망, 막힘 없는 상태). 받은 날: 2026-11-16
+// min = 경로 시간(분), km = 도로 거리. 제주·서귀포 값은 배(카페리) 구간이 섞인 값이라 화면에서 쓰지 않는다.
+export default {"incheon":{"min":33,"km":32},"suwon":{"min":40,"km":41},"chuncheon":{"min":89,"km":95},"wonju":{"min":94,"km":109},"gangneung":{"min":178,"km":216},"sokcho":{"min":162,"km":193},"chungju":{"min":108,"km":127},"cheongju":{"min":107,"km":137},"cheonan":{"min":78,"km":96},"hongseong":{"min":112,"km":135},"sejong":{"min":114,"km":144},"daejeon":{"min":127,"km":167},"gunsan":{"min":155,"km":208},"jeonju":{"min":163,"km":212},"gwangju":{"min":222,"km":297},"mokpo":{"min":252,"km":352},"suncheon":{"min":246,"km":327},"yeosu":{"min":266,"km":349},"andong":{"min":192,"km":236},"gumi":{"min":184,"km":240},"daegu":{"min":215,"km":282},"pohang":{"min":250,"km":331},"gyeongju":{"min":252,"km":331},"ulsan":{"min":282,"km":371},"busan":{"min":292,"km":393},"changwon":{"min":274,"km":359},"jinju":{"min":256,"km":329},"tongyeong":{"min":288,"km":379},"jeju":{"min":495,"km":539},"seogwipo":{"min":546,"km":586}};
