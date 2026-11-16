@@ -19,7 +19,7 @@ export function createShell(root, id) {
   const panel = h('aside', { class: 'ds-panel' },
     h('div', { class: 'ds-head ds-block' },
       h('h1', { class: 'ds-title' }, meta?.title ?? id),
-      h('span', { class: 'ds-src' }, `${book?.title ?? ''} ${meta?.unit ?? ''}${meta?.page ? ` · ${meta.page}쪽` : ''}`),
+      h('span', { class: 'ds-src' }, `${book?.title ?? ''} ${meta?.unit ?? ''}${meta?.page ? `, ${meta.page}쪽` : ''}`),
     ),
   );
   // replaceChildren 금지: 래퍼 안의 <style>·<script> 가 지워진다
