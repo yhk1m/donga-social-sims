@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>개발 미리보기</title>
+</head>
+<!-- 개발 서버(npm run dev)용 미리보기 틀. 배포물은 npm run embed 가 만드는 embed/<id>.html 조각이다. -->
+<body style="margin:0">
+  <div class="ds-sim" id="root"></div>
+  <script type="module">
+    import mount from './main.js';
+    mount(document.getElementById('root'));
+  </script>
+</body>
+</html>

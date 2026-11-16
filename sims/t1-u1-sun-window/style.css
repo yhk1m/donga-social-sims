@@ -1,0 +1,93 @@
+/* © 2026 김용현 */
+/* 우리 집 창은 어느 쪽? 전용 스타일. 모든 선택자는 .ds-sim 으로 시작(빌드 때 .ds-t1-u1-sun-window 로 바뀜), 클래스만 사용 */
+.ds-sim { --sw-sun: #f5a524; --sw-lit: #f08c00; --sw-day: #ffe9b0; --sw-night: #2b3a4d; }
+
+.ds-sim .sw-stage { background: #a7cbe8; }
+
+.ds-sim .sw-hint {
+  position: absolute; top: 12px; left: 12px; z-index: 3;
+  font-size: 12px; color: #1d2126; background: rgba(255, 255, 255, .78);
+  border: 1px solid rgba(0, 0, 0, .08); border-radius: 6px; padding: 4px 8px; pointer-events: none;
+}
+.ds-sim .sw-status {
+  position: absolute; top: 12px; right: 12px; z-index: 3;
+  font-size: 14px; color: #1d2126; background: rgba(255, 255, 255, .9);
+  border: 1px solid rgba(0, 0, 0, .08); border-radius: 8px; padding: 6px 10px; pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+.ds-sim .sw-loading {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 4;
+  font-size: 14px; background: rgba(255, 255, 255, .92); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px;
+}
+.ds-sim .sw-loading[hidden] { display: none; }
+.ds-sim .sw-loading-warn { top: auto; bottom: 56px; transform: translateX(-50%); color: var(--warn); }
+.ds-sim .sw-attrib {
+  position: absolute; right: 8px; bottom: 6px; z-index: 3; text-align: right;
+  font-size: 11px; line-height: 1.35; color: #2b2f35; background: rgba(255, 255, 255, .72);
+  border-radius: 4px; padding: 2px 6px; pointer-events: none;
+}
+
+/* 3D 이름표 */
+.ds-sim .sw-l3d {
+  font-family: var(--font); font-size: 13px; font-weight: 700; color: #1d2126; white-space: nowrap; pointer-events: none;
+  background: rgba(255, 255, 255, .85); border: 1px solid rgba(0, 0, 0, .12); border-radius: 6px; padding: 1px 6px;
+}
+.ds-sim .sw-l3d-n { color: #fff; background: #d6336c; border-color: #d6336c; }
+.ds-sim .sw-l3d-dir { background: rgba(29, 33, 38, .72); color: #fff; border-color: transparent; }
+.ds-sim .sw-l3d-sun { color: #7a4b00; background: #ffe08a; border-color: #f5a524; }
+.ds-sim .sw-l3d-hour { font-size: 11px; font-weight: 600; background: rgba(255, 244, 214, .9); color: #6b4a00; padding: 0 4px; }
+.ds-sim .sw-l3d-place { font-size: 12px; font-weight: 600; background: rgba(255, 255, 255, .8); }
+.ds-sim .sw-l3d-hut { background: #1d2126; color: #fff; }
+
+/* 사이드바 */
+.ds-sim .sw-ticks { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-2); margin-top: -2px; }
+.ds-sim .sw-time-row { display: flex; gap: 8px; align-items: center; }
+.ds-sim .sw-time-row > .ds-range { flex: 1; }
+.ds-sim .sw-play { padding: 6px 10px; flex: none; }
+.ds-sim .sw-daybar { display: block; width: 100%; height: auto; }
+.ds-sim .sw-db-night { fill: var(--sw-night); }
+.ds-sim .sw-db-day { fill: var(--sw-day); }
+.ds-sim .sw-db-lit { fill: var(--sw-lit); }
+.ds-sim .sw-db-now { stroke: #d6336c; stroke-width: 2; }
+.ds-sim .sw-db-tick { stroke: var(--ink-2); stroke-width: 1; }
+.ds-sim .sw-db-text { font-size: 8px; fill: var(--ink-2); font-family: var(--font); }
+.ds-sim .sw-legend { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); flex-wrap: wrap; }
+.ds-sim .sw-key { display: inline-block; width: 12px; height: 10px; border-radius: 2px; }
+.ds-sim .sw-key + .sw-key, .ds-sim .sw-key-lit { margin-left: 6px; }
+.ds-sim .sw-key-day { background: var(--sw-day); border: 1px solid #e3cf95; }
+.ds-sim .sw-key-lit { background: var(--sw-lit); }
+
+.ds-sim .sw-home { justify-content: flex-start; text-align: left; gap: 10px; line-height: 1.35; }
+.ds-sim .sw-switch {
+  flex: none; width: 34px; height: 20px; border-radius: 10px; background: #c9ccd1; position: relative; transition: background .15s;
+}
+.ds-sim .sw-switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .15s;
+}
+.ds-sim .sw-home[aria-pressed=true] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.ds-sim .sw-home[aria-pressed=true] .sw-switch { background: var(--accent); }
+.ds-sim .sw-home[aria-pressed=true] .sw-switch::after { left: 16px; }
+
+.ds-sim .sw-result { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--line); border-left: 4px solid var(--sw-lit); border-radius: 0 8px 8px 0; padding: 10px 12px; }
+.ds-sim .sw-hours { margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.ds-sim .sw-hours-k { font-size: 13px; color: var(--ink-2); }
+.ds-sim .sw-hours-v { font-size: 26px; line-height: 1.2; color: var(--sw-lit); font-variant-numeric: tabular-nums; }
+.ds-sim .sw-hours-v.sw-zero { color: var(--ink-2); }
+.ds-sim .sw-hours-span { font-size: 13px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ds-sim .sw-now { margin: 0; font-size: 14px; color: var(--ink-2); }
+.ds-sim .sw-now-lit { color: #b35c00; font-weight: 700; }
+.ds-sim .sw-note { margin: 0; }
+.ds-sim .sw-b { color: var(--ink); font-weight: 700; }
+.ds-sim .sw-src { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--ink-2); }
+.ds-sim .sw-src-list { margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 3px; }
+
+.ds-sim .sw-legend3d {
+  position: absolute; left: 12px; bottom: 10px; z-index: 3; display: flex; flex-direction: column; gap: 3px;
+  font-size: 12px; color: #1d2126; background: rgba(255, 255, 255, .85); border: 1px solid rgba(0, 0, 0, .08);
+  border-radius: 8px; padding: 6px 10px; pointer-events: none;
+}
+.ds-sim .sw-lg { display: flex; align-items: center; gap: 8px; }
+.ds-sim .sw-lg-line { display: inline-block; width: 22px; height: 0; border-top: 3px solid #ffc533; }
+.ds-sim .sw-lg-hidden { border-top-color: #8d8d8d; }
+.ds-sim .sw-lg-ridge { border-top: 2px solid #7a5a3a; }
+.ds-sim .sw-lg-box { display: inline-block; width: 22px; height: 10px; background: #ffd36b; border: 1px solid #e0a020; box-sizing: border-box; }
