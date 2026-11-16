@@ -263,9 +263,10 @@
   80%, 100% { transform: translate(0, 0); opacity: 1; }
 }
 @keyframes pyr-logo-word {
-  /* 글자는 ㄷ의 오른쪽 끝과 ㅇ의 왼쪽 끝 사이만 보인다: 둘과 같은 시간, 같은 곡선으로 틈을 따라 열려 하얀 빈칸이 생기지 않는다 */
-  0%, 35% { clip-path: inset(-10px 116.87px -10px 159.22px); }
-  80%, 100% { clip-path: inset(-10px -66.63px -10px -24.28px); }
+  /* 글자는 ㄷ의 오른쪽 끝과 ㅇ의 왼쪽 끝 사이만 보인다: 둘과 같은 시간, 같은 곡선으로 틈을 따라 열려 하얀 빈칸이 생기지 않는다.
+     아래쪽도 내려가는 ㄷ의 밑변을 따라가서 붙은 D 밖으로 글자가 삐져나오지 않는다 */
+  0%, 35% { clip-path: inset(-10px 116.87px 30.65px 159.22px); }
+  80%, 100% { clip-path: inset(-10px -66.63px -10.6px -24.28px); }
 }
 /* 움직임 줄이기: 벌어지지 않고 제자리에서 나타나기만 */
 @keyframes pyr-logo-fade { from { opacity: 0; } to { opacity: 1; } }
