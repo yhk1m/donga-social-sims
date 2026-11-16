@@ -1,77 +1,234 @@
 /* © 2026 김용현 */
-/* 인구 피라미드 비교 전용 스타일. 규칙: 모든 선택자는 .ds-sim 으로 시작, 클래스만(태그 선택자 금지) */
-.ds-sim .pyr-stage { display: flex; flex-direction: column; background: #ffffff; }
-.ds-sim .pyr-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 16px 22px 8px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
-.ds-sim .pyr-title { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
-.ds-sim .pyr-sub { font-size: 14px; color: var(--ink-2); }
-.ds-sim .pyr-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--ink); }
+/* 인구 피라미드 비교 전용 스타일, 동아 디자인 적용판.
+   규칙: 모든 선택자는 .ds-sim 으로 시작(빌드 때 .ds-<자료id>), 클래스만(태그 선택자 금지), !important·fixed 금지, z-index ≤ 100.
+   색은 동아 디자인 토큰(동아출판 CI: 주색 빨강, 보조색 먹)으로만 쓴다. 공통 theme.css 의 변수와 부품을 이 자료 안에서만 덮어쓴다. */
+
+/* ===== 동아 디자인 토큰 (라이트) ===== */
+.ds-sim {
+  --donga-red: #ec1940;
+  --accent: #d4153a;            /* 주색: 주요 버튼, 선택 상태 */
+  --on-accent: #ffffff;
+  --gray-100: #f1f3f6; --gray-200: #e4e7ec; --gray-400: #a9b1bd; --gray-500: #868f9c;
+  --gray-600: #646d7a; --gray-700: #4a5260; --gray-900: #1a1e25;
+  --surface: #ffffff;
+  --fill-subtle: var(--gray-100);
+  --text-strong: var(--gray-900);
+  --text-muted: var(--gray-600);
+  --icon-muted: var(--gray-500);
+  --text-disabled: var(--gray-400);
+  --line-soft: rgba(16, 24, 40, 0.08);
+  --line-strong: rgba(16, 24, 40, 0.16);
+  --focus: #2a64d4;
+  /* 자료 색: 남자 파랑, 여자 청록 (빨강 주색, 상태색과 따로) */
+  --data-m: #2563c9;
+  --data-f: #0f7f86;
+  --data-m-weak: rgba(37, 99, 201, 0.14);
+  --data-f-weak: rgba(15, 127, 134, 0.14);
+  --pyr-canvas-m: #2563c9;      /* 세 나라 캔버스는 늘 흰 바탕이라 라이트 값 고정 */
+  --pyr-canvas-f: #0f7f86;
+  --r-control: 10px; --r-card: 16px;
+  --touch: 44px;
+
+  /* 공통 theme.css 변수를 동아 디자인 값으로 */
+  --bg: var(--gray-100);
+  --panel: var(--surface);
+  --ink: var(--text-strong);
+  --ink-2: var(--text-muted);
+  --line: var(--line-soft);
+  --accent-soft: color-mix(in oklch, var(--accent) 9%, var(--surface));
+  --shadow: 0 4px 16px rgba(16, 24, 40, 0.08);
+  --font: Pretendard, 'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+
+  color-scheme: light;
+  font-size: 16px;
+  word-break: keep-all;
+  -webkit-font-smoothing: antialiased;
+  /* 흰 면 두 장(무대, 사이드바)을 바탕색 위에 띄운다. 선 대신 바탕색 차이로 나눔 */
+  gap: 12px;
+  padding: 12px;
+  height: 100dvh;
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+
+/* ===== 다크 ===== */
+@media (prefers-color-scheme: dark) {
+  .ds-sim:not([data-theme="light"]) {
+    --accent: #ff5a72; --on-accent: #2a0610;
+    --bg: #121418; --surface: #1b1e24; --fill-subtle: #252930;
+    --text-strong: #eef0f3; --text-muted: #8e97a4; --icon-muted: #6b7380; --text-disabled: #5d6571;
+    --line-soft: rgba(255, 255, 255, 0.08); --line-strong: rgba(255, 255, 255, 0.16); --focus: #7aa5ff;
+    --data-m: #7aa5ff; --data-f: #4fc9cf;
+    --data-m-weak: rgba(122, 165, 255, 0.16); --data-f-weak: rgba(79, 201, 207, 0.16);
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+  }
+}
+.ds-sim[data-theme="dark"] {
+  --accent: #ff5a72; --on-accent: #2a0610;
+  --bg: #121418; --surface: #1b1e24; --fill-subtle: #252930;
+  --text-strong: #eef0f3; --text-muted: #8e97a4; --icon-muted: #6b7380; --text-disabled: #5d6571;
+  --line-soft: rgba(255, 255, 255, 0.08); --line-strong: rgba(255, 255, 255, 0.16); --focus: #7aa5ff;
+  --data-m: #7aa5ff; --data-f: #4fc9cf;
+  --data-m-weak: rgba(122, 165, 255, 0.16); --data-f-weak: rgba(79, 201, 207, 0.16);
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+.ds-sim[data-theme="light"] { color-scheme: light; }
+
+/* ===== 공통 셸 덮어쓰기 ===== */
+.ds-sim .ds-stage { background: var(--surface); border-radius: var(--r-card); }
+.ds-sim .ds-panel { background: var(--surface); border-left: 0; border-radius: var(--r-card); padding: 20px; gap: 24px; }
+.ds-sim .ds-head { border-bottom: 0; padding-bottom: 0; }
+.ds-sim .ds-title { font-size: 1.25rem; letter-spacing: -0.025em; color: var(--text-strong); }
+.ds-sim .ds-src { font-size: 0.8125rem; color: var(--text-muted); }
+.ds-sim .ds-h2 { font-size: 0.875rem; font-weight: 600; color: var(--text-muted); }
+.ds-sim .ds-ctl { gap: 8px; }
+.ds-sim .ds-label { font-size: 0.875rem; color: var(--text-muted); align-items: baseline; }
+.ds-sim .ds-out { color: var(--text-strong); }
+.ds-sim .ds-range { accent-color: var(--accent); min-height: var(--touch); }
+.ds-sim .ds-btn {
+  min-height: var(--touch); padding: 0 14px; border: 0; border-radius: var(--r-control);
+  background: var(--fill-subtle); color: var(--text-strong); font-size: 0.9375rem; font-weight: 500;
+  transition: background-color 150ms cubic-bezier(0.35, 0, 0.35, 1), transform 150ms cubic-bezier(0.35, 0, 0.35, 1);
+}
+.ds-sim .ds-btn:hover { background: color-mix(in oklch, var(--fill-subtle) 85%, var(--text-strong)); }
+.ds-sim .ds-btn:active { transform: scale(0.97); }
+.ds-sim .ds-btn.ds-primary { background: var(--accent); color: var(--on-accent); font-weight: 600; min-height: 48px; }
+.ds-sim .ds-btn.ds-primary:hover { filter: none; background: color-mix(in oklch, var(--accent) 86%, black); }
+.ds-sim .ds-seg { border: 0; border-radius: var(--r-control); background: var(--fill-subtle); padding: 3px; gap: 2px; }
+.ds-sim .ds-seg-btn {
+  min-height: calc(var(--touch) - 6px); border-radius: calc(var(--r-control) - 3px); background: transparent;
+  color: var(--text-muted); font-size: 0.875rem; font-weight: 500;
+}
+.ds-sim .ds-seg-btn + .ds-seg-btn { border-left: 0; }
+.ds-sim .ds-seg-btn[aria-pressed=true] { background: var(--surface); color: var(--text-strong); font-weight: 600; box-shadow: 0 1px 4px rgba(16, 24, 40, 0.08); }
+.ds-sim .ds-note { background: var(--fill-subtle); border: 0; border-radius: var(--r-control); color: var(--text-muted); }
+.ds-sim .ds-icon { width: 18px; height: 18px; }
+.ds-sim :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ===== 무대 ===== */
+.ds-sim .pyr-stage { display: flex; flex-direction: column; }
+.ds-sim .pyr-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px 20px; padding: 20px 24px 4px; flex-wrap: wrap; }
+.ds-sim .pyr-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; color: var(--text-strong); line-height: 1.35; }
+.ds-sim .pyr-sub { font-size: 0.9375rem; color: var(--text-muted); }
+.ds-sim .pyr-legend { display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: 0.875rem; color: var(--text-strong); }
 .ds-sim .pyr-key { display: inline-flex; align-items: center; gap: 6px; }
-.ds-sim .pyr-sw { display: inline-block; width: 22px; height: 12px; box-sizing: border-box; }
-.ds-sim .pyr-sw-a { background: rgba(59, 111, 182, .16); border: 1.5px solid #3b6fb6; }
-.ds-sim .pyr-sw-b { background: #3b6fb6; }
-.ds-sim .pyr-sw-more { background: #f08c00; }
-.ds-sim .pyr-sw-svg { width: 22px; height: 12px; border: 1px solid #8a9099; box-sizing: border-box; }
+.ds-sim .pyr-sw { display: inline-block; width: 20px; height: 12px; border-radius: 2px; box-sizing: border-box; }
+.ds-sim .pyr-sw-m { background: var(--data-m); }
+.ds-sim .pyr-sw-f { background: var(--data-f); }
+.ds-sim .pyr-sw-a { background: transparent; border: 1.5px solid var(--text-muted); }
+.ds-sim .pyr-sw-b { background: var(--text-muted); }
+.ds-sim .pyr-sw-more { background: var(--accent); }
+.ds-sim .pyr-sw-svg { width: 20px; height: 12px; border: 1px solid var(--icon-muted); border-radius: 2px; box-sizing: border-box; }
 
-.ds-sim .pyr-chart { position: relative; flex: 1; min-height: 0; }
-.ds-sim .pyr-chart[hidden], .ds-sim .pyr-trio[hidden], .ds-sim .pyr-tip[hidden], .ds-sim .pyr-field[hidden], .ds-sim .ds-ctl[hidden], .ds-sim .pyr-small[hidden] { display: none; }
-.ds-sim .pyr-svg { display: block; width: 100%; height: 100%; font-family: var(--font); }
+.ds-sim .pyr-chart { position: relative; flex: 1; min-height: 0; margin: 0 8px 8px; }
+.ds-sim .pyr-chart[hidden], .ds-sim .pyr-trio[hidden], .ds-sim .pyr-tip[hidden], .ds-sim .pyr-field[hidden],
+.ds-sim .ds-ctl[hidden], .ds-sim .pyr-small[hidden], .ds-sim .pyr-toggles[hidden] { display: none; }
+.ds-sim .pyr-svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; font-family: var(--font); }
 
-.ds-sim .pyr-gridline { stroke: #e6e4de; stroke-width: 1; stroke-dasharray: 3 3; }
-.ds-sim .pyr-axis { stroke: #1d2126; stroke-width: 1.2; }
-.ds-sim .pyr-tick { font-size: 12px; fill: #5b636d; text-anchor: middle; }
-.ds-sim .pyr-unit { font-size: 12px; fill: #5b636d; text-anchor: start; }
+.ds-sim .pyr-gridline { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 2 4; }
+.ds-sim .pyr-axis { stroke: var(--text-muted); stroke-width: 1.2; }
+.ds-sim .pyr-tick { font-size: 13px; fill: var(--text-muted); text-anchor: middle; font-variant-numeric: tabular-nums; }
+.ds-sim .pyr-unit { font-size: 13px; fill: var(--text-muted); text-anchor: start; }
 .ds-sim .pyr-unit-c { text-anchor: middle; }
-.ds-sim .pyr-sex { font-size: 15px; font-weight: 700; }
-.ds-sim .pyr-sex-m { fill: #2d5c9e; text-anchor: end; }
-.ds-sim .pyr-sex-f { fill: #b03a55; text-anchor: start; }
-.ds-sim .pyr-age { font-size: 12px; fill: #1d2126; text-anchor: middle; dominant-baseline: central; }
-.ds-sim .pyr-empty { font-size: 18px; fill: #5b636d; text-anchor: middle; }
+.ds-sim .pyr-unit-r { text-anchor: end; }
+.ds-sim .pyr-sex { font-size: 15px; font-weight: 600; }
+.ds-sim .pyr-sex-m { fill: var(--data-m); text-anchor: end; }
+.ds-sim .pyr-sex-f { fill: var(--data-f); text-anchor: start; }
+.ds-sim .pyr-cap-year { font-size: 17px; font-weight: 700; fill: var(--text-strong); text-anchor: middle; }
+.ds-sim .pyr-age { font-size: 13px; fill: var(--text-strong); text-anchor: middle; dominant-baseline: central; font-variant-numeric: tabular-nums; }
+.ds-sim .pyr-empty { font-size: 18px; fill: var(--text-muted); text-anchor: middle; }
 
 /* 이전 해: 옅은 채움 + 테두리 */
-.ds-sim .pyr-a-m { fill: rgba(59, 111, 182, .14); stroke: #3b6fb6; stroke-width: 1.2; }
-.ds-sim .pyr-a-f { fill: rgba(200, 80, 106, .14); stroke: #c8506a; stroke-width: 1.2; }
+.ds-sim .pyr-a-m { fill: var(--data-m-weak); stroke: var(--data-m); stroke-width: 1.2; }
+.ds-sim .pyr-a-f { fill: var(--data-f-weak); stroke: var(--data-f); stroke-width: 1.2; }
 /* 이후 해: 진한 막대 */
-.ds-sim .pyr-b-m { fill: #3b6fb6; }
-.ds-sim .pyr-b-f { fill: #c8506a; }
-.ds-sim .pyr-more { fill: #f08c00; }
+.ds-sim .pyr-b-m { fill: var(--data-m); }
+.ds-sim .pyr-b-f { fill: var(--data-f); }
+/* 늘어남: 이 자료의 핵심 강조 하나라 주색을 쓴다 */
+.ds-sim .pyr-more { fill: var(--accent); }
 .ds-sim .pyr-less { stroke: none; }
 .ds-sim .pyr-a-edge { fill: none; stroke-width: 1.2; }
-.ds-sim .pyr-a-m-edge { stroke: #3b6fb6; }
-.ds-sim .pyr-a-f-edge { stroke: #c8506a; }
+.ds-sim .pyr-a-m-edge { stroke: var(--data-m); }
+.ds-sim .pyr-a-f-edge { stroke: var(--data-f); }
 .ds-sim .pyr-hatch-bg { fill: none; }
-.ds-sim .pyr-hatch-line { stroke: #6b7280; stroke-width: 1.6; }
-.ds-sim .pyr-dlabel { font-size: 11px; font-weight: 700; dominant-baseline: central; font-variant-numeric: tabular-nums; }
-.ds-sim .pyr-dl-more { fill: #b86400; color: #b86400; }
-.ds-sim .pyr-dl-less { fill: #4b5563; color: #4b5563; }
+.ds-sim .pyr-hatch-line { stroke: var(--icon-muted); stroke-width: 1.6; }
+.ds-sim .pyr-dlabel { font-size: 12px; font-weight: 600; dominant-baseline: central; font-variant-numeric: tabular-nums; }
+.ds-sim .pyr-dl-more { fill: var(--accent); color: var(--accent); }
+.ds-sim .pyr-dl-less { fill: var(--text-muted); color: var(--text-muted); }
 .ds-sim .pyr-hit { fill: transparent; }
-.ds-sim .pyr-row-on .pyr-age { font-weight: 800; }
-.ds-sim .pyr-row-on .pyr-b { filter: brightness(1.1); }
+.ds-sim .pyr-row-on .pyr-age { font-weight: 700; }
+.ds-sim .pyr-row-on .pyr-hit { fill: var(--line-soft); }
 
-.ds-sim .pyr-tip { position: absolute; z-index: 5; pointer-events: none; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 8px 12px; font-size: 13px; min-width: 200px; }
-.ds-sim .pyr-tip-t { font-weight: 700; margin-bottom: 4px; }
+.ds-sim .pyr-tip {
+  position: absolute; z-index: 5; pointer-events: none; background: var(--surface); border-radius: 12px;
+  box-shadow: var(--shadow); padding: 10px 14px; font-size: 0.875rem; min-width: 220px; color: var(--text-strong);
+}
+.ds-sim[data-theme="dark"] .pyr-tip { background: #252930; }
+.ds-sim .pyr-tip-t { font-weight: 600; margin-bottom: 4px; }
 .ds-sim .pyr-tip-r { display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; font-variant-numeric: tabular-nums; }
-.ds-sim .pyr-tip-k { color: var(--ink-2); }
+.ds-sim .pyr-tip-k { color: var(--text-muted); }
+.ds-sim .pyr-tip-n { margin-top: 4px; font-size: 0.8125rem; color: var(--text-muted); }
 
-.ds-sim .pyr-trio { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 14px; align-items: start; align-content: start; }
-.ds-sim .pyr-trio-card { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.ds-sim .pyr-trio-canvas { width: 100%; height: auto; display: block; border: 1px solid var(--line); border-radius: 8px; }
-.ds-sim .pyr-trio-cap { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 13px; color: var(--ink-2); justify-content: center; }
-.ds-sim .pyr-cap-v { color: var(--ink); font-weight: 700; }
+.ds-sim .pyr-trio { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 12px 16px 16px; align-items: start; align-content: start; overflow-y: auto; }
+.ds-sim .pyr-trio-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ds-sim .pyr-trio-canvas { width: 100%; height: auto; display: block; border-radius: 12px; }
+.ds-sim .pyr-trio-cap { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.875rem; color: var(--text-muted); justify-content: center; }
+.ds-sim .pyr-cap-v { color: var(--text-strong); font-weight: 600; }
+.ds-sim .pyr-trio-note { grid-column: 1 / -1; margin: 0; font-size: 0.875rem; color: var(--text-muted); text-align: center; }
 
+/* ===== 사이드바 부품 ===== */
 .ds-sim .pyr-shorts { display: flex; flex-direction: column; gap: 6px; }
 .ds-sim .pyr-short { justify-content: flex-start; }
-.ds-sim .pyr-short[aria-pressed=true] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-.ds-sim .pyr-short:disabled { opacity: .45; cursor: not-allowed; }
-.ds-sim .pyr-field { display: flex; flex-direction: column; gap: 4px; }
-.ds-sim .pyr-field-k { font-size: 13px; color: var(--ink-2); }
-.ds-sim .pyr-select { font: inherit; font-size: 14px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); }
-.ds-sim .pyr-check { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
-.ds-sim .pyr-range-a { accent-color: #8aa9d6; }
-.ds-sim .pyr-small { font-size: 12px; line-height: 1.55; color: var(--ink-2); margin: 0; }
+.ds-sim .pyr-short[aria-pressed=true] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.ds-sim .pyr-short:disabled { color: var(--text-disabled); cursor: default; }
+.ds-sim .pyr-field { display: flex; flex-direction: column; gap: 6px; }
+.ds-sim .pyr-field-k { font-size: 0.875rem; color: var(--text-muted); }
+.ds-sim .pyr-select {
+  font: inherit; font-size: 1rem; min-height: var(--touch); padding: 0 12px; border: 1.5px solid var(--line-strong);
+  border-radius: var(--r-control); background: var(--surface); color: var(--text-strong);
+}
+.ds-sim .pyr-range-a { accent-color: var(--text-muted); }
+.ds-sim .pyr-small { font-size: 0.8125rem; line-height: 1.55; color: var(--text-muted); margin: 0; }
 
-.ds-sim .pyr-sum-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 4px 8px; font-size: 13px; align-items: baseline; }
-.ds-sim .pyr-sum-h { color: var(--ink-2); font-size: 12px; text-align: right; }
-.ds-sim .pyr-sum-k { color: var(--ink-2); white-space: nowrap; }
-.ds-sim .pyr-sum-v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+/* 켜고 끄는 스위치 줄: 줄 전체가 눌린다 */
+.ds-sim .pyr-toggles { display: flex; flex-direction: column; margin-top: 4px; }
+.ds-sim .pyr-toggle {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: var(--touch);
+  padding: 0 2px; border: 0; background: transparent; color: var(--text-strong); font: inherit; font-size: 0.9375rem; text-align: left; cursor: pointer;
+}
+.ds-sim .pyr-toggle:disabled { color: var(--text-disabled); cursor: default; }
+.ds-sim .pyr-switch { flex: none; position: relative; width: 44px; height: 26px; border-radius: 999px; background: var(--gray-400); transition: background-color 150ms cubic-bezier(0.35, 0, 0.35, 1); }
+.ds-sim .pyr-switch-dot { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 999px; background: #ffffff; box-shadow: 0 1px 3px rgba(16, 24, 40, 0.2); transition: transform 150ms cubic-bezier(0.35, 0, 0.35, 1); }
+.ds-sim .pyr-toggle[aria-checked=true] .pyr-switch { background: var(--accent); }
+.ds-sim .pyr-toggle[aria-checked=true] .pyr-switch-dot { transform: translateX(18px); }
+.ds-sim .pyr-toggle:disabled .pyr-switch { opacity: 0.4; }
 
-.ds-sim .pyr-trio-note { grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--ink-2); text-align: center; }
+.ds-sim .pyr-sum-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 6px 12px; font-size: 0.875rem; align-items: baseline; }
+.ds-sim .pyr-sum-grid-3 { grid-template-columns: minmax(0, 1fr) auto auto auto; }
+.ds-sim .pyr-sum-h { color: var(--text-muted); font-size: 0.8125rem; text-align: right; }
+.ds-sim .pyr-sum-k { color: var(--text-muted); white-space: nowrap; }
+.ds-sim .pyr-sum-v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--text-strong); }
+
+/* ===== 태블릿 ===== */
+/* 손가락으로 쓰는 기기: 누르는 곳 48px */
+@media (pointer: coarse) {
+  .ds-sim { --touch: 48px; }
+}
+/* 태블릿 세로(공통 셸이 무대 위, 사이드바 아래로 쌓음): 사이드바는 두 열로 펼쳐 스크롤을 줄인다 */
+@media (max-width: 1023px) {
+  .ds-sim { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; height: 100dvh; }
+  .ds-sim .ds-panel { max-height: 46dvh; border-top: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 20px 24px; }
+  .ds-sim .ds-panel > .ds-head, .ds-sim .ds-panel > .ds-note { grid-column: 1 / -1; }
+  .ds-sim .pyr-trio { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+/* 태블릿 가로 이상: 그림 왼쪽, 조작 오른쪽 두 칸 */
+@media (min-width: 1024px) {
+  .ds-sim { grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: minmax(0, 1fr); }
+}
+@media (min-width: 1440px) {
+  .ds-sim { grid-template-columns: minmax(0, 1fr) 380px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ds-sim .ds-btn, .ds-sim .pyr-switch, .ds-sim .pyr-switch-dot { transition: none; }
+}
