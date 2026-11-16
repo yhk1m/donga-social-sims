@@ -19,13 +19,14 @@
   --line-soft: rgba(16, 24, 40, 0.08);
   --line-strong: rgba(16, 24, 40, 0.16);
   --focus: #2a64d4;
-  /* 자료 색: 남자 파랑, 여자 청록 (빨강 주색, 상태색과 따로) */
-  --data-m: #2563c9;
-  --data-f: #0f7f86;
-  --data-m-weak: rgba(37, 99, 201, 0.14);
-  --data-f-weak: rgba(15, 127, 134, 0.14);
-  --pyr-canvas-m: #2563c9;      /* 세 나라 캔버스는 늘 흰 바탕이라 라이트 값 고정 */
-  --pyr-canvas-f: #0f7f86;
+  /* 자료 색: CI 두 색을 따라 남자 먹, 여자 동아 빨강. 늘어남은 두 색과 겹치지 않게 파랑 */
+  --data-m: #333333;
+  --data-f: #d4153a;
+  --data-m-weak: rgba(51, 51, 51, 0.12);
+  --data-f-weak: rgba(212, 21, 58, 0.12);
+  --data-more: #2563c9;
+  --pyr-canvas-m: #333333;      /* 세 나라 캔버스는 늘 흰 바탕이라 라이트 값 고정 */
+  --pyr-canvas-f: #d4153a;
   --r-control: 10px; --r-card: 16px;
   --touch: 44px;
 
@@ -57,8 +58,8 @@
     --bg: #121418; --surface: #1b1e24; --fill-subtle: #252930;
     --text-strong: #eef0f3; --text-muted: #8e97a4; --icon-muted: #6b7380; --text-disabled: #5d6571;
     --line-soft: rgba(255, 255, 255, 0.08); --line-strong: rgba(255, 255, 255, 0.16); --focus: #7aa5ff;
-    --data-m: #7aa5ff; --data-f: #4fc9cf;
-    --data-m-weak: rgba(122, 165, 255, 0.16); --data-f-weak: rgba(79, 201, 207, 0.16);
+    --data-m: #eceef1; --data-f: #ff5a72; --data-more: #7aa5ff;
+    --data-m-weak: rgba(236, 238, 241, 0.14); --data-f-weak: rgba(255, 90, 114, 0.16);
     --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
     color-scheme: dark;
   }
@@ -68,8 +69,8 @@
   --bg: #121418; --surface: #1b1e24; --fill-subtle: #252930;
   --text-strong: #eef0f3; --text-muted: #8e97a4; --icon-muted: #6b7380; --text-disabled: #5d6571;
   --line-soft: rgba(255, 255, 255, 0.08); --line-strong: rgba(255, 255, 255, 0.16); --focus: #7aa5ff;
-  --data-m: #7aa5ff; --data-f: #4fc9cf;
-  --data-m-weak: rgba(122, 165, 255, 0.16); --data-f-weak: rgba(79, 201, 207, 0.16);
+  --data-m: #eceef1; --data-f: #ff5a72; --data-more: #7aa5ff;
+  --data-m-weak: rgba(236, 238, 241, 0.14); --data-f-weak: rgba(255, 90, 114, 0.16);
   --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
   color-scheme: dark;
 }
@@ -118,7 +119,7 @@
 .ds-sim .pyr-sw-f { background: var(--data-f); }
 .ds-sim .pyr-sw-a { background: transparent; border: 1.5px solid var(--text-muted); }
 .ds-sim .pyr-sw-b { background: var(--text-muted); }
-.ds-sim .pyr-sw-more { background: var(--accent); }
+.ds-sim .pyr-sw-more { background: var(--data-more); }
 .ds-sim .pyr-sw-svg { width: 20px; height: 12px; border: 1px solid var(--icon-muted); border-radius: 2px; box-sizing: border-box; }
 
 .ds-sim .pyr-chart { position: relative; flex: 1; min-height: 0; margin: 0 8px 8px; }
@@ -145,8 +146,8 @@
 /* 이후 해: 진한 막대 */
 .ds-sim .pyr-b-m { fill: var(--data-m); }
 .ds-sim .pyr-b-f { fill: var(--data-f); }
-/* 늘어남: 이 자료의 핵심 강조 하나라 주색을 쓴다 */
-.ds-sim .pyr-more { fill: var(--accent); }
+/* 늘어남: 남자 먹, 여자 빨강과 겹치지 않는 파랑 */
+.ds-sim .pyr-more { fill: var(--data-more); }
 .ds-sim .pyr-less { stroke: none; }
 .ds-sim .pyr-a-edge { fill: none; stroke-width: 1.2; }
 .ds-sim .pyr-a-m-edge { stroke: var(--data-m); }
@@ -154,7 +155,7 @@
 .ds-sim .pyr-hatch-bg { fill: none; }
 .ds-sim .pyr-hatch-line { stroke: var(--icon-muted); stroke-width: 1.6; }
 .ds-sim .pyr-dlabel { font-size: 12px; font-weight: 600; dominant-baseline: central; font-variant-numeric: tabular-nums; }
-.ds-sim .pyr-dl-more { fill: var(--accent); color: var(--accent); }
+.ds-sim .pyr-dl-more { fill: var(--data-more); color: var(--data-more); }
 .ds-sim .pyr-dl-less { fill: var(--text-muted); color: var(--text-muted); }
 .ds-sim .pyr-hit { fill: transparent; }
 .ds-sim .pyr-row-on .pyr-age { font-weight: 700; }
