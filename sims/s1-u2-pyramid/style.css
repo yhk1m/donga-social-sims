@@ -1,12 +1,12 @@
 /* © 2026 김용현 */
 /* 인구 피라미드 비교 전용 스타일, 동아 디자인 적용판.
    규칙: 모든 선택자는 .ds-sim 으로 시작(빌드 때 .ds-<자료id>), 클래스만(태그 선택자 금지), !important·fixed 금지, z-index ≤ 100.
-   색은 동아 디자인 토큰(동아출판 CI: 주색 빨강, 보조색 먹)으로만 쓴다. 공통 theme.css 의 변수와 부품을 이 자료 안에서만 덮어쓴다. */
+   색은 동아 디자인 v1.4 토큰(CI 빨강은 로고에만, 콘텐츠는 A안 청록)으로만 쓴다. 공통 theme.css 의 변수와 부품을 이 자료 안에서만 덮어쓴다. */
 
 /* ===== 동아 디자인 토큰 (라이트) ===== */
 .ds-sim {
   --donga-red: #ec1940;
-  --accent: #d4153a;            /* 주색: 주요 버튼, 선택 상태 */
+  --accent: #057176;            /* 주색(A안 청록): 주요 버튼, 선택 상태 */
   --on-accent: #ffffff;
   --gray-100: #f1f3f6; --gray-200: #e4e7ec; --gray-400: #a9b1bd; --gray-500: #868f9c;
   --gray-600: #646d7a; --gray-700: #4a5260; --gray-900: #1a1e25;
@@ -19,14 +19,17 @@
   --line-soft: rgba(16, 24, 40, 0.08);
   --line-strong: rgba(16, 24, 40, 0.16);
   --focus: #2a64d4;
-  /* 자료 색: CI 두 색을 따라 남자 먹, 여자 동아 빨강. 늘어남은 두 색과 겹치지 않게 파랑 */
-  --data-m: #333333;
-  --data-f: #d4153a;
-  --data-m-weak: rgba(51, 51, 51, 0.12);
-  --data-f-weak: rgba(212, 21, 58, 0.12);
-  --data-more: #2563c9;
-  --pyr-canvas-m: #333333;      /* 세 나라 캔버스는 늘 흰 바탕이라 라이트 값 고정 */
-  --pyr-canvas-f: #d4153a;
+  /* 자료 색(2026-11-22 동아출판 요청): 남녀를 빨강과 검정으로 나누지 않는다. 두 무리 색 --group-1 청록, --group-2 호박.
+     어느 쪽이 남자인지 색으로 정해 두지 않고 범례와 그래프 위에 늘 이름을 붙인다. 늘어남은 두 색과 겹치지 않게 먹 */
+  --data-m: #088187;
+  --data-f: #be7a05;
+  --data-m-ink: #088187;        /* 글자로 쓸 때(흰 바탕 대비 4.7) */
+  --data-f-ink: #8f5b00;        /* 호박은 글자로 쓰면 대비가 모자라 진하게(5.7) */
+  --data-m-weak: rgba(8, 129, 135, 0.13);
+  --data-f-weak: rgba(190, 122, 5, 0.14);
+  --data-more: #333333;
+  --pyr-canvas-m: #088187;      /* 세 나라 캔버스는 늘 흰 바탕이라 라이트 값 고정 */
+  --pyr-canvas-f: #be7a05;
   --r-control: 10px; --r-card: 16px;
   --touch: 44px;
 
@@ -54,23 +57,23 @@
 /* ===== 다크 ===== */
 @media (prefers-color-scheme: dark) {
   .ds-sim:not([data-theme="light"]) {
-    --accent: #ff5a72; --on-accent: #2a0610;
+    --accent: #72c8cd; --on-accent: #001b1c;
     --bg: #121418; --surface: #1b1e24; --fill-subtle: #252930;
     --text-strong: #eef0f3; --text-muted: #8e97a4; --icon-muted: #6b7380; --text-disabled: #5d6571;
     --line-soft: rgba(255, 255, 255, 0.08); --line-strong: rgba(255, 255, 255, 0.16); --focus: #7aa5ff;
-    --data-m: #eceef1; --data-f: #ff5a72; --data-more: #7aa5ff;
-    --data-m-weak: rgba(236, 238, 241, 0.14); --data-f-weak: rgba(255, 90, 114, 0.16);
+    --data-m: #68c9cf; --data-f: #eea74a; --data-more: #d0d5dd; --data-m-ink: #68c9cf; --data-f-ink: #eea74a;
+    --data-m-weak: rgba(104, 201, 207, 0.16); --data-f-weak: rgba(238, 167, 74, 0.16);
     --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
     color-scheme: dark;
   }
 }
 .ds-sim[data-theme="dark"] {
-  --accent: #ff5a72; --on-accent: #2a0610;
+  --accent: #72c8cd; --on-accent: #001b1c;
   --bg: #121418; --surface: #1b1e24; --fill-subtle: #252930;
   --text-strong: #eef0f3; --text-muted: #8e97a4; --icon-muted: #6b7380; --text-disabled: #5d6571;
   --line-soft: rgba(255, 255, 255, 0.08); --line-strong: rgba(255, 255, 255, 0.16); --focus: #7aa5ff;
-  --data-m: #eceef1; --data-f: #ff5a72; --data-more: #7aa5ff;
-  --data-m-weak: rgba(236, 238, 241, 0.14); --data-f-weak: rgba(255, 90, 114, 0.16);
+  --data-m: #68c9cf; --data-f: #eea74a; --data-more: #d0d5dd; --data-m-ink: #68c9cf; --data-f-ink: #eea74a;
+  --data-m-weak: rgba(104, 201, 207, 0.16); --data-f-weak: rgba(238, 167, 74, 0.16);
   --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
   color-scheme: dark;
 }
@@ -134,8 +137,8 @@
 .ds-sim .pyr-unit-c { text-anchor: middle; }
 .ds-sim .pyr-unit-r { text-anchor: end; }
 .ds-sim .pyr-sex { font-size: 15px; font-weight: 600; }
-.ds-sim .pyr-sex-m { fill: var(--data-m); text-anchor: end; }
-.ds-sim .pyr-sex-f { fill: var(--data-f); text-anchor: start; }
+.ds-sim .pyr-sex-m { fill: var(--data-m-ink); text-anchor: end; }
+.ds-sim .pyr-sex-f { fill: var(--data-f-ink); text-anchor: start; }
 .ds-sim .pyr-cap-year { font-size: 17px; font-weight: 700; fill: var(--text-strong); text-anchor: middle; }
 .ds-sim .pyr-age { font-size: 13px; fill: var(--text-strong); text-anchor: middle; dominant-baseline: central; font-variant-numeric: tabular-nums; }
 .ds-sim .pyr-empty { font-size: 18px; fill: var(--text-muted); text-anchor: middle; }
@@ -146,7 +149,7 @@
 /* 이후 해: 진한 막대 */
 .ds-sim .pyr-b-m { fill: var(--data-m); }
 .ds-sim .pyr-b-f { fill: var(--data-f); }
-/* 늘어남: 남자 먹, 여자 빨강과 겹치지 않는 파랑 */
+/* 늘어남: 두 무리 색(청록, 호박)과 겹치지 않는 먹 */
 .ds-sim .pyr-more { fill: var(--data-more); }
 .ds-sim .pyr-less { stroke: none; }
 .ds-sim .pyr-a-edge { fill: none; stroke-width: 1.2; }

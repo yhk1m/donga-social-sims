@@ -154,10 +154,11 @@
 }
 
 /* ===== 칠판 모드 (donga-design references/board.md) =====
-   1920 x 1080 칠판에서 --bk 는 약 2.15: 사이드바 15px 글자가 32px, 13px 이 28px 이 된다.
-   사이드바는 zoom 으로 통째로 키우고, 칸 너비도 같은 배율로 넓힌다. 무대 안 글자는 자료마다 var(--bk) 를 곱한다. */
-.ds-sim[data-board="on"] { grid-template-columns: minmax(0, 1fr) calc(340px * var(--bk)); }
-.ds-sim[data-board="on"] .ds-panel { zoom: var(--bk); }
+   1920 x 1080 칠판에서 --bk 는 약 2.15: 무대(지도) 13px 글자가 28px 이 된다.
+   사이드바는 --bkp(약 1.5) 만큼만 zoom 으로 키우고, 칸 너비도 같은 배율로 넓힌다. 무대 안 글자는 자료마다 var(--bk) 를 곱한다. */
+/* 사이드바는 교사가 가까이서 누르는 곳이라 무대만큼 키우지 않는다(--bkp, 1080 높이에서 약 1.5). 무대가 넓게 남는다 */
+.ds-sim[data-board="on"] { grid-template-columns: minmax(0, 1fr) calc(340px * var(--bkp, var(--bk))); }
+.ds-sim[data-board="on"] .ds-panel { zoom: var(--bkp, var(--bk)); }
 .ds-sim[data-board="on"] .ds-panel { font-weight: 500; }
 
 @media (prefers-reduced-motion: reduce) {

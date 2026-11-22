@@ -87,3 +87,12 @@
 .ds-sim .tm-map.is-air .tm-city.is-via .tm-label, .ds-sim .tm-map.is-air .tm-city.is-slow .tm-label { display: none; }
 .ds-sim .tm-rings.is-dense .tm-ring { stroke-opacity: 0.12; }
 .ds-sim .tm-rings.is-dense .tm-ring.is-major { stroke-opacity: 0.5; }
+/* 확대 단추: 오른쪽 위 */
+.ds-sim .tm-map { touch-action: none; cursor: grab; }
+.ds-sim .tm-map:active { cursor: grabbing; }
+.ds-sim .tm-zoom { position: absolute; right: 12px; top: 12px; display: flex; flex-direction: column; gap: 6px; zoom: var(--bk); }
+.ds-sim .tm-zbtn {
+  width: var(--touch); height: var(--touch); border-radius: var(--r-control); border: 0; background: var(--surface-raised); color: var(--text-strong);
+  display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow); padding: 0;
+}
+.ds-sim .tm-zbtn:hover { background: var(--fill-subtle); }

@@ -39,10 +39,12 @@ export function addViewBlock(panel, root, { onBoard, onTheme } = {}) {
   function fitK() {
     const k = Math.max(1.4, Math.min(3, (root.clientHeight || window.innerHeight) / 1080 * BASE_K));
     root.style.setProperty('--bk', k.toFixed(3));
+    // 사이드바 배율: 무대의 절반쯤만 키운다(2.15 → 약 1.5). 칠판에서 지도가 넓게 남는다
+    root.style.setProperty('--bkp', (1 + (k - 1) * 0.45).toFixed(3));
     return k;
   }
   function setBoard(on) {
-    if (on) { root.setAttribute('data-board', 'on'); fitK(); } else { root.removeAttribute('data-board'); root.style.setProperty('--bk', '1'); }
+    if (on) { root.setAttribute('data-board', 'on'); fitK(); } else { root.removeAttribute('data-board'); root.style.setProperty('--bk', '1'); root.style.setProperty('--bkp', '1'); }
     boardBtn.setAttribute('aria-pressed', String(on));
     state.textContent = on ? '켜짐' : '꺼짐';
     if (onBoard) onBoard(boardK(root));

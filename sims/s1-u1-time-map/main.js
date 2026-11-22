@@ -115,8 +115,19 @@ export default function mount(root) {
   const capTitle = h('div', { class: 'tm-cap-title' });
   const capSub = h('div', { class: 'tm-cap-sub' });
   const tip = h('div', { class: 'tm-tip', hidden: true });
-  stage.append(svg, h('div', { class: 'tm-cap' }, capTitle, capSub), tip);
+  const zoomBtn = (name, label, fn) => h('button', { class: 'tm-zbtn', type: 'button', 'aria-label': label, title: label, on: { click: fn } }, icon(name));
+  const zoomBox = h('div', { class: 'tm-zoom' },
+    zoomBtn('plus', '확대', () => zoomBy(1.6)),
+    zoomBtn('minus', '축소', () => zoomBy(1 / 1.6)),
+    zoomBtn('expand', '처음 크기', () => { view.k = 1; view.dx = 0; view.dy = 0; refreshView(); }));
+  stage.append(svg, h('div', { class: 'tm-cap' }, capTitle, capSub), zoomBox, tip);
 
+  // 확대, 옮기기(2026-11-22 교사 요청): 수단별 화면(vb) 위에 k 배 확대와 (dx, dy) 옮김을 얹는다. 수단을 바꾸면 처음 크기로
+  const view = { k: 1, dx: 0, dy: 0 };
+  const eff = (vb) => {
+    const w = vb[2] / view.k, hh = vb[3] / view.k;
+    return [vb[0] + (vb[2] - w) / 2 + view.dx, vb[1] + (vb[3] - hh) / 2 + view.dy, w, hh];
+  };
   // 현재 그려진 좌표(보간 중간값)
   let cur = target('real', true);
   let curVB = cur.vb.slice();
@@ -127,15 +138,20 @@ export default function mount(root) {
     bordersEl.setAttribute('d', geo.borders.map((l) => pathD(l)).join(''));
     coastEl.setAttribute('d', geo.coast.map((l) => pathD(l)).join(''));
     cityEls.forEach((g, i) => g.setAttribute('transform', `translate(${geo.cities[2 * i].toFixed(1)},${geo.cities[2 * i + 1].toFixed(1)})`));
-    svg.setAttribute('viewBox', vb.map((v) => v.toFixed(1)).join(' '));
-    // 글자와 선 굵기가 확대·축소에 끌려가지 않게 viewBox 크기에 맞춘 배율을 CSS 변수로
-    const unit = unitFor(vb);
+    setViewBox(vb);
+  }
+  function setViewBox(vb) {
+    const v = eff(vb);
+    svg.setAttribute('viewBox', v.map((x) => x.toFixed(2)).join(' '));
+    // 글자와 선 굵기가 확대, 축소에 끌려가지 않게 viewBox 크기에 맞춘 배율을 CSS 변수로
+    const unit = unitFor(v);
     svg.style.setProperty('--u', unit.toFixed(3));
   }
 
   // 동심원: 수단마다 눈금 단위가 다르다
-  function drawRings(geo, mode, vb) {
+  function drawRings(geo, mode, vb0) {
     clear(gRings);
+    const vb = eff(vb0);
     const m = MODES[mode];
     const stepPx = mode === 'real' ? m.ringKm / MAP.kmPerPx : m.ringMin * geo.k;
     const corners = [[vb[0], vb[1]], [vb[0] + vb[2], vb[1]], [vb[0], vb[1] + vb[3]], [vb[0] + vb[2], vb[1] + vb[3]]];
@@ -157,7 +173,7 @@ export default function mount(root) {
     if (!show) return;
     const car = target('car', state.ktxAfter);
     cmpLand.setAttribute('d', car.land.map((rs) => rs.map((r) => pathD(r, true)).join('')).join(''));
-    const u = unitFor(vb) * boardK(root);
+    const u = unitFor(eff(vb)) * boardK(root);
     const b = car.raw;
     const x1 = b[0] - 4 * u, y1 = (b[1] + b[3]) / 2;
     const x2 = x1 - 50 * u, y2 = y1 - 50 * u;
@@ -196,6 +212,7 @@ export default function mount(root) {
     updateCities(to);
     setCaption();
     refreshTip();
+    view.k = 1; view.dx = 0; view.dy = 0;
     const t0 = performance.now();
     const big = fromVB[2] / to.vb[2] > 3 || to.vb[2] / fromVB[2] > 3;
     const dur = big ? 2200 : DURATION;
@@ -225,6 +242,76 @@ export default function mount(root) {
     };
     anim = requestAnimationFrame(step);
   }
+
+  // ---------- 확대와 옮기기: 휠, 끌기, 두 손가락, 단추 ----------
+  const MAX_K = 12;
+  function refreshView() {
+    setViewBox(curVB);
+    drawRings(cur, state.mode, curVB);
+    drawCompare(state.mode === 'walk', curVB);
+    placeTip();
+  }
+  function clampPan() {
+    const lim = (1 - 1 / view.k) / 2;
+    view.dx = Math.max(-curVB[2] * lim, Math.min(curVB[2] * lim, view.dx));
+    view.dy = Math.max(-curVB[3] * lim, Math.min(curVB[3] * lim, view.dy));
+  }
+  const toWorld = (cx, cy) => {
+    const m = svg.getScreenCTM();
+    if (!m) return null;
+    const pt = new DOMPoint(cx, cy).matrixTransform(m.inverse());
+    return [pt.x, pt.y];
+  };
+  // 화면의 (cx, cy) 자리를 그대로 두고 f 배 확대
+  function zoomBy(f, cx, cy) {
+    if (cx == null) { const r = svg.getBoundingClientRect(); cx = r.left + r.width / 2; cy = r.top + r.height / 2; }
+    const before = toWorld(cx, cy);
+    view.k = Math.max(1, Math.min(MAX_K, view.k * f));
+    if (view.k === 1) { view.dx = 0; view.dy = 0; }
+    setViewBox(curVB);
+    const after = toWorld(cx, cy);
+    if (before && after && view.k > 1) { view.dx += before[0] - after[0]; view.dy += before[1] - after[1]; }
+    clampPan();
+    refreshView();
+  }
+  svg.addEventListener('wheel', (ev) => { ev.preventDefault(); zoomBy(Math.exp(-ev.deltaY * 0.0015), ev.clientX, ev.clientY); }, { passive: false });
+  const ptrs = new Map();
+  let pinch = null, moved = 0;
+  svg.addEventListener('pointerdown', (ev) => {
+    ptrs.set(ev.pointerId, [ev.clientX, ev.clientY]);
+    moved = 0;
+    if (ptrs.size === 2) {
+      const [a, b] = [...ptrs.values()];
+      pinch = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    }
+  });
+  svg.addEventListener('pointermove', (ev) => {
+    const last = ptrs.get(ev.pointerId);
+    if (!last) return;
+    const now = [ev.clientX, ev.clientY];
+    if (ptrs.size === 2 && pinch) {
+      ptrs.set(ev.pointerId, now);
+      const [a, b] = [...ptrs.values()];
+      const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      zoomBy(d / pinch, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
+      pinch = d; moved = 99;
+      return;
+    }
+    const ddx = now[0] - last[0], ddy = now[1] - last[1];
+    moved += Math.abs(ddx) + Math.abs(ddy);
+    ptrs.set(ev.pointerId, now);
+    if (view.k <= 1 || moved < 4) return;
+    if (!svg.hasPointerCapture(ev.pointerId)) svg.setPointerCapture(ev.pointerId);
+    const u = unitFor(eff(curVB));
+    view.dx -= ddx * u; view.dy -= ddy * u;
+    clampPan();
+    refreshView();
+  });
+  const endPtr = (ev) => { ptrs.delete(ev.pointerId); if (ptrs.size < 2) pinch = null; };
+  svg.addEventListener('pointerup', endPtr);
+  svg.addEventListener('pointercancel', endPtr);
+  // 끌어서 옮긴 뒤에는 도시 누르기(말풍선)로 치지 않는다
+  svg.addEventListener('click', (ev) => { if (moved >= 4) { ev.stopPropagation(); moved = 0; } }, true);
 
   // ---------- 말풍선: 실제 거리와 수단별 시간 ----------
   function tipTable(i) {
