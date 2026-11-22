@@ -1,10 +1,12 @@
 // © 2026 김용현
-// 초국적 기업의 발달 과정 — 세계 지도 위에 가상의 Z 기업이 단계별로 시설을 늘려 가는 모습.
+// 초국적 기업의 발달 과정, 세계 지도 위에 가상의 Z 기업이 단계별로 시설을 늘려 가는 모습.
 // 교과서: 동아출판 중등 사회1 94~96쪽(초국적 기업의 성장 과정 → 공간적 분업 → 지역 변화).
 // 규칙(EMBED_RULES.md): DOM 은 h()/s() 로만, 탐색은 root 안에서만.
 import { geoNaturalEarth1, geoPath, geoArea, geoGraticule } from 'd3-geo';
 import { createShell, addBlock } from '../../src/shared/shell.js';
 import { h, s, icon } from '../../src/shared/dom.js';
+import '../../src/shared/donga.css';
+import { addViewBlock, boardK } from '../../src/shared/dongaUi.js';
 import './style.css';
 import world from './land-110m.json';
 import { TYPES, KINDS, FACILITIES, FLOWS, GROUPS, STEPS, DEFINITION } from './data.js';
@@ -84,7 +86,7 @@ export default function mount(root) {
     const why = h('span', { class: 'tnc-lab-why' }, f.why ?? '');
     const lab = h('span', { class: `tnc-lab tnc-lab-${f.lp || 'r'}` },
       h('b', { class: 'tnc-lab-name' }, facName(f)), h('span', { class: 'tnc-lab-place' }, f.place), why);
-    const el = h('div', { class: 'tnc-mk', style: `--c:${T.color}`, title: `${facName(f)} · ${f.place}` },
+    const el = h('div', { class: 'tnc-mk', style: `--c:${T.color}`, title: `${facName(f)}, ${f.place}` },
       h('span', { class: 'tnc-badge' }, typeIcon(f.type)),
       s('svg', { class: 'tnc-xmark', viewBox: '0 0 24 24', 'aria-hidden': 'true' }, s('path', { d: 'M5 5l14 14M19 5L5 19' })),
       lab);
@@ -108,13 +110,14 @@ export default function mount(root) {
       pts.push(p);
     }
     const K = KINDS[F.kind];
-    const line = s('polyline', { class: 'tnc-flow', fill: 'none', stroke: K.color, 'stroke-dasharray': K.dash || null, 'vector-effect': 'non-scaling-stroke' });
-    const arrA = s('polygon', { class: 'tnc-arrow', fill: K.color });
-    const arrB = s('polygon', { class: 'tnc-arrow', fill: K.color });
+    const kc = `--c:${K.color}`;
+    const line = s('polyline', { class: `tnc-flow${K.dash ? ' tnc-flow-dash' : ''}`, fill: 'none', style: kc, 'vector-effect': 'non-scaling-stroke' });
+    const arrA = s('polygon', { class: 'tnc-arrow', style: kc });
+    const arrB = s('polygon', { class: 'tnc-arrow', style: kc });
     gFlows.append(line);
     gArrows.append(arrA, arrB);
     const nDots = Math.max(2, Math.round(len / 55));
-    const dots = Array.from({ length: nDots * 2 }, () => { const c = s('circle', { class: 'tnc-dot', fill: K.color }); gDots.append(c); return c; });
+    const dots = Array.from({ length: nDots * 2 }, () => { const c = s('circle', { class: 'tnc-dot', style: kc }); gDots.append(c); return c; });
     const note = F.note ? h('span', { class: 'tnc-note', style: `--c:${K.color}` }, F.note) : null;
     if (note) overlay.append(note);
     return { F, pts, len, line, arrA, arrB, dots, nDots, note, prog: -1, state: null };
@@ -158,10 +161,13 @@ export default function mount(root) {
     h('ul', { class: 'tnc-legend tnc-legend-flow' }, Object.values(KINDS).map((K) =>
       h('li', { class: 'tnc-leg' },
         s('svg', { class: 'tnc-leg-line', viewBox: '0 0 34 10', 'aria-hidden': 'true' },
-          s('line', { x1: 2, y1: 5, x2: 26, y2: 5, stroke: K.color, 'stroke-width': 2.5, 'stroke-dasharray': K.dash || null }),
-          s('polygon', { points: '25,1 33,5 25,9', fill: K.color })),
+          s('line', { class: 'tnc-leg-stroke', x1: 2, y1: 5, x2: 26, y2: 5, style: `--c:${K.color}`, 'stroke-dasharray': K.dash || null }),
+          s('polygon', { class: 'tnc-leg-head', points: '25,1 33,5 25,9', style: `--c:${K.color}` })),
         K.name))),
     h('label', { class: 'ds-check tnc-all-chk' }, allLabels, '모든 시설 이름 보기')));
+
+  // 화면 밝기와 칠판 모드 (동아 디자인). 지도 위 표시는 매 프레임 boardK(root) 로 다시 맞추므로 따로 다시 그릴 것이 없다(밀어 넣은 거리만 다시 잰다)
+  addViewBlock(panel, root, { onBoard: () => { for (const m of fac.values()) { m.sx = m.sy = undefined; } } });
 
   addBlock(panel, h('div', { class: 'ds-note tnc-def' },
     h('b', {}, '초국적 기업이란? '), DEFINITION, '을 말해요.', h('span', { class: 'tnc-def-src' }, ' (교과서 94쪽)')));
@@ -181,7 +187,7 @@ export default function mount(root) {
     goal = VIEWS[st.view];
     hudN.textContent = `${n} / ${STEPS.length}`;
     const g = GROUPS.find((x) => x.steps.includes(n));
-    hudG.textContent = `${g.name} · 교과서 ${g.page}쪽`;
+    hudG.textContent = `${g.name}, 교과서 ${g.page}쪽`;
     hudT.textContent = st.title;
     cardQuote.textContent = `“${st.quote}”`;
     cardSrc.textContent = `교과서 ${st.page}쪽`;
@@ -251,17 +257,17 @@ export default function mount(root) {
     return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * f, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * f];
   };
 
-  function arrow(poly, pts, fromEnd, k, show) {
+  function arrow(poly, pts, fromEnd, k, show, K = 1) {
     if (!show) { poly.setAttribute('points', ''); return; }
     const n = pts.length - 1;
     const tip = fromEnd ? pts[n] : pts[0];
     let j = fromEnd ? n - 1 : 1;
     // 시설 표시(반지름 약 13px)에 가리지 않을 만큼 물러선 곳에 화살촉을 둔다
-    while (j > 0 && j < n && Math.hypot(pts[j][0] - tip[0], pts[j][1] - tip[1]) * k < 17) j += fromEnd ? -1 : 1;
+    while (j > 0 && j < n && Math.hypot(pts[j][0] - tip[0], pts[j][1] - tip[1]) * k < 17 * K) j += fromEnd ? -1 : 1;
     const p = pts[j], q = pts[fromEnd ? j - 1 : j + 1] || p;
     let dx = p[0] - q[0], dy = p[1] - q[1];
     const d = Math.hypot(dx, dy) || 1; dx /= d; dy /= d;
-    const L = 8 / k, W = 4.2 / k;
+    const L = 8 * K / k, W = 4.2 * K / k;
     poly.setAttribute('points', `${p[0] + dx * L * 0.4},${p[1] + dy * L * 0.4} ${p[0] - dx * L * 0.6 - dy * W},${p[1] - dy * L * 0.6 + dx * W} ${p[0] - dx * L * 0.6 + dy * W},${p[1] - dy * L * 0.6 - dx * W}`);
   }
 
@@ -281,26 +287,28 @@ export default function mount(root) {
     svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
     const { cw, ch, k, ox, oy } = fit();
     const scr = (x, y) => [x * k + ox, y * k + oy];
+    // 칠판 모드: 시설 표시, 말풍선, 흐름 이름은 zoom 으로 커진다. 크기는 화면 값으로 재고 위치는 배율 B 로 나눠 넣는다
+    const B = boardK(root);
 
     const allOn = allLabels.checked;
     for (const m of fac.values()) {
       if (m.el.hidden) continue;
       const [px, py] = scr(m.x, m.y);
-      m.el.style.transform = `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px)`;
+      m.el.style.transform = `translate(${(px / B).toFixed(1)}px, ${(py / B).toFixed(1)}px)`;
       // 보이는 이름표가 지도 밖으로 나가면 안쪽으로 민다
       const shown = allOn || (m.el.classList.contains('tnc-new') && !m.el.classList.contains('tnc-hascall'));
       if (!shown) continue;
-      const w = m.lab.offsetWidth, hh = m.lab.offsetHeight;
+      const lr = m.lab.getBoundingClientRect(), w = lr.width, hh = lr.height, gap = 17 * B;
       const lp = m.f.lp || 'r';
       let left = px - w / 2, top = py - hh / 2;
-      if (lp === 'r') left = px + 17;
-      if (lp === 'l') left = px - 17 - w;
-      if (lp === 't') top = py - 17 - hh;
-      if (lp === 'b') top = py + 17;
+      if (lp === 'r') left = px + gap;
+      if (lp === 'l') left = px - gap - w;
+      if (lp === 't') top = py - gap - hh;
+      if (lp === 'b') top = py + gap;
       const sx = left < 4 ? 4 - left : left + w > cw - 4 ? cw - 4 - left - w : 0;
       const sy = top < 4 ? 4 - top : top + hh > ch - 4 ? ch - 4 - top - hh : 0;
-      if (sx !== m.sx) { m.lab.style.setProperty('--sx', `${sx.toFixed(1)}px`); m.sx = sx; }
-      if (sy !== m.sy) { m.lab.style.setProperty('--sy', `${sy.toFixed(1)}px`); m.sy = sy; }
+      if (sx !== m.sx) { m.lab.style.setProperty('--sx', `${(sx / B).toFixed(1)}px`); m.sx = sx; }
+      if (sy !== m.sy) { m.lab.style.setProperty('--sy', `${(sy / B).toFixed(1)}px`); m.sy = sy; }
     }
 
     const el = now - t0;
@@ -320,8 +328,8 @@ export default function mount(root) {
       const done = p >= 1;
       const op = fl.state === 'on' ? 1 : 0.3;
       fl.arrA.style.opacity = op; fl.arrB.style.opacity = op;
-      arrow(fl.arrA, fl.pts, true, k, done);
-      arrow(fl.arrB, fl.pts, false, k, done && fl.two);
+      arrow(fl.arrA, fl.pts, true, k, done, B);
+      arrow(fl.arrB, fl.pts, false, k, done && fl.two, B);
       // 움직이는 점: 밝은 흐름에서만
       const live = done && fl.state === 'on';
       for (let i = 0; i < fl.dots.length; i++) {
@@ -331,11 +339,11 @@ export default function mount(root) {
         let t = ((now * 42) / fl.len + (i % fl.nDots) / fl.nDots) % 1;
         if (back) t = 1 - ((t + 0.5 / fl.nDots) % 1);
         const [x, y] = at(fl.pts, t);
-        c.setAttribute('cx', x.toFixed(2)); c.setAttribute('cy', y.toFixed(2)); c.setAttribute('r', (3 / k).toFixed(3));
+        c.setAttribute('cx', x.toFixed(2)); c.setAttribute('cy', y.toFixed(2)); c.setAttribute('r', (3 * B / k).toFixed(3));
       }
       if (fl.note) {
         fl.note.hidden = !live;
-        if (live) { const [x, y] = scr(...at(fl.pts, 0.5)); fl.note.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`; }
+        if (live) { const [x, y] = scr(...at(fl.pts, 0.5)); fl.note.style.transform = `translate(${(x / B).toFixed(1)}px, ${(y / B).toFixed(1)}px)`; }
       }
     }
 
@@ -343,14 +351,17 @@ export default function mount(root) {
     for (const { c, el: box } of callouts[cur - 1]) {
       const a = fac.get(c.at);
       const [px, py] = scr(a.x, a.y);
-      const bw = box.offsetWidth, bh = box.offsetHeight, g = 20;
+      const br = box.getBoundingClientRect(), bw = br.width, bh = br.height, g = 20 * B;
       let left = px - bw / 2, top = py - g - bh;
       if (c.dir === 'b') top = py + g;
       if (c.dir === 'r') { left = px + g; top = py - bh / 2; }
       if (c.dir === 'l') { left = px - g - bw; top = py - bh / 2; }
+      // 위아래로 자리가 모자라면(칠판 모드처럼 말풍선이 클 때) 반대쪽으로 뒤집어 시설을 가리지 않게 한다
+      if (c.dir === 't' && top < 6 && py + g + bh <= ch - 6) top = py + g;
+      if (c.dir === 'b' && top + bh > ch - 6 && py - g - bh >= 6) top = py - g - bh;
       left = Math.min(cw - bw - 6, Math.max(6, left));
       top = Math.min(ch - bh - 6, Math.max(6, top));
-      box.style.transform = `translate(${left.toFixed(1)}px, ${top.toFixed(1)}px)`;
+      box.style.transform = `translate(${(left / B).toFixed(1)}px, ${(top / B).toFixed(1)}px)`;
     }
     requestAnimationFrame(frame);
   }

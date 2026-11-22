@@ -1,0 +1,165 @@
+/* © 2026 김용현 */
+/* 동아 디자인 v1.4 공통판 (donga-design 스킬의 tokens.css 를 이 저장소 규칙에 맞춘 것).
+   이 파일을 import 한 자료만 바뀐다. 공통 theme.css 의 변수와 부품을 덮어쓴다.
+   규칙(EMBED_RULES.md): 모든 선택자는 .ds-sim 으로 시작(빌드 때 .ds-<자료id>), 태그 선택자, !important, fixed 금지, z-index 100 이하.
+   색: CI 빨강은 로고에만. 콘텐츠 색은 CI 색상환에서 뽑은 A안(보색 청록). 두 무리를 견주는 색은 --group-1, --group-2.
+   칠판 모드: 래퍼에 data-board="on" 과 --bk(배율, dongaUi.js 가 화면 높이로 계산). 사이드바는 zoom 으로 통째로 키운다. */
+
+/* ===== 토큰 (라이트) ===== */
+.ds-sim {
+  --donga-red: #ec1940;
+  --accent: #057176;             /* 주색 A안 청록: 주요 버튼, 선택 상태. 흰 글자 대비 5.8 */
+  --on-accent: #ffffff;
+  --gray-100: #f1f3f6; --gray-200: #e4e7ec; --gray-300: #d0d5dd; --gray-400: #a9b1bd; --gray-500: #868f9c;
+  --gray-600: #646d7a; --gray-700: #4a5260; --gray-900: #1a1e25;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --fill-subtle: var(--gray-100);
+  --text-strong: var(--gray-900);
+  --text: var(--gray-700);
+  --text-muted: var(--gray-600);
+  --icon-muted: var(--gray-500);
+  --text-disabled: var(--gray-400);
+  --line-soft: rgba(16, 24, 40, 0.08);
+  --line-strong: rgba(16, 24, 40, 0.16);
+  --focus: #2a64d4;
+  --positive: #0b7a52; --critical: #b42318; --warning: #8a5a00;
+  /* 자료 색 (A안): 1 주색 계열, 2 짝 색 호박, 3 먹, 4 회색 */
+  --data-1: #057176; --data-2: #be7a05; --data-3: #333333; --data-4: #868f9c;
+  --group-1: #088187; --group-2: #be7a05;
+  /* 지도 바탕 */
+  --map-sea: #e9f0f3;
+  --map-land: #fbfaf7;
+  --map-border: #c9cdd3;
+  --map-coast: #7d8a94;
+  --map-halo: #fbfaf7;           /* 지도 글자 둘레 */
+  --r-control: 10px; --r-card: 16px;
+  --touch: 44px;
+  --bk: 1;                       /* 칠판 모드 배율 */
+
+  /* 공통 theme.css 변수를 동아 디자인 값으로 */
+  --bg: var(--gray-100);
+  --panel: var(--surface);
+  --ink: var(--text-strong);
+  --ink-2: var(--text-muted);
+  --line: var(--line-soft);
+  --warn: var(--critical);
+  --accent-soft: color-mix(in oklch, var(--accent) 9%, var(--surface));
+  --accent-text: color-mix(in oklch, var(--accent) 90%, var(--text-strong));
+  --shadow: 0 4px 16px rgba(16, 24, 40, 0.08);
+  --font: Pretendard, 'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+
+  color-scheme: light;
+  font-size: 16px;
+  word-break: keep-all;
+  -webkit-font-smoothing: antialiased;
+  /* 흰 면 두 장(무대, 사이드바)을 바탕색 위에 띄운다. 선 대신 바탕색 차이로 나눔 */
+  gap: 12px;
+  padding: 12px;
+  height: 100dvh;
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+
+/* ===== 다크 ===== */
+@media (prefers-color-scheme: dark) {
+  .ds-sim:not([data-theme="light"]) {
+    --accent: #72c8cd; --on-accent: #001b1c;
+    --bg: #121418; --surface: #1b1e24; --surface-raised: #252930; --fill-subtle: #252930;
+    --text-strong: #eef0f3; --text: #c4cad3; --text-muted: #8e97a4; --icon-muted: #6b7380; --text-disabled: #5d6571;
+    --line-soft: rgba(255, 255, 255, 0.08); --line-strong: rgba(255, 255, 255, 0.16); --focus: #7aa5ff;
+    --positive: #3ccf8e; --critical: #ff8a5c; --warning: #f0b44a;
+    --data-1: #72c8cd; --data-2: #eea74a; --data-3: #d0d5dd; --data-4: #6b7380;
+    --group-1: #68c9cf; --group-2: #eea74a;
+    --map-sea: #13161b; --map-land: #343a45; --map-border: #555d69; --map-coast: #8e97a4; --map-halo: #343a45;
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+  }
+}
+.ds-sim[data-theme="dark"] {
+  --accent: #72c8cd; --on-accent: #001b1c;
+  --bg: #121418; --surface: #1b1e24; --surface-raised: #252930; --fill-subtle: #252930;
+  --text-strong: #eef0f3; --text: #c4cad3; --text-muted: #8e97a4; --icon-muted: #6b7380; --text-disabled: #5d6571;
+  --line-soft: rgba(255, 255, 255, 0.08); --line-strong: rgba(255, 255, 255, 0.16); --focus: #7aa5ff;
+  --positive: #3ccf8e; --critical: #ff8a5c; --warning: #f0b44a;
+  --data-1: #72c8cd; --data-2: #eea74a; --data-3: #d0d5dd; --data-4: #6b7380;
+  --group-1: #68c9cf; --group-2: #eea74a;
+  --map-sea: #13161b; --map-land: #343a45; --map-border: #555d69; --map-coast: #8e97a4; --map-halo: #343a45;
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+.ds-sim[data-theme="light"] { color-scheme: light; }
+
+/* ===== 공통 셸 덮어쓰기 ===== */
+.ds-sim .ds-stage { background: var(--surface); border-radius: var(--r-card); }
+.ds-sim .ds-panel { background: var(--surface); border-left: 0; border-radius: var(--r-card); padding: 20px; gap: 24px; }
+.ds-sim .ds-head { border-bottom: 0; padding-bottom: 0; }
+.ds-sim .ds-title { font-size: 1.25rem; letter-spacing: -0.025em; color: var(--text-strong); }
+.ds-sim .ds-src { font-size: 0.8125rem; color: var(--text-muted); }
+.ds-sim .ds-h2 { font-size: 0.875rem; font-weight: 600; color: var(--text-muted); }
+.ds-sim .ds-ctl { gap: 8px; }
+.ds-sim .ds-label { font-size: 0.875rem; color: var(--text-muted); align-items: baseline; }
+.ds-sim .ds-out { color: var(--text-strong); }
+.ds-sim .ds-range { accent-color: var(--accent); min-height: var(--touch); }
+.ds-sim .ds-check { min-height: var(--touch); accent-color: var(--accent); color: var(--text-strong); }
+.ds-sim .ds-btn {
+  min-height: var(--touch); padding: 0 14px; border: 0; border-radius: var(--r-control);
+  background: var(--fill-subtle); color: var(--text-strong); font-size: 0.9375rem; font-weight: 500;
+  transition: background-color 150ms cubic-bezier(0.35, 0, 0.35, 1), transform 150ms cubic-bezier(0.35, 0, 0.35, 1);
+}
+.ds-sim .ds-btn:hover { background: color-mix(in oklch, var(--fill-subtle) 85%, var(--text-strong)); }
+.ds-sim .ds-btn:active { transform: scale(0.97); }
+.ds-sim .ds-btn:disabled { color: var(--text-disabled); cursor: default; transform: none; }
+.ds-sim .ds-btn.ds-primary { background: var(--accent); color: var(--on-accent); font-weight: 600; min-height: 48px; }
+.ds-sim .ds-btn.ds-primary:hover { filter: none; background: color-mix(in oklch, var(--accent) 86%, black); }
+.ds-sim .ds-seg { border: 0; border-radius: var(--r-control); background: var(--fill-subtle); padding: 3px; gap: 2px; }
+.ds-sim .ds-seg-btn {
+  min-height: calc(var(--touch) - 6px); border-radius: calc(var(--r-control) - 3px); background: transparent;
+  color: var(--text-muted); font-size: 0.875rem; font-weight: 500;
+}
+.ds-sim .ds-seg-btn + .ds-seg-btn { border-left: 0; }
+.ds-sim .ds-seg-btn[aria-pressed=true] { background: var(--surface); color: var(--text-strong); font-weight: 600; box-shadow: 0 1px 4px rgba(16, 24, 40, 0.08); }
+.ds-sim .ds-note { background: var(--fill-subtle); border: 0; border-radius: var(--r-control); color: var(--text-muted); }
+.ds-sim .ds-stat-k { color: var(--text-muted); }
+.ds-sim .ds-icon { width: 18px; height: 18px; }
+.ds-sim :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ===== 화면 블록 (dongaUi.js): 밝기 + 칠판 모드 ===== */
+.ds-sim .dg-view { display: flex; flex-direction: column; gap: 8px; }
+.ds-sim .dg-board {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: var(--touch);
+  padding: 0 14px; border: 0; border-radius: var(--r-control); background: var(--fill-subtle); color: var(--text-strong);
+  font: inherit; font-size: 0.9375rem; font-weight: 500; cursor: pointer; text-align: left;
+}
+.ds-sim .dg-board[aria-pressed=true] { background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
+.ds-sim .dg-board-state { font-size: 0.8125rem; color: var(--text-muted); }
+.ds-sim .dg-board[aria-pressed=true] .dg-board-state { color: var(--accent-text); }
+/* 칠판 모드 단추는 넓은 화면(칠판, PC)에서만 */
+.ds-sim .dg-board-row[hidden] { display: none; }
+@media (max-width: 1023px) { .ds-sim .dg-board-row { display: none; } }
+
+/* ===== 태블릿 ===== */
+@media (pointer: coarse) {
+  .ds-sim { --touch: 48px; }
+}
+@media (max-width: 1023px) {
+  .ds-sim { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; height: 100dvh; }
+  .ds-sim .ds-panel { max-height: 46dvh; border-top: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 20px 24px; }
+  .ds-sim .ds-panel > .ds-head, .ds-sim .ds-panel > .ds-note { grid-column: 1 / -1; }
+}
+@media (min-width: 1024px) {
+  .ds-sim { grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: minmax(0, 1fr); }
+}
+@media (min-width: 1440px) {
+  .ds-sim { grid-template-columns: minmax(0, 1fr) 380px; }
+}
+
+/* ===== 칠판 모드 (donga-design references/board.md) =====
+   1920 x 1080 칠판에서 --bk 는 약 2.15: 사이드바 15px 글자가 32px, 13px 이 28px 이 된다.
+   사이드바는 zoom 으로 통째로 키우고, 칸 너비도 같은 배율로 넓힌다. 무대 안 글자는 자료마다 var(--bk) 를 곱한다. */
+.ds-sim[data-board="on"] { grid-template-columns: minmax(0, 1fr) calc(340px * var(--bk)); }
+.ds-sim[data-board="on"] .ds-panel { zoom: var(--bk); }
+.ds-sim[data-board="on"] .ds-panel { font-weight: 500; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-sim .ds-btn { transition: none; }
+}

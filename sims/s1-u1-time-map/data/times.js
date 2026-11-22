@@ -5,8 +5,13 @@
 //  - 도보(교사 결정): 도로 거리 ÷ (서울~부산 도로 거리 ÷ 30일). 모든 도시에 같은 하루 이동 거리를 쓴다.
 //  - 자동차: OSRM 경로 시간(roads.js)에 「교과서 5시간 ÷ OSRM 서울~부산 시간」을 곱해 맞춘다(막힘 없는 계산값을 교과서 기준에 맞춤).
 //  - KTX: 시간표 최단 소요 시간(서울역, 용산역, 청량리역 출발 중 가장 빠른 값). est:true 는 확인 못 한 추정값.
-//  - 비행기: 김포 출발 국내선 시간표 운항 시간. 김포에서 바로 가는 노선이 없는 도시는 null(바로 갈 수 없음).
+//  - 비행기: 김포 출발 국내선 시간표 운항 시간.
+//  - 갈아타기(2026-11-22 교사 요청 「지도가 직관적이지 않다」): KTX, 비행기 지도에서 역이나 공항이 없는 도시도
+//    「그 수단으로 가장 알맞은 역(공항)까지 + 갈아타기 10분 + 자동차」로 시간을 셈한다. 자동차로 바로 가는 게 더 빠르면 자동차 시간.
+//    역(공항)에서 도시까지 자동차 시간은 직선 거리 × 1.3(도로 굽음) ÷ 서울~부산 자동차 평균 속력으로 어림한다.
+//    그래서 모든 도시가 시간을 가지고, 빈 도시 때문에 지도가 찌그러지지 않는다. 섬(제주, 서귀포)은 바다를 차로 건너지 않는다.
 import ROADS from './roads.js';
+import MAP from './map.js';
 
 const BUSAN = { walk: 30 * 1440, car: 300, ktx: 150, air: 60 };
 
@@ -54,6 +59,38 @@ export const AIR = {
 };
 
 const ISLAND = new Set(['jeju', 'seogwipo']); // 자동차, 도보로 바로 갈 수 없음(바다)
+export const TRANSFER_MIN = 10;  // 역, 공항에서 자동차로 갈아타는 시간
+const DETOUR = 1.3;               // 직선 거리 → 도로 거리
+const CITY = new Map(MAP.cities.map((c) => [c.id, c]));
+
+/** 두 도시 사이 자동차 시간 어림(분). 섬과 뭍 사이는 null */
+export function carBetween(a, b) {
+  if (a === b) return 0;
+  if (ISLAND.has(a) !== ISLAND.has(b)) return null;
+  const A = CITY.get(a), B = CITY.get(b);
+  const km = Math.hypot(A.x - B.x, A.y - B.y) * MAP.kmPerPx * DETOUR;
+  const kmPerMin = ROADS.busan.km / BUSAN.car;
+  return km / kmPerMin;
+}
+
+/** 표(역, 공항이 있는 도시)를 바탕으로 모든 도시의 「그 수단 + 자동차」 가장 빠른 시간을 셈한다 */
+function withTransfer(table, car, unit) {
+  const out = {};
+  for (const id of Object.keys(ROADS)) {
+    if (table[id]) { out[id] = { ...table[id] }; continue; }
+    let best = null;
+    for (const [hub, t] of Object.entries(table)) {
+      const leg = carBetween(hub, id);
+      if (leg == null) continue;
+      const total = t.min + TRANSFER_MIN + leg;
+      if (!best || total < best.min) best = { min: total, est: true, via: hub, note: `${CITY.get(hub).name}${unit}까지 간 다음 자동차로 갈아탐(어림)` };
+    }
+    const direct = car[id]?.min;
+    if (direct != null && (!best || direct <= best.min)) best = { min: direct, byCar: true, note: '자동차로 바로 가는 편이 더 빨라요' };
+    out[id] = best ?? { min: null };
+  }
+  return out;
+}
 
 const cache = new Map();
 /** 수단별 시간 표: { 도시id: { min, est?, note?, km? } }. 갈 수 없으면 { min: null } */
@@ -72,9 +109,9 @@ export function timesFor(mode, { ktxAfter = true } = {}) {
     }
     out.busan.min = BUSAN[mode];
   } else if (mode === 'ktx' || mode === 'air') {
-    const table = mode === 'ktx' ? KTX : AIR;
-    for (const id of ids) out[id] = table[id] ? { ...table[id] } : { min: null };
-    if (mode === 'ktx' && !ktxAfter) out.gangneung = { ...GANGNEUNG_BEFORE };
+    const table = mode === 'ktx' ? { ...KTX } : { ...AIR };
+    if (mode === 'ktx' && !ktxAfter) table.gangneung = { ...GANGNEUNG_BEFORE };
+    Object.assign(out, withTransfer(table, timesFor('car'), mode === 'ktx' ? '역' : ' 공항'));
   }
   cache.set(key, out);
   return out;
@@ -84,14 +121,14 @@ const hm = (j, step) => { const m = j * step, hh = Math.floor(m / 60), mm = m % 
 export const MODES = {
   real: { name: '실제', button: '실제 지도', icon: 'map', title: '실제 지도', sub: '거리 그대로 그린 지도. 동심원은 서울에서 100km 간격', busanMin: null, busanText: '약 325km',
     ringKm: 100, major: 1, labelEvery: 1, ringLabel: (j) => `${j * 100}km`, ringLegend: '동심원: 서울에서 100km 간격' },
-  walk: { name: '도보', button: '걸어서', icon: 'walk', title: '걸어서 가는 시간 지도', sub: '서울에서 오래 걸릴수록 멀리 그렸어요. 동심원은 5일 간격', busanMin: BUSAN.walk, busanText: '약 30일',
-    ringMin: 5 * 1440, major: 1, labelEvery: 1, ringLabel: (j) => `${j * 5}일`, ringLegend: '동심원: 걸어서 5일 간격' },
+  walk: { name: '도보', button: '걸어서', icon: 'walk', title: '걸어서 가는 시간 지도', sub: '모든 시간 지도와 같은 축척이라 아주 커요. 동심원은 1일(24시간) 간격', busanMin: BUSAN.walk, busanText: '약 30일',
+    ringMin: 1440, major: 5, labelEvery: 5, ringLabel: (j) => `${j}일`, ringLegend: '동심원: 1일(24시간) 간격. 1시간 원은 너무 촘촘해서 하루마다 그렸어요' },
   car: { name: '자동차', button: '자동차', icon: 'car', title: '자동차로 가는 시간 지도', sub: '서울에서 오래 걸릴수록 멀리 그렸어요. 동심원은 1시간 간격', busanMin: BUSAN.car, busanText: '약 5시간',
-    ringMin: 60, major: 1, labelEvery: 1, ringLabel: (j) => `${j}시간`, ringLegend: '동심원: 자동차로 1시간 간격' },
-  ktx: { name: 'KTX', button: 'KTX', icon: 'train', title: 'KTX로 가는 시간 지도', sub: '서울에서 오래 걸릴수록 멀리 그렸어요. 동심원은 30분 간격', busanMin: BUSAN.ktx, busanText: '약 2시간 30분',
-    ringMin: 30, major: 2, labelEvery: 2, ringLabel: (j) => hm(j, 30), ringLegend: '동심원: KTX로 30분 간격' },
-  air: { name: '비행기', button: '비행기', icon: 'plane', title: '비행기로 가는 시간 지도', sub: '김포 공항에서 뜨는 시간만 셌어요. 동심원은 30분 간격', busanMin: BUSAN.air, busanText: '약 1시간',
-    ringMin: 30, major: 2, labelEvery: 1, ringLabel: (j) => hm(j, 30), ringLegend: '동심원: 비행기로 30분 간격' },
+    ringMin: 60, major: 1, labelEvery: 1, ringLabel: (j) => `${j}시간`, ringLegend: '동심원: 1시간 간격(모든 시간 지도가 같은 축척)' },
+  ktx: { name: 'KTX', button: 'KTX', icon: 'train', title: 'KTX로 가는 시간 지도', sub: '자동차 지도와 같은 축척이라 지도가 줄어들어요. 동심원은 1시간 간격', busanMin: BUSAN.ktx, busanText: '약 2시간 30분',
+    ringMin: 60, major: 1, labelEvery: 1, ringLabel: (j) => `${j}시간`, ringLegend: '동심원: 1시간 간격(모든 시간 지도가 같은 축척)' },
+  air: { name: '비행기', button: '비행기', icon: 'plane', title: '비행기로 가는 시간 지도', sub: '김포 공항에서 뜨는 시간만 셌어요. 같은 축척이라 지도가 가장 작아요. 동심원은 1시간 간격', busanMin: BUSAN.air, busanText: '약 1시간',
+    ringMin: 60, major: 1, labelEvery: 1, ringLabel: (j) => `${j}시간`, ringLegend: '동심원: 1시간 간격(모든 시간 지도가 같은 축척)' },
 };
 
 export const SOURCES = [
@@ -100,5 +137,6 @@ export const SOURCES = [
   '도보 시간: 도로 거리를 하루에 걷는 거리(서울에서 부산까지 도로 거리를 30일로 나눈 값)로 나눔',
   'KTX 시간: 코레일 열차 시간표에서 가장 빠른 열차(2026년 11월 조사). 강릉선 개통 전 시간은 2017년 신문 기사 수치',
   '비행기 시간: 김포 공항 출발 국내선 시간표의 운항 시간(2026년 11월 조사)',
+  '역이나 공항이 없는 도시: 가장 빠른 역(공항)까지 시간 + 갈아타기 10분 + 자동차 시간(직선 거리 × 1.3을 자동차 평균 속력으로 나눈 어림값)',
   '지도 경계: 통계청 SGIS 행정 경계 기반 자료(vuski/admdongkor)를 단순하게 다듬음',
 ];

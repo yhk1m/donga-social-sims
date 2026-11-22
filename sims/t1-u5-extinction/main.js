@@ -5,6 +5,8 @@
 // 규칙(EMBED_RULES.md): DOM 은 h() 로만 만들고, 검색은 root 안에서만, fetch 없이 자료는 정적 import.
 import { createShell, addBlock } from '../../src/shared/shell.js';
 import { h, icon, clear } from '../../src/shared/dom.js';
+import '../../src/shared/donga.css';
+import { addViewBlock, boardK } from '../../src/shared/dongaUi.js';
 import './style.css';
 import data from './data/extinction.json';
 
@@ -95,7 +97,7 @@ export default function mount(root) {
   const backBtn = h('button', { class: 'ds-btn', type: 'button', on: { click: () => animateTo(0) } }, icon('reset'), '실제 지도');
   const sidoCheck = h('input', { class: 'ext-checkbox', type: 'checkbox', checked: true, on: { change: (ev) => { sidoPath.style.display = ev.target.checked ? '' : 'none'; } } });
   addBlock(panel, h('div', { class: 'ds-ctl' },
-    h('label', { class: 'ds-label' }, '실제 지도 → 카토그램', morphOut),
+    h('label', { class: 'ds-label' }, '실제 지도에서 카토그램으로', morphOut),
     morph,
     h('div', { class: 'ds-row' }, playBtn, backBtn),
     h('label', { class: 'ds-check' }, sidoCheck, '시도 경계 보기')));
@@ -142,14 +144,23 @@ export default function mount(root) {
   const P = (...c) => h('p', { class: 'ext-p' }, ...c);
   const B = (t) => h('b', { class: 'ext-strong' }, t);
   addBlock(panel, h('div', { class: 'ds-note' },
-    P(B('지방소멸위험지수'), ' = 20~39세 여성 인구 ÷ 65세 이상 인구. 값이 작을수록 아이를 낳을 수 있는 젊은 여성에 비해 고령 인구가 많아 인구가 줄어들 위험이 크다는 뜻이다.'),
-    P(B('크기 규칙'), ' 지수 1.5 이상이면 원래 크기, 그보다 낮으면 넓이 = 원래 넓이 × (지수 ÷ 1.5). 예를 들어 지수 0.3인 군은 넓이가 5분의 1로 줄어든다. 육각 돌링에서는 모든 시군구가 같은 크기의 육각형에서 출발해 같은 규칙으로 넓이가 정해지며, 서로 겹치지 않도록 원래 위치 가까이에 놓였다.'),
-    P(`${yy}년 ${+mm}월 기준으로 지수 1.5 이상인 시군구는 ${counts[4]}곳이어서 모든 시군구가 조금씩이라도 줄어든다.`)));
+    P(B('지방소멸위험지수'), ' = 20~39세 여성 인구 ÷ 65세 이상 인구예요. 값이 작을수록 아이를 낳을 수 있는 젊은 여성에 비해 고령 인구가 많아서, 인구가 줄어들 위험이 크다는 뜻이에요.'),
+    P(B('크기 규칙'), ' 지수가 1.5 이상이면 원래 크기 그대로예요. 그보다 낮으면 넓이 = 원래 넓이 × (지수 ÷ 1.5)예요. 예를 들어 지수가 0.3인 군은 넓이가 5분의 1로 줄어들어요. 육각 돌링에서는 모든 시군구가 같은 크기의 육각형에서 출발해 같은 규칙으로 넓이가 정해지고, 서로 겹치지 않게 원래 위치 가까이에 놓여요.'),
+    P(`${yy}년 ${+mm}월 기준으로 지수 1.5 이상인 시군구는 ${counts[4]}곳이에요. 그래서 모든 시군구가 조금씩이라도 줄어들어요.`)));
+  // 화면 밝기와 칠판 모드 (동아 디자인). 칠판 모드를 켜고 끄면 무대 크기가 바뀌므로 시작 화면을 다시 맞춘다
+  addViewBlock(panel, root, { onBoard: () => {
+    hideTip();
+    const atHome = vb.x === home.x && vb.y === home.y && vb.w === home.w && vb.h === home.h;
+    fitHome();
+    if (atHome) Object.assign(vb, home);
+    applyVB();
+  } });
+
   addBlock(panel, h('div', { class: 'ds-note ext-small' },
     P(B('인구'), ` 행정안전부 주민등록 인구통계 「연령별 인구현황」(시군구, 5세 단위, 성별), ${yy}년 ${+mm}월 말. `,
       h('a', { class: 'ext-link', href: 'https://jumin.mois.go.kr/ageStatMonth.do', target: '_blank', rel: 'noopener' }, 'jumin.mois.go.kr')),
-    P(B('지수·등급'), ' 이상호(한국고용정보원)의 지방소멸위험지수와 5단계 구분(0.2·0.5·1.0·1.5).'),
-    P(B('경계'), ' 통계청 SGIS 행정동 경계(공공누리 제1유형)를 가공한 vuski/admdongkor 2026-07-01판(CC BY 4.0)을 시군구로 합침. 자치구가 아닌 구(예: 수원시 장안구)는 시로 합쳤고, 2026년 7월 인천 행정체제 개편(제물포구·영종구·서해구·검단구)과 전남광주통합특별시 출범을 반영했다.')));
+    P(B('지수와 등급'), ' 이상호(한국고용정보원)의 지방소멸위험지수와 5단계 구분(0.2, 0.5, 1.0, 1.5)을 따랐어요.'),
+    P(B('경계'), ' 통계청 SGIS 행정동 경계(공공누리 제1유형)를 가공한 vuski/admdongkor 2026-07-01판(CC BY 4.0)을 시군구로 합쳤어요. 자치구가 아닌 구(예: 수원시 장안구)는 시로 합쳤고, 2026년 7월 인천 행정체제 개편(제물포구, 영종구, 서해구, 검단구)과 전남광주통합특별시 출범을 반영했어요.')));
 
   // ---------- 그리기 ----------
   function render() {
@@ -187,9 +198,9 @@ export default function mount(root) {
   function updateCaption() {
     const pct = Math.round(state.t * 100);
     const b = (t) => h('b', { class: 'ext-strong' }, t);
-    if (pct === 0) caption.replaceChildren(b('실제 지도'), ' · 시군구 색 = 소멸위험 등급');
-    else if (state.mode === 'area') caption.replaceChildren(b('행정구역 카토그램'), ` ${pct}% · 회색은 원래 면적, 색칠한 부분은 지수에 비례한 면적`);
-    else caption.replaceChildren(b('육각 돌링 카토그램'), ` ${pct}% · 육각형 하나 = 시군구 하나, 넓이 ∝ 지수`);
+    if (pct === 0) caption.replaceChildren(b('실제 지도'), ', 시군구 색 = 소멸위험 등급');
+    else if (state.mode === 'area') caption.replaceChildren(b('행정구역 카토그램'), ` ${pct}%, 회색은 원래 넓이이고 색칠한 부분은 지수에 비례한 넓이예요`);
+    else caption.replaceChildren(b('육각 돌링 카토그램'), ` ${pct}%, 육각형 하나가 시군구 하나이고 넓이는 지수에 비례해요`);
   }
 
   // ---------- 재생 ----------
@@ -228,14 +239,17 @@ export default function mount(root) {
   const [ex0, ey0, ex1, ey1] = data.extent;
   const PAD = 14;
   const home = { x: ex0 - PAD, y: ey0 - PAD, w: ex1 - ex0 + 2 * PAD, h: ey1 - ey0 + 2 * PAD };
-  const baseH = home.h;
+  const baseX = home.x, baseW = home.w, baseH = home.h;
   const narrowQ = matchMedia('(max-width: 820px)');
   // 사이드바가 아래로 쌓인 화면(820px 이하)에서는 아래쪽 안내 띠가 지도를 가리지 않게 아래 여백을 더 둔다
   function fitHome() {
     const r = stage.getBoundingClientRect();
     if (!r.width || !r.height) return;
-    const upp = Math.max(home.w / r.width, baseH / r.height);
+    const upp = Math.max(baseW / r.width, baseH / r.height);
     home.h = baseH + (narrowQ.matches ? 56 * upp : 0);
+    // 칠판 모드에서는 커진 확대 단추가 서해 섬을 가리지 않게 왼쪽 여백을 더 둔다
+    const k = boardK(root), left = k > 1 ? 64 * k * upp : 0;
+    home.x = baseX - left; home.w = baseW + left;
   }
   const vb = { ...home };
   function applyVB() { svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`); if (state.mode === 'hex') updateLabelVisibility(); }
@@ -342,13 +356,16 @@ export default function mount(root) {
         row('소멸위험지수', r.index.toFixed(3)),
         row('등급', badge(c))));
     tip.hidden = false;
+    // 칠판 모드에서는 말풍선도 zoom 으로 커진다. 크기는 실제 화면 값으로 재고, 위치는 배율로 나눠 넣는다
+    const k = boardK(root);
     const sr = stage.getBoundingClientRect();
-    const tw = tip.offsetWidth, th = tip.offsetHeight;
-    let x = cx - sr.left + 14, y = cy - sr.top + 14;
-    if (x + tw > sr.width - 8) x = cx - sr.left - tw - 14;
-    if (y + th > sr.height - 8) y = cy - sr.top - th - 14;
-    tip.style.left = `${Math.max(8, x)}px`;
-    tip.style.top = `${Math.max(8, y)}px`;
+    const tr = tip.getBoundingClientRect();
+    const tw = tr.width, th = tr.height, gap = 14 * k;
+    let x = cx - sr.left + gap, y = cy - sr.top + gap;
+    if (x + tw > sr.width - 8) x = cx - sr.left - tw - gap;
+    if (y + th > sr.height - 8) y = cy - sr.top - th - gap;
+    tip.style.left = `${Math.max(8, x) / k}px`;
+    tip.style.top = `${Math.max(8, y) / k}px`;
   }
   function hideTip() { tip.hidden = true; }
 

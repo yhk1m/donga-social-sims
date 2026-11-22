@@ -58,3 +58,23 @@ test('시간 글', () => {
   assert.equal(formatMinutes(30 * 1440, { days: true }), '약 30일');
   assert.equal(formatMinutes(2.46 * 1440, { days: true }), '약 2.5일');
 });
+
+// 2026-11-22: 역, 공항이 없는 도시도 갈아타기로 시간을 가진다(지도에 빈 도시가 없게)
+import { timesFor, carBetween, TRANSFER_MIN } from '../../sims/s1-u1-time-map/data/times.js';
+test('KTX, 비행기 지도에서 뭍의 모든 도시가 시간을 가진다', () => {
+  for (const mode of ['ktx', 'air']) {
+    const t = timesFor(mode);
+    for (const [id, v] of Object.entries(t)) {
+      if (mode === 'ktx' && (id === 'jeju' || id === 'seogwipo')) { assert.equal(v.min, null); continue; }
+      assert.ok(v.min > 0, `${mode} ${id}`);
+      assert.ok(v.min <= timesFor('car')[id]?.min || timesFor('car')[id]?.min == null, `${mode} ${id} 는 자동차보다 늦지 않다`);
+    }
+  }
+});
+test('갈아타기 시간 = 역까지 + 갈아타기 + 자동차, 섬과 뭍 사이는 차로 못 감', () => {
+  const t = timesFor('air');
+  const v = t.seogwipo;
+  assert.equal(v.via, 'jeju');
+  near(v.min, t.jeju.min + TRANSFER_MIN + carBetween('jeju', 'seogwipo'), 1e-9);
+  assert.equal(carBetween('jeju', 'busan'), null);
+});

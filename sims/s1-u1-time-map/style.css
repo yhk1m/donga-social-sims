@@ -1,68 +1,89 @@
 /* © 2026 김용현 */
-/* 줄어드는 지도. 모든 선택자는 .ds-sim 으로 시작, 태그 선택자 금지 */
-.ds-sim .tm-stage { background: #eef3f6; }
+/* 줄어드는 지도, 동아 디자인 적용판(공통 토큰은 src/shared/donga.css). 모든 선택자는 .ds-sim 으로 시작, 태그 선택자 금지.
+   색: 도시 점은 자료 색 2(호박), 동심원은 주색(청록), 서울은 먹. 칠판 모드에서는 var(--bk) 만큼 글자와 점을 키운다. */
+.ds-sim .tm-stage { background: var(--map-sea); }
 .ds-sim .tm-map { display: block; width: 100%; height: 100%; --u: 1; }
-.ds-sim .tm-sea { fill: #eef3f6; }
-.ds-sim .tm-land { fill: #fbfaf6; stroke: none; }
-.ds-sim .tm-border { fill: none; stroke: #c9c5b9; stroke-width: calc(0.8px * var(--u)); stroke-linejoin: round; }
-.ds-sim .tm-coast { fill: none; stroke: #7d8a94; stroke-width: calc(1px * var(--u)); stroke-linejoin: round; }
-.ds-sim .tm-ghost { fill: none; stroke: #9aa7b1; stroke-width: calc(1px * var(--u)); stroke-dasharray: calc(3px * var(--u)) calc(3px * var(--u)); opacity: 0.8; transition: opacity 0.2s; }
+.ds-sim .tm-sea { fill: var(--map-sea); }
+.ds-sim .tm-land { fill: var(--map-land); stroke: none; }
+.ds-sim .tm-border { fill: none; stroke: var(--map-border); stroke-width: calc(0.8px * var(--u) * var(--bk)); stroke-linejoin: round; }
+.ds-sim .tm-coast { fill: none; stroke: var(--map-coast); stroke-width: calc(1px * var(--u) * var(--bk)); stroke-linejoin: round; }
+.ds-sim .tm-ghost { fill: none; stroke: var(--icon-muted); stroke-width: calc(1px * var(--u) * var(--bk)); stroke-dasharray: calc(3px * var(--u)) calc(3px * var(--u)); opacity: 0.8; transition: opacity 0.2s; }
 .ds-sim .tm-ghost.is-hidden { opacity: 0; }
 .ds-sim .tm-rings { transition: opacity 0.3s; }
 .ds-sim .tm-rings.is-hidden { opacity: 0; transition: none; }
-.ds-sim .tm-ring { fill: none; stroke: #1f6feb; stroke-opacity: 0.22; stroke-width: calc(1px * var(--u)); }
-.ds-sim .tm-ring.is-major { stroke-opacity: 0.45; }
-.ds-sim .tm-ring-label { fill: #1f6feb; font-weight: 700; paint-order: stroke; stroke: #eef3f6; stroke-width: calc(3px * var(--u)); }
+.ds-sim .tm-ring { fill: none; stroke: var(--accent); stroke-opacity: 0.25; stroke-width: calc(1px * var(--u) * var(--bk)); }
+.ds-sim .tm-ring.is-major { stroke-opacity: 0.5; }
+.ds-sim .tm-ring-label { fill: var(--accent-text); font-weight: 700; paint-order: stroke; stroke: var(--map-sea); stroke-width: calc(3px * var(--u) * var(--bk)); }
 
 .ds-sim .tm-city { cursor: pointer; }
-.ds-sim .tm-cin { transform: scale(var(--u)); }
-.ds-sim .tm-dot { fill: #d9480f; stroke: #fff; stroke-width: 1.5px; transition: fill 0.2s; }
-.ds-sim .tm-seoul { fill: #1d2126; stroke: #fff; stroke-width: 1.5px; }
-.ds-sim .tm-label { font-size: 13px; font-weight: 600; fill: #1d2126; paint-order: stroke; stroke: #fbfaf6; stroke-width: 3px; stroke-linejoin: round; }
+.ds-sim .tm-cin { transform: scale(calc(var(--u) * var(--bk))); }
+.ds-sim .tm-dot { fill: var(--data-2); stroke: var(--map-land); stroke-width: 1.5px; transition: fill 0.2s; }
+.ds-sim .tm-seoul { fill: var(--data-3); stroke: var(--map-land); stroke-width: 1.5px; }
+.ds-sim .tm-label { font-size: 13px; font-weight: 600; fill: var(--text-strong); paint-order: stroke; stroke: var(--map-halo); stroke-width: 3px; stroke-linejoin: round; }
 .ds-sim .tm-city.is-seoul .tm-label { font-weight: 800; font-size: 15px; }
-.ds-sim .tm-city.is-off .tm-dot { fill: #fff; stroke: #a9aeb4; }
-.ds-sim .tm-city.is-off .tm-label { fill: #a9aeb4; }
-.ds-sim .tm-city.is-hover .tm-dot { fill: #1f6feb; }
-.ds-sim .tm-city.is-hover.is-off .tm-dot { fill: #fff; stroke: #1f6feb; }
+.ds-sim .tm-city.is-off .tm-dot { fill: var(--map-land); stroke: var(--text-disabled); }
+.ds-sim .tm-city.is-off .tm-label { fill: var(--text-disabled); }
+.ds-sim .tm-city.is-hover .tm-dot { fill: var(--accent); }
+.ds-sim .tm-city.is-hover.is-off .tm-dot { fill: var(--map-land); stroke: var(--accent); }
 
-.ds-sim .tm-cap { position: absolute; left: 16px; top: 14px; background: rgba(255,255,255,0.92); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; max-width: 360px; pointer-events: none; }
-.ds-sim .tm-cap-title { font-size: 18px; font-weight: 800; }
-.ds-sim .tm-cap-sub { font-size: 13px; color: var(--ink-2); }
+.ds-sim .tm-cap { position: absolute; left: 16px; top: 14px; background: color-mix(in oklch, var(--surface) 92%, transparent); border-radius: var(--r-control); box-shadow: var(--shadow); padding: 10px 14px; max-width: 360px; pointer-events: none; zoom: var(--bk); }
+.ds-sim .tm-cap-title { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--text-strong); }
+.ds-sim .tm-cap-sub { font-size: 13px; color: var(--text-muted); }
 
-.ds-sim .tm-tip { position: absolute; z-index: 20; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 10px 12px; min-width: 210px; pointer-events: none; font-size: 13px; }
-.ds-sim .tm-tip-name { font-size: 16px; font-weight: 800; }
+.ds-sim .tm-tip { position: absolute; z-index: 20; background: var(--surface-raised); color: var(--text-strong); border-radius: 12px; box-shadow: var(--shadow); padding: 10px 14px; min-width: 210px; pointer-events: none; font-size: 13px; zoom: var(--bk); }
+.ds-sim .tm-tip-name { font-size: 16px; font-weight: 700; }
 .ds-sim .tm-tip-km { color: var(--ink-2); margin-bottom: 6px; }
 .ds-sim .tm-tip-table { border-collapse: collapse; width: 100%; }
 .ds-sim .tm-tip-k { text-align: left; font-weight: 500; color: var(--ink-2); padding: 3px 12px 3px 0; }
 .ds-sim .tm-tip-v { text-align: right; font-weight: 700; padding: 3px 0; font-variant-numeric: tabular-nums; }
-.ds-sim .tm-tip-v.is-none { color: #a9aeb4; font-weight: 500; }
-.ds-sim .tm-tip-row.is-cur .tm-tip-k, .ds-sim .tm-tip-row.is-cur .tm-tip-v { color: var(--accent); }
+.ds-sim .tm-tip-v.is-none { color: var(--text-disabled); font-weight: 500; }
+.ds-sim .tm-tip-row.is-cur .tm-tip-k, .ds-sim .tm-tip-row.is-cur .tm-tip-v { color: var(--accent-text); }
 .ds-sim .tm-tip-note { margin-top: 6px; color: var(--ink-2); font-size: 12px; }
 
 .ds-sim .tm-sec { display: flex; flex-direction: column; gap: 8px; }
-.ds-sim .tm-hint { margin: 0; font-size: 12.5px; color: var(--ink-2); }
+.ds-sim .tm-hint { margin: 0; font-size: 0.8125rem; line-height: 1.55; color: var(--text-muted); }
 .ds-sim .tm-modes { display: flex; flex-direction: column; gap: 4px; }
-.ds-sim .tm-mode { font: inherit; display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); cursor: pointer; text-align: left; box-shadow: none; }
-.ds-sim .tm-mode:hover { background: #f4f3ee; }
-.ds-sim .tm-mode[aria-pressed=true] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); border-radius: 0 8px 8px 0; }
-.ds-sim .tm-mode-name { font-weight: 700; font-size: 15px; }
-.ds-sim .tm-mode-time { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.ds-sim .tm-mode[aria-pressed=true] .tm-mode-time { color: var(--accent); }
+.ds-sim .tm-mode { font: inherit; display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 10px; min-height: var(--touch); padding: 0 14px; border: 0; border-radius: var(--r-control); background: var(--fill-subtle); color: var(--text-strong); cursor: pointer; text-align: left; transition: background-color 150ms cubic-bezier(0.35, 0, 0.35, 1); }
+.ds-sim .tm-mode:hover { background: color-mix(in oklch, var(--fill-subtle) 85%, var(--text-strong)); }
+.ds-sim .tm-mode[aria-pressed=true] { background: var(--accent-soft); color: var(--accent-text); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.ds-sim .tm-mode-name { font-weight: 600; font-size: 0.9375rem; }
+.ds-sim .tm-mode-time { font-size: 0.8125rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.ds-sim .tm-mode[aria-pressed=true] .tm-mode-time { color: var(--accent-text); }
 
 .ds-sim .tm-bars { display: flex; flex-direction: column; gap: 6px; }
 .ds-sim .tm-bar-row { display: grid; grid-template-columns: 46px 1fr 92px; align-items: center; gap: 8px; font-size: 13px; }
-.ds-sim .tm-bar-k { color: var(--ink-2); }
-.ds-sim .tm-bar-track { height: 10px; background: #f1f0eb; display: block; }
-.ds-sim .tm-bar { display: block; height: 100%; background: var(--accent); }
-.ds-sim .tm-bar-walk { background: #8a6d3b; }
+.ds-sim .tm-bar-k { color: var(--text-muted); }
+.ds-sim .tm-bar-track { height: 10px; background: var(--fill-subtle); border-radius: 2px; display: block; overflow: hidden; }
+.ds-sim .tm-bar { display: block; height: 100%; background: var(--data-1); }
+.ds-sim .tm-bar-walk { background: var(--data-2); }
 .ds-sim .tm-bar-v { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-.ds-sim .tm-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; font-size: 13px; }
+.ds-sim .tm-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 0.875rem; color: var(--text-strong); }
 .ds-sim .tm-lg-seoul, .ds-sim .tm-lg-dot, .ds-sim .tm-lg-off, .ds-sim .tm-lg-ring { display: inline-block; width: 12px; height: 12px; margin-right: 8px; vertical-align: -1px; box-sizing: border-box; }
-.ds-sim .tm-lg-seoul { background: #1d2126; }
-.ds-sim .tm-lg-dot { background: #d9480f; border-radius: 50%; }
-.ds-sim .tm-lg-off { background: #fff; border: 2px solid #a9aeb4; border-radius: 50%; }
-.ds-sim .tm-lg-ring { border: 1.5px solid rgba(31,111,235,0.6); border-radius: 50%; }
+.ds-sim .tm-lg-seoul { background: var(--data-3); }
+.ds-sim .tm-lg-dot { background: var(--data-2); border-radius: 50%; }
+.ds-sim .tm-lg-off { background: var(--surface); border: 2px solid var(--text-disabled); border-radius: 50%; }
+.ds-sim .tm-lg-ring { border: 1.5px solid var(--accent); border-radius: 50%; }
 
-.ds-sim .tm-src { font-size: 12px; color: var(--ink-2); }
+.ds-sim .tm-src { font-size: 0.8125rem; color: var(--text-muted); }
 .ds-sim .tm-src-list { margin: 6px 0 0; padding-left: 16px; display: flex; flex-direction: column; gap: 4px; }
+
+@media (prefers-reduced-motion: reduce) { .ds-sim .tm-mode { transition: none; } }
+/* 칠판 모드: 커진 설명 상자가 서울 쪽 지도를 가리지 않게 왼쪽 아래(바다)로 */
+.ds-sim[data-board="on"] .tm-cap { top: auto; bottom: 14px; }
+/* 역, 공항이 없어 갈아타고 가는 도시: 속 빈 점 */
+.ds-sim .tm-city.is-via .tm-dot { fill: var(--map-land); stroke: var(--data-2); stroke-width: 2px; }
+.ds-sim .tm-lg-via { display: inline-block; width: 12px; height: 12px; margin-right: 8px; vertical-align: -1px; box-sizing: border-box; background: var(--surface); border: 2px solid var(--data-2); border-radius: 50%; }
+/* 비행기 지도에서 자동차가 더 빠른 도시 */
+.ds-sim .tm-city.is-slow .tm-dot { fill: var(--map-land); stroke: var(--text-disabled); }
+.ds-sim .tm-city.is-slow .tm-label { fill: var(--text-disabled); }
+/* 도보 지도에서 같은 축척의 자동차 지도 크기 */
+.ds-sim .tm-cmp { transition: opacity 0.3s; }
+.ds-sim .tm-cmp.is-hidden { opacity: 0; transition: none; }
+.ds-sim .tm-cmp-land { fill: var(--accent); stroke: none; }
+.ds-sim .tm-cmp-line { stroke: var(--accent); stroke-width: calc(1.5px * var(--u) * var(--bk)); }
+.ds-sim .tm-cmp-text { fill: var(--accent-text); font-weight: 700; paint-order: stroke; stroke: var(--map-land); stroke-width: calc(3px * var(--u) * var(--bk)); }
+.ds-sim .tm-cmp-text { text-anchor: end; }
+.ds-sim .tm-map.is-air .tm-city.is-via .tm-label, .ds-sim .tm-map.is-air .tm-city.is-slow .tm-label { display: none; }
+.ds-sim .tm-rings.is-dense .tm-ring { stroke-opacity: 0.12; }
+.ds-sim .tm-rings.is-dense .tm-ring.is-major { stroke-opacity: 0.5; }

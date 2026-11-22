@@ -4,6 +4,8 @@
 // 계산부는 warp.js(Node 시험), 자료는 data/*.js. 규칙(EMBED_RULES.md): DOM 은 h() 로만, 검색은 root 안에서만.
 import { createShell, addBlock } from '../../src/shared/shell.js';
 import { h, s, icon, clear } from '../../src/shared/dom.js';
+import '../../src/shared/donga.css';
+import { addViewBlock, boardK } from '../../src/shared/dongaUi.js';
 import './style.css';
 import MAP from './data/map.js';
 import { MODES, timesFor, SOURCES } from './data/times.js';
@@ -47,6 +49,12 @@ export default function mount(root) {
 
   const state = { mode: 'real', ktxAfter: true, ghost: true, hover: null };
   const cache = new Map();
+  // 축척 하나(2026-11-22 교사 요청): 모든 시간 지도에서 1분 = K px. 자동차 지도가 실제 지도와 비슷한 크기가 되게
+  // 서울~부산 자동차 5시간을 실제 서울~부산 거리에 맞췄다. 그래서 KTX, 비행기 지도는 실제로 작아지고, 도보 지도는 아주 커진다.
+  const K = rBusan / MODES.car.busanMin;
+  const pad = 28;
+  const padVB = (b) => [b[0] - pad, b[1] - pad, b[2] - b[0] + pad * 2, b[3] - b[1] + pad * 2];
+  let fixedVB = null; // 실제, 자동차, KTX, 비행기 지도가 함께 쓰는 화면(줄어드는 모습이 보이게 화면을 고정)
 
   // 수단(+강릉선 선택)에 맞는 변형 좌표 계산(한 번 계산하면 저장)
   function target(mode, ktxAfter) {
@@ -57,15 +65,25 @@ export default function mount(root) {
       out = { ...base, k: 1 / MAP.kmPerPx, times: null };
     } else {
       const times = timesFor(mode, { ktxAfter });
-      const k = rBusan / times.busan.min; // 서울~부산 거리는 그대로 두는 축척(px / 분)
-      const ctl = makeControls(O, cities.map((c) => ({ x: c.x, y: c.y, t: times[c.id]?.min ?? null })), k);
+      const k = K;
+      // 비행기 지도에서 자동차가 더 빠른 가운데 도시까지 넣으면, 남쪽 공항 도시가 더 가까워져 지도가 접힌다.
+      // 그래서 비행기 지도는 공항이 있는 도시만으로 땅 모양을 정하고, 나머지 도시는 땅을 따라 놓는다(속 빈 점, 회색 점). 시간은 말풍선에
+      const useT = (c) => (mode === 'air' && (times[c.id]?.byCar || times[c.id]?.via) ? null : times[c.id]?.min ?? null);
+      const ctl = makeControls(O, cities.map((c) => ({ x: c.x, y: c.y, t: useT(c) })), k);
       const w = (a) => warpFlat(a, O, ctl);
       out = { land: base.land.map((rs) => rs.map(w)), coast: base.coast.map(w), borders: base.borders.map(w), cities: w(base.cities), k, times };
     }
-    const b = bounds([...out.land.flat(), out.cities]);
-    const pad = 28;
-    out.vb = [b[0] - pad, b[1] - pad, b[2] - b[0] + pad * 2, b[3] - b[1] + pad * 2];
+    out.raw = bounds([...out.land.flat(), out.cities]);
     cache.set(key, out);
+    if (mode === 'walk') out.vb = padVB(out.raw);
+    else {
+      if (!fixedVB) {
+        const a = mode === 'real' ? out.raw : target('real', true).raw;
+        const c = mode === 'car' ? out.raw : target('car', true).raw;
+        fixedVB = padVB([Math.min(a[0], c[0]), Math.min(a[1], c[1]), Math.max(a[2], c[2]), Math.max(a[3], c[3])]);
+      }
+      out.vb = fixedVB;
+    }
     return out;
   }
 
@@ -75,6 +93,11 @@ export default function mount(root) {
   const bordersEl = h('path', { class: 'tm-border' });
   const coastEl = h('path', { class: 'tm-coast' });
   const gRings = h('g', { class: 'tm-rings' });
+  // 도보 지도에서만: 같은 축척의 자동차 지도가 얼마나 작은지
+  const cmpLand = h('path', { class: 'tm-cmp-land' });
+  const cmpText = h('text', { class: 'tm-cmp-text' }, '자동차 지도는 이만큼');
+  const cmpLine = h('line', { class: 'tm-cmp-line' });
+  const gCmp = h('g', { class: 'tm-cmp is-hidden' }, cmpLand, cmpLine, cmpText);
   const cityEls = cities.map((c, i) => {
     const isSeoul = c.id === 'seoul';
     const dot = isSeoul ? h('rect', { class: 'tm-seoul', x: -6, y: -6, width: 12, height: 12 }) : h('circle', { class: 'tm-dot', r: 4.5 });
@@ -87,7 +110,7 @@ export default function mount(root) {
   });
   const svg = h('svg', { class: 'tm-map', role: 'img', 'aria-label': '서울에서 걸리는 시간에 따라 휘는 우리나라 지도', preserveAspectRatio: 'xMidYMid meet' },
     h('rect', { class: 'tm-sea', x: -5000, y: -5000, width: 10000, height: 10000 }),
-    h('g', {}, landEls), gGhost, bordersEl, coastEl, gRings, h('g', {}, cityEls));
+    h('g', {}, landEls), gGhost, bordersEl, coastEl, gRings, h('g', {}, cityEls), gCmp);
 
   const capTitle = h('div', { class: 'tm-cap-title' });
   const capSub = h('div', { class: 'tm-cap-sub' });
@@ -124,16 +147,34 @@ export default function mount(root) {
       gRings.append(h('circle', { class: 'tm-ring' + (j % m.major === 0 ? ' is-major' : ''), cx: O[0], cy: O[1], r: r.toFixed(1) }));
       if (j % m.labelEvery === 0 || n <= 6) {
         const lx = O[0] + r * Math.cos(-Math.PI / 5), ly = O[1] + r * Math.sin(-Math.PI / 5);
-        gRings.append(h('text', { class: 'tm-ring-label', x: lx.toFixed(1), y: ly.toFixed(1), 'font-size': (13 * fs).toFixed(1) }, m.ringLabel(j)));
+        gRings.append(h('text', { class: 'tm-ring-label', x: lx.toFixed(1), y: ly.toFixed(1), 'font-size': (13 * fs * boardK(root)).toFixed(1) }, m.ringLabel(j)));
       }
     }
+  }
+
+  function drawCompare(show, vb) {
+    gCmp.classList.toggle('is-hidden', !show);
+    if (!show) return;
+    const car = target('car', state.ktxAfter);
+    cmpLand.setAttribute('d', car.land.map((rs) => rs.map((r) => pathD(r, true)).join('')).join(''));
+    const u = unitFor(vb) * boardK(root);
+    const b = car.raw;
+    const x1 = b[0] - 4 * u, y1 = (b[1] + b[3]) / 2;
+    const x2 = x1 - 50 * u, y2 = y1 - 50 * u;
+    cmpLine.setAttribute('x1', x1.toFixed(1)); cmpLine.setAttribute('y1', y1.toFixed(1));
+    cmpLine.setAttribute('x2', x2.toFixed(1)); cmpLine.setAttribute('y2', y2.toFixed(1));
+    cmpText.setAttribute('x', (x2 - 4 * u).toFixed(1)); cmpText.setAttribute('y', (y2 - 4 * u).toFixed(1));
+    cmpText.setAttribute('font-size', (15 * u).toFixed(1));
   }
 
   function updateCities(geo) {
     cityEls.forEach((g, i) => {
       const id = cities[i].id;
-      const off = geo.times && id !== 'seoul' && geo.times[id]?.min == null;
-      g.classList.toggle('is-off', !!off);
+      const t = geo.times && id !== 'seoul' ? geo.times[id] : null;
+      g.classList.toggle('is-off', !!(geo.times && id !== 'seoul' && t?.min == null));
+      // 역, 공항이 없어서 갈아타고 가는 도시(또는 자동차가 더 빠른 도시)
+      g.classList.toggle('is-via', !!(t && (t.via || t.byCar)) && !(state.mode === 'air' && t.byCar));
+      g.classList.toggle('is-slow', !!(t && state.mode === 'air' && t.byCar));
     });
   }
 
@@ -150,23 +191,35 @@ export default function mount(root) {
     const from = cur, fromVB = curVB.slice();
     cancelAnimationFrame(anim);
     gRings.classList.add('is-hidden');
+    svg.classList.toggle('is-air', state.mode === 'air');   // 비행기 지도: 공항 없는 도시 이름 숨김(점과 말풍선은 그대로)
+    gRings.classList.toggle('is-dense', state.mode === 'walk'); // 도보: 1일 원은 옅게, 5일마다 진하게
     updateCities(to);
     setCaption();
     refreshTip();
     const t0 = performance.now();
+    const big = fromVB[2] / to.vb[2] > 3 || to.vb[2] / fromVB[2] > 3;
+    const dur = big ? 2200 : DURATION;
+    gCmp.classList.add('is-hidden');
     const mid = { land: from.land.map((rs) => rs.map((r) => new Float64Array(r.length))), coast: from.coast.map((l) => new Float64Array(l.length)), borders: from.borders.map((l) => new Float64Array(l.length)), cities: new Float64Array(from.cities.length) };
     const step = (now) => {
-      const t = easeInOut(Math.min(1, (now - t0) / DURATION));
+      const raw = Math.min(1, (now - t0) / dur);
+      const t = easeInOut(big ? Math.min(1, raw / 0.55) : raw);
+      const tv = big ? easeInOut(Math.max(0, (raw - 0.45) / 0.55)) : t;
       from.land.forEach((rs, i) => rs.forEach((r, j) => lerpFlat(r, to.land[i][j], t, mid.land[i][j])));
       from.coast.forEach((l, i) => lerpFlat(l, to.coast[i], t, mid.coast[i]));
       from.borders.forEach((l, i) => lerpFlat(l, to.borders[i], t, mid.borders[i]));
       lerpFlat(from.cities, to.cities, t, mid.cities);
-      const vb = fromVB.map((v, i) => v + (to.vb[i] - v) * t);
+      // 도보처럼 크기가 아주 많이 다를 때도 자연스럽게: 너비, 높이는 비율(로그)로, 가운데는 곧게 옮긴다
+      const w = fromVB[2] * Math.pow(to.vb[2] / fromVB[2], tv), hh = fromVB[3] * Math.pow(to.vb[3] / fromVB[3], tv);
+      const cx = fromVB[0] + fromVB[2] / 2 + (to.vb[0] + to.vb[2] / 2 - fromVB[0] - fromVB[2] / 2) * tv;
+      const cy = fromVB[1] + fromVB[3] / 2 + (to.vb[1] + to.vb[3] / 2 - fromVB[1] - fromVB[3] / 2) * tv;
+      const vb = [cx - w / 2, cy - hh / 2, w, hh];
       draw(mid, vb);
-      if (t < 1) { anim = requestAnimationFrame(step); return; }
+      if (raw < 1) { anim = requestAnimationFrame(step); return; }
       cur = to; curVB = to.vb.slice(); lastDrawn = to;
       draw(to, curVB);
       drawRings(to, state.mode, curVB);
+      drawCompare(state.mode === 'walk', curVB);
       gRings.classList.remove('is-hidden');
       refreshTip();
     };
@@ -204,11 +257,14 @@ export default function mount(root) {
     const sr = stage.getBoundingClientRect();
     const cr = cityEls[state.hover].firstChild.firstChild.getBoundingClientRect();
     const x = cr.left + cr.width / 2 - sr.left, y = cr.top + cr.height / 2 - sr.top;
-    const tw = tip.offsetWidth, th = tip.offsetHeight;
-    let left = x + 16, top = y - th / 2;
-    if (left + tw > sr.width - 8) left = x - tw - 16;
+    // 칠판 모드에서는 말풍선도 zoom 으로 커진다. 크기는 실제 화면 값으로 재고, 위치는 배율로 나눠 넣는다
+    const k = boardK(root);
+    const tr = tip.getBoundingClientRect();
+    const tw = tr.width, th = tr.height;
+    let left = x + 16 * k, top = y - th / 2;
+    if (left + tw > sr.width - 8) left = x - tw - 16 * k;
     top = Math.max(8, Math.min(sr.height - th - 8, top));
-    tip.style.left = `${left}px`; tip.style.top = `${top}px`;
+    tip.style.left = `${left / k}px`; tip.style.top = `${top / k}px`;
   }
   function hideTip(i) {
     if (i != null && state.hover !== i) return;
@@ -262,9 +318,13 @@ export default function mount(root) {
     h('ul', { class: 'tm-legend' },
       h('li', {}, h('span', { class: 'tm-lg-seoul' }), '서울(출발)'),
       h('li', {}, h('span', { class: 'tm-lg-dot' }), '도시: 마우스를 올리면 시간 표'),
-      h('li', {}, h('span', { class: 'tm-lg-off' }), '이 수단으로 바로 갈 수 없는 도시'),
+      h('li', {}, h('span', { class: 'tm-lg-via' }), '역(공항)에서 자동차로 갈아타고 가는 도시'),
+      h('li', {}, h('span', { class: 'tm-lg-off' }), '갈 수 없는 도시, 비행기 지도에서는 자동차가 더 빠른 도시'),
       h('li', {}, h('span', { class: 'tm-lg-ring' }), ringLegend)),
-    h('p', { class: 'ds-note' }, '서울에서 본 방향은 실제와 같고, 거리만 걸리는 시간에 맞춰 늘이거나 줄였어요. 도시 사이의 해안선과 경계는 가까운 도시들에 맞춰 함께 휘어요. 서울에서 부산까지 거리는 모든 지도에서 같게 맞췄습니다.')));
+    h('p', { class: 'ds-note' }, '서울에서 본 방향은 실제와 같고, 거리만 걸리는 시간에 맞춰 늘이거나 줄였어요. 도시 사이의 해안선과 경계는 가까운 도시들에 맞춰 함께 휘어요. 모든 시간 지도는 축척이 같아서(1시간이 늘 같은 길이) 빠른 수단일수록 지도가 작아져요.')));
+
+  // 화면 밝기와 칠판 모드 (동아 디자인). 칠판 모드를 켜고 끄면 지도 글자를 다시 맞춘다
+  addViewBlock(panel, root, { onBoard: () => { draw(cur, curVB); drawRings(cur, state.mode, curVB); drawCompare(state.mode === 'walk', curVB); placeTip(); } });
 
   addBlock(panel, h('details', { class: 'tm-src' }, h('summary', {}, '자료 출처'),
     h('ul', { class: 'tm-src-list' }, SOURCES.map((t) => h('li', {}, t)))));
@@ -277,7 +337,7 @@ export default function mount(root) {
     ringLegend.textContent = MODES[state.mode].ringLegend;
   }
 
-  new ResizeObserver(() => { if (cur === lastDrawn) { draw(cur, curVB); drawRings(cur, state.mode, curVB); } placeTip(); }).observe(stage);
+  new ResizeObserver(() => { if (cur === lastDrawn) { draw(cur, curVB); drawRings(cur, state.mode, curVB); drawCompare(state.mode === 'walk', curVB); } placeTip(); }).observe(stage);
   syncButtons();
   setCaption();
   updateCities(cur);

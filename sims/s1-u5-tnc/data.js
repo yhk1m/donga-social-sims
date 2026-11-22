@@ -3,23 +3,23 @@
 // 교과서: 동아출판 중등 사회1(22개정) 94~96쪽. 기업은 가상의 'Z 기업'(스마트 기기 회사)이며,
 // 시설 위치는 교과서 설명(공간적 분업)에 맞춰 고른 예시일 뿐 실제 기업의 시설이 아니다.
 
-// 시설 종류: 이름, 테두리 색, 선 아이콘(24x24)
+// 시설 종류: 이름, 색(style.css 의 --tnc-c-* 토큰, 라이트와 다크 값이 따로 있다), 선 아이콘(24x24)
 export const TYPES = {
-  hq: { name: '본사', color: '#c92a2a', icon: [['path', { d: 'M4 21V10h16v11' }], ['path', { d: 'M2.5 21h19' }], ['path', { d: 'M12 10V3l5 2-5 2' }], ['path', { d: 'M8 14h2M14 14h2M8 17.5h2M14 17.5h2' }]] },
-  sub: { name: '해외 자회사', color: '#1971c2', icon: [['rect', { x: 6, y: 3, width: 12, height: 18, rx: 1 }], ['path', { d: 'M3 21h18' }], ['path', { d: 'M10 7h4M10 11h4M10 15h4' }]] },
-  lab: { name: '연구소', color: '#7048e8', icon: [['path', { d: 'M9 3h6' }], ['path', { d: 'M10 3v6l-5.4 9.6A1.6 1.6 0 0 0 6 21h12a1.6 1.6 0 0 0 1.4-2.4L14 9V3' }], ['path', { d: 'M7.2 15h9.6' }]] },
-  factory: { name: '생산 공장', color: '#b35c00', icon: [['path', { d: 'M3 21V11l6 3.5V11l6 3.5V4h5v17z' }], ['path', { d: 'M7 18h2M12 18h2' }]] },
-  raw: { name: '원료 산지', color: '#5c940d', icon: [['path', { d: 'M2 20l7-12 4 6 2.5-3.5L22 20z' }], ['path', { d: 'M6.6 12.2 9 14l2-2' }]] },
-  warehouse: { name: '물류 창고', color: '#0c8599', icon: [['path', { d: 'M3 21V9l9-5 9 5v12' }], ['path', { d: 'M7 21v-8h10v8' }], ['path', { d: 'M7 17h10' }]] },
-  sales: { name: '판매 지사(영업 지점)', short: '판매 지사', color: '#2b8a3e', icon: [['path', { d: 'M5 8h14l-1 13H6z' }], ['path', { d: 'M9 8V6.5a3 3 0 0 1 6 0V8' }]] },
-  call: { name: '고객 센터', color: '#c2255c', icon: [['path', { d: 'M4 15v-3a8 8 0 0 1 16 0v3' }], ['rect', { x: 3, y: 14, width: 4, height: 6, rx: 1.5 }], ['rect', { x: 17, y: 14, width: 4, height: 6, rx: 1.5 }], ['path', { d: 'M19 20c0 1.2-1.3 2-3 2h-3' }]] },
+  hq: { name: '본사', color: 'var(--tnc-c-hq)', icon: [['path', { d: 'M4 21V10h16v11' }], ['path', { d: 'M2.5 21h19' }], ['path', { d: 'M12 10V3l5 2-5 2' }], ['path', { d: 'M8 14h2M14 14h2M8 17.5h2M14 17.5h2' }]] },
+  sub: { name: '해외 자회사', color: 'var(--tnc-c-sub)', icon: [['rect', { x: 6, y: 3, width: 12, height: 18, rx: 1 }], ['path', { d: 'M3 21h18' }], ['path', { d: 'M10 7h4M10 11h4M10 15h4' }]] },
+  lab: { name: '연구소', color: 'var(--tnc-c-lab)', icon: [['path', { d: 'M9 3h6' }], ['path', { d: 'M10 3v6l-5.4 9.6A1.6 1.6 0 0 0 6 21h12a1.6 1.6 0 0 0 1.4-2.4L14 9V3' }], ['path', { d: 'M7.2 15h9.6' }]] },
+  factory: { name: '생산 공장', color: 'var(--tnc-c-factory)', icon: [['path', { d: 'M3 21V11l6 3.5V11l6 3.5V4h5v17z' }], ['path', { d: 'M7 18h2M12 18h2' }]] },
+  raw: { name: '원료 산지', color: 'var(--tnc-c-raw)', icon: [['path', { d: 'M2 20l7-12 4 6 2.5-3.5L22 20z' }], ['path', { d: 'M6.6 12.2 9 14l2-2' }]] },
+  warehouse: { name: '물류 창고', color: 'var(--tnc-c-warehouse)', icon: [['path', { d: 'M3 21V9l9-5 9 5v12' }], ['path', { d: 'M7 21v-8h10v8' }], ['path', { d: 'M7 17h10' }]] },
+  sales: { name: '판매 지사(영업 지점)', short: '판매 지사', color: 'var(--tnc-c-sales)', icon: [['path', { d: 'M5 8h14l-1 13H6z' }], ['path', { d: 'M9 8V6.5a3 3 0 0 1 6 0V8' }]] },
+  call: { name: '고객 센터', color: 'var(--tnc-c-call)', icon: [['path', { d: 'M4 15v-3a8 8 0 0 1 16 0v3' }], ['rect', { x: 3, y: 14, width: 4, height: 6, rx: 1.5 }], ['rect', { x: 17, y: 14, width: 4, height: 6, rx: 1.5 }], ['path', { d: 'M19 20c0 1.2-1.3 2-3 2h-3' }]] },
 };
 
-// 흐름 종류
+// 흐름 종류 (색은 style.css 의 --tnc-k-* 토큰)
 export const KINDS = {
-  part: { name: '원료·부품', color: '#e67700', dash: '' },
-  product: { name: '제품', color: '#2f9e44', dash: '' },
-  info: { name: '정보·자본', color: '#364fc7', dash: '5 4' },
+  part: { name: '원료, 부품', color: 'var(--tnc-k-part)', dash: '' },
+  product: { name: '제품', color: 'var(--tnc-k-product)', dash: '' },
+  info: { name: '정보, 자본', color: 'var(--tnc-k-info)', dash: '5 4' },
 };
 
 // 시설: step = 처음 나타나는 단계, closed = 문을 닫는 단계, lp = 이름표 방향(r·l·t·b), why = 그곳에 둔 까닭(새로 생길 때 표시)
@@ -49,7 +49,7 @@ export const FACILITIES = [
   { id: 'mem', type: 'warehouse', place: '미국 멤피스', lon: -90, lat: 35.1, step: 7, lp: 't', why: '교통이 편리한 거점' },
   { id: 'pan', type: 'warehouse', place: '파나마', lon: -79.5, lat: 9, step: 7, lp: 'b', why: '교통이 편리한 거점' },
   { id: 'dxb', type: 'warehouse', place: '아랍 에미리트', lon: 55.3, lat: 25.2, step: 7, lp: 'b', why: '교통이 편리한 거점' },
-  { id: 'mnl', type: 'call', place: '필리핀 마닐라', lon: 121, lat: 14.6, step: 7, lp: 'r', why: '시차·영어·낮은 임금' },
+  { id: 'mnl', type: 'call', place: '필리핀 마닐라', lon: 121, lat: 14.6, step: 7, lp: 'r', why: '시차, 영어, 낮은 임금' },
   { id: 'los', type: 'sales', place: '나이지리아', lon: 3.4, lat: 6.5, step: 7, lp: 'b', why: '새 판매 시장' },
   { id: 'bue', type: 'sales', place: '아르헨티나', lon: -58.4, lat: -34.6, step: 7, lp: 'b', why: '새 판매 시장' },
 
@@ -126,7 +126,7 @@ export const STEPS = [
     n: 2, short: '해외 판매 시장 확대', title: '세계 각지로 판매 시장을 넓혀요', view: 'world', page: 94,
     quote: '판매 시장을 넓히기 위해 세계 각지에 자회사와 영업 지점을 만들었어요.',
     points: [
-      [null, '왜 가능해졌을까?', '교통·통신이 발달하고 세계 무역 기구(WTO)가 출범하면서 무역 장벽이 낮아졌어요.'],
+      [null, '왜 가능해졌을까?', '교통과 통신이 발달하고 세계 무역 기구(WTO)가 출범하면서 무역 장벽이 낮아졌어요.'],
       ['sub', '해외 자회사', '영국, 한국, 싱가포르, 브라질에 자회사를 세워요.'],
       ['sales', '영업 지점', '미국 공장에서 만든 제품을 세계 곳곳에서 팔아요.'],
     ],
@@ -165,7 +165,7 @@ export const STEPS = [
     callouts: [{ at: 'hq', head: '본사', text: '정보와 자본 확보에 유리', dir: 'b' }],
     quote: '주로 의사 결정을 내리는 본사는 정보와 자본 확보에 유리한 지역에 두며, 연구소는 지식과 기술을 갖춘 고급 인력이 풍부한 지역에 세운다.',
     points: [
-      [null, '공간적 분업', '연구·개발·생산·판매 기능을 나누어, 각 기능을 잘 해낼 수 있는 서로 다른 지역에 두어요.'],
+      [null, '공간적 분업', '연구, 개발, 생산, 판매 기능을 나누어, 각 기능을 잘 해낼 수 있는 서로 다른 지역에 두어요.'],
       ['lab', '연구소', '지식과 기술을 갖춘 고급 인력이 많은 도시에 세워요.'],
     ],
   },
@@ -179,7 +179,7 @@ export const STEPS = [
     ],
   },
   {
-    n: 7, short: '물류·판매·고객 센터', title: '공간적 분업 ③ 물류 창고·판매 지사·고객 센터', view: 'world', page: 94,
+    n: 7, short: '물류, 판매, 고객 센터', title: '공간적 분업 ③ 물류 창고, 판매 지사, 고객 센터', view: 'world', page: 94,
     quote: '초국적 기업은 본사, 연구소와 같은 핵심 사업뿐만 아니라 원료 산지, 생산 공장, 물류 창고, 판매 지사, 고객 센터 등을 해외 여러 국가에서 운영하면서 전 세계를 대상으로 생산과 판매 활동을 하는 기업을 말한다.',
     points: [
       ['warehouse', '물류 창고', '교통이 편리한 곳에서 제품을 모았다가 각 시장으로 보내요.'],
@@ -190,8 +190,8 @@ export const STEPS = [
   {
     n: 8, short: '재배치와 지역 변화', title: '공장이 옮겨 가면 지역이 달라져요', view: 'na', page: 96,
     callouts: [
-      { at: 'usf', head: '공장이 빠져나간 지역', text: '산업 공동화 · 일자리 감소 · 지역 경제 침체', dir: 't', tone: 'bad' },
-      { at: 'mex', head: '공장이 들어선 지역', text: '새 산업 단지 · 일자리 증가 · 관련 산업 발달', dir: 'b', tone: 'good' },
+      { at: 'usf', head: '공장이 빠져나간 지역', text: '산업 공동화, 일자리 감소, 지역 경제 침체', dir: 't', tone: 'bad' },
+      { at: 'mex', head: '공장이 들어선 지역', text: '새 산업 단지, 일자리 증가, 관련 산업 발달', dir: 'b', tone: 'good' },
     ],
     quote: '초국적 기업이 기존의 생산 공장을 폐쇄하고 다른 지역에 새로운 생산 공장을 설립하면 생산 공장이 다른 지역으로 빠져나간 지역에서는 산업 공동화 현상이 나타난다.',
     points: [

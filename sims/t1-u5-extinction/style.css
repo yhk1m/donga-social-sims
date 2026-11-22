@@ -1,67 +1,87 @@
 /* © 2026 김용현 */
-/* 지방 소멸 위험 카토그램 전용 스타일. 규칙: 모든 선택자는 .ds-sim 으로 시작, 클래스만(태그 선택자 금지) */
-.ds-sim .ext-stage { background: #eef2f4; touch-action: none; }
+/* 지방 소멸 위험 카토그램, 동아 디자인 적용판(공통 토큰은 src/shared/donga.css). 규칙: 모든 선택자는 .ds-sim 으로 시작, 클래스만(태그 선택자 금지).
+   색: 5단계 등급 색(진한 빨강에서 파랑)은 소멸위험지수의 표준 자료 색이라 그대로 두고, 바탕, 경계, 테두리, 단추는 토큰을 쓴다.
+   칠판 모드에서는 지도 선 굵기에 var(--bk) 를 곱하고, 무대 위 상자(확대 단추, 설명, 말풍선)는 zoom 으로 키운다. */
+.ds-sim .ext-stage { background: var(--map-sea); touch-action: none; }
 .ds-sim .ext-map { display: block; width: 100%; height: 100%; cursor: grab; user-select: none; }
 .ds-sim .ext-map.ext-dragging { cursor: grabbing; }
 
-.ds-sim .ext-ghost-p { fill: #dcd9d1; stroke: #f4f3ef; stroke-width: .6; vector-effect: non-scaling-stroke; }
-.ds-sim .ext-reg-p, .ds-sim .ext-hex-p { stroke: #ffffff; stroke-width: .7; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
-.ds-sim .ext-hex-p { stroke-width: .9; }
-.ds-sim .ext-reg-p.ext-hover, .ds-sim .ext-hex-p.ext-hover { stroke: #111111; stroke-width: 1.6; }
-.ds-sim .ext-sido { fill: none; stroke: #4a525c; stroke-width: 1.1; vector-effect: non-scaling-stroke; stroke-linejoin: round; pointer-events: none; }
-.ds-sim .ext-outline { fill: none; stroke: #b9b5ab; stroke-width: .8; vector-effect: non-scaling-stroke; pointer-events: none; }
-.ds-sim .ext-hl { fill: none; stroke: #111111; stroke-width: 2.4; vector-effect: non-scaling-stroke; pointer-events: none; stroke-linejoin: round; }
+.ds-sim .ext-ghost-p { fill: color-mix(in oklch, var(--map-border) 70%, var(--map-land)); stroke: var(--map-land); stroke-width: calc(.6px * var(--bk)); vector-effect: non-scaling-stroke; }
+.ds-sim .ext-reg-p, .ds-sim .ext-hex-p { stroke: var(--map-land); stroke-width: calc(.7px * var(--bk)); vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.ds-sim .ext-hex-p { stroke-width: calc(.9px * var(--bk)); }
+.ds-sim .ext-reg-p.ext-hover, .ds-sim .ext-hex-p.ext-hover { stroke: var(--text-strong); stroke-width: calc(1.6px * var(--bk)); }
+.ds-sim .ext-sido { fill: none; stroke: var(--text); stroke-width: calc(1.1px * var(--bk)); vector-effect: non-scaling-stroke; stroke-linejoin: round; pointer-events: none; }
+.ds-sim .ext-outline { fill: none; stroke: var(--map-coast); stroke-width: calc(.8px * var(--bk)); vector-effect: non-scaling-stroke; pointer-events: none; }
+.ds-sim .ext-hl { fill: none; stroke: var(--text-strong); stroke-width: calc(2.4px * var(--bk)); vector-effect: non-scaling-stroke; pointer-events: none; stroke-linejoin: round; }
 .ds-sim .ext-label { text-anchor: middle; dominant-baseline: central; pointer-events: none; font-weight: 600; letter-spacing: -.02em; }
 
-.ds-sim .ext-zoom { position: absolute; left: 12px; top: 12px; display: flex; flex-direction: column; gap: 6px; }
-.ds-sim .ext-zbtn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow); padding: 0; }
-.ds-sim .ext-zbtn:hover { background: #f1f0eb; }
+.ds-sim .ext-zoom { position: absolute; left: 12px; top: 12px; display: flex; flex-direction: column; gap: 6px; zoom: var(--bk); }
+.ds-sim .ext-zbtn {
+  width: var(--touch); height: var(--touch); border-radius: var(--r-control); border: 0; background: var(--surface-raised); color: var(--text-strong);
+  display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow); padding: 0;
+  transition: background-color 150ms cubic-bezier(0.35, 0, 0.35, 1);
+}
+.ds-sim .ext-zbtn:hover { background: color-mix(in oklch, var(--surface-raised) 88%, var(--text-strong)); }
 
-.ds-sim .ext-caption { position: absolute; right: 12px; top: 12px; max-width: min(320px, calc(100% - 72px)); background: rgba(255,255,255,.92); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font-size: 13px; color: var(--ink-2); box-shadow: var(--shadow); pointer-events: none; }
-.ds-sim .ext-strong { color: var(--ink); font-weight: 700; }
+.ds-sim .ext-caption {
+  position: absolute; right: 12px; top: 12px; max-width: min(320px, calc(100% - 80px)); background: color-mix(in oklch, var(--surface) 92%, transparent);
+  border-radius: var(--r-control); padding: 10px 14px; font-size: 13px; line-height: 1.5; color: var(--text-muted); box-shadow: var(--shadow); pointer-events: none; zoom: var(--bk);
+}
+.ds-sim .ext-strong { color: var(--text-strong); font-weight: 700; }
 
-.ds-sim .ext-tip { position: absolute; z-index: 5; pointer-events: none; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 10px 12px; font-size: 13px; min-width: 190px; }
+.ds-sim .ext-tip { position: absolute; z-index: 5; pointer-events: none; background: var(--surface-raised); color: var(--text-strong); border-radius: 12px; box-shadow: var(--shadow); padding: 10px 14px; font-size: 13px; min-width: 190px; zoom: var(--bk); }
 .ds-sim .ext-tip[hidden], .ds-sim .ext-picked[hidden] { display: none; }
-.ds-sim .ext-tip-title { margin: 0 0 6px; font-size: 15px; }
+.ds-sim .ext-tip-title { margin: 0 0 6px; font-size: 15px; font-weight: 700; }
 .ds-sim .ext-tip-dl { display: grid; grid-template-columns: auto auto; gap: 2px 14px; margin: 0; }
-.ds-sim .ext-tip-k { color: var(--ink-2); }
+.ds-sim .ext-tip-k { color: var(--text-muted); }
 .ds-sim .ext-tip-v { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .ds-sim .ext-badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
 
-.ds-sim .ext-checkbox { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
+.ds-sim .ext-checkbox { accent-color: var(--accent); width: 18px; height: 18px; margin: 0; }
 
-.ds-sim .ext-searchbox { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; background: var(--panel); color: var(--ink-2); }
-.ds-sim .ext-searchbox:focus-within { border-color: var(--accent); }
-.ds-sim .ext-search-input { flex: 1; border: 0; outline: 0; font: inherit; font-size: 14px; padding: 8px 0; background: transparent; color: var(--ink); min-width: 0; }
-.ds-sim .ext-picked { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
-.ds-sim .ext-picked-name { font-weight: 700; font-size: 15px; color: var(--ink); }
-.ds-sim .ext-kv { display: flex; justify-content: space-between; gap: 8px; color: var(--ink-2); }
+.ds-sim .ext-searchbox { display: flex; align-items: center; gap: 8px; min-height: var(--touch); border: 0; border-radius: var(--r-control); padding: 0 14px; background: var(--fill-subtle); color: var(--icon-muted); }
+.ds-sim .ext-searchbox:focus-within { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.ds-sim .ext-search-input { flex: 1; border: 0; outline: 0; font: inherit; font-size: 0.9375rem; padding: 8px 0; background: transparent; color: var(--text-strong); min-width: 0; }
+.ds-sim .ext-search-input::placeholder { color: var(--text-muted); }
+.ds-sim .ext-picked { border: 0; border-radius: var(--r-control); background: var(--fill-subtle); padding: 12px 14px; font-size: 0.8125rem; display: flex; flex-direction: column; gap: 4px; }
+.ds-sim .ext-picked-name { font-weight: 700; font-size: 0.9375rem; color: var(--text-strong); }
+.ds-sim .ext-kv { display: flex; justify-content: space-between; gap: 8px; color: var(--text-muted); }
 .ds-sim .ext-kv .ext-strong { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 .ds-sim .ext-block { display: flex; flex-direction: column; gap: 8px; }
 .ds-sim .ext-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.ds-sim .ext-legend-row { display: grid; grid-template-columns: 16px 1fr auto; gap: 8px; align-items: center; font-size: 13px; }
-.ds-sim .ext-sw { width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(0,0,0,.08); box-sizing: border-box; }
-.ds-sim .ext-lb-name { font-size: 14px; color: var(--ink); }
-.ds-sim .ext-lb-range { color: var(--ink-2); margin-left: 4px; }
-.ds-sim .ext-ct { font-weight: 700; font-variant-numeric: tabular-nums; }
-.ds-sim .ext-bar { grid-column: 2 / 4; height: 4px; border-radius: 2px; background: #efeee9; overflow: hidden; margin-top: -2px; }
+.ds-sim .ext-legend-row { display: grid; grid-template-columns: 16px 1fr auto; gap: 8px; align-items: center; font-size: 0.8125rem; color: var(--text-muted); }
+.ds-sim .ext-sw { width: 16px; height: 16px; border-radius: 4px; border: 1px solid var(--line-soft); box-sizing: border-box; }
+.ds-sim .ext-lb-name { font-size: 0.875rem; font-weight: 600; color: var(--text-strong); }
+.ds-sim .ext-lb-range { color: var(--text-muted); margin-left: 4px; }
+.ds-sim .ext-ct { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-strong); }
+.ds-sim .ext-bar { grid-column: 2 / 4; height: 4px; border-radius: 2px; background: var(--fill-subtle); overflow: hidden; margin-top: -2px; }
 .ds-sim .ext-bar-fill { display: block; height: 100%; }
-.ds-sim .ext-sub { margin: 0; font-size: 13px; color: var(--ink-2); }
+.ds-sim .ext-sub { margin: 0; font-size: 0.8125rem; line-height: 1.55; color: var(--text-muted); }
 
 .ds-sim .ext-lowest { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
-.ds-sim .ext-low-btn { width: 100%; display: grid; grid-template-columns: 22px 1fr auto; gap: 6px; align-items: center; font: inherit; font-size: 13px; text-align: left; background: none; border: 0; border-radius: 6px; padding: 5px 6px; cursor: pointer; color: var(--ink); }
-.ds-sim .ext-low-btn:hover, .ds-sim .ext-low-btn[aria-current=true] { background: var(--accent-soft); }
-.ds-sim .ext-low-rank { color: var(--ink-2); font-variant-numeric: tabular-nums; text-align: right; }
+.ds-sim .ext-low-btn {
+  width: 100%; min-height: var(--touch); display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: center; font: inherit; font-size: 0.875rem; text-align: left;
+  background: transparent; border: 0; border-radius: var(--r-control); padding: 0 10px; cursor: pointer; color: var(--text-strong);
+  transition: background-color 150ms cubic-bezier(0.35, 0, 0.35, 1);
+}
+.ds-sim .ext-low-btn:hover { background: var(--fill-subtle); }
+.ds-sim .ext-low-btn[aria-current=true] { background: var(--accent-soft); color: var(--accent-text); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.ds-sim .ext-low-rank { color: var(--text-muted); font-variant-numeric: tabular-nums; text-align: right; }
 .ds-sim .ext-low-v { font-variant-numeric: tabular-nums; font-weight: 700; }
-.ds-sim .ext-low-sido { color: var(--ink-2); font-size: 12px; margin-left: 4px; }
+.ds-sim .ext-low-sido { color: var(--text-muted); font-size: 0.75rem; margin-left: 4px; }
+.ds-sim .ext-low-btn[aria-current=true] .ext-low-rank, .ds-sim .ext-low-btn[aria-current=true] .ext-low-sido { color: var(--accent-text); }
 
-.ds-sim .ext-small { font-size: 12px; line-height: 1.55; }
-.ds-sim .ext-link { color: var(--accent); }
+.ds-sim .ext-small { font-size: 0.75rem; line-height: 1.55; }
+.ds-sim .ext-link { color: var(--accent-text); }
 .ds-sim .ext-p { margin: 0 0 6px; }
 .ds-sim .ext-p:last-child { margin: 0; }
 
 @media (max-width: 820px) {
   .ds-sim .ext-caption { top: auto; bottom: 10px; left: 10px; right: 10px; max-width: none; font-size: 12px; padding: 6px 10px; }
-  .ds-sim .ext-zbtn { width: 32px; height: 32px; }
+}
+/* 칠판 모드: 커진 설명 상자가 강원, 경북 쪽 지도를 가리지 않게 오른쪽 아래(바다)로 */
+.ds-sim[data-board="on"] .ext-caption { top: auto; bottom: 12px; }
+@media (prefers-reduced-motion: reduce) {
+  .ds-sim .ext-zbtn, .ds-sim .ext-low-btn { transition: none; }
 }
